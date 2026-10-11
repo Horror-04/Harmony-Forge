@@ -7,6 +7,7 @@ add_library(harmony_forge_core STATIC
   music/chord_detect.cpp
   model/track_pattern.cpp
   model/pattern_ops.cpp
+  model/selection.cpp
   serialization/tokenizer.cpp
   serialization/midi_file.cpp
 )

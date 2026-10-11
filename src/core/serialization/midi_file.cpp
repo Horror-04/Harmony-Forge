@@ -61,4 +61,76 @@ std::vector<std::uint8_t> write_smf0(const core::Pattern& pattern, int ticks_per
   return out;
 }
 
+std::vector<std::uint8_t> write_smf1(const core::Pattern& pattern, int ticks_per_beat) {
+  std::vector<std::vector<std::uint8_t>> tracks;
+  if (pattern.tracks.empty()) {
+    tracks.emplace_back();
+  } else {
+    for (const auto& t : pattern.tracks) {
+      const int ch = std::clamp(t.channel, 0, 15);
+      std::vector<std::pair<int, core::Note>> events;
+      for (const auto& n : t.notes) events.emplace_back(n.start_tick, n);
+      std::sort(events.begin(), events.end(),
+                [](const auto& a, const auto& b) { return a.first < b.first; });
+      std::vector<std::uint8_t> track;
+      int cursor = 0;
+      for (const auto& [start, n] : events) {
+        push_vlq(track, static_cast<std::uint32_t>(start - cursor));
+        cursor = start;
+        track.push_back(static_cast<std::uint8_t>(0x90 | ch));
+        track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
+        track.push_back(static_cast<std::uint8_t>(n.velocity & 0x7F));
+        push_vlq(track, static_cast<std::uint32_t>(n.duration_ticks));
+        track.push_back(static_cast<std::uint8_t>(0x80 | ch));
+        track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
+        track.push_back(0x40);
+      }
+      tracks.push_back(std::move(track));
+    }
+  }
+
+  std::vector<std::uint8_t> out;
+  out.insert(out.end(), {'M', 'T', 'h', 'd'});
+  push_be32(out, 6);
+  out.insert(out.end(), {0x00, 0x01});  // format 1: multitrack
+  const auto n_tracks = static_cast<std::uint16_t>(tracks.size());
+  out.push_back(static_cast<std::uint8_t>((n_tracks >> 8) & 0xFF));
+  out.push_back(static_cast<std::uint8_t>(n_tracks & 0xFF));
+  out.push_back(static_cast<std::uint8_t>((ticks_per_beat >> 8) & 0xFF));
+  out.push_back(static_cast<std::uint8_t>(ticks_per_beat & 0xFF));
+  for (auto& track : tracks) {
+    push_vlq(track, 0);
+    track.insert(track.end(), {0xFF, 0x2F, 0x00});
+    out.insert(out.end(), {'M', 'T', 'r', 'k'});
+    push_be32(out, static_cast<std::uint32_t>(track.size()));
+    out.insert(out.end(), track.begin(), track.end());
+  }
+  return out;
+}
+
+void assign_default_channels(core::Pattern& pattern) {
+  for (auto& t : pattern.tracks) {
+    switch (t.type) {
+      case core::TrackType::Melody:
+        t.channel = 0;
+        break;
+      case core::TrackType::Bass:
+        t.channel = 1;
+        break;
+      case core::TrackType::Chords:
+        t.channel = 2;
+        break;
+      case core::TrackType::Arpeggio:
+        t.channel = 3;
+        break;
+      case core::TrackType::CounterMelody:
+        t.channel = 4;
+        break;
+      case core::TrackType::Drums:
+        t.channel = 9;
+        break;
+    }
+  }
+}
+
 }  // namespace hf::ser

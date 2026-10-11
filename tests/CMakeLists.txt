@@ -22,6 +22,7 @@ function(hf_add_test name source)
 endfunction()
 
 hf_add_test(test_theory test_theory.cpp)
+hf_add_test(test_selection test_selection.cpp)
 hf_add_test(test_analysis test_analysis.cpp)
 hf_add_test(test_tokenizer test_tokenizer.cpp)
 hf_add_test(test_candidates test_candidates.cpp)

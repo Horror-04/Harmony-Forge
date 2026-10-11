@@ -19,7 +19,13 @@ target_sources(HarmonyForge PRIVATE
   audio/PreviewSynth.h
   state/PluginState.cpp
   state/PluginState.h
-  ui/PianoRollStub.h
+  ui/PatternDocument.h
+  ui/PatternDocument.cpp
+  ui/PianoRoll.h
+  ui/PianoRoll.cpp
+  ui/ChordTrack.h
+  ui/ChordTrack.cpp
+  ui/CandidateBar.h
 )
 
 target_include_directories(HarmonyForge PRIVATE

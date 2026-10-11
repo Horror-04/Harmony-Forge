@@ -3,20 +3,16 @@
 #include <algorithm>
 
 #include "candidates.h"
+#include "core/model/track_pattern.h"
 #include "core/serialization/midi_file.h"
 #include "PluginProcessor.h"
 
 namespace {
-// Builds the Safe candidate for the current state on the message thread.
-// Fixed 4 bars, Strict mode; seed follows SelectedChordIndex so the chord
-// selection audibly changes the preview. Never throws.
-hf::core::Pattern safePatternForState(const juce::ValueTree& tree) {
-  hf::infer::GenParams gp;
-  gp.mode = hf::infer::GenMode::Strict;
-  gp.seed = hf::plugin::selectedChordIndex(tree);
-  gp.bars = 4;
-  gp.tonic = hf::plugin::rootKey(tree);
-  gp.scale = hf::plugin::scaleName(tree).toLowerCase().toStdString();
+
+hf::core::Pattern patternForState(const juce::ValueTree& tree) {
+  hf::infer::GenParams gp = PatternDocument::makeParams(
+      hf::plugin::seed(tree), hf::plugin::bars(tree), hf::plugin::rootKey(tree),
+      hf::plugin::scaleName(tree).toLowerCase().toStdString());
   const auto cands = hf::infer::generate_candidates(gp);
   return cands[0];
 }
@@ -26,18 +22,38 @@ const hf::core::Track* melodyOf(const hf::core::Pattern& pat) {
     if (t.type == hf::core::TrackType::Melody) return &t;
   return pat.tracks.empty() ? nullptr : &pat.tracks.front();
 }
+
+juce::String trackName(hf::core::TrackType t) {
+  switch (t) {
+    case hf::core::TrackType::Chords:
+      return "Chords";
+    case hf::core::TrackType::Melody:
+      return "Melody";
+    case hf::core::TrackType::Bass:
+      return "Bass";
+    case hf::core::TrackType::Arpeggio:
+      return "Arpeggio";
+    case hf::core::TrackType::CounterMelody:
+      return "Counter";
+    case hf::core::TrackType::Drums:
+      return "Drums";
+  }
+  return "?";
+}
+
 }  // namespace
 
 HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
-    : AudioProcessorEditor(p), proc(p) {
-  setSize(800, 600);
+    : AudioProcessorEditor(p),
+      proc(p),
+      doc(&p.undo()),
+      chordTrack(doc),
+      roll(doc),
+      candidateBar(doc) {
+  setSize(1024, 720);
 
   transportLabel.setText("Transport: --", juce::dontSendNotification);
   addAndMakeVisible(transportLabel);
-
-  placeholder.setText("Harmony Forge — Sprint 4 (transport/state/preview/drag&drop live)",
-                      juce::dontSendNotification);
-  addAndMakeVisible(placeholder);
 
   previewButton.onClick = [this] { startPreview(); };
   addAndMakeVisible(previewButton);
@@ -45,6 +61,9 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   // External file drag must start from a mouse event: run it on mouseDown.
   dragButton.addMouseListener(this, false);
   addAndMakeVisible(dragButton);
+
+  exportButton.onClick = [this] { exportMultitrack(); };
+  addAndMakeVisible(exportButton);
 
   undoButton.onClick = [this] { proc.undo().undo(); };
   redoButton.onClick = [this] { proc.undo().redo(); };
@@ -71,8 +90,118 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   };
   addAndMakeVisible(densitySlider);
 
+  // Track + freeze row.
+  trackLabel.setText("Track", juce::dontSendNotification);
+  addAndMakeVisible(trackLabel);
+  trackBox.onChange = [this] {
+    const int id = trackBox.getSelectedId();
+    if (id > 0) doc.setTrackShown(id - 1);
+  };
+  addAndMakeVisible(trackBox);
+
+  freezeTrackButton.onClick = [this] {
+    const int t = doc.trackShown();
+    doc.setTrackFrozen(t, !hf::core::is_track_frozen(doc.freeze(), t));
+  };
+  addAndMakeVisible(freezeTrackButton);
+
+  axisBox.addItemList({"Full", "Rhythm", "Pitch"}, 1);
+  axisBox.setSelectedId(1, juce::dontSendNotification);
+  axisBox.onChange = [this] {
+    doc.setFreezeAxis(doc.trackShown(),
+                      static_cast<hf::core::FreezeAxis>(axisBox.getSelectedId() - 1));
+  };
+  addAndMakeVisible(axisBox);
+
+  snapLabel.setText("Snap", juce::dontSendNotification);
+  addAndMakeVisible(snapLabel);
+  snapBox.addItemList({"1/4", "1/8", "1/16", "1/32"}, 1);
+  snapBox.setSelectedId(3, juce::dontSendNotification);
+  snapBox.onChange = [this] {
+    static const int kGrids[4] = {480, 240, 120, 60};
+    roll.setSnapGrid(kGrids[juce::jlimit(1, 4, snapBox.getSelectedId()) - 1]);
+  };
+  addAndMakeVisible(snapBox);
+
+  quantButton.onClick = [this] { doc.quantizeSelection(roll.snapGrid(), 100); };
+  addAndMakeVisible(quantButton);
+
+  zoomHSlider.setRange(0.05, 2.0, 0.01);
+  zoomHSlider.setValue(0.35, juce::dontSendNotification);
+  zoomHSlider.onValueChange = [this] { applyZoom(); };
+  addAndMakeVisible(zoomHSlider);
+  zoomVSlider.setRange(2.0, 16.0, 0.5);
+  zoomVSlider.setValue(6.0, juce::dontSendNotification);
+  zoomVSlider.onValueChange = [this] { applyZoom(); };
+  addAndMakeVisible(zoomVSlider);
+
+  // Chord editor row (acts on the ChordTrack's selected bar).
+  chordBarLabel.setText("Chord bar: -", juce::dontSendNotification);
+  addAndMakeVisible(chordBarLabel);
+  juce::StringArray roots;
+  for (const char* n : {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"})
+    roots.add(n);
+  chordRootBox.addItemList(roots, 1);
+  addAndMakeVisible(chordRootBox);
+  juce::StringArray types;
+  for (const auto& t : ChordTrack::chordTypes()) types.add(t);
+  chordTypeBox.addItemList(types, 1);
+  addAndMakeVisible(chordTypeBox);
+  chordReplaceButton.onClick = [this] {
+    const int bar = chordTrack.selectedBar();
+    if (bar < 0 || bar >= static_cast<int>(doc.chords().size())) return;
+    const int pc = chordRootBox.getSelectedId() - 1;
+    const int typeId = chordTypeBox.getSelectedId() - 1;
+    if (pc < 0 || typeId < 0) return;
+    const auto& old = doc.chords()[static_cast<size_t>(bar)];
+    // Keep the octave of the current chord, move the pitch class.
+    int root = old.root + ((pc - old.root) % 12 + 12) % 12;
+    if (root > old.root + 6) root -= 12;
+    if (root < old.root - 6) root += 12;
+    root = juce::jlimit(0, 127, root);
+    hf::core::ChordSymbol next;
+    next.root = root;
+    next.type = ChordTrack::chordTypes()[static_cast<size_t>(typeId)];
+    doc.replaceChord(bar, next);
+  };
+  addAndMakeVisible(chordReplaceButton);
+  invUpButton.onClick = [this] {
+    if (chordTrack.selectedBar() >= 0) doc.applyInversion(chordTrack.selectedBar(), 1);
+  };
+  addAndMakeVisible(invUpButton);
+  invDownButton.onClick = [this] {
+    if (chordTrack.selectedBar() >= 0) doc.applyInversion(chordTrack.selectedBar(), -1);
+  };
+  addAndMakeVisible(invDownButton);
+
+  // Roll stack in a viewport (one scroller for chords + roll).
+  rollStack.chords = &chordTrack;
+  rollStack.roll = &roll;
+  rollStack.addAndMakeVisible(chordTrack);
+  rollStack.addAndMakeVisible(roll);
+  viewport.setViewedComponent(&rollStack, false);
+  addAndMakeVisible(viewport);
+
+  chordTrack.onBarSelected = [this](int bar) { refreshChordRow(bar); };
+
+  candidateBar.onRegenerate = [this] { doRegenerate(); };
+  candidateBar.onAudition = [this](int i) { auditionCandidate(i); };
+  candidateBar.onKeep = [this](int i) { doKeep(i); };
+  candidateBar.onRecallHistory = [this](const hf::core::HistoryEntry& e) {
+    candidateBar.setSeedAndBars(e.seed, e.bars);
+  };
+  candidateBar.setSeedAndBars(hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
+  addAndMakeVisible(candidateBar);
+
+  roll.setKey(hf::plugin::rootKey(proc.state()),
+              hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
+  chordTrack.setKey(hf::plugin::rootKey(proc.state()),
+                    hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
+
+  doc.addChangeListener(this);
   proc.state().addListener(this);
-  startTimer(25);  // transport poll + preview scheduler
+  refreshTrackBox();
+  startTimer(25);  // transport poll + preview scheduler + width sync
 }
 
 HarmonyForgeEditor::~HarmonyForgeEditor() {
@@ -81,36 +210,83 @@ HarmonyForgeEditor::~HarmonyForgeEditor() {
   proc.previewAllNotesOff();
 }
 
+void HarmonyForgeEditor::applyZoom() {
+  const float h = static_cast<float>(zoomHSlider.getValue());
+  const float v = static_cast<float>(zoomVSlider.getValue());
+  roll.setZoom(h, v);
+  chordTrack.setPxPerTick(h);
+}
+
 void HarmonyForgeEditor::paint(juce::Graphics& g) {
   g.fillAll(juce::Colours::darkgrey);
 }
 
 void HarmonyForgeEditor::resized() {
-  auto r = getLocalBounds().reduced(12);
-  transportLabel.setBounds(r.removeFromTop(24));
-  r.removeFromTop(6);
-  placeholder.setBounds(r.removeFromTop(24));
-  r.removeFromTop(6);
-  auto row = r.removeFromTop(30);
-  previewButton.setBounds(row.removeFromLeft(120));
-  row.removeFromLeft(8);
-  dragButton.setBounds(row.removeFromLeft(120));
-  row.removeFromLeft(8);
-  undoButton.setBounds(row.removeFromLeft(80));
-  row.removeFromLeft(8);
-  redoButton.setBounds(row.removeFromLeft(80));
-  r.removeFromTop(8);
-  auto bpmRow = r.removeFromTop(30);
-  bpmLabel.setBounds(bpmRow.removeFromLeft(70));
-  bpmSlider.setBounds(bpmRow);
+  auto r = getLocalBounds().reduced(8);
+  transportLabel.setBounds(r.removeFromTop(22));
   r.removeFromTop(4);
-  auto denRow = r.removeFromTop(30);
-  densityLabel.setBounds(denRow.removeFromLeft(70));
-  densitySlider.setBounds(denRow);
+  auto row = r.removeFromTop(28);
+  previewButton.setBounds(row.removeFromLeft(100));
+  row.removeFromLeft(6);
+  dragButton.setBounds(row.removeFromLeft(100));
+  row.removeFromLeft(6);
+  exportButton.setBounds(row.removeFromLeft(110));
+  row.removeFromLeft(6);
+  undoButton.setBounds(row.removeFromLeft(70));
+  row.removeFromLeft(6);
+  redoButton.setBounds(row.removeFromLeft(70));
+  r.removeFromTop(4);
+  auto bpmRow = r.removeFromTop(26);
+  bpmLabel.setBounds(bpmRow.removeFromLeft(60));
+  bpmSlider.setBounds(bpmRow.removeFromLeft(220));
+  bpmRow.removeFromLeft(8);
+  densityLabel.setBounds(bpmRow.removeFromLeft(60));
+  densitySlider.setBounds(bpmRow);
+  r.removeFromTop(4);
+  auto trackRow = r.removeFromTop(26);
+  trackLabel.setBounds(trackRow.removeFromLeft(48));
+  trackBox.setBounds(trackRow.removeFromLeft(140));
+  trackRow.removeFromLeft(6);
+  freezeTrackButton.setBounds(trackRow.removeFromLeft(110));
+  trackRow.removeFromLeft(6);
+  axisBox.setBounds(trackRow.removeFromLeft(90));
+  trackRow.removeFromLeft(6);
+  snapLabel.setBounds(trackRow.removeFromLeft(44));
+  snapBox.setBounds(trackRow.removeFromLeft(70));
+  trackRow.removeFromLeft(6);
+  quantButton.setBounds(trackRow.removeFromLeft(90));
+  trackRow.removeFromLeft(6);
+  zoomHSlider.setBounds(trackRow.removeFromLeft(120));
+  trackRow.removeFromLeft(6);
+  zoomVSlider.setBounds(trackRow.removeFromLeft(120));
+  r.removeFromTop(4);
+  auto chordRow = r.removeFromTop(26);
+  chordBarLabel.setBounds(chordRow.removeFromLeft(110));
+  chordRootBox.setBounds(chordRow.removeFromLeft(70));
+  chordRow.removeFromLeft(6);
+  chordTypeBox.setBounds(chordRow.removeFromLeft(90));
+  chordRow.removeFromLeft(6);
+  chordReplaceButton.setBounds(chordRow.removeFromLeft(120));
+  chordRow.removeFromLeft(6);
+  invUpButton.setBounds(chordRow.removeFromLeft(60));
+  chordRow.removeFromLeft(6);
+  invDownButton.setBounds(chordRow.removeFromLeft(60));
+  r.removeFromTop(4);
+  auto cand = r.removeFromBottom(40);
+  candidateBar.setBounds(cand);
+  r.removeFromBottom(4);
+  viewport.setBounds(r);
+  rollStack.setSize(std::max(viewport.getWidth(), roll.getWidth()),
+                    68 + roll.getHeight());
 }
 
 void HarmonyForgeEditor::timerCallback() {
-  // Preview scheduler (every tick).
+  // Keep the chord strip as wide as the roll (shared scroller).
+  const int w = std::max(viewport.getWidth(), roll.getWidth());
+  chordTrack.setSize(w, 64);
+  rollStack.setSize(w, 68 + roll.getHeight());
+  // Preview scheduler (every tick) — message thread enqueue into the
+  // lock-free preview queue consumed by processBlock.
   if (previewNext < previewQueue.size()) {
     const auto now = juce::Time::getMillisecondCounter() - previewT0;
     while (previewNext < previewQueue.size() && previewQueue[previewNext].timeMs <= (int)now) {
@@ -132,10 +308,48 @@ void HarmonyForgeEditor::timerCallback() {
       juce::dontSendNotification);
 }
 
-void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree, const juce::Identifier&) {
+void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
+                                                  const juce::Identifier&) {
   // Reflect undo/redo without feeding back into the tree.
   bpmSlider.setValue(hf::plugin::bpm(tree), juce::dontSendNotification);
   densitySlider.setValue(hf::plugin::density(tree), juce::dontSendNotification);
+  candidateBar.setSeedAndBars(hf::plugin::seed(tree), hf::plugin::bars(tree));
+  roll.setKey(hf::plugin::rootKey(tree),
+              hf::plugin::scaleName(tree).toLowerCase().toStdString());
+  chordTrack.setKey(hf::plugin::rootKey(tree),
+                    hf::plugin::scaleName(tree).toLowerCase().toStdString());
+}
+
+void HarmonyForgeEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
+  refreshTrackBox();
+  const int t = doc.trackShown();
+  freezeTrackButton.setButtonText(hf::core::is_track_frozen(doc.freeze(), t) ? "Unfreeze track"
+                                                                             : "Freeze track");
+  const auto ax = hf::core::freeze_axis_for(doc.freeze(), t);
+  axisBox.setSelectedId(static_cast<int>(ax) + 1, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::refreshTrackBox() {
+  trackBox.clear(juce::dontSendNotification);
+  for (int i = 0; i < static_cast<int>(doc.pattern().tracks.size()); ++i) {
+    const auto& tr = doc.pattern().tracks[static_cast<size_t>(i)];
+    trackBox.addItem(juce::String(i) + " " + trackName(tr.type), i + 1);
+  }
+  const int shown = doc.trackShown();
+  if (shown >= 0 && shown < trackBox.getNumItems())
+    trackBox.setSelectedId(shown + 1, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::refreshChordRow(int bar) {
+  chordBarLabel.setText("Chord bar: " + juce::String(bar), juce::dontSendNotification);
+  if (bar < 0 || bar >= static_cast<int>(doc.chords().size())) return;
+  const auto& ch = doc.chords()[static_cast<size_t>(bar)];
+  chordRootBox.setSelectedId(((ch.root % 12) + 12) % 12 + 1, juce::dontSendNotification);
+  const auto types = ChordTrack::chordTypes();
+  const auto it = std::find(types.begin(), types.end(), ch.type);
+  chordTypeBox.setSelectedId(
+      static_cast<int>(it != types.end() ? it - types.begin() : 0) + 1,
+      juce::dontSendNotification);
 }
 
 void HarmonyForgeEditor::mouseDown(const juce::MouseEvent& e) {
@@ -143,11 +357,12 @@ void HarmonyForgeEditor::mouseDown(const juce::MouseEvent& e) {
   if (e.eventComponent == &dragButton) startMidiDrag();
 }
 
-void HarmonyForgeEditor::startPreview() {
-  // Message thread: generate, then feed timed note events to the synth.
+void HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int preferTrack) {
   stopPreview();
-  const hf::core::Pattern pat = safePatternForState(proc.state());
-  const hf::core::Track* mel = melodyOf(pat);
+  const hf::core::Track* mel = nullptr;
+  if (preferTrack >= 0 && preferTrack < static_cast<int>(pat.tracks.size()))
+    mel = &pat.tracks[static_cast<size_t>(preferTrack)];
+  if (mel == nullptr || mel->notes.empty()) mel = melodyOf(pat);
   if (mel == nullptr) return;
   const double bpm = hf::plugin::bpm(proc.state());
   const double msPerTick = 60000.0 / (480.0 * bpm);
@@ -164,6 +379,40 @@ void HarmonyForgeEditor::startPreview() {
   previewT0 = juce::Time::getMillisecondCounter();
 }
 
+void HarmonyForgeEditor::startPreview() {
+  // Message thread: the working pattern when present, else the Safe
+  // candidate for the current state (Sprint 4 behaviour, now with
+  // state seed/bars).
+  if (hf::core::pattern_note_count(doc.pattern()) > 0)
+    schedulePattern(doc.pattern(), doc.trackShown());
+  else
+    schedulePattern(patternForState(proc.state()));
+}
+
+void HarmonyForgeEditor::auditionCandidate(int i) {
+  if (!doc.hasCandidates() || i < 0 || i >= 4) return;
+  doc.setAuditionIndex(i);
+  schedulePattern(doc.candidate(i));
+}
+
+void HarmonyForgeEditor::doRegenerate() {
+  // Message thread: persist seed/bars undoably, then generate. Frozen
+  // regions of the working pattern merge into every candidate.
+  const int seed = candidateBar.seedValue();
+  const int bars = candidateBar.barsValue();
+  proc.undo().beginNewTransaction("Seed/bars");
+  hf::plugin::setSeed(proc.state(), seed, &proc.undo());
+  hf::plugin::setBars(proc.state(), bars, &proc.undo());
+  const auto gp = PatternDocument::makeParams(
+      seed, bars, hf::plugin::rootKey(proc.state()),
+      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
+  doc.regenerate(gp);
+}
+
+void HarmonyForgeEditor::doKeep(int i) {
+  if (doc.keepCandidate(i)) stopPreview();
+}
+
 void HarmonyForgeEditor::stopPreview() {
   previewQueue.clear();
   previewNext = 0;
@@ -171,13 +420,36 @@ void HarmonyForgeEditor::stopPreview() {
 }
 
 void HarmonyForgeEditor::startMidiDrag() {
-  // Message thread file I/O is fine (never the audio thread).
-  const hf::core::Pattern pat = safePatternForState(proc.state());
-  const std::vector<std::uint8_t> bytes = hf::ser::write_smf0(pat, 480);
+  // Message thread file I/O is fine (never the audio thread). Drags the
+  // working pattern as multitrack MIDI (all tracks, correct channels); with
+  // no pattern yet, the Safe candidate for the current state.
+  hf::core::Pattern pat = hf::core::pattern_note_count(doc.pattern()) > 0
+                              ? doc.pattern()
+                              : patternForState(proc.state());
+  hf::ser::assign_default_channels(pat);
+  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(pat, 480);
   juce::File mid =
       juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("HarmonyForge-drag.mid");
   if (!mid.replaceWithData(bytes.data(), bytes.size())) return;
   juce::StringArray files;
   files.add(mid.getFullPathName());
   juce::DragAndDropContainer::performExternalDragDropOfFiles(files, false, this);
+}
+
+void HarmonyForgeEditor::exportMultitrack() {
+  hf::core::Pattern pat = hf::core::pattern_note_count(doc.pattern()) > 0
+                              ? doc.pattern()
+                              : patternForState(proc.state());
+  hf::ser::assign_default_channels(pat);
+  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(pat, 480);
+  auto chooser = std::make_shared<juce::FileChooser>("Export multitrack MIDI",
+                                                     juce::File::getSpecialLocation(
+                                                         juce::File::userDocumentsDirectory),
+                                                     "*.mid");
+  chooser->launchAsync(juce::FileBrowserComponent::saveMode |
+                           juce::FileBrowserComponent::canSelectFiles,
+                       [bytes, chooser](const juce::FileChooser& fc) {
+                         const auto f = fc.getResult();
+                         if (f != juce::File{}) f.replaceWithData(bytes.data(), bytes.size());
+                       });
 }

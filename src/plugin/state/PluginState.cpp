@@ -9,6 +9,8 @@ juce::ValueTree createDefaultState() {
   t.setProperty(StateID::kBpm, StateDefaults::bpm, nullptr);
   t.setProperty(StateID::kDensity, StateDefaults::density, nullptr);
   t.setProperty(StateID::kSelectedChordIndex, StateDefaults::selectedChordIndex, nullptr);
+  t.setProperty(StateID::kSeed, StateDefaults::seed, nullptr);
+  t.setProperty(StateID::kBars, StateDefaults::bars, nullptr);
   return t;
 }
 
@@ -40,6 +42,8 @@ bool sanitiseState(juce::ValueTree tree) {
   ensureDouble(StateID::kBpm, 20.0, 300.0, StateDefaults::bpm);
   ensureDouble(StateID::kDensity, 0.0, 1.0, StateDefaults::density);
   ensureInt(StateID::kSelectedChordIndex, 0, 1024, StateDefaults::selectedChordIndex);
+  ensureInt(StateID::kSeed, 0, 999999, StateDefaults::seed);
+  ensureInt(StateID::kBars, 1, 16, StateDefaults::bars);
   return changed;
 }
 
@@ -69,6 +73,16 @@ int selectedChordIndex(const juce::ValueTree& tree) {
                                                         StateDefaults::selectedChordIndex)));
 }
 
+int seed(const juce::ValueTree& tree) {
+  return juce::jlimit(0, 999999,
+                      static_cast<int>(tree.getProperty(StateID::kSeed, StateDefaults::seed)));
+}
+
+int bars(const juce::ValueTree& tree) {
+  return juce::jlimit(1, 16,
+                      static_cast<int>(tree.getProperty(StateID::kBars, StateDefaults::bars)));
+}
+
 void setRootKey(juce::ValueTree tree, int v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kRootKey, juce::jlimit(0, 127, v), undo);
 }
@@ -87,6 +101,14 @@ void setDensity(juce::ValueTree tree, double v, juce::UndoManager* undo) {
 
 void setSelectedChordIndex(juce::ValueTree tree, int v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kSelectedChordIndex, juce::jmax(0, v), undo);
+}
+
+void setSeed(juce::ValueTree tree, int v, juce::UndoManager* undo) {
+  tree.setProperty(StateID::kSeed, juce::jlimit(0, 999999, v), undo);
+}
+
+void setBars(juce::ValueTree tree, int v, juce::UndoManager* undo) {
+  tree.setProperty(StateID::kBars, juce::jlimit(1, 16, v), undo);
 }
 
 }  // namespace hf::plugin
