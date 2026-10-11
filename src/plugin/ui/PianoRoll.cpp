@@ -117,6 +117,12 @@ bool PianoRoll::noteFrozen(int note) const {
 juce::Colour PianoRoll::colourFor(int pitch, int start) const {
   const auto& chords = doc_.chords();
   const auto& pat = doc_.pattern();
+  const int shown = doc_.trackShown();
+  // Drums are an unpitched map (core contract: excluded from pitched
+  // analysis) — one neutral color, no classify_note.
+  if (shown >= 0 && shown < static_cast<int>(pat.tracks.size()) &&
+      pat.tracks[static_cast<size_t>(shown)].type == hf::core::TrackType::Drums)
+    return juce::Colour(0xff8a8f98);
   const int bar = hf::core::bar_of_tick(pat, start);
   const hf::core::ChordSymbol* ch =
       (bar >= 0 && bar < static_cast<int>(chords.size())) ? &chords[static_cast<size_t>(bar)]

@@ -12,6 +12,77 @@
 
 namespace {
 
+// Parsed-back SMF note (absolute ticks) for F1 round-trip tests.
+struct ParsedNote {
+  int track = -1;
+  int channel = 0;
+  int pitch = 60;
+  int start = 0;
+  int duration = 0;
+};
+
+std::uint32_t read_vlq(const std::vector<std::uint8_t>& d, size_t& pos) {
+  std::uint32_t v = 0;
+  while (pos < d.size()) {
+    const std::uint8_t b = d[pos++];
+    v = (v << 7) | (b & 0x7F);
+    if ((b & 0x80) == 0) break;
+  }
+  return v;
+}
+
+// Minimal SMF-1 reader matching our writer (note on/off + end-of-track,
+// no running status). Returns parsed notes in file order.
+std::vector<ParsedNote> parse_smf1(const std::vector<std::uint8_t>& d) {
+  std::vector<ParsedNote> out;
+  if (d.size() < 14) return out;
+  const int n_tracks = (d[10] << 8) | d[11];
+  size_t pos = 14;
+  struct Open {
+    int track, channel, pitch, start;
+  };
+  std::vector<Open> open;
+  for (int t = 0; t < n_tracks && pos + 8 <= d.size(); ++t) {
+    pos += 4;  // "MTrk"
+    const std::uint32_t len =
+        (std::uint32_t(d[pos]) << 24) | (std::uint32_t(d[pos + 1]) << 16) |
+        (std::uint32_t(d[pos + 2]) << 8) | std::uint32_t(d[pos + 3]);
+    pos += 4;
+    const size_t end = std::min(d.size(), pos + len);
+    int abs = 0;
+    while (pos < end) {
+      abs += static_cast<int>(read_vlq(d, pos));
+      if (pos >= end) break;
+      const std::uint8_t st = d[pos++];
+      if (st == 0xFF) {  // meta: type + VLQ len + payload
+        if (pos >= end) break;
+        ++pos;  // type
+        const std::uint32_t mlen = read_vlq(d, pos);
+        pos += mlen;
+        continue;
+      }
+      if (pos + 2 > end) break;
+      const int p1 = d[pos++];
+      const int p2 = d[pos++];
+      const int kind = st & 0xF0;
+      const int ch = st & 0x0F;
+      if (kind == 0x90 && p2 > 0) {
+        open.push_back({t, ch, p1, abs});
+      } else if (kind == 0x80 || (kind == 0x90 && p2 == 0)) {
+        for (size_t i = 0; i < open.size(); ++i) {
+          if (open[i].track == t && open[i].channel == ch && open[i].pitch == p1) {
+            out.push_back({t, ch, p1, open[i].start, abs - open[i].start});
+            open.erase(open.begin() + i);
+            break;
+          }
+        }
+      }
+    }
+    pos = end;
+  }
+  return out;
+}
+
 hf::core::ChordSymbol sym(int root, const std::string& type) {
   hf::core::ChordSymbol c;
   c.root = root;
@@ -219,6 +290,69 @@ TEST_CASE("seed history is bounded and ordered", "[selection][sprint5]") {
   h.clear();
   h.mark_latest_kept(0);  // no-op on empty
   CHECK(h.empty());
+}
+
+TEST_CASE("smf1 round-trips sequential starts and durations", "[selection][sprint5][fix1]") {
+  // F1: the writer must accumulate absolute time across on AND off events.
+  // Sequential quarters {60@0/480, 62@480/480} must parse back to starts
+  // {0, 480} — the old cursor (never advanced past offs) emitted the second
+  // on at 960.
+  hf::core::Pattern p;
+  p.ticks_per_beat = 480;
+  p.beats_per_bar = 4;
+  p.tracks.push_back(melody_track({{60, 0, 480, 100}, {62, 480, 480, 100}}));
+  const auto bytes = hf::ser::write_smf1(p);
+  const auto notes = parse_smf1(bytes);
+  REQUIRE(notes.size() == 2);
+  CHECK(notes[0].pitch == 60);
+  CHECK(notes[0].start == 0);
+  CHECK(notes[0].duration == 480);
+  CHECK(notes[1].pitch == 62);
+  CHECK(notes[1].start == 480);
+  CHECK(notes[1].duration == 480);
+}
+
+TEST_CASE("smf1 round-trips overlapping chord notes", "[selection][sprint5][fix1]") {
+  // On/off interleave: {60@0/960, 64@0/960, 67@480/480} must parse back
+  // exactly (offs-before-ons at shared ticks).
+  hf::core::Pattern p;
+  p.ticks_per_beat = 480;
+  p.beats_per_bar = 4;
+  p.tracks.push_back(melody_track({{60, 0, 960, 100}, {64, 0, 960, 90}, {67, 480, 480, 80}}));
+  const auto bytes = hf::ser::write_smf1(p);
+  const auto notes = parse_smf1(bytes);
+  REQUIRE(notes.size() == 3);
+  auto find = [&](int pitch) {
+    for (const auto& n : notes)
+      if (n.pitch == pitch) return n;
+    return ParsedNote{};
+  };
+  CHECK(find(60).start == 0);
+  CHECK(find(60).duration == 960);
+  CHECK(find(64).start == 0);
+  CHECK(find(64).duration == 960);
+  CHECK(find(67).start == 480);
+  CHECK(find(67).duration == 480);
+}
+
+TEST_CASE("frozen bar merge keeps start_tick order", "[selection][sprint5][fix1]") {
+  // F3: frozen bar cells are collected before the surviving regen notes, so
+  // a frozen bar > 0 lands out of order unless the merge is re-sorted.
+  auto base = two_bar_melody();
+  auto regen = base;
+  for (auto& n : regen.tracks[0].notes) n.pitch = std::clamp(n.pitch + 5, 0, 127);
+  hf::core::FreezeState f;
+  hf::core::set_bar_frozen(f, 0, 1, true);
+  const auto merged = hf::core::merge_with_frozen(base, regen, f);
+  REQUIRE(merged.tracks.size() == 1);
+  const auto& notes = merged.tracks[0].notes;
+  REQUIRE(notes.size() == 8);
+  for (size_t i = 1; i < notes.size(); ++i) CHECK(notes[i - 1].start_tick <= notes[i].start_tick);
+  // Bar 1 kept base pitches, bar 0 took regen.
+  for (int i = 0; i < 4; ++i)
+    CHECK(notes[static_cast<size_t>(i)].pitch == regen.tracks[0].notes[i].pitch);
+  for (int i = 4; i < 8; ++i)
+    CHECK(notes[static_cast<size_t>(i)].pitch == base.tracks[0].notes[i].pitch);
 }
 
 TEST_CASE("smf1 multitrack export carries channels", "[selection][sprint5]") {

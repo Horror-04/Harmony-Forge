@@ -62,28 +62,37 @@ std::vector<std::uint8_t> write_smf0(const core::Pattern& pattern, int ticks_per
 }
 
 std::vector<std::uint8_t> write_smf1(const core::Pattern& pattern, int ticks_per_beat) {
+  // One absolute-time event per on/off; offs sort before ons at the same
+  // tick (a note ending exactly when the next starts must close first).
+  struct AbsEvent {
+    int tick = 0;
+    bool on = true;
+    int pitch = 60;
+    int velocity = 100;
+  };
   std::vector<std::vector<std::uint8_t>> tracks;
   if (pattern.tracks.empty()) {
     tracks.emplace_back();
   } else {
     for (const auto& t : pattern.tracks) {
       const int ch = std::clamp(t.channel, 0, 15);
-      std::vector<std::pair<int, core::Note>> events;
-      for (const auto& n : t.notes) events.emplace_back(n.start_tick, n);
-      std::sort(events.begin(), events.end(),
-                [](const auto& a, const auto& b) { return a.first < b.first; });
+      std::vector<AbsEvent> events;
+      for (const auto& n : t.notes) {
+        events.push_back({n.start_tick, true, n.pitch, n.velocity});
+        events.push_back({n.start_tick + n.duration_ticks, false, n.pitch, 0x40});
+      }
+      std::stable_sort(events.begin(), events.end(), [](const AbsEvent& a, const AbsEvent& b) {
+        if (a.tick != b.tick) return a.tick < b.tick;
+        return !a.on && b.on;  // offs before ons
+      });
       std::vector<std::uint8_t> track;
-      int cursor = 0;
-      for (const auto& [start, n] : events) {
-        push_vlq(track, static_cast<std::uint32_t>(start - cursor));
-        cursor = start;
-        track.push_back(static_cast<std::uint8_t>(0x90 | ch));
-        track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
-        track.push_back(static_cast<std::uint8_t>(n.velocity & 0x7F));
-        push_vlq(track, static_cast<std::uint32_t>(n.duration_ticks));
-        track.push_back(static_cast<std::uint8_t>(0x80 | ch));
-        track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
-        track.push_back(0x40);
+      int cursor = 0;  // absolute-time cursor across BOTH ons and offs
+      for (const auto& e : events) {
+        push_vlq(track, static_cast<std::uint32_t>(e.tick - cursor));
+        cursor = e.tick;
+        track.push_back(static_cast<std::uint8_t>((e.on ? 0x90 : 0x80) | ch));
+        track.push_back(static_cast<std::uint8_t>(e.pitch & 0x7F));
+        track.push_back(static_cast<std::uint8_t>(e.velocity & 0x7F));
       }
       tracks.push_back(std::move(track));
     }

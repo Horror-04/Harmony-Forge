@@ -226,6 +226,11 @@ Pattern merge_with_frozen(const Pattern& base, const Pattern& regen,
         const int bar = bar_of_tick(out, n.start_tick);
         if (!is_bar_frozen(fz, ti, bar)) merged.push_back(n);
       }
+      // Frozen cells are collected before the surviving regen notes, so a
+      // frozen bar > 0 would land out of order without this stable re-sort.
+      std::stable_sort(merged.begin(), merged.end(), [](const Note& a, const Note& b) {
+        return a.start_tick < b.start_tick;
+      });
       dst = std::move(merged);
     }
   }
