@@ -21,16 +21,20 @@ VoiceReport validate_voice_leading(const hf::core::Pattern& p,
                                    const hf::core::ChordProgression& chords) {
   VoiceReport report;
 
-  // Range audit: every note against its track's register.
+  // Range audit: every pitched note against its track's register.
+  // Drum tracks are skipped (unpitched map).
   for (const auto& t : p.tracks) {
+    if (t.type == hf::core::TrackType::Drums) continue;
     for (const auto& n : t.notes) {
       if (!in_register(t.type, n.pitch)) ++report.range_violations;
     }
   }
 
-  // Slice audit: start_tick -> per-track lowest pitch.
+  // Slice audit: start_tick -> per-track lowest pitch. Drum tracks are
+  // skipped (columns stay absent), so unpitched hits never form parallels.
   std::map<int, std::vector<int>> slices;  // tick -> pitch per track (-1 absent)
   for (size_t ti = 0; ti < p.tracks.size(); ++ti) {
+    if (p.tracks[ti].type == hf::core::TrackType::Drums) continue;
     for (const auto& n : p.tracks[ti].notes) {
       auto& row = slices[n.start_tick];
       if (row.empty()) row.assign(p.tracks.size(), -1);
@@ -65,6 +69,7 @@ VoiceReport validate_voice_leading(const hf::core::Pattern& p,
   const int beat_ticks = p.ticks_per_beat;
   if (bar_ticks > 0 && beat_ticks > 0 && !chords.empty()) {
     for (const auto& t : p.tracks) {
+      if (t.type == hf::core::TrackType::Drums) continue;  // unpitched map
       for (const auto& n : t.notes) {
         const int pos_in_bar = n.start_tick % bar_ticks;
         const int beat = pos_in_bar / beat_ticks;

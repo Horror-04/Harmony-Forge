@@ -15,6 +15,7 @@ struct KeyEstimate {
 };
 
 // Template match over all 12 tonics x all ScaleDatabase scales.
+// Drum tracks are skipped (unpitched map, would skew the histogram).
 // Each note votes with weight = duration_ticks (min 1); the tonic pitch
 // class gets a 1.5x emphasis so C-heavy white-note material reads C major
 // while A-heavy material reads A natural_minor. Ties resolve deterministically

@@ -5,7 +5,8 @@
 namespace hf::music {
 
 // Voice-leading audit of a pattern against a chord progression. Never throws;
-// empty input yields a zero report.
+// empty input yields a zero report. Drum tracks are excluded from all four
+// counters (unpitched map).
 //
 // Definitions (deterministic):
 // - Slices: groups of notes sharing a start_tick, ordered by tick. Each

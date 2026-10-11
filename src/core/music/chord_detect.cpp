@@ -21,16 +21,23 @@ int mod12(int v) { return ((v % 12) + 12) % 12; }
 }  // namespace
 
 hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
-  if (pitches.empty()) return hf::core::ChordSymbol{60, "unknown"};
+  // Pitch is 0..127 per project convention; out-of-range values carry no
+  // pitch class and are ignored. Nothing usable -> safe root-60 anchor.
+  std::vector<int> valid;
+  valid.reserve(pitches.size());
+  for (int p : pitches) {
+    if (p >= 0 && p <= 127) valid.push_back(p);
+  }
+  if (valid.empty()) return hf::core::ChordSymbol{60, "unknown"};
 
-  int bass = pitches[0];
-  for (int p : pitches)
+  int bass = valid[0];
+  for (int p : valid)
     if (p < bass) bass = p;
   const int bass_pc = mod12(bass);
 
   std::array<bool, 12> pcs{};
   int distinct = 0;
-  for (int p : pitches) {
+  for (int p : valid) {
     const int c = mod12(p);
     if (!pcs[c]) {
       pcs[c] = true;
@@ -71,7 +78,7 @@ hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
         int root_pitch = bass;
         if (mod12(bass) != root_pc) {
           root_pitch = 60 + root_pc;
-          for (int p : pitches) {
+          for (int p : valid) {
             if (mod12(p) == root_pc && p < root_pitch) root_pitch = p;
           }
         }
@@ -82,7 +89,7 @@ hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
         int root_pitch = bass;
         if (mod12(bass) != root_pc) {
           root_pitch = 60 + root_pc;
-          for (int p : pitches) {
+          for (int p : valid) {
             if (mod12(p) == root_pc && p < root_pitch) root_pitch = p;
           }
         }

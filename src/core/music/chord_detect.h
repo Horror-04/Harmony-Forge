@@ -7,7 +7,8 @@
 namespace hf::music {
 
 // Name the chord spelled by a set of MIDI pitches (duplicates and octaves
-// are ignored; only pitch classes matter). Never throws.
+// are ignored; only pitch classes matter). Pitches outside 0..127 are dropped;
+// empty or fully out-of-range input returns root 60 / type "unknown". Never throws.
 //
 // Matching covers every type chord_intervals() supports (maj/min/dim/aug,
 // sus2/sus4, 6/m6, 7/maj7/m7, 9/m9/add9, 11, 13): an exact pitch-class match

@@ -208,3 +208,83 @@ TEST_CASE("validate_voice_leading empty pattern is clean", "[analysis][voice]") 
   CHECK(r.range_violations == 0);
   CHECK(r.strong_beat_dissonances == 0);
 }
+
+TEST_CASE("drums-only pattern is analysis-clean", "[analysis][drums]") {
+  // Drum pitches are an unpitched map: parallel motion, strong-beat clusters
+  // and odd pitches here must all be ignored by pitched analysis.
+  hf::core::Pattern p;
+  hf::core::Track d1;
+  d1.type = hf::core::TrackType::Drums;
+  d1.notes.push_back(hf::core::Note{61, 0, 120, 100});
+  d1.notes.push_back(hf::core::Note{62, 480, 120, 100});
+  hf::core::Track d2;
+  d2.type = hf::core::TrackType::Drums;
+  d2.notes.push_back(hf::core::Note{68, 0, 120, 100});
+  d2.notes.push_back(hf::core::Note{69, 480, 120, 100});
+  p.tracks.push_back(d1);
+  p.tracks.push_back(d2);
+
+  hf::core::ChordProgression chords;
+  chords.push_back(hf::core::ChordSymbol{60, "maj"});
+  const hf::music::VoiceReport r = hf::music::validate_voice_leading(p, chords);
+  CHECK(r.parallel_fifths == 0);
+  CHECK(r.parallel_octaves == 0);
+  CHECK(r.range_violations == 0);
+  CHECK(r.strong_beat_dissonances == 0);
+
+  const hf::music::KeyEstimate est = hf::music::detect_key(p);
+  CHECK(est.tonic == 60);
+  CHECK(est.scale == "major");
+  CHECK(est.confidence == 0.0f);
+}
+
+TEST_CASE("drums do not skew pitched analysis", "[analysis][drums]") {
+  hf::core::ChordProgression chords;
+  chords.push_back(hf::core::ChordSymbol{60, "maj"});
+  chords.push_back(hf::core::ChordSymbol{60, "maj"});
+  chords.push_back(hf::core::ChordSymbol{60, "maj"});
+
+  const hf::core::Pattern pitched = make_c_major_material();
+  const hf::music::KeyEstimate key_plain = hf::music::detect_key(pitched);
+  const hf::music::VoiceReport voice_plain =
+      hf::music::validate_voice_leading(pitched, chords);
+
+  hf::core::Pattern mixed = pitched;
+  hf::core::Track drums;
+  drums.type = hf::core::TrackType::Drums;
+  drums.notes.push_back(hf::core::Note{61, 0, 120, 110});    // hostile hit: C#
+  drums.notes.push_back(hf::core::Note{55, 0, 120, 100});    // parallel-motion pair
+  drums.notes.push_back(hf::core::Note{57, 960, 120, 100});  // ...into a fifth
+  mixed.tracks.push_back(drums);
+
+  const hf::music::KeyEstimate key_mixed = hf::music::detect_key(mixed);
+  CHECK(key_mixed.tonic == key_plain.tonic);
+  CHECK(key_mixed.scale == key_plain.scale);
+  CHECK(key_mixed.confidence == key_plain.confidence);
+
+  const hf::music::VoiceReport voice_mixed =
+      hf::music::validate_voice_leading(mixed, chords);
+  CHECK(voice_mixed.parallel_fifths == voice_plain.parallel_fifths);
+  CHECK(voice_mixed.parallel_octaves == voice_plain.parallel_octaves);
+  CHECK(voice_mixed.range_violations == voice_plain.range_violations);
+  CHECK(voice_mixed.strong_beat_dissonances == voice_plain.strong_beat_dissonances);
+}
+
+TEST_CASE("recognize_chord clamps out-of-range roots", "[analysis][chord]") {
+  const auto empty = hf::music::recognize_chord({});
+  CHECK(empty.root == 60);
+  CHECK(empty.type == "unknown");
+
+  const auto oor = hf::music::recognize_chord({-5, 200});
+  CHECK(oor.root == 60);
+  CHECK(oor.type == "unknown");
+
+  const auto single_oor = hf::music::recognize_chord({200});
+  CHECK(single_oor.root == 60);
+  CHECK(single_oor.type == "unknown");
+
+  // In-range pitches keep current behavior: out-of-range extras are ignored.
+  const auto with_extra = hf::music::recognize_chord({60, 64, 67, 200});
+  CHECK(with_extra.root % 12 == 0);
+  CHECK(with_extra.type == "maj");
+}

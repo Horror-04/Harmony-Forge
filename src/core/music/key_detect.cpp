@@ -25,6 +25,7 @@ KeyEstimate detect_key(const hf::core::Pattern& p) {
   std::array<double, 12> hist{};
   double total = 0.0;
   for (const auto& t : p.tracks) {
+    if (t.type == hf::core::TrackType::Drums) continue;  // unpitched map
     for (const auto& n : t.notes) {
       const double w = n.duration_ticks > 0 ? n.duration_ticks : 1;
       hist[mod12(n.pitch)] += w;
