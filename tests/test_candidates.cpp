@@ -76,14 +76,17 @@ TEST_CASE("Strict compliance holds across keys and modes", "[candidates][sprint3
 }
 
 TEST_CASE("same seed gives bit-identical candidates", "[candidates][sprint3]") {
-  const auto params = strict_params();
+  const auto params = strict_params();  // pinned seed 7 (see below)
   const auto a = hf::infer::generate_candidates(params);
   const auto b = hf::infer::generate_candidates(params);
   for (int i = 0; i < 4; ++i) {
     CHECK(hf::ser::encode_pattern(a[i]) == hf::ser::encode_pattern(b[i]));
   }
-  // The four candidates must actually differ (Safe/Catchy/Complex/Unexpected
-  // are distinct characters, not copies): pairwise-distinct encodes.
+  // Pinned-seed regression check (seed 7 only, NOT a general invariant):
+  // Safe/Catchy/Complex/Unexpected are distinct characters, not copies.
+  // Pairwise-distinctness is only asserted for this pinned seed — other
+  // seeds may legitimately share material after clamps/snaps.
+  REQUIRE(params.seed == 7);  // pin: the check below is only valid here
   for (int i = 0; i < 4; ++i)
     for (int j = i + 1; j < 4; ++j)
       CHECK(hf::ser::encode_pattern(a[i]) != hf::ser::encode_pattern(a[j]));

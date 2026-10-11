@@ -49,6 +49,12 @@ except ImportError:
 # ch 2, ...). Colors are FL color-picker ints supplied by the user; None
 # leaves the existing color untouched (the API takes a raw int and this
 # script does not guess the encoding).
+#
+# POSITIONAL ASSUMPTION: entries map to FL channel-rack positions in MIDI
+# import order (track 0 = Melody, 1 = Bass, 2 = Chords, 3 = Drums) from the
+# Safe-candidate multitrack export, NOT to MIDI channels (drums export on
+# MIDI channel 10 but still import fourth). Exports without drums have only
+# 3 tracks, so the Drums entry is skipped when the rack is shorter.
 DEFAULT_LAYOUT = [
     {"part": "Melody", "channel": 0, "color": None},
     {"part": "Bass", "channel": 1, "color": None},

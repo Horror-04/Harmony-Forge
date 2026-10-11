@@ -4,11 +4,6 @@
 #include "core/model/track_pattern.h"
 #include "core/music/chord.h"
 #include "core/music/scale.h"
-#include "core/music/chord.h"
-#include "core/music/scale.h"
-
-// ---- Sprint 1 (RED first): deterministic theory helpers --------------------
-// New headers below do not exist yet; build MUST fail until implemented.
 #include "core/model/pattern_ops.h"
 #include "core/music/quantizer.h"
 #include "core/music/ranges.h"

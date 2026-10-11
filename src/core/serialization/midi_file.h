@@ -13,6 +13,8 @@ std::vector<std::uint8_t> write_smf0(const core::Pattern& pattern, int ticks_per
 
 // Sprint 5 multitrack export (SPEC §§7, 14): SMF Type-1, one track per
 // pattern track, note on/off on the track's own channel (clamped 0..15).
+// Defensive: out-of-range notes are clamped (tick >= 0, pitch 0..127,
+// duration >= 1).
 // Deterministic: same pattern -> byte-identical output. Empty patterns
 // yield a single empty track. Never throws.
 std::vector<std::uint8_t> write_smf1(const core::Pattern& pattern, int ticks_per_beat = 480);

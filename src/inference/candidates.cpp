@@ -74,11 +74,9 @@ int snap_to_pcs(int pitch, int tonic, const std::vector<int>& allowed_pcs) {
     if (wanted[mod12(pc + d)] && pitch + d <= 127) return pitch + d;
     if (wanted[mod12(pc - d)] && pitch - d >= 0) return pitch - d;
   }
-  // Near the 0/127 edges only one direction fits; rescan that side.
-  for (int d = 1; d <= 24; ++d) {
-    if (pitch + d <= 127 && wanted[mod12(pc + d)]) return pitch + d;
-    if (pitch - d >= 0 && wanted[mod12(pc - d)]) return pitch - d;
-  }
+  // Unreachable: for any pitch in 0..127 one of the two directions always
+  // fits within d <= 11 (d_up + d_down == 12, so a blocked upward step
+  // implies room downward and vice versa).
   return std::clamp(pitch, 0, 127);
 }
 
@@ -111,7 +109,6 @@ core::Pattern compose_base(const GenParams& p, const core::ChordProgression& pro
   pat.ticks_per_beat = 480;
   pat.beats_per_bar = kBeatsPerBar;
   const int n = static_cast<int>(iv.size());
-  const int tonic_pc = mod12(p.tonic);
 
   int center = std::clamp(p.tonic, 0, 127);
   while (center + 12 <= kMelodyHi) center += 12;
@@ -159,7 +156,6 @@ core::Pattern compose_base(const GenParams& p, const core::ChordProgression& pro
     for (int s : offsets)
       chords.notes.push_back(
           core::Note{std::clamp(cr + s, 0, 127), b * kBarTicks, kBarTicks, 70});
-    (void)tonic_pc;
   }
   pat.tracks = {melody, bass, chords};
   return pat;

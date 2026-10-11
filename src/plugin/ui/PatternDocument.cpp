@@ -1,11 +1,45 @@
 #include "PatternDocument.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <map>
+#include <vector>
 
 #include "constraints.h"
 #include "core/model/pattern_ops.h"
+#include "core/music/chord.h"
 #include "core/music/quantizer.h"
+
+namespace {
+
+// Residue-class helper (local copy of the constraints.cpp policy).
+int mod12int(int v) { return ((v % 12) + 12) % 12; }
+
+// Mirrors resolve_harmonic_conflicts step 3 (constraints.cpp): true when a
+// pre-resolve note sits on a strong beat (start_tick % 480 == 0) whose pitch
+// class is a minor 2nd from a tone of the bar's chord. Only such rub notes
+// may move on chord replace (SPEC §3.1); every other note keeps its
+// grid/register (see replaceChord below).
+bool is_replace_rub(const hf::core::Note& n, const hf::core::Pattern& p,
+                    const hf::core::ChordProgression& chords) {
+  if (n.start_tick % 480 != 0) return false;
+  const int bar_ticks = p.ticks_per_beat * p.beats_per_bar;
+  if (bar_ticks <= 0) return false;
+  const int bar = n.start_tick / bar_ticks;
+  if (bar < 0 || bar >= static_cast<int>(chords.size())) return false;
+  const auto& chord = chords[static_cast<size_t>(bar)];
+  const std::vector<int> iv = hf::music::chord_intervals(chord);
+  if (iv.empty()) return false;
+  const int pc = mod12int(n.pitch);
+  const int root_pc = mod12int(chord.root);
+  for (int s : iv) {
+    const int d = std::abs(pc - mod12int(root_pc + s));
+    if (std::min(d, 12 - d) == 1) return true;
+  }
+  return false;
+}
+
+}  // namespace
 
 class PatternDocument::SnapshotAction : public juce::UndoableAction {
  public:
@@ -224,8 +258,23 @@ bool PatternDocument::replaceChord(int bar, hf::core::ChordSymbol chord) {
   auto nextChords = chords_;
   nextChords[static_cast<size_t>(bar)] = std::move(chord);
   auto next = pattern_;
-  // Message thread: repair dependent parts (SPEC §3.1 / §16).
+  // Message thread: repair dependent parts (SPEC §3.1 / §16). resolve moves
+  // grid/register/rub for every note, but a chord replace must move only
+  // conflicting (strong-beat rub) notes — restore the rest to their
+  // pre-resolve grid/register. resolve never adds/removes notes, so indices
+  // line up; the bounds checks below are belt-and-braces.
+  const auto before = pattern_;
   hf::infer::resolve_harmonic_conflicts(next, nextChords);
+  for (size_t ti = 0; ti < next.tracks.size() && ti < before.tracks.size(); ++ti) {
+    auto& dst = next.tracks[ti].notes;
+    const auto& src = before.tracks[ti].notes;
+    for (size_t ni = 0; ni < dst.size() && ni < src.size(); ++ni) {
+      if (!is_replace_rub(src[ni], before, nextChords)) {
+        dst[ni].pitch = src[ni].pitch;
+        dst[ni].start_tick = src[ni].start_tick;
+      }
+    }
+  }
   commit(next, nextChords, freeze_, "Replace chord");
   return true;
 }

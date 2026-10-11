@@ -18,6 +18,17 @@ constexpr std::array<std::string_view, 16> kTypes = {
 
 int mod12(int v) { return ((v % 12) + 12) % 12; }
 
+// Lowest input pitch carrying pitch class root_pc; falls back to a
+// 60-anchored pitch when no input pitch carries that class.
+int root_pitch(int bass, int root_pc, const std::vector<int>& valid) {
+  if (mod12(bass) == root_pc) return bass;
+  int out = 60 + root_pc;
+  for (int p : valid) {
+    if (mod12(p) == root_pc && p < out) out = p;
+  }
+  return out;
+}
+
 }  // namespace
 
 hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
@@ -75,25 +86,11 @@ hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
       // Exact matches (size == distinct) beat supersets; first hit at a
       // given specificity wins (bass root first, richer types first).
       if (size == distinct) {
-        int root_pitch = bass;
-        if (mod12(bass) != root_pc) {
-          root_pitch = 60 + root_pc;
-          for (int p : valid) {
-            if (mod12(p) == root_pc && p < root_pitch) root_pitch = p;
-          }
-        }
-        return hf::core::ChordSymbol{root_pitch, std::string(type)};
+        return hf::core::ChordSymbol{root_pitch(bass, root_pc, valid), std::string(type)};
       }
       if (size > best_size) {
         best_size = size;
-        int root_pitch = bass;
-        if (mod12(bass) != root_pc) {
-          root_pitch = 60 + root_pc;
-          for (int p : valid) {
-            if (mod12(p) == root_pc && p < root_pitch) root_pitch = p;
-          }
-        }
-        best = hf::core::ChordSymbol{root_pitch, std::string(type)};
+        best = hf::core::ChordSymbol{root_pitch(bass, root_pc, valid), std::string(type)};
       }
     }
   }

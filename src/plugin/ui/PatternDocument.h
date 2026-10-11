@@ -74,7 +74,8 @@ class PatternDocument : public juce::ChangeBroadcaster {
   void deleteSelection();
 
   // Chord Track: replace one bar's chord, then resolve_harmonic_conflicts on
-  // the message thread (SPEC §3.1: only conflicting notes move). Undoable.
+  // the message thread (SPEC §3.1: only conflicting notes move; non-rub
+  // notes keep their grid/register). Undoable.
   bool replaceChord(int bar, hf::core::ChordSymbol chord);
   // Rotate a bar's chord voicing: the `inversion` lowest notes up one octave
   // each (clamped 0..127). Undoable.
@@ -104,5 +105,5 @@ class PatternDocument : public juce::ChangeBroadcaster {
   bool hasCandidates_ = false;
   hf::core::ChordProgression lastProg_;  // progression behind the candidates
   int auditionIndex_ = -1;
-  int trackShown_ = 1;  // melody of compose_base {melody, bass, chords}
+  int trackShown_ = 0;  // melody-first: index 0 of compose_base {melody, bass, chords}
 };

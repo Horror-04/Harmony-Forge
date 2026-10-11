@@ -390,6 +390,28 @@ TEST_CASE("smf1 multitrack export carries channels", "[selection][sprint5]") {
   CHECK(saw_drums);
 }
 
+TEST_CASE("smf1 writer clamps hostile notes", "[selection][sprint5][phase2]") {
+  // Phase 2 Task 1 (B2): defensive clamps in write_smf1 (tick >= 0,
+  // pitch 0..127, duration >= 1). Hostile input must round-trip clamped,
+  // never emit negative-delta VLQs or masked pitches.
+  hf::core::Pattern p;
+  p.ticks_per_beat = 480;
+  p.beats_per_bar = 4;
+  p.tracks.push_back(melody_track({
+      {200, -50, 0, 100},  // over-pitch, negative start, zero duration
+      {-5, 480, -30, 90},  // under-pitch, negative duration
+  }));
+  const auto bytes = hf::ser::write_smf1(p);
+  const auto notes = parse_smf1(bytes);
+  REQUIRE(notes.size() == 2);
+  CHECK(notes[0].pitch == 127);
+  CHECK(notes[0].start == 0);
+  CHECK(notes[0].duration == 1);
+  CHECK(notes[1].pitch == 0);
+  CHECK(notes[1].start == 480);
+  CHECK(notes[1].duration == 1);
+}
+
 TEST_CASE("strict compliance stays above the 90 percent gate", "[selection][sprint5]") {
   // SPEC §16: >= 90-95% of notes respect user constraints. Strict mode must
   // clear the gate across keys, scales, and seeds (measured, not asserted

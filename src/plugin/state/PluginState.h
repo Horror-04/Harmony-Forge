@@ -42,8 +42,9 @@ struct StateDefaults {
 // Builds a fresh default tree (undo == nullptr: no history entries).
 juce::ValueTree createDefaultState();
 
-// Validates + clamps a restored tree in place (unknown props removed,
-// missing reset to defaults, ranges clamped). Returns true if anything changed.
+// Validates + clamps a restored tree in place (missing props reset to
+// defaults, ranges clamped; unknown properties are preserved untouched).
+// Returns true if anything changed.
 bool sanitiseState(juce::ValueTree tree);
 
 // Typed accessors (read-only; safe on any thread for reads, but the tree

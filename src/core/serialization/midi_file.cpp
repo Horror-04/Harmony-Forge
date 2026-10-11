@@ -78,8 +78,14 @@ std::vector<std::uint8_t> write_smf1(const core::Pattern& pattern, int ticks_per
       const int ch = std::clamp(t.channel, 0, 15);
       std::vector<AbsEvent> events;
       for (const auto& n : t.notes) {
-        events.push_back({n.start_tick, true, n.pitch, n.velocity});
-        events.push_back({n.start_tick + n.duration_ticks, false, n.pitch, 0x40});
+        // Defensive clamps (callers already clamp): negative ticks would
+        // underflow the delta VLQ, out-of-range pitches alias via & 0x7F,
+        // and zero durations write zero-length notes.
+        const int tick = std::max(0, n.start_tick);
+        const int pitch = std::clamp(n.pitch, 0, 127);
+        const int dur = std::max(1, n.duration_ticks);
+        events.push_back({tick, true, pitch, n.velocity});
+        events.push_back({tick + dur, false, pitch, 0x40});
       }
       std::stable_sort(events.begin(), events.end(), [](const AbsEvent& a, const AbsEvent& b) {
         if (a.tick != b.tick) return a.tick < b.tick;
