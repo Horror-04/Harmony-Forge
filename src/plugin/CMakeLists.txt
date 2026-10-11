@@ -15,6 +15,8 @@ target_sources(HarmonyForge PRIVATE
   audio/PluginProcessor.h
   audio/PluginEditor.cpp
   audio/PluginEditor.h
+  audio/PreviewSynth.cpp
+  audio/PreviewSynth.h
   state/PluginState.cpp
   state/PluginState.h
   ui/PianoRollStub.h
@@ -33,9 +35,18 @@ target_compile_definitions(HarmonyForge PUBLIC
 
 target_link_libraries(HarmonyForge PRIVATE
   harmony_forge_core
+  harmony_forge_inference
   juce::juce_audio_processors
   juce::juce_audio_utils
   juce::juce_gui_extra
 )
 
 target_compile_features(HarmonyForge PRIVATE cxx_std_20)
+
+# Ship the matching onnxruntime.dll next to the Standalone exe (app dir is first
+# in DLL search order, so this deterministically fixes the runtime there). A
+# stale inbox copy elsewhere on the system must never terminate the host —
+# see OnnxRunner's noexcept hardening in src/inference/onnx_runner.cpp.
+if(TARGET HarmonyForge_Standalone)
+  hf_copy_ort_runtime(HarmonyForge_Standalone)
+endif()

@@ -31,34 +31,50 @@ struct OnnxRunner::Impl {
 #endif
 };
 
-OnnxRunner::OnnxRunner(const InferenceConfig& cfg) noexcept
-    : impl_(std::make_unique<Impl>()) {
+OnnxRunner::OnnxRunner(const InferenceConfig& cfg) noexcept : impl_(nullptr) {
 #ifdef HARMONY_FORGE_WITH_ONNX
+  // NOTE (Sprint 4 DAW hardening): Impl's member Ort::Env queries the loaded
+  // onnxruntime.dll for ORT_API_VERSION at construction. A mismatched inbox
+  // DLL (e.g. an older System32 copy shadowing ours) makes Env throw, and
+  // the throw must NEVER escape this noexcept ctor (that would terminate the
+  // host). Build Impl inside try: failure degrades to the unloaded stub and
+  // generation falls back to the deterministic composer. Never throws.
   try {
-    if (cfg.model_path.empty()) return;
-    Ort::SessionOptions opts;
-    opts.SetIntraOpNumThreads(1);
-    opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
+    auto impl = std::make_unique<Impl>();
+    if (!cfg.model_path.empty()) {
+      Ort::SessionOptions opts;
+      opts.SetIntraOpNumThreads(1);
+      opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);
 #ifdef _WIN32
-    const std::string& utf8 = cfg.model_path;
-    const int need =
-        ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
-    if (need <= 0) return;
-    std::wstring wpath(static_cast<size_t>(need), L'\0');
-    if (::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wpath.data(), need) <= 0) return;
-    Ort::Session session{impl_->env, wpath.c_str(), opts};
+      const std::string& utf8 = cfg.model_path;
+      const int need = ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
+      if (need > 0) {
+        std::wstring wpath(static_cast<size_t>(need), L'\0');
+        if (::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wpath.data(), need) > 0) {
+          Ort::Session session{impl->env, wpath.c_str(), opts};
+          Ort::AllocatorWithDefaultOptions alloc;
+          Ort::AllocatedStringPtr in_name = session.GetInputNameAllocated(0, alloc);
+          Ort::AllocatedStringPtr out_name = session.GetOutputNameAllocated(0, alloc);
+          impl->input_name = in_name.get();
+          impl->output_name = out_name.get();
+          impl->session = std::move(session);
+          impl->loaded = true;
+        }
+      }
 #else
-    Ort::Session session{impl_->env, cfg.model_path.c_str(), opts};
+      Ort::Session session{impl->env, cfg.model_path.c_str(), opts};
+      Ort::AllocatorWithDefaultOptions alloc;
+      Ort::AllocatedStringPtr in_name = session.GetInputNameAllocated(0, alloc);
+      Ort::AllocatedStringPtr out_name = session.GetOutputNameAllocated(0, alloc);
+      impl->input_name = in_name.get();
+      impl->output_name = out_name.get();
+      impl->session = std::move(session);
+      impl->loaded = true;
 #endif
-    Ort::AllocatorWithDefaultOptions alloc;
-    Ort::AllocatedStringPtr in_name = session.GetInputNameAllocated(0, alloc);
-    Ort::AllocatedStringPtr out_name = session.GetOutputNameAllocated(0, alloc);
-    impl_->input_name = in_name.get();
-    impl_->output_name = out_name.get();
-    impl_->session = std::move(session);
-    impl_->loaded = true;
+    }
+    impl_ = std::move(impl);
   } catch (...) {
-    impl_->loaded = false;
+    impl_ = nullptr;  // unloaded stub: predict() returns empty, never throws
   }
 #else
   (void)cfg;

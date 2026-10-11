@@ -1,0 +1,39 @@
+# Sprint 4 CI: configure (BUILD_PLUGIN=ON) + build + ctest + pluginval VST3 check.
+# Every step below mirrors a command run locally during Sprint 4.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-validate:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DHARMONY_FORGE_BUILD_PLUGIN=ON
+
+      - name: Build (Release)
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Determinism proof (render_midi byte-identity)
+        run: |
+          .\build\tools\Release\render_midi.exe --seed 7 --bars 4 --out ci_a.mid
+          .\build\tools\Release\render_midi.exe --seed 7 --bars 4 --out ci_b.mid
+          fc /b ci_a.mid ci_b.mid
+
+      - name: Download pluginval
+        run: |
+          Invoke-WebRequest https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_Windows.zip -OutFile pluginval_Windows.zip
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory('pluginval_Windows.zip', 'pluginval')
+
+      - name: Validate VST3 (strictness 5)
+        # Flags verified against `pluginval --help` (v1.0.4); strictness 5 is
+        # also pluginval's default and the minimum recommended for compatibility.
+        run: .\pluginval\pluginval.exe --validate "build\src\plugin\HarmonyForge_artefacts\Release\VST3\Harmony Forge.vst3" --strictness-level 5

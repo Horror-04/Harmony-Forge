@@ -1,12 +1,18 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
+#include "../state/PluginState.h"
+#include "PreviewSynth.h"
+
 // RT-SAFETY (AGENTS.md): processBlock below must never allocate, lock,
 // do file I/O, or run inference. GUI/Inference -> Audio only via MidiOutbox
-// (juce::AbstractFifo, lock-free). Keep this file's audio path allocation-free.
+// (juce::AbstractFifo, lock-free) and the atomic TransportView snapshot.
+// The ValueTree/UndoManager live on the message thread — processBlock must
+// NEVER touch them. Keep this file's audio path allocation-free.
 
 class MidiOutbox {
  public:
@@ -39,6 +45,18 @@ class MidiOutbox {
   std::array<juce::MidiMessage, kCapacity> buf;
 };
 
+// DAW transport snapshot (SPEC §7). Written in processBlock from the
+// AudioPlayHead, read on the message thread by the editor. Each field is an
+// independent atomic; the editor polls a coherent-enough copy at ~10 Hz
+// (no lock, no tear risk that matters for a display + preview timing).
+struct TransportView {
+  double bpm = 120.0;
+  int numerator = 4;
+  int denominator = 4;
+  double ppq = 0.0;
+  bool playing = false;
+};
+
 class HarmonyForgeProcessor : public juce::AudioProcessor {
  public:
   HarmonyForgeProcessor();
@@ -49,8 +67,9 @@ class HarmonyForgeProcessor : public juce::AudioProcessor {
 
   bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 
-  // RT-SAFETY: allocation/lock/IO/inference-free. Only pops pre-rendered
-  // MIDI from outbox into the output buffer.
+  // RT-SAFETY: allocation/lock/IO/inference-free. ONLY: buffer.clear(),
+  // pop MidiOutbox -> output MidiBuffer, render PreviewSynth, copy the
+  // playhead fields into atomics. Nothing else.
   void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
   juce::AudioProcessorEditor* createEditor() override;
@@ -73,13 +92,45 @@ class HarmonyForgeProcessor : public juce::AudioProcessor {
   // Called from the message thread (UI / inference completion). Lock-free push.
   bool enqueueMidi(const juce::MidiMessage& msg) { return outbox.push(msg); }
 
+  // Message thread: lock-free transport snapshot for the editor.
+  TransportView transport() const {
+    TransportView v;
+    v.bpm = transportBpm.load(std::memory_order_relaxed);
+    v.numerator = transportNumerator.load(std::memory_order_relaxed);
+    v.denominator = transportDenominator.load(std::memory_order_relaxed);
+    v.ppq = transportPpq.load(std::memory_order_relaxed);
+    v.playing = transportPlaying.load(std::memory_order_relaxed);
+    return v;
+  }
+
+  // Message thread: preview synth hooks (standard Synthesiser pattern —
+  // generation happens on the message thread, e.g. at button press; only
+  // rendering runs on the audio thread).
+  void previewNoteOn(int pitch, float velocity) {
+    preview.noteOn(juce::jlimit(0, 127, pitch), juce::jlimit(0.0f, 1.0f, velocity));
+  }
+  void previewNoteOff(int pitch) { preview.noteOff(juce::jlimit(0, 127, pitch)); }
+  void previewAllNotesOff() { preview.allNotesOff(); }
+
   juce::ValueTree& state() { return pluginState; }
+  const juce::ValueTree& state() const { return pluginState; }
   juce::UndoManager& undo() { return undoManager; }
 
  private:
+  // Audio thread only: copies playhead fields into the atomics.
+  // Allocation/lock-free by construction (plain optional reads + stores).
+  void publishTransport() noexcept;
+
   MidiOutbox outbox;
+  PreviewSynth preview;
   juce::ValueTree pluginState{"HarmonyForge"};
   juce::UndoManager undoManager;
+
+  std::atomic<double> transportBpm{120.0};
+  std::atomic<int> transportNumerator{4};
+  std::atomic<int> transportDenominator{4};
+  std::atomic<double> transportPpq{0.0};
+  std::atomic<bool> transportPlaying{false};
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HarmonyForgeProcessor)
 };

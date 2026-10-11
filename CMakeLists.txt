@@ -31,6 +31,7 @@ include(CTest)
 
 add_subdirectory(src/core)
 add_subdirectory(src/inference)
+add_subdirectory(tools)
 add_subdirectory(tests)
 
 if(HARMONY_FORGE_BUILD_PLUGIN)
