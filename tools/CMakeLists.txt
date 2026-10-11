@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 add_executable(render_midi render_midi.cpp)
 
 target_link_libraries(render_midi PRIVATE

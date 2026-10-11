@@ -1,4 +1,6 @@
 # name=Harmony Forge Dispatcher
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Harmony Forge FL Studio companion dispatcher (Sprint 5, SPEC §7).
 
 What this is: after dragging Harmony Forge multitrack MIDI (.mid) from the

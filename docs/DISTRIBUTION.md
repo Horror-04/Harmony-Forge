@@ -14,7 +14,7 @@ human steps.
 | Executing any installer / pkg | **NOT-RUN by design** (system side effect; human step — §5) |
 | macOS AU build + `.pkg` | **UNTESTED** (no Mac on the development machine; §3) |
 | Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) |
-| Licence decision (R1) | **PENDING-HUMAN-DECISION** (§4 — the option is *not* chosen here) |
+| Licence decision (R1) | **DECIDED: AGPLv3** — our code under AGPL-3.0-or-later, JUCE under its AGPL side (§4) |
 | Code signing / notarization | Not implemented; plan stub in §6 |
 
 Reproduce the Windows gates:
@@ -35,7 +35,7 @@ powershell -File packaging\windows\check_payload.ps1
 | AU bundle (`Harmony Forge.component`) | n/a | yes (untested) |
 | Standalone app | `Harmony Forge.exe` | `Harmony Forge.app` |
 | `onnxruntime` library (R5, §7) | next to VST3 bundle + Standalone exe | next to Standalone app, if the build has a dylib |
-| JUCE licence notice | R1 placeholder, see §4 | same file, see §4 |
+| AGPL licence notice (`packaging/LICENSE-JUCE-NOTICE.txt`) | installed next to the Standalone exe, see §4 | installed to `/Library/Application Support/Harmony Forge/`, see §4 |
 | `docs/SPEC.md` | deliberately **not** shipped | deliberately not shipped |
 
 Build prerequisites (Windows): Visual Studio + CMake 3.22+, ONNX Runtime is
@@ -101,47 +101,69 @@ copy built plugins into the user folders at build time with
 `-DJUCE_COPY_PLUGIN_AFTER_BUILD=ON` (off by default). If it is enabled, the AU
 appears in `~/Library/Audio/Plug-Ins/Components` as a side effect of building.
 
-## 4. Licence decision — PENDING-HUMAN-DECISION (R1)
+## 4. Licence decision — DECIDED: AGPLv3 (R1, resolved 2026-10-12)
 
-**This task did not choose a licence, did not buy anything, and did not modify
-any licence text file.** The JUCE Framework modules are dual-licensed; the
-choice below is a HUMAN/LEGAL decision (see `JUCE/LICENSE.md` and the
-[JUCE 9 EULA](https://juce.com/legal/juce-9-licence/)).
+**Decision (human-chosen): the project distributes under the GNU Affero
+General Public Licence v3 or later (AGPLv3+).** Our code carries
+`SPDX-License-Identifier: AGPL-3.0-or-later` headers (copyright holder
+`Horror-04`); the canonical licence text is the root `LICENSE` file
+(fetched verbatim from `https://www.gnu.org/licenses/agpl-3.0.txt`).
+The JUCE Framework modules are used under their AGPLv3 side (same
+licence — see `JUCE/LICENSE.md`); no commercial JUCE licence was bought
+and none is needed for this distribution model.
 
-The two realistic options:
+### Obligations — source publication REQUIRED before ANY distribution
 
-**Option A — commercial JUCE licence (paid).**
-- Requires buying a JUCE licence (per-developer/per-seat terms; see the EULA).
-- Source code may stay closed; no obligation to publish Harmony Forge source.
-- Distribution of binaries is subject to the commercial EULA terms (and any
-  obligations it imposes, e.g. for certain products).
-- Cost: money; benefit: no source-disclosure obligation.
+AGPLv3 §§4–6 + §13: distributing binaries (installer, VST3/AU bundles,
+standalone app — or network use of a modified version) **requires**
+offering every recipient the complete corresponding source under AGPLv3,
+keeping licence notices intact (including JUCE's).
 
-**Option B — AGPLv3 (free of charge).**
-- Permitted at no cost under the
-  [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html).
-- Distributing binaries **requires** offering the complete corresponding source
-  of the whole derivative work under AGPLv3, keeping licence notices intact
-  (including JUCE's), and making the source available to recipients — network
-  use also triggers this for users interacting remotely (AGPL §13).
-- The entire work linking JUCE (plugin + core + inference + model pipeline)
-  must be AGPL-compatible; third-party assets (model weights, corpus) must not
-  contradict it.
-- Cost: none; obligation: open-source compliance for the whole derivative work.
+- **Human step (blocking): create the public repository and push.**
+  `git remote -v` is empty — no remote exists. Until the source is
+  public at a stable URL, **no binary may be distributed** (not even to
+  testers; the R4 clean-machine install counts as distribution).
+- After publishing, replace the `TODO: repo URL` markers in `README.md`,
+  `packaging/LICENSE-JUCE-NOTICE.txt` and this section with the URL.
+- The installers surface the notice: the Windows `.iss` shows
+  `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=` and installs it
+  next to the Standalone exe; `packaging/macos/build_pkg.sh` stages it to
+  `/Library/Application Support/Harmony Forge/`. `check_payload.ps1`
+  reports the notice presence as an INFO line.
 
-After the decision (TODO markers exist in the packaging scripts):
+### Trademark compliance
 
-1. Create `packaging/LICENSE-JUCE-NOTICE.txt` with the notices the chosen option
-   requires (the Windows installer and the macOS pkg pick the file up
-   automatically once it exists).
-2. Uncomment `LicenseFile=` in `packaging\windows\harmony_forge.iss` `[Setup]`.
-3. Update `README.md` / `docs/SPEC.md` licence sections and any repository
-   `LICENSE` file **as the human decides** — nothing here is pre-selected.
+- Product name **"Harmony Forge"** is trademark-clean (no VST/Steinberg
+  branding in the name).
+- No Steinberg/VST logos are bundled or displayed by the plugin or the
+  installers. If VST-compatible branding is ever added, it must follow
+  the *Steinberg VST Usage Guidelines* shipped in the SDK (see
+  `JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/README.md`
+  §"Trademark and Logo Usage"); logo use is optional under the SDK's MIT
+  licence but trademark compliance is mandatory when used.
 
-`packaging/windows/check_payload.ps1` prints an INFO line while the notice file
-is missing, so the pending state stays visible; the installer still compiles
-(deliberately) but the produced installer must not be distributed before this
-is resolved.
+### Per-component licence table
+
+| Component | Licence | Notes |
+| --- | --- | --- |
+| Our code (`src/`, `tests/`, `tools/`, `packaging/`, root `LICENSE`) | AGPL-3.0-or-later (© 2026 Horror-04) | headers added 2026-10-12; `training/` excluded from this pass — headers follow-up after the Phase 3 merge |
+| JUCE 9.0.3 framework (`JUCE/`, unmodified) | AGPLv3 (dual AGPLv3/commercial; AGPL side used) | see `JUCE/LICENSE.md`; never re-headered |
+| Steinberg VST3 SDK (bundled inside JUCE) | MIT | per its README §"License & Usage guidelines"; AGPL-compatible |
+| ONNX Runtime (`onnxruntime.dll`, downloaded at configure, R5) | MIT | AGPL-compatible; shipped next to VST3 bundle + Standalone exe |
+| Catch2 (tests only, FetchContent; never shipped) | BSL-1.0 | AGPL-compatible; test-only dependency |
+| Training dependencies (`training/`, Python/ML stack) | BSD-style (permissive) | model weights/corpus must not contradict AGPL on distribution — reviewed at Phase 3 merge |
+
+### Installer-notice wiring (verified 2026-10-12)
+
+All three references resolve to `packaging/LICENSE-JUCE-NOTICE.txt`:
+
+- `packaging/windows/harmony_forge.iss`: `#define LicenceNotice "..\LICENSE-JUCE-NOTICE.txt"`
+  (relative to `packaging\windows\`) + `LicenseFile={#LicenceNotice}` in `[Setup]`
+  + conditional `[Files]` entry (`HaveLicenceNotice`).
+- `packaging/windows/check_payload.ps1`: `$licencePath = ...(packaging)\LICENSE-JUCE-NOTICE.txt`
+  (INFO line; never fails the check).
+- `packaging/macos/build_pkg.sh`: `NOTICE_SRC="${ROOT_DIR}/packaging/LICENSE-JUCE-NOTICE.txt"`
+  (staged automatically; warns but still builds when missing).
 
 ## 5. Clean-machine verification (R4) — NOT-RUN
 
@@ -222,8 +244,8 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 
 - macOS AU + pkg: **never executed** on a Mac (§3).
 - macOS inference: offline stub only; the ONNX Runtime delivery is win-x64 only.
-- Licence notice: absent by design until R1 (§4); installers/pkgs must not be
-  distributed until it exists.
+- Licence notice: present (`packaging/LICENSE-JUCE-NOTICE.txt`, R1 resolved §4);
+  installers must still not be distributed until the source is public (§4).
 - No signing/notarization (§6).
 - Installer version is a manual `#define` in the `.iss`; the version-sync check
   in `check_payload.ps1` fails loudly if it drifts from the CMake project

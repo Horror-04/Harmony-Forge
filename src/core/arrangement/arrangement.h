@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
 // Arrangement Builder (Phase 2 Task 5): song structure over generate_candidates.

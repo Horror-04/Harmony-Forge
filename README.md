@@ -3,8 +3,14 @@
 AI MIDI Composer: VST3 + Standalone. Chords / Melody / Bass (+ Arp, Counter, Drums later).
 Hybrid: Music Theory Engine (deterministic) + ONNX generative models + Constraint Engine + Ranking.
 
-> JUCE licensing note: JUCE 9.0.3 is vendored in `JUCE/` under dual AGPLv3 / commercial JUCE licence.
-> A commercial JUCE licence may be required for closed-source distribution. See `JUCE/LICENSE.md`.
+> Licence: this project is licensed under the **GNU Affero General Public
+> Licence v3 or later (AGPLv3+)** — see `LICENSE` for the full text.
+> JUCE 9.0.3 (vendored in `JUCE/`) is used under its AGPLv3 side; the
+> bundled VST3 SDK is MIT-licensed. Every recipient of a binary (installer,
+> plugin bundle, standalone app) is offered the complete corresponding
+> source under AGPLv3 via the public repository — TODO: repo URL until
+> published (see `docs/DISTRIBUTION.md` §4). Do NOT distribute binaries
+> before the source is published.
 
 ## Status
 

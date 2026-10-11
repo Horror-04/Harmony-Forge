@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Arrangement Builder implementation. See arrangement.h for the contract.
 // Pure C++20, no JUCE; never throws (all parsing is checked, generation is
 // no-throw by contract).

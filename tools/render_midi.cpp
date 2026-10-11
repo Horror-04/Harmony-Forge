@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // render_midi: headless deterministic MIDI render (Sprint 4 regression proof,
 // extended Sprint 5 with multitrack export, Phase 2 Task 5 with arrangement
 // builds).

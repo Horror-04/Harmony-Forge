@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Candidate composer: deterministic base + seeded per-index transforms +
 // mode post-processing. See candidates.h. Never throws; pure C++20, no JUCE.
 #include "candidates.h"

@@ -1,0 +1,26 @@
+Harmony Forge — licence notice (shown by the installers before installation
+and installed next to the standalone app).
+
+Copyright (C) 2026 Horror-04
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at
+your option) any later version. The full licence text is in the file
+LICENSE at the root of the source tree. If you received this program as
+a binary without the source, the complete corresponding source is
+available as follows.
+
+Complete corresponding source: TODO — public repository URL until the
+source is published. See docs/DISTRIBUTION.md §4. DO NOT distribute
+binaries before the source repository is public.
+
+Third-party components bundled or linked (see docs/DISTRIBUTION.md §4
+for the full per-component table):
+
+  * Our code (src/, tests/, tools/, packaging/) — AGPLv3-or-later
+  * JUCE 9.0.3 framework (JUCE/, used under its AGPLv3 side) — AGPLv3
+  * Steinberg VST3 SDK (bundled inside JUCE) — MIT (AGPL-compatible)
+  * ONNX Runtime library (onnxruntime.dll) — MIT (AGPL-compatible)
+  * Catch2 test framework (tests only, not shipped) — BSL-1.0

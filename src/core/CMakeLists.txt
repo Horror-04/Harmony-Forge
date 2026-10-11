@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 add_library(harmony_forge_core STATIC
   music/scale.cpp
   music/chord.cpp

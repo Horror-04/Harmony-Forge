@@ -1,3 +1,5 @@
+; Copyright (C) 2026 Horror-04
+; SPDX-License-Identifier: AGPL-3.0-or-later
 ; =============================================================================
 ; Harmony Forge -- Windows installer (Inno Setup 6.3+)
 ; =============================================================================
@@ -13,16 +15,13 @@
 ;   * Standalone    -> {app}\Harmony Forge.exe
 ;   * onnxruntime.dll installed next to BOTH the VST3 bundle and the
 ;     Standalone exe (R5 deployment rule from the MVP final review)
-;   * JUCE licence notice placeholder LICENSE-JUCE-NOTICE.txt (R1, PENDING-HUMAN)
+;   * AGPL licence notice packaging\LICENSE-JUCE-NOTICE.txt (R1, DECIDED
+;     2026-10-12: project distributes under AGPLv3; JUCE under its AGPL side)
 ;
-; TODO(R1): the JUCE licence decision (commercial vs AGPL) is PENDING-HUMAN.
-;   See docs\DISTRIBUTION.md section "Licence decision (PENDING-HUMAN-DECISION)".
-;   Once decided:
-;     1. create packaging\LICENSE-JUCE-NOTICE.txt with the required notices;
-;     2. uncomment the "LicenseFile=" line in [Setup] below;
-;     3. re-run iscc.
-;   Until then this script still compiles; the notice [Files] entry is
-;   included automatically once the file exists (see HaveLicenceNotice below).
+; R1 (resolved 2026-10-12, AGPLv3): packaging\LICENSE-JUCE-NOTICE.txt exists;
+;   [Setup] LicenseFile shows it before installation and the [Files] entry
+;   installs it next to the Standalone exe. See docs\DISTRIBUTION.md §4.
+;   Binaries must still NOT be distributed until the source is public (§4).
 ; =============================================================================
 
 #define MyAppName "Harmony Forge"
@@ -54,7 +53,8 @@
   #error "Preflight: onnxruntime.dll not found under build-full (R5). Build first: cmake --build build-full --config Release"
 #endif
 
-; TODO(R1): the notice file is deliberately absent until the licence decision.
+; R1 resolved (AGPLv3, 2026-10-12): the notice file must exist; iscc fails
+; loudly here if it is missing so no installer ships without the notice.
 #if FileExists(LicenceNotice)
   #define HaveLicenceNotice 1
 #else
@@ -83,9 +83,8 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 VersionInfoVersion={#MyAppVersion}
-; TODO(R1): uncomment after packaging\LICENSE-JUCE-NOTICE.txt exists so the
-; notice is shown before installation:
-; LicenseFile={#LicenceNotice}
+; R1 resolved (AGPLv3): the notice is shown before installation.
+LicenseFile={#LicenceNotice}
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut for the standalone app"; GroupDescription: "Additional shortcuts:"
@@ -98,7 +97,7 @@ Source: "{#OrtDll}"; DestDir: "{commoncf}\VST3"; Flags: ignoreversion
 ; Standalone exe + its R5 DLL copy.
 Source: "{#StandaloneExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#OrtDll}"; DestDir: "{app}"; Flags: ignoreversion
-; JUCE licence notice (R1 placeholder; included automatically once created).
+; AGPL licence notice (R1 resolved; installed next to the Standalone exe).
 #if HaveLicenceNotice
 Source: "{#LicenceNotice}"; DestDir: "{app}"; Flags: ignoreversion
 #endif

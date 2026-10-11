@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Sprint 4 CI: configure (BUILD_PLUGIN=ON) + build + ctest + pluginval VST3 check.
 # Every step below mirrors a command run locally during Sprint 4.
 name: CI

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Model-path sanitise rule. See model_path.h. Pure C++20, no JUCE.
 #include "model_path.h"
 

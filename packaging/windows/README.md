@@ -2,7 +2,7 @@
 
 Inno Setup script for the Windows installer (VST3 bundle + Standalone app +
 `onnxruntime.dll`). See `docs/DISTRIBUTION.md` for the licence decision
-(**PENDING-HUMAN-DECISION**, R1), the clean-machine checklist (R4) and the
+(**DECIDED: AGPLv3**, R1 §4), the clean-machine checklist (R4) and the
 signing plan stub.
 
 ## Prerequisites
@@ -46,7 +46,7 @@ What the installer does:
 | `onnxruntime.dll` (R5) | `C:\Program Files\Common Files\VST3\` (next to the bundle) |
 | `Harmony Forge.exe` | `C:\Program Files\Harmony Forge\` |
 | `onnxruntime.dll` (R5) | `C:\Program Files\Harmony Forge\` (next to the exe) |
-| `LICENSE-JUCE-NOTICE.txt` (R1, TODO) | `C:\Program Files\Harmony Forge\` — included automatically once created |
+| `LICENSE-JUCE-NOTICE.txt` (R1, AGPL) | `C:\Program Files\Harmony Forge\` |
 
 Machine-wide install (`PrivilegesRequired=admin`); a desktop shortcut is offered.
 
@@ -66,6 +66,6 @@ for the human's clean-machine test (see the R4 checklist in
 ## Rebuild notes
 
 - `docs/SPEC.md` is deliberately **not** shipped.
-- TODO(R1): after the licence decision, create
-  `packaging\LICENSE-JUCE-NOTICE.txt` and uncomment `LicenseFile=` in the
-  `[Setup]` section of `harmony_forge.iss`.
+- R1 resolved (AGPLv3, 2026-10-12): `packaging\LICENSE-JUCE-NOTICE.txt` exists
+  and `[Setup] LicenseFile=` shows it before installation. Binaries must
+  still NOT be distributed until the source is public (`docs/DISTRIBUTION.md` §4).

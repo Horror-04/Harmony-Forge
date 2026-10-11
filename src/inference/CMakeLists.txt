@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Sprint 2: OnnxRunner + worker queue. ONNX Runtime delivery (R2):
 # Microsoft prebuilt `onnxruntime-win-x64` release ZIP, downloaded once at
 # CMake configure time and pinned below (asset verified on 2026-10-11 via the

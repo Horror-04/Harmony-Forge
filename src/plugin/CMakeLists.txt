@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 juce_add_plugin(HarmonyForge
   COMPANY_NAME "HarmonyForge"
   PLUGIN_MANUFACTURER_CODE HfMf

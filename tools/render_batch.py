@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Batch-render deterministic MIDI files via the built render_midi tool.
 
 Phase 2 Task 2 listening-test harness. Stdlib only.

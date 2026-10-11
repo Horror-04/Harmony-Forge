@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Self-test for tools/render_batch.py (Phase 2 Task 2, stdlib unittest only).
 
 Run: python tools/tests/test_render_batch.py   (from repo root)

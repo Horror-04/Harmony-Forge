@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # =============================================================================
 # Harmony Forge -- macOS package builder (AU + VST3 + Standalone)
 # =============================================================================
@@ -117,9 +119,8 @@ else
   echo "note: no onnxruntime.dylib in the build tree; the macOS build uses the offline inference stub"
 fi
 
-# TODO(R1): the JUCE licence decision is PENDING-HUMAN (see docs/DISTRIBUTION.md).
-# Create packaging/LICENSE-JUCE-NOTICE.txt after the decision; it is picked up
-# automatically here and in the Windows installer.
+# R1 resolved (AGPLv3, 2026-10-12): packaging/LICENSE-JUCE-NOTICE.txt exists
+# and is picked up automatically here and in the Windows installer.
 NOTICE_SRC="${ROOT_DIR}/packaging/LICENSE-JUCE-NOTICE.txt"
 if [ -f "${NOTICE_SRC}" ]; then
   mkdir -p "${STAGE}/Library/Application Support/Harmony Forge"
