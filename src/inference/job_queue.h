@@ -37,6 +37,14 @@ class InferenceJobQueue {
 
   std::size_t pending() const;
 
+  // Blocking teardown: signals workers to stop, drains already-queued jobs,
+  // joins all worker threads. In-flight jobs run to completion, so this
+  // blocks until they finish (bounded: predict never blocks indefinitely).
+  // Idempotent; the destructor calls it. Jobs submitted after shutdown are
+  // accepted but never processed. Never call from a worker thread, and never
+  // from the real-time audio thread.
+  void shutdown();
+
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;  // fwd-declared to keep this header dependency-light

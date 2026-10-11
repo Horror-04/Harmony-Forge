@@ -25,6 +25,7 @@ struct InferenceJobQueue::Impl {
   std::queue<CompletedJob> done;
   std::vector<std::thread> workers;
   std::atomic<JobId> next_id{1};
+  std::atomic<bool> shut{false};
   bool stop = false;  // under tasks_mutex
   int active = 0;     // running jobs, under tasks_mutex
 
@@ -80,11 +81,13 @@ InferenceJobQueue::InferenceJobQueue(std::size_t workers)
   }
 }
 
-InferenceJobQueue::~InferenceJobQueue() {
-  // Drain submitted jobs so no result is silently lost, then stop.
+InferenceJobQueue::~InferenceJobQueue() { shutdown(); }
+
+void InferenceJobQueue::shutdown() {
+  bool expected = false;
+  if (!impl_->shut.compare_exchange_strong(expected, true)) return;  // idempotent
   {
-    std::unique_lock<std::mutex> lock(impl_->tasks_mutex);
-    impl_->tasks_cv.wait(lock, [&] { return impl_->tasks.empty() && impl_->active == 0; });
+    std::lock_guard<std::mutex> lock(impl_->tasks_mutex);
     impl_->stop = true;
   }
   impl_->tasks_cv.notify_all();

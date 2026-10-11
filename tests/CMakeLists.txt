@@ -24,6 +24,7 @@ endfunction()
 hf_add_test(test_theory test_theory.cpp)
 hf_add_test(test_analysis test_analysis.cpp)
 hf_add_test(test_tokenizer test_tokenizer.cpp)
+hf_add_test(test_candidates test_candidates.cpp)
 hf_add_test(test_constraints test_constraints.cpp)
 hf_add_test(test_inference test_inference.cpp)
 target_compile_definitions(test_inference PRIVATE

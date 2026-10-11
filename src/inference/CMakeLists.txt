@@ -8,6 +8,8 @@ option(HARMONY_FORGE_WITH_ONNX
 
 add_library(harmony_forge_inference STATIC
   constraints.cpp
+  candidates.cpp
+  ranking.cpp
   onnx_runner.cpp
   job_queue.cpp
 )
