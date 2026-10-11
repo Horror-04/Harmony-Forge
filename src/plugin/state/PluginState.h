@@ -10,7 +10,9 @@
 //   SelectedChordIndex (int >= 0, default 0),
 //   Seed (int 0..999999, default 0; Sprint 5: undoable generation seed so
 //   saved state reproduces its candidates), Bars (int 1..16, default 4;
-//   Sprint 5: generated length).
+//   Sprint 5: generated length), ModelPath (String, default empty = no model,
+//   deterministic fallback; Phase 2 Task 4: undoable model file wired into
+//   GenParams.model_path for Regenerate).
 //
 // Policy: every mutation from the UI goes through these helpers with a
 // non-null UndoManager so undo/redo works in the editor. Initial defaults
@@ -27,6 +29,7 @@ static constexpr const char* kDensity = "Density";
 static constexpr const char* kSelectedChordIndex = "SelectedChordIndex";
 static constexpr const char* kSeed = "Seed";
 static constexpr const char* kBars = "Bars";
+static constexpr const char* kModelPath = "ModelPath";
 }  // namespace StateID
 
 struct StateDefaults {
@@ -37,6 +40,7 @@ struct StateDefaults {
   static constexpr int selectedChordIndex = 0;
   static constexpr int seed = 0;
   static constexpr int bars = 4;
+  static constexpr const char* modelPath = "";
 };
 
 // Builds a fresh default tree (undo == nullptr: no history entries).
@@ -56,6 +60,11 @@ double density(const juce::ValueTree& tree);
 int selectedChordIndex(const juce::ValueTree& tree);
 int seed(const juce::ValueTree& tree);
 int bars(const juce::ValueTree& tree);
+// Model file for generation ("" = none configured = deterministic
+// fallback). Reads are clamped through the sanitise rule (existing .onnx
+// file or empty), so a stale path from an older session can never reach
+// the runner.
+juce::String modelPath(const juce::ValueTree& tree);
 
 // Undoable mutations (undo must be non-null for editor use).
 void setRootKey(juce::ValueTree tree, int v, juce::UndoManager* undo);
@@ -65,5 +74,8 @@ void setDensity(juce::ValueTree tree, double v, juce::UndoManager* undo);
 void setSelectedChordIndex(juce::ValueTree tree, int v, juce::UndoManager* undo);
 void setSeed(juce::ValueTree tree, int v, juce::UndoManager* undo);
 void setBars(juce::ValueTree tree, int v, juce::UndoManager* undo);
+// Undoable setter following the setBpm pattern: the value is sanitised
+// (must exist + `.onnx` extension, else empty) before it is stored.
+void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager* undo);
 
 }  // namespace hf::plugin

@@ -1,10 +1,12 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <string>
 
 #include <juce_data_structures/juce_data_structures.h>
 
+#include "async_generate.h"
 #include "candidates.h"
 #include "core/model/note.h"
 #include "core/model/selection.h"
@@ -17,10 +19,14 @@
 // - EVERY mutation commits through the processor's UndoManager as a
 //   whole-snapshot action (Pattern + chords), so undo/redo always restores a
 //   coherent pair (chord replace + resolve_harmonic_conflicts included).
-// - Generation (generate_candidates) runs on the calling thread — the editor
-//   calls it on the message thread, never the audio thread. The deterministic
-//   composer is sub-millisecond; the ONNX path behind it stays off the audio
-//   thread by construction (see THREADING_MODEL.md).
+// - Generation runs OFF the calling thread (Phase 2 Task 4): Regenerate
+//   submits generate_candidates(params) to an AsyncGenerateQueue worker and
+//   returns; the editor's Timer tick calls poll_regenerate(), which applies
+//   the latest completion (stale superseded jobs are dropped by id). The
+//   deterministic composer is sub-millisecond and the ONNX path behind it
+//   stays off the audio thread by construction (see THREADING_MODEL.md).
+//   Behavior is identical for the empty model path (fallback,
+//   synchronous-equivalent output, bit-identical to the old sync call).
 // - Broadcasts ChangeMessages; PianoRoll/ChordTrack/CandidateBar listen.
 // - Never touches processBlock state; audio contact only via the processor's
 //   lock-free preview queue (the editor pulls notes out of here).
@@ -43,8 +49,15 @@ class PatternDocument : public juce::ChangeBroadcaster {
   int trackShown() const { return trackShown_; }
 
   // Build GenParams from explicit args (pure helper for the editor).
+  // makeParams == makeParamsWithModel(..., ""): empty model path keeps the
+  // deterministic fallback. Pass hf::plugin::modelPath(state) for real
+  // weights (Task 4 item B). Stable for arrangement/distribution tasks.
   static hf::infer::GenParams makeParams(int seed, int bars, int tonic,
                                          const std::string& scale);
+
+  static hf::infer::GenParams makeParamsWithModel(int seed, int bars, int tonic,
+                                                  const std::string& scale,
+                                                  const std::string& model_path);
 
   // Selection + view state (undoable where it changes data; pure view state
   // like trackShown/auditionIndex broadcasts without undo entries).
@@ -81,11 +94,27 @@ class PatternDocument : public juce::ChangeBroadcaster {
   // each (clamped 0..127). Undoable.
   bool applyInversion(int bar, int inversion);
 
-  // Regenerate: run generate_candidates(params) on this thread, merge the
-  // frozen regions of the current pattern into every candidate (SPEC: frozen
-  // survives Regenerate), store A/B/C/D + push a history entry. The working
-  // pattern is untouched until keepCandidate(). Returns false on empty bars.
+  // Regenerate: submit generate_candidates(params) to the background
+  // AsyncGenerateQueue worker and return immediately (message thread is
+  // never blocked on inference). The working pattern is untouched until
+  // keepCandidate(). Returns false on empty bars (nothing submitted).
+  // A second Regenerate supersedes the first: completions are matched by
+  // job id, stale ones dropped. Candidates/history appear when
+  // poll_regenerate() collects the completion — behavior identical for the
+  // empty model path (fallback, synchronous-equivalent output). Frozen
+  // regions of the pattern at submit time merge into every candidate on
+  // completion (SPEC: frozen survives Regenerate).
   bool regenerate(const hf::infer::GenParams& params);
+  // Collect a finished regeneration on the message thread (call from the
+  // editor's Timer tick): applies the latest completion, merges the
+  // submit-time frozen regions, stores A/B/C/D + pushes a history entry,
+  // broadcasts. Returns true when a completion was applied. Stale
+  // completions from superseded Regenerates are dropped. No-op when no
+  // job is pending. The candidate audition path (auditionIndex/candidate)
+  // reads the stored candidates, so it works unchanged once applied.
+  bool poll_regenerate();
+  // True between regenerate() and the poll_regenerate() that applies it.
+  bool regenerate_pending() const { return gen_pending_; }
   // Commit candidate i as the working pattern (undoable). Marks the history
   // entry kept. Returns false for a bad index / no candidates.
   bool keepCandidate(int i);
@@ -106,4 +135,14 @@ class PatternDocument : public juce::ChangeBroadcaster {
   hf::core::ChordProgression lastProg_;  // progression behind the candidates
   int auditionIndex_ = -1;
   int trackShown_ = 0;  // melody-first: index 0 of compose_base {melody, bass, chords}
+  // Async regeneration state (Task 4 item C, message thread only): the
+  // queue owns its worker; pending_* snapshots pin the submit-time inputs
+  // so a superseding Regenerate cannot corrupt the in-flight job's merge.
+  // The queue destructor joins the worker (bounded: generation never
+  // blocks indefinitely); never touched from the audio thread.
+  std::unique_ptr<hf::infer::AsyncGenerateQueue> gen_queue_;
+  hf::infer::GenJobId pending_gen_ = 0;
+  bool gen_pending_ = false;
+  hf::core::Pattern pending_pattern_;
+  hf::core::FreezeState pending_freeze_;
 };

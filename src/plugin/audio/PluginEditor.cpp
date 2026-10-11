@@ -10,9 +10,15 @@
 namespace {
 
 hf::core::Pattern patternForState(const juce::ValueTree& tree) {
-  hf::infer::GenParams gp = PatternDocument::makeParams(
+  // Synchronous preview/export fallback (Task 4 judgment: drag/export need
+  // synchronous bytes, and the empty-path fallback is sub-millisecond, so
+  // this path stays sync; only Regenerate goes through the async queue).
+  // The model path IS threaded from state here, so a configured model
+  // applies to previews as well as Regenerate.
+  hf::infer::GenParams gp = PatternDocument::makeParamsWithModel(
       hf::plugin::seed(tree), hf::plugin::bars(tree), hf::plugin::rootKey(tree),
-      hf::plugin::scaleName(tree).toLowerCase().toStdString());
+      hf::plugin::scaleName(tree).toLowerCase().toStdString(),
+      hf::plugin::modelPath(tree).toStdString());
   const auto cands = hf::infer::generate_candidates(gp);
   return cands[0];
 }
@@ -281,6 +287,9 @@ void HarmonyForgeEditor::resized() {
 }
 
 void HarmonyForgeEditor::timerCallback() {
+  // Async Regenerate collector (Task 4 item C): apply the latest finished
+  // generation, drop stale superseded ones. Non-blocking poll only.
+  doc.poll_regenerate();
   // Keep the chord strip as wide as the roll (shared scroller).
   const int w = std::max(viewport.getWidth(), roll.getWidth());
   chordTrack.setSize(w, 64);
@@ -396,16 +405,19 @@ void HarmonyForgeEditor::auditionCandidate(int i) {
 }
 
 void HarmonyForgeEditor::doRegenerate() {
-  // Message thread: persist seed/bars undoably, then generate. Frozen
+  // Message thread: persist seed/bars undoably, then submit generation to
+  // the background queue (non-blocking). The timerCallback poll applies the
+  // candidates when ready; a second Regenerate supersedes by job id. Frozen
   // regions of the working pattern merge into every candidate.
   const int seed = candidateBar.seedValue();
   const int bars = candidateBar.barsValue();
   proc.undo().beginNewTransaction("Seed/bars");
   hf::plugin::setSeed(proc.state(), seed, &proc.undo());
   hf::plugin::setBars(proc.state(), bars, &proc.undo());
-  const auto gp = PatternDocument::makeParams(
+  const auto gp = PatternDocument::makeParamsWithModel(
       seed, bars, hf::plugin::rootKey(proc.state()),
-      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
+      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
+      hf::plugin::modelPath(proc.state()).toStdString());
   doc.regenerate(gp);
 }
 

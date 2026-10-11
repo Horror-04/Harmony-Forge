@@ -12,6 +12,8 @@ add_library(harmony_forge_inference STATIC
   ranking.cpp
   onnx_runner.cpp
   job_queue.cpp
+  model_path.cpp
+  async_generate.cpp
 )
 
 target_include_directories(harmony_forge_inference PUBLIC

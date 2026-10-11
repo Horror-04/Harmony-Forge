@@ -4,6 +4,7 @@
 #include <string>
 
 #include "core/model/note.h"
+#include "inference_runner.h"
 
 namespace hf::infer {
 
@@ -16,6 +17,12 @@ struct GenParams {
   int bars = 4;
   int tonic = 60;             ///< MIDI pitch anchor (pitch class = tonic % 12)
   std::string scale = "major";  ///< lowercase scale name (see ScaleDatabase)
+  /// Model file wired from state (Phase 2 Task 4, item A). Default empty ==
+  /// pre-Task-4 behavior: the runner stage is unloaded and generation falls
+  /// back to the deterministic composer. Non-empty builds OnnxRunner with
+  /// this path (real weights). Deliberately EXCLUDED from the candidate
+  /// stream seeds, so empty-path output is bit-identical to before.
+  std::string model_path;
 };
 
 // Diatonic triad-per-bar progression for `params` (degrees I-V-vi-IV cycled,
@@ -53,5 +60,14 @@ core::ChordProgression progression_for_params(const GenParams& params);
 // output respects the codec caps (bars <= 16, notes <= 170, pitch 0..127,
 // velocity 1..127, start >= 0, duration > 0). Never throws.
 std::array<core::Pattern, 4> generate_candidates(const GenParams& params);
+
+// Test/integration seam (Phase 2 Task 4, item D): the identical pipeline,
+// but the runner stage delegates to `runner` instead of the OnnxRunner built
+// from `params.model_path`. A stub returning empty reproduces the
+// deterministic fallback; a fake-latency stub proves the async message flow
+// without touching production timing. Never throws. Stable alongside
+// generate_candidates for arrangement/distribution tasks.
+std::array<core::Pattern, 4> generate_candidates_with_runner(const GenParams& params,
+                                                             IInferenceRunner& runner);
 
 }  // namespace hf::infer

@@ -163,11 +163,16 @@ core::Pattern compose_base(const GenParams& p, const core::ChordProgression& pro
 
 // Runner stage: encode the base, run the model, decode. The mock model
 // echoes its input (decode then yields ~base with binned velocities); with
-// no model path (Sprint 4 hook) the runner is unloaded and predict returns
-// empty, so decode fails and the deterministic base is kept. Identical
-// behavior in ONNX-ON and WITH_ONNX=OFF builds; never throws.
+// no model path the runner is unloaded and predict returns empty, so decode
+// fails and the deterministic base is kept. Identical behavior in ONNX-ON
+// and WITH_ONNX=OFF builds; never throws.
+//
+// Phase 2 Task 4 (item A) keeps this two-arg form VERBATIM for the empty
+// model path (the default: `generate_candidates_impl` calls it exactly as
+// before, so default output cannot drift). Non-empty paths and test seams
+// go through `material_from_runner_with` below.
 core::Pattern material_from_runner(const core::Pattern& base, unsigned seed) {
-  InferenceConfig cfg;  // Sprint 4: model_path comes from JUCE state.
+  InferenceConfig cfg;
   cfg.max_tokens = 1024;
   cfg.seed = seed;
   OnnxRunner runner(cfg);
@@ -177,6 +182,34 @@ core::Pattern material_from_runner(const core::Pattern& base, unsigned seed) {
     if (!decoded->tracks.empty()) return *decoded;
   }
   return base;
+}
+
+// Shared encode/predict/decode core over an already-chosen runner.
+core::Pattern material_with_runner(const core::Pattern& base, const InferenceConfig& cfg,
+                                   IInferenceRunner& runner) {
+  const std::vector<int> ids = hf::ser::encode_pattern(base);
+  const std::vector<int> out = runner.predict(ids, cfg);
+  if (const auto decoded = hf::ser::decode_tokens(out)) {
+    if (!decoded->tracks.empty()) return *decoded;
+  }
+  return base;
+}
+
+// Task 4 runner stage (item A: `model_path` selects the weights — empty
+// keeps the unloaded-runner fallback; item D: non-null `runner_override`
+// replaces OnnxRunner for the call, letting test-only latency stubs prove
+// the async flow without touching production timing). Never throws: runner
+// failures surface as empty output -> deterministic base.
+core::Pattern material_from_runner_with(const core::Pattern& base, unsigned seed,
+                                        const std::string& model_path,
+                                        IInferenceRunner* runner_override) {
+  InferenceConfig cfg;
+  cfg.model_path = model_path;
+  cfg.max_tokens = 1024;
+  cfg.seed = seed;
+  if (runner_override != nullptr) return material_with_runner(base, cfg, *runner_override);
+  OnnxRunner runner(cfg);
+  return material_with_runner(base, cfg, runner);
 }
 
 // Per-index character transforms (deterministic via rng).
@@ -340,6 +373,42 @@ void enforce_caps(core::Pattern& pat, int bars) {
   }
 }
 
+// Shared pipeline behind generate_candidates / with_runner (ADD, Task 4).
+// The empty model path (default) runs the verbatim pre-Task-4 statements,
+// so default output cannot drift; model/override paths share the same core
+// with their runner choice made explicit. The two public entry points keep
+// their exact signatures; this helper is file-local.
+std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
+                                                      IInferenceRunner* runner_override) {
+  GenParams p = params;
+  p.bars = std::clamp(p.bars, 1, kMaxBars);
+  p.tonic = std::clamp(p.tonic, 0, 127);
+  if (hf::music::ScaleDatabase::intervals(p.scale).empty()) p.scale = "major";
+  const core::ChordProgression prog = progression_for_params(p);
+  const std::vector<int> iv = scale_or_major(p.scale);
+
+  std::array<core::Pattern, 4> out;
+  for (int i = 0; i < 4; ++i) {
+    std::mt19937 rng(stream_seed(p, i));
+    core::Pattern base = compose_base(p, prog, iv, rng);
+    // Empty model path (the default) runs the verbatim pre-Task-4 statements
+    // so default output cannot drift; model/override paths share the same
+    // core with their runner choice made explicit.
+    core::Pattern material =
+        (runner_override != nullptr || !p.model_path.empty())
+            ? material_from_runner_with(base, static_cast<unsigned>(p.seed + i), p.model_path,
+                                        runner_override)
+            : material_from_runner(base, static_cast<unsigned>(p.seed + i));
+    // Decoded runner output regroups tracks by type; generation below only
+    // needs the Melody track to exist, base already guarantees the rest.
+    apply_candidate_transform(material, p, i, iv, rng);
+    apply_mode(material, p, prog, iv, rng);
+    enforce_caps(material, p.bars);
+    out[i] = std::move(material);
+  }
+  return out;
+}
+
 }  // namespace
 
 core::ChordProgression progression_for_params(const GenParams& params) {
@@ -368,28 +437,13 @@ core::ChordProgression progression_for_params(const GenParams& params) {
   return out;
 }
 
-std::array<core::Pattern, 4> generate_candidates(const GenParams& params) {
-  GenParams p = params;
-  p.bars = std::clamp(p.bars, 1, kMaxBars);
-  p.tonic = std::clamp(p.tonic, 0, 127);
-  if (hf::music::ScaleDatabase::intervals(p.scale).empty()) p.scale = "major";
-  const core::ChordProgression prog = progression_for_params(p);
-  const std::vector<int> iv = scale_or_major(p.scale);
+std::array<core::Pattern, 4> generate_candidates_with_runner(const GenParams& params,
+                                                             IInferenceRunner& runner) {
+  return generate_candidates_impl(params, &runner);
+}
 
-  std::array<core::Pattern, 4> out;
-  for (int i = 0; i < 4; ++i) {
-    std::mt19937 rng(stream_seed(p, i));
-    core::Pattern base = compose_base(p, prog, iv, rng);
-    core::Pattern material =
-        material_from_runner(base, static_cast<unsigned>(p.seed + i));
-    // Decoded runner output regroups tracks by type; generation below only
-    // needs the Melody track to exist, base already guarantees the rest.
-    apply_candidate_transform(material, p, i, iv, rng);
-    apply_mode(material, p, prog, iv, rng);
-    enforce_caps(material, p.bars);
-    out[i] = std::move(material);
-  }
-  return out;
+std::array<core::Pattern, 4> generate_candidates(const GenParams& params) {
+  return generate_candidates_impl(params, nullptr);
 }
 
 }  // namespace hf::infer

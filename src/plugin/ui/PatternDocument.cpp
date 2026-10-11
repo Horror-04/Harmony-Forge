@@ -77,20 +77,28 @@ class PatternDocument::SnapshotAction : public juce::UndoableAction {
   hf::core::FreezeState beforeFz_, afterFz_;
 };
 
-PatternDocument::PatternDocument(juce::UndoManager* undo) : undo_(undo) {
+PatternDocument::PatternDocument(juce::UndoManager* undo)
+    : undo_(undo), gen_queue_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
   pattern_.ticks_per_beat = hf::core::kEditorTicksPerBeat;
   pattern_.beats_per_bar = hf::core::kEditorBeatsPerBar;
 }
 
-hf::infer::GenParams PatternDocument::makeParams(int seed, int bars, int tonic,
-                                                 const std::string& scale) {
+hf::infer::GenParams PatternDocument::makeParamsWithModel(int seed, int bars, int tonic,
+                                                 const std::string& scale,
+                                                 const std::string& model_path) {
   hf::infer::GenParams gp;
   gp.mode = hf::infer::GenMode::Strict;
   gp.seed = seed;
   gp.bars = std::clamp(bars, 1, 16);
   gp.tonic = std::clamp(tonic, 0, 127);
   gp.scale = scale.empty() ? "major" : scale;
+  gp.model_path = model_path;
   return gp;
+}
+
+hf::infer::GenParams PatternDocument::makeParams(int seed, int bars, int tonic,
+                                                 const std::string& scale) {
+  return makeParamsWithModel(seed, bars, tonic, scale, std::string{});
 }
 
 void PatternDocument::commit(const hf::core::Pattern& next,
@@ -306,17 +314,35 @@ bool PatternDocument::applyInversion(int bar, int inversion) {
 
 bool PatternDocument::regenerate(const hf::infer::GenParams& params) {
   if (params.bars < 1) return false;
-  auto cands = hf::infer::generate_candidates(params);
-  lastProg_ = hf::infer::progression_for_params(params);
-  for (auto& c : cands) c = hf::core::merge_with_frozen(pattern_, c, freeze_);
+  // Message thread: snapshot the submit-time inputs, then hand the whole
+  // generation to the background worker. Candidates/history appear when
+  // poll_regenerate() (editor Timer tick) collects the completion. A second
+  // call supersedes: the older job still runs to completion (bounded), but
+  // its completion is dropped by id in poll_regenerate().
+  pending_pattern_ = pattern_;
+  pending_freeze_ = freeze_;
+  pending_gen_ = gen_queue_->generate_async(params);
+  gen_pending_ = true;
+  sendChangeMessage();
+  return true;
+}
+
+bool PatternDocument::poll_regenerate() {
+  if (!gen_pending_) return false;
+  auto got = gen_queue_->try_take_latest(pending_gen_);
+  if (!got.has_value()) return false;  // worker still generating
+  gen_pending_ = false;
+  auto cands = std::move(got->candidates);
+  for (auto& c : cands) c = hf::core::merge_with_frozen(pending_pattern_, c, pending_freeze_);
+  lastProg_ = std::move(got->progression);
   candidates_ = std::move(cands);
   hasCandidates_ = true;
   auditionIndex_ = -1;
   hf::core::HistoryEntry e;
-  e.seed = params.seed;
-  e.bars = params.bars;
-  e.tonic = params.tonic;
-  e.scale = params.scale;
+  e.seed = got->params.seed;
+  e.bars = got->params.bars;
+  e.tonic = got->params.tonic;
+  e.scale = got->params.scale;
   e.kept_index = -1;
   history_.push(std::move(e));
   sendChangeMessage();

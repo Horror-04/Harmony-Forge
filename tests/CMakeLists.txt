@@ -30,3 +30,6 @@ hf_add_test(test_constraints test_constraints.cpp)
 hf_add_test(test_inference test_inference.cpp)
 target_compile_definitions(test_inference PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
+hf_add_test(test_async_generate test_async_generate.cpp)
+target_compile_definitions(test_async_generate PRIVATE
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")

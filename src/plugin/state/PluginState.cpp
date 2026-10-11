@@ -1,5 +1,7 @@
 #include "PluginState.h"
 
+#include "model_path.h"
+
 namespace hf::plugin {
 
 juce::ValueTree createDefaultState() {
@@ -11,6 +13,7 @@ juce::ValueTree createDefaultState() {
   t.setProperty(StateID::kSelectedChordIndex, StateDefaults::selectedChordIndex, nullptr);
   t.setProperty(StateID::kSeed, StateDefaults::seed, nullptr);
   t.setProperty(StateID::kBars, StateDefaults::bars, nullptr);
+  t.setProperty(StateID::kModelPath, StateDefaults::modelPath, nullptr);
   return t;
 }
 
@@ -44,6 +47,17 @@ bool sanitiseState(juce::ValueTree tree) {
   ensureInt(StateID::kSelectedChordIndex, 0, 1024, StateDefaults::selectedChordIndex);
   ensureInt(StateID::kSeed, 0, 999999, StateDefaults::seed);
   ensureInt(StateID::kBars, 1, 16, StateDefaults::bars);
+  // ModelPath: missing resets to empty; present-but-unusable (wrong
+  // extension, deleted file) also resets to empty. Unknown properties stay
+  // untouched (policy above).
+  const juce::String raw = tree.getProperty(StateID::kModelPath, StateDefaults::modelPath)
+                               .toString();
+  const std::string clean =
+      hf::infer::sanitised_model_path(raw.toStdString());
+  if (!tree.hasProperty(StateID::kModelPath) || clean != raw.toStdString()) {
+    tree.setProperty(StateID::kModelPath, juce::String(clean), nullptr);
+    changed = true;
+  }
   return changed;
 }
 
@@ -83,6 +97,15 @@ int bars(const juce::ValueTree& tree) {
                       static_cast<int>(tree.getProperty(StateID::kBars, StateDefaults::bars)));
 }
 
+juce::String modelPath(const juce::ValueTree& tree) {
+  const juce::String raw =
+      tree.getProperty(StateID::kModelPath, StateDefaults::modelPath).toString();
+  // Clamp reads through the same rule as writes: a path that stopped
+  // existing (moved/deleted weights) degrades to the fallback instead of
+  // reaching the runner.
+  return juce::String(hf::infer::sanitised_model_path(raw.toStdString()));
+}
+
 void setRootKey(juce::ValueTree tree, int v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kRootKey, juce::jlimit(0, 127, v), undo);
 }
@@ -109,6 +132,11 @@ void setSeed(juce::ValueTree tree, int v, juce::UndoManager* undo) {
 
 void setBars(juce::ValueTree tree, int v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kBars, juce::jlimit(1, 16, v), undo);
+}
+
+void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager* undo) {
+  tree.setProperty(StateID::kModelPath,
+                   juce::String(hf::infer::sanitised_model_path(v.toStdString())), undo);
 }
 
 }  // namespace hf::plugin
