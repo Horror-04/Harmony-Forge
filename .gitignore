@@ -10,6 +10,9 @@ DerivedData/
 # temp MIDI for drag&drop tests
 *.mid
 *.midi
+# listening-test batches: rendered MIDI + scores log are local-only
+tools/batch/*
+!tools/batch/.gitkeep
 # python
 __pycache__/
 .venv/
