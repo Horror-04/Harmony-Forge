@@ -10,10 +10,12 @@ Arch (R3: <= ~2 M params, 4 layers, 4 heads, d_model 128, ctx <= 1024):
   bar <= 15, pitch <= 127, dur <= 64 by construction; asserted on load).
 
 Modes:
-  --smoke   overfit ONE batch (first train record, batch=1): must reach
-            near-zero loss (proves the loop). Writes smoke_loss.csv.
-  (default) full corpus run: train/val, per-epoch val loss, best checkpoint
-            -> training/checkpoints/best.pt + loss_curve.csv. Prints wall time.
+  --smoke   overfit ONE batch (first train record, batch=1) with pure CE:
+            must reach near-zero loss (proves the loop). Writes smoke_loss.csv.
+  (default) full corpus run: loss = CE + PENALTY_W * compliance-penalty
+            (rung-2 term, fix round 2), train/val, per-epoch val CE loss,
+            best checkpoint -> training/checkpoints/best.pt + loss_curve.csv
+            (columns epoch,train_ce,train_pen,val_loss). Prints wall time.
 
 R4 time-box: calibrate --epochs so the full run fits ~2 h; the smoke timing
 printed here guides that choice (do NOT ship smoke-overfit as the model).
@@ -36,7 +38,88 @@ CORPUS_DIR = os.path.join(HERE, "corpus")
 CKPT_DIR = os.path.join(HERE, "checkpoints")
 
 sys.path.insert(0, HERE)
+import theory as T
 from tinilm import CONFIG, CTX, VOCAB, build_model, param_count
+
+# Fix round 2, rung 2: compliance-penalty weight. Single a priori choice
+# (equal footing with CE), disclosed in MODEL_CARD + report. ONE shot —
+# re-tuning it against eval results would be gate-tuning, so there is none.
+PENALTY_W = 1.0
+
+# Mask caches: static per (tonic, scale) / (root, type); built once.
+_scale_cache: dict = {}
+_norub_cache: dict = {}
+
+
+def _scale_ok(tonic: int, scale: str, torch):
+    """[VOCAB] float mask: 1 iff id is a decodable in-scale pitch."""
+    key = ("s", tonic, scale)
+    m = _scale_cache.get(key)
+    if m is None:
+        iv = set(T.SCALES.get(scale, []))
+        m = torch.tensor(
+            [1.0 if (v <= 127 and (v - tonic) % 12 in iv) else 0.0
+             for v in range(VOCAB)])
+        _scale_cache[key] = m
+    return m
+
+
+def _norub_ok(root: int, ctype: str, torch):
+    """[VOCAB] float mask: 1 iff id is NOT a minor-2nd rub vs chord tones.
+
+    Unknown chord type -> all-ones (mirrors strict_compliance: unknown
+    chords cannot judge, count as safe)."""
+    key = ("r", root, ctype)
+    m = _norub_cache.get(key)
+    if m is None:
+        pcs = T.chord_tone_pcs(root, ctype)
+        if not pcs:
+            m = torch.ones(VOCAB)
+        else:
+            def ok(v: int) -> bool:
+                pc = v % 12
+                return all(min(abs(pc - q), 12 - abs(pc - q)) != 1 for q in pcs)
+
+            m = torch.tensor([1.0 if ok(v) else 0.0 for v in range(VOCAB)])
+        _norub_cache[key] = m
+    return m
+
+
+def compliance_penalty(logits, inp, lens: list[int], metas: list[dict], torch):
+    """Mean P(metric-fail) over Melody/Bass pitch-slot predictions.
+
+    Same deterministic rules as strict_compliance (theory.py mirror of
+    ranking.cpp): pitch must be in (tonic, scale); on strong beats
+    (sub % 4 == 0 ⟺ start_tick % 480 == 0 on the 16th grid) it must not rub
+    a bar-indexed chord tone; out-of-range bars / unknown chords are safe;
+    only Melody(1)/Bass(2) tracks count. Context (bar/sub/track) comes from
+    teacher-forced inputs; positions past each row's true length are skipped.
+    Fully differentiable (expectation under softmax)."""
+    _, T_, _ = logits.shape
+    probs = torch.softmax(logits, dim=-1)
+    total, count = 0.0, 0
+    for b, meta in enumerate(metas):
+        ln = lens[b]
+        if ln < 5:
+            continue
+        ok_scale = _scale_ok(meta["tonic"], meta["scale"], torch)
+        chords = meta["chords"]
+        for t in range(4, min(T_, ln - 1)):
+            if (t - 1) % 6 != 3:  # pitch slots only
+                continue
+            track = int(inp[b, t - 1])
+            if track not in (1, 2):
+                continue
+            bar, sub = int(inp[b, t - 3]), int(inp[b, t - 2])
+            safe = ok_scale
+            if sub % 4 == 0 and 0 <= bar < len(chords):
+                ch = chords[bar]
+                safe = safe * _norub_ok(ch["root"], ch["type"], torch)
+            total = total + (1.0 - (probs[b, t] * safe).sum())
+            count += 1
+    if count == 0:
+        return torch.tensor(0.0)
+    return total / count
 
 
 def load_corpus(split: str) -> list[dict]:
@@ -49,12 +132,12 @@ def load_corpus(split: str) -> list[dict]:
     return recs
 
 
-def batchify(recs: list[dict], batch_size: int, shuffle: bool, rng) -> list[list[list[int]]]:
+def batchify(recs: list[dict], batch_size: int, shuffle: bool, rng) -> list[list[int]]:
+    """Batches of record INDICES (callers look up ids + metadata)."""
     idx = list(range(len(recs)))
     if shuffle:
         rng.shuffle(idx)
-    return [[recs[i]["ids"] for i in idx[k:k + batch_size]]
-            for k in range(0, len(idx), batch_size)]
+    return [idx[k:k + batch_size] for k in range(0, len(idx), batch_size)]
 
 
 def pad_batch(batch: list[list[int]], torch):
@@ -76,20 +159,33 @@ def pad_batch(batch: list[list[int]], torch):
     return x[:, :-1], tgt
 
 
-def run_epoch(model, opt, loss_fn, batches, train: bool, torch) -> float:
+def run_epoch(model, opt, loss_fn, recs: list[dict], idx_batches,
+              train: bool, torch, penalty_w: float = 0.0):
+    """One epoch. Train: loss = CE + penalty_w * compliance_penalty.
+    Val/smoke: pure CE (penalty_w=0); best.pt selection stays pure-CE."""
     model.train(train)
-    tot, cnt = 0.0, 0
-    for b in batches:
-        inp, tgt = pad_batch(b, torch)
+    ce_tot, pen_tot, cnt = 0.0, 0.0, 0
+    for idx in idx_batches:
+        rows = [recs[i] for i in idx]
+        ids = [r["ids"] for r in rows]
+        inp, tgt = pad_batch(ids, torch)
         logits = model(inp)
-        loss = loss_fn(logits.reshape(-1, VOCAB), tgt.reshape(-1))
+        ce = loss_fn(logits.reshape(-1, VOCAB), tgt.reshape(-1))
+        if train and penalty_w > 0:
+            lens = [len(s) for s in ids]
+            pen = compliance_penalty(logits, inp, lens, rows, torch)
+            loss = ce + penalty_w * pen
+        else:
+            pen, loss = torch.tensor(0.0), ce
         if train:
             opt.zero_grad()
             loss.backward()
             opt.step()
-        tot += loss.item()
+        ce_tot += ce.item()
+        pen_tot += float(pen.item())
         cnt += 1
-    return tot / max(1, cnt)
+    n = max(1, cnt)
+    return ce_tot / n, pen_tot / n
 
 
 def main() -> int:
@@ -148,21 +244,23 @@ def main() -> int:
     curve = []
     best = (float("inf"), -1)
     for ep in range(args.epochs):
-        tl = run_epoch(model, opt, loss_fn,
-                       batchify(train_recs, args.batch, True, rng), True, torch)
-        vl = run_epoch(model, None, loss_fn,
-                       batchify(val_recs, args.batch, False, rng), False, torch)
-        curve.append((ep, tl, vl))
+        tce, tpen = run_epoch(model, opt, loss_fn, train_recs,
+                              batchify(train_recs, args.batch, True, rng),
+                              True, torch, PENALTY_W)
+        vl, _ = run_epoch(model, None, loss_fn, val_recs,
+                          batchify(val_recs, args.batch, False, rng),
+                          False, torch)
+        curve.append((ep, tce, tpen, vl))
         if vl < best[0]:
             best = (vl, ep)
             torch.save({"config": CONFIG,
                         "state": model.state_dict()},
                        os.path.join(CKPT_DIR, "best.pt"))
-        print(f"epoch {ep}: train={tl:.4f} val={vl:.4f}"
+        print(f"epoch {ep}: train_ce={tce:.4f} train_pen={tpen:.4f} val={vl:.4f}"
               + (" <- best" if vl == best[0] else ""), flush=True)
     with open(os.path.join(HERE, "loss_curve.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["epoch", "train_loss", "val_loss"])
+        w.writerow(["epoch", "train_ce", "train_pen", "val_loss"])
         w.writerows(curve)
     wall = time.time() - t0
     print(f"full run: {args.epochs} epochs wall={wall:.1f}s "
