@@ -1,0 +1,41 @@
+juce_add_plugin(HarmonyForge
+  COMPANY_NAME "HarmonyForge"
+  PLUGIN_MANUFACTURER_CODE HfMf
+  PLUGIN_CODE HfF1
+  FORMATS VST3 Standalone
+  PRODUCT_NAME "Harmony Forge"
+  IS_SYNTH FALSE
+  NEEDS_MIDI_INPUT FALSE
+  NEEDS_MIDI_OUTPUT TRUE
+  IS_MIDI_EFFECT TRUE
+)
+
+target_sources(HarmonyForge PRIVATE
+  audio/PluginProcessor.cpp
+  audio/PluginProcessor.h
+  audio/PluginEditor.cpp
+  audio/PluginEditor.h
+  state/PluginState.cpp
+  state/PluginState.h
+  ui/PianoRollStub.h
+)
+
+target_include_directories(HarmonyForge PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_definitions(HarmonyForge PUBLIC
+  JUCE_WEB_BROWSER=0
+  JUCE_USE_CURL=0
+  # New plugin, no VST2 ever released: disable VST2-replacement to keep
+  # modern VST3 parameter IDs (see juce_audio_plugin_client_VST3.cpp note).
+  JUCE_VST3_CAN_REPLACE_VST2=0)
+
+target_link_libraries(HarmonyForge PRIVATE
+  harmony_forge_core
+  juce::juce_audio_processors
+  juce::juce_audio_utils
+  juce::juce_gui_extra
+)
+
+target_compile_features(HarmonyForge PRIVATE cxx_std_20)

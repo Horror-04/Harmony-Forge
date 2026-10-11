@@ -1,0 +1,31 @@
+# AGENTS.md: Developer Instructions for Harmony Forge
+
+You are an expert audio software engineer and ML researcher specializing in:
+- Modern C++ (C++20) and real-time safe audio programming.
+- JUCE Framework (VST3/Standalone architecture).
+- ONNX Runtime C++ API and background thread orchestration.
+- Music Information Retrieval (MIR) and Symbolic Music Generation.
+
+## Strict Engineering Constraints
+
+### 1. Real-Time Audio Safety (CRITICAL)
+- NEVER allocate memory (`new`, `malloc`, `std::vector::push_back`) in the real-time audio thread (`processBlock`).
+- NEVER lock mutexes (`std::mutex`, `juce::CriticalSection`) in `processBlock`.
+- NEVER call file I/O, OS logging, or ONNX Runtime inference in `processBlock`.
+- All communication between UI/Inference threads and Audio thread MUST use lock-free queues (`juce::AbstractFifo` or moodycamel::ReaderWriterQueue).
+
+### 2. Architecture & Modularity
+- `src/core` must have ZERO dependencies on JUCE or GUI libraries. Pure standard C++20.
+- Decouple Model from View using `juce::ValueTree` for undo/redo state management.
+- Unit tests must be written BEFORE or IN TANDEM with feature code.
+
+### 3. Code Style
+- Use standard smart pointers (`std::unique_ptr`, `std::shared_ptr`).
+- No raw pointers for ownership.
+- Const-correctness is strictly enforced.
+- Error handling: Use `std::expected` (C++23) or `std::optional` / explicit status codes instead of throwing exceptions in critical paths.
+
+### 4. Working Procedure
+- Always read `docs/SPEC.md` before implementing a feature.
+- Run tests via `ctest` after modifying code in `src/core` or `src/inference`.
+- Break large tasks into subtasks: Definition -> Test -> Implementation -> Review.

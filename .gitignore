@@ -1,0 +1,20 @@
+build*/
+cmake-build*/
+out/
+DerivedData/
+.vs/
+*.user
+*.suo
+*.sln.docstates
+.vscode/ipch/
+# temp MIDI for drag&drop tests
+*.mid
+*.midi
+# python
+__pycache__/
+.venv/
+*.pyc
+# onnx models (large)
+*.onnx
+# superpowers scratch (git-ignored workspaces)
+.superpowers/

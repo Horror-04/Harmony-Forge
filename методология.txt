@@ -1,0 +1,264 @@
+Разработка сложного гибридного VST3-плагина (C++ / JUCE + Python / PyTorch / ONNX + UI) с помощью ИИ-агента (`opencode` / Claude Code / Cursor / Aider) требует жесткой инженерной дисциплины. 
+
+Если дать ИИ задачу «напиши плагин целиком», проект утонет в галлюцинациях, спагетти-коде JUCE и крашах аудиопотока. Единственный рабочий подход — **Contract-Driven Development (разработка через контракты)** и строгое разделение ядра логики, инференса и UI.
+
+Ниже представлена готовая методология, структура репозитория, файлы контекста для агента и пошаговый пайплайн разработки.
+
+---
+
+# ЧАСТЬ 1. Методология работы с OpenCode
+
+### Главное правило
+> **ИИ-агент никогда не пишет GUI и нейросеть одновременно.** Кодовая база делится на изолированные слои. Каждый слой покрывается CLI-тестами. Агент работает по циклу: **Спецификация контракта (C++ header) → Unit-тест → Реализация → Валидация.**
+
+### 3 правила для предотвращения деградации контекста:
+1. **No-JUCE Core:** Вся теория музыки, парсеры MIDI, токенизаторы и валидаторы пишутся на **чистом C++20** без единой зависимости от JUCE. Это позволяет агенту мгновенно прогонять тесты через CMake/Catch2 в консоли без запуска DAW и GUI.
+2. **Deterministic Parity:** Токенизатор на Python (для обучения) и токенизатор на C++ (для инференса) должны тестироваться на одинаковых MIDI-файлах и выдавать байт-в-байт идентичные векторы токенов.
+3. **Lock-Free Boundaries:** Генерация модели и аудиопоток DAW никогда не пересекаются напрямую. Связь — строго через потокобезопасные неблокирующие очереди (Lock-free FIFO).
+
+---
+
+# ЧАСТЬ 2. Архитектура репозитория
+
+Создайте структуру каталогов, понятную для `opencode`:
+
+```text
+musegrid-core/
+├── .opencode/                  # Конфигурация агента
+│   └── agent_rules.md
+├── AGENTS.md                   # Главный файл контекста для ИИ (System Prompt)
+├── CMakeLists.txt              # Корневой мультипроект CMake
+├── docs/                       # ТЗ, спецификации протоколов, токенизация
+│   ├── SPEC.md                 # Ваше ТЗ
+│   ├── TOKENIZATION.md         # Описание схемы токенов
+│   └── THREADING_MODEL.md      # Модель потоков (Audio vs Worker)
+├── external/                   # Сабмодули: onnxruntime, juce, catch2
+├── src/
+│   ├── core/                   # ЧИСТЫЙ C++20 (Музыкальная теория, структуры данных)
+│   │   ├── music/              # Scales, Chords, VoiceLeading, Quantizer
+│   │   ├── model/              # Representation: Note, Track, Pattern, Timeline
+│   │   └── serialization/      # Tokenizer C++, Fast MIDI I/O
+│   ├── inference/              # C++ обертка над ONNX Runtime
+│   │   ├── onnx_runner.h/cpp   # Background worker, CPU/DirectML execution
+│   │   └── constraints.h/cpp   # Constraint Engine (маскирование логитов / исправление)
+│   ├── plugin/                 # JUCE C++ (VST3 / Standalone)
+│   │   ├── audio/              # AudioProcessor, Synth для превью, MIDI out
+│   │   ├── state/              # ValueTree state, Undo/Redo, Sync с DAW
+│   │   └── ui/                 # Piano Roll, Chord Track, Components
+│   └── companion/              # FL Studio Python Script
+├── tests/                      # Юнит-тесты (Catch2/GTest)
+│   ├── test_theory.cpp
+│   ├── test_tokenizer.cpp
+│   └── test_constraints.cpp
+└── training/                   # Python-пайплайн (Датасет, обучение, экспорт в ONNX)
+    ├── datasets/
+    ├── models/                 # Transformer / Diffusion архитектура
+    ├── export_onnx.py          # Скрипт валидации и квантизации ONNX
+    └── tests/                  # Сверка векторов Python vs C++
+```
+
+---
+
+# ЧАСТЬ 3. База знаний для ИИ-агента
+
+Чтобы `opencode` действовал как Senior C++ Audio & ML Engineer, добавьте в корень репозитория следующие файлы.
+
+### 1. Файл `.opencode/agent_rules.md` (или `AGENTS.md`)
+Этот файл агент обязан читать перед каждым промптом.
+
+```markdown
+# AGENTS.md: Developer Instructions for MuseGrid AI
+
+You are an expert audio software engineer and ML researcher specializing in:
+- Modern C++ (C++20) and real-time safe audio programming.
+- JUCE Framework (VST3/Standalone architecture).
+- ONNX Runtime C++ API and background thread orchestration.
+- Music Information Retrieval (MIR) and Symbolic Music Generation.
+
+## Strict Engineering Constraints
+
+### 1. Real-Time Audio Safety (CRITICAL)
+- NEVER allocate memory (`new`, `malloc`, `std::vector::push_back`) in the real-time audio thread (`processBlock`).
+- NEVER lock mutexes (`std::mutex`, `juce::CriticalSection`) in `processBlock`.
+- NEVER call file I/O, OS logging, or ONNX Runtime inference in `processBlock`.
+- All communication between UI/Inference threads and Audio thread MUST use lock-free queues (`juce::AbstractFifo` or moodycamel::ReaderWriterQueue).
+
+### 2. Architecture & Modularity
+- `src/core` must have ZERO dependencies on JUCE or GUI libraries. Pure standard C++20.
+- Decouple Model from View using `juce::ValueTree` for undo/redo state management.
+- Unit tests must be written BEFORE or IN TANDEM with feature code.
+
+### 3. Code Style
+- Use standard smart pointers (`std::unique_ptr`, `std::shared_ptr`).
+- No raw pointers for ownership.
+- Const-correctness is strictly enforced.
+- Error handling: Use `std::expected` (C++23) or `std::optional` / explicit status codes instead of throwing exceptions in critical paths.
+
+### 4. Working Procedure
+- Always read `docs/SPEC.md` before implementing a feature.
+- Run tests via `ctest` after modifying code in `src/core` or `src/inference`.
+- Break large tasks into subtasks: Definition -> Test -> Implementation -> Review.
+```
+
+### 2. Контракт потоков: `docs/THREADING_MODEL.md`
+Это убережет плагин от вылетов DAW:
+
+```markdown
+# Threading Model
+
+1. [DAW Audio Thread] (Real-Time Priority)
+   - Executes `PluginProcessor::processBlock()`.
+   - Reads pre-generated MIDI events from a Lock-Free Ring Buffer.
+   - Outputs MIDI to DAW or feeds simple internal synth.
+   - Read-only access to Playhead / Transport (BPM, position).
+
+2. [GUI Thread] (Message Thread)
+   - JUCE UI repaints, Piano Roll rendering, user inputs.
+   - Pushes user intent (e.g., "Regenerate Bar 4") to Command Queue.
+
+3. [Inference Background ThreadPool] (Worker Threads)
+   - Long-running inference (ONNX Runtime).
+   - Generates candidates, applies Music Theory Constraints.
+   - Sends finished patterns back to GUI thread via AsyncUpdater/MessageManagerLock-safe queues.
+```
+
+---
+
+# ЧАСТЬ 4. Пошаговый план разработки через OpenCode (Blueprint)
+
+Разработку нужно вести через 5 последовательных спринтов. Не переходите к следующему, пока не закрыт предыдущий.
+
+---
+
+## Спринт 1: Движок теории музыки и структуры данных (Pure C++)
+**Цель:** Создать ядро генерации без UI и плагинов.
+
+### Задачи для агента:
+1. Реализовать структуры: `Note { pitch, start_tick, duration_ticks, velocity }`, `Chord { root, type, inversions, tension }`, `Track`, `Pattern`.
+2. Реализовать `ScaleDatabase` (Major, Minor, Dorian, etc.) и математику квантизации нот.
+3. Написать модуль `VoiceLeadingValidator`:
+   - Штрафы за параллельные квинты/октавы.
+   - Проверка пересечения мелодии и баса.
+   - Определение диссонансов на сильных долях.
+4. Покрыть 100% юнит-тестами Catch2.
+
+> **Промпт для OpenCode:**
+> *"Implement `src/core/music/scale.h` and `scale.cpp` supporting all standard diatonic modes, pentatonics, and custom intervals. Write full Catch2 unit tests in `tests/test_theory.cpp` verifying degree calculation, in-scale validation, and nearest-scale-tone snapping. No JUCE dependencies."*
+
+---
+
+## Спринт 2: Токенизация и ML-модель (Python + ONNX)
+**Цель:** Быстрая, легковесная модель (~30–50 Мб), способная генерировать за 500 мс на CPU.
+
+### Архитектурный выбор:
+- **Тип модели:** Маленький Decoder-Only Transformer (архитектура в стиле GPT-2 Mini: 6 слоев, 8 голов, dim=384) с Compound Tokens или структурированным REMI-форматом.
+- **Токены:** `Bar`, `Subbeat`, `Track_Type` (Chords/Melody/Bass), `Pitch`, `Duration`, `Velocity_Bin`.
+- **Контекст:** Ограничен 16 тактами (1024 токена).
+
+### Задачи для агента:
+1. `training/tokenizer.py`: Реализация кодирования/декодирования MIDI <-> Tokens.
+2. `src/core/serialization/tokenizer.cpp`: Точная копия логики на C++.
+3. Тест проверки паритета: скрипт, прогоняющий 100 MIDI-файлов через Python и C++, проверяющий тождество токенов.
+4. Экспорт обученной/замоканной модели в `model.onnx` с dynamic axes.
+5. Интеграция `src/inference/onnx_runner.cpp` через ONNX Runtime C++ API с поддержкой многопоточности.
+
+> **Промпт для OpenCode:**
+> *"Write a C++ ONNX Runtime inference wrapper in `src/inference/onnx_runner.h/cpp`. It must load a model asynchronously, accept a flat vector of input token IDs, support KV-caching if applicable, and return predicted logits. It must not block the main thread and run on a dedicated worker thread."*
+
+---
+
+## Спринт 3: Constraint Engine (Детерминированная валидация)
+**Цель:** 100% гарантия того, что ИИ не выдаст фальшивых нот в режиме *Strict*.
+
+### Задачи для агента:
+1. `LogitMasking` (при инференсе) или `PostProcessor` (сразу после инференса). Для MVP проще и быстрее **PostProcessor**:
+   - Принудительный сдвиг нот мелодии в ноты аккорда/лады.
+   - Проверка регистра (Bass не выше C3, Melody не ниже C3).
+   - Выравнивание длительностей по сетке (Snap).
+   - Замена конфликтующих нот при смене аккорда (например, если аккорд стал `Fmaj7`, а бас играет `A#`, плагин опускает его в `A` или поднимает в `C`).
+
+> **Промпт для OpenCode:**
+> *"Create `src/inference/constraints.cpp` implementing `resolve_harmonic_conflicts(Pattern& pattern, const ChordProgression& chords)`. If a melody note creates an unpermitted minor second dissonance against the current chord on a strong beat (tick % 480 == 0), transpose or adjust it to the nearest chord tone."*
+
+---
+
+## Спринт 4: JUCE Skeleton, State и DAW Sync (VST3)
+**Цель:** Плагин собирается, открывается в FL Studio, синхронизирует темп и такты, воспроизводит простой синус/звук.
+
+### Задачи для агента:
+1. Создать базовый проект через CMake с JUCE 7/8 (`juce_audio_processors`, `juce_audio_utils`).
+2. В `PluginProcessor` настроить получение `AudioPlayHead` (BPM, Time Signature, PPQ Position, IsPlaying).
+3. Создать `PluginState` на базе `juce::ValueTree`:
+   - Дерево параметров: `RootKey`, `Scale`, `BPM`, `Density`, `SelectedChordIndex`.
+   - Вся история операций через `juce::UndoManager`.
+4. Реализовать внутренний генератор предпрослушивания: простейший полифонический синтезатор (`juce::Synthesiser`) для превью нот без загрузки внешних VST.
+
+> **Промпт для OpenCode:**
+> *"Set up the `PluginProcessor` using CMake and JUCE. Implement reliable transport reading from DAW's `AudioPlayHead` in `processBlock`. Expose current PPQ position, BPM, and playing status as thread-safe atomic flags or through a real-time FIFO to the editor."*
+
+---
+
+## Спринт 5: Piano Roll UI & FL Studio MIDI Drag-and-Drop
+**Цель:** Готовый рабочий MVP интерфейс.
+
+### Задачи для агента:
+1. **Chord Track UI:** Верхний компонент с блоками аккордов, контекстным меню выбора трезвучий/септаккордов.
+2. **Piano Roll Component:** Отрисовка нот по дорожкам разными цветами (аккорд = зеленый, лад = синий, конфликт = красный).
+3. **MIDI Drag and Drop:** 
+   - При клике и перетаскивании кнопки дорожки плагин временно сериализует партию в `.mid` файл во временную директорию ОС (`juce::File::createTempFile`).
+   - Инициирует стандартный системный `juce::DragAndDropContainer::startExternalDragFile()`. 
+   - Это гарантирует 100% совместимость с FL Studio (перетаскивание прямо на дорожку в Channel Rack / Playlist).
+4. Кнопки `Freeze` (блокировка изменения дорожки) и `Regenerate`.
+
+---
+
+# ЧАСТЬ 5. Тестирование и контроль галлюцинаций ИИ
+
+ИИ часто допускает три типа критических ошибок в аудиософте:
+1. **Утечки памяти при аллокациях в UI.**
+2. **Race conditions между рабочим потоком ONNX и GUI.**
+3. **Audio Dropout (щелчки) из-за блокировок аудиопотока.**
+
+### Автоматические барьеры (Guardrails)
+
+Добавьте в корневой `CMakeLists.txt` профили проверки:
+
+```cmake
+# Активация AddressSanitizer и ThreadSanitizer для отлова багов агента
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_compile_options(-fsanitize=address,undefined)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+```
+
+### Памятка для человека-ревьюера
+Перед мерджем любого кода от `opencode`:
+1. Нажмите в редакторе поиск по слову: `std::mutex` или `lock()` внутри `PluginProcessor.cpp`. Если агент вставил мьютекс в аудиопоток — **отклоняйте**.
+2. Поиск по `new ` / `malloc` внутри `processBlock`. Если есть — **отклоняйте**.
+3. Убедитесь, что все операции генерации вызываются через `ThreadPool` или `std::async`.
+
+---
+
+# ЧАСТЬ 6. Промпт-сессия: Как стартовать прямо сейчас
+
+Выполните следующие шаги:
+
+1. **Инициализируйте проект:**
+```bash
+mkdir musegrid-ai && cd musegrid-ai
+git init
+mkdir -p .opencode docs src/core src/inference src/plugin tests external
+```
+
+2. **Создайте `.opencode/agent_rules.md`** и **`docs/SPEC.md`** (скопируйте туда ваше исходное ТЗ).
+
+3. **Запустите OpenCode и дайте первую входную команду:**
+
+> **Первый стартовый промпт для OpenCode:**
+> *"Hello. We are building the MuseGrid AI MIDI plugin based on `docs/SPEC.md` and following `AGENTS.md`. 
+>
+> Our first milestone is **Sprint 1: The Core Music Theory Engine**. 
+> Please generate a modern root `CMakeLists.txt` using C++20 with Catch2 for unit testing (do not add JUCE yet). Then, create `src/core/music/scale.h` and implement scale interval definitions, scale degree conversions, and in-scale snapping for all 7 standard modes. Include comprehensive unit tests in `tests/test_theory.cpp`. 
+> Ensure all code is pure C++20 with zero third-party dependencies."*
+
+Этот подход позволит сразу получить рабочий компилируемый каркас, проверит способность агента писать тесты и создаст надежный фундамент для интеграции нейросетевых модулей.
