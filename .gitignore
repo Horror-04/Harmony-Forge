@@ -19,5 +19,10 @@ __pycache__/
 *.pyc
 # onnx models (large)
 *.onnx
+# phase-2 task 3 training artifacts (local-only; committed: model.onnx,
+# model.quant.onnx via `git add -f`, corpus jsonl, loss curves, eval report)
+training/checkpoints/
+training/export_parity.npy
+training/*.log
 # superpowers scratch (git-ignored workspaces)
 .superpowers/

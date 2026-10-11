@@ -1,0 +1,37 @@
+{
+ "seed": 7,
+ "sources": [
+  {
+   "name": "composed",
+   "licence": "Heads 'after' J.S. Bach chorale tunes (public domain, composer d. 1750; pitches re-encoded and harmonized originally for this repo) + original heads in chorale idiom (original work, same licence as repo).",
+   "count": 32
+  },
+  {
+   "name": "procedural",
+   "licence": "Procedural augmentation from Harmony Forge's own theory engine (Python mirror of src/inference/candidates.cpp); clean by construction.",
+   "count": 288
+  }
+ ],
+ "total_kept": 320,
+ "exact_dupes_dropped": 0,
+ "near_dup_signature_groups": 15,
+ "near_dup_note": "Transposed/same-shape melodies share a signature; kept as legitimate augmentation, counted here.",
+ "split": {
+  "train": 287,
+  "val": 33,
+  "held_out_heads": [
+   "O",
+   "P"
+  ],
+  "val_procedural_rule": "procedural-NNNN with NNNN % 10 == 0"
+ },
+ "token_stats": {
+  "train_ids": 60515,
+  "val_ids": 6183,
+  "max_ids": 457
+ },
+ "memo_reference": {
+  "melody_interval_6grams": 1913,
+  "flat_id_8grams": 6749
+ }
+}

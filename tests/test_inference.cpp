@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <thread>
@@ -84,7 +85,7 @@ TEST_CASE("async job completes with the sync result", "[inference]") {
 }
 
 TEST_CASE("perf: 8-bar predict well under SPEC budget", "[inference]") {
-  // SPEC §11: 4-8 bars local <= 2 s. Mock is far below; print the real number.
+  // SPEC §11: 4-8 bars local <= 2 s. Real weights are far below; print the number.
   std::vector<int> in{128};
   for (int i = 0; i < 128; ++i)
     in.insert(in.end(), {i / 16, i % 16, 1, 60 + (i % 12), 1, 6});
@@ -94,7 +95,10 @@ TEST_CASE("perf: 8-bar predict well under SPEC budget", "[inference]") {
   for (int r = 0; r < kReps; ++r) {
     const auto out = runner.predict(in, mock_cfg());
 #ifdef HARMONY_FORGE_WITH_ONNX
-    CHECK(out == in);
+    // Phase 2 Task 3 (R6): real weights predict per-position next tokens,
+    // they do NOT echo the input. Contract: same length, ids in [0, 256).
+    CHECK(out.size() == in.size());
+    CHECK(std::all_of(out.begin(), out.end(), [](int v) { return v >= 0 && v < 256; }));
 #else
     CHECK(out.empty());
 #endif

@@ -1,7 +1,13 @@
-# Sprint 2 training deps (R1: onnx package ONLY, no torch).
-# Pinned after verifying `pip install` on Python 3.14 (2026-10-11).
-# onnxruntime (Python) is a verification-only dep: export_onnx.py prefers it
-# to smoke-run model.onnx, else falls back to onnx.checker.
+# Phase 2 Task 3 training deps (R2: PyTorch CPU).
+# Pinned after verifying install on Python 3.14.6 (2026-10-11, venv).
+# torch CPU wheels come from the PyTorch CPU index:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# onnxruntime (Python) is a verification-only dep: export/eval scripts
+# smoke-run model.onnx through it. onnxscript (+onnx_ir) is required by
+# torch 2.14's dynamo ONNX exporter (used by export_onnx.py).
+torch==2.14.1+cpu
+numpy==2.5.4
 onnx==1.23.2
-numpy==2.5.2
 onnxruntime==1.31.0
+onnxscript==0.7.2
+onnx_ir==1.0.0
