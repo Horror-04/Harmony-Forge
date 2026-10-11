@@ -1,0 +1,111 @@
+; =============================================================================
+; Harmony Forge -- Windows installer (Inno Setup 6.3+)
+; =============================================================================
+; Build:  iscc packaging\windows\harmony_forge.iss        (run from the repo root)
+; Output: build-full\installer-output\HarmonyForge-<version>-windows-x64-setup.exe
+;
+; NEVER run the produced installer on a development machine: it writes into the
+; system VST3 folder ({commoncf}\VST3). Installation is a HUMAN step on a clean
+; machine -- see docs\DISTRIBUTION.md (R4 checklist) and packaging\windows\README.md.
+;
+; Payload (all taken from a Release build of build-full):
+;   * VST3 bundle   -> {commoncf}\VST3\Harmony Forge.vst3
+;   * Standalone    -> {app}\Harmony Forge.exe
+;   * onnxruntime.dll installed next to BOTH the VST3 bundle and the
+;     Standalone exe (R5 deployment rule from the MVP final review)
+;   * JUCE licence notice placeholder LICENSE-JUCE-NOTICE.txt (R1, PENDING-HUMAN)
+;
+; TODO(R1): the JUCE licence decision (commercial vs AGPL) is PENDING-HUMAN.
+;   See docs\DISTRIBUTION.md section "Licence decision (PENDING-HUMAN-DECISION)".
+;   Once decided:
+;     1. create packaging\LICENSE-JUCE-NOTICE.txt with the required notices;
+;     2. uncomment the "LicenseFile=" line in [Setup] below;
+;     3. re-run iscc.
+;   Until then this script still compiles; the notice [Files] entry is
+;   included automatically once the file exists (see HaveLicenceNotice below).
+; =============================================================================
+
+#define MyAppName "Harmony Forge"
+; Keep in sync with project(HarmonyForge VERSION ...) in the repo CMakeLists.txt;
+; packaging\windows\check_payload.ps1 fails if these drift apart.
+#define MyAppVersion "0.1.0"
+#define MyAppPublisher "HarmonyForge"
+#define MyAppExeName "Harmony Forge.exe"
+
+; All paths below are relative to this script (packaging\windows\).
+#define BuildDir "..\..\build-full"
+#define ArtefactsDir AddBackslash(BuildDir) + "src\plugin\HarmonyForge_artefacts\Release"
+#define Vst3BundleDir AddBackslash(ArtefactsDir) + "VST3\Harmony Forge.vst3"
+#define Vst3ModuleFile AddBackslash(Vst3BundleDir) + "Contents\x86_64-win\Harmony Forge.vst3"
+#define StandaloneExe AddBackslash(ArtefactsDir) + "Standalone\Harmony Forge.exe"
+#define OrtDll AddBackslash(ArtefactsDir) + "Standalone\onnxruntime.dll"
+#define LicenceNotice "..\LICENSE-JUCE-NOTICE.txt"
+
+; --- Preflight: fail at compile time if the payload is not built -------------
+; R5 explicitly requires the onnxruntime.dll assertion; the other two catch a
+; stale/never-built tree before a broken installer reaches the human.
+#if !FileExists(Vst3ModuleFile)
+  #error "Preflight: VST3 bundle not found under build-full. Build first: cmake --build build-full --config Release"
+#endif
+#if !FileExists(StandaloneExe)
+  #error "Preflight: Standalone exe not found under build-full. Build first: cmake --build build-full --config Release"
+#endif
+#if !FileExists(OrtDll)
+  #error "Preflight: onnxruntime.dll not found under build-full (R5). Build first: cmake --build build-full --config Release"
+#endif
+
+; TODO(R1): the notice file is deliberately absent until the licence decision.
+#if FileExists(LicenceNotice)
+  #define HaveLicenceNotice 1
+#else
+  #define HaveLicenceNotice 0
+  #pragma message "TODO(R1): packaging\LICENSE-JUCE-NOTICE.txt not found -- building an installer WITHOUT a JUCE licence notice."
+#endif
+
+[Setup]
+; Stable per-product GUID: keep it unchanged across versions so upgrades work.
+AppId={{314D332F-8F4D-402D-B8D3-2F414788407F}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+DefaultDirName={autopf}\{#MyAppName}
+UninstallDisplayIcon={app}\{#MyAppExeName}
+DefaultGroupName={#MyAppName}
+DisableProgramGroupPage=yes
+; Machine-wide install: the VST3 must land in the shared VST3 folder.
+PrivilegesRequired=admin
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+OutputDir={#BuildDir}\installer-output
+OutputBaseFilename=HarmonyForge-{#MyAppVersion}-windows-x64-setup
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+VersionInfoVersion={#MyAppVersion}
+; TODO(R1): uncomment after packaging\LICENSE-JUCE-NOTICE.txt exists so the
+; notice is shown before installation:
+; LicenseFile={#LicenceNotice}
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a &desktop shortcut for the standalone app"; GroupDescription: "Additional shortcuts:"
+
+[Files]
+; VST3 bundle: the whole directory tree.
+Source: "{#Vst3BundleDir}\*"; DestDir: "{commoncf}\VST3\Harmony Forge.vst3"; Flags: ignoreversion recursesubdirs createallsubdirs
+; R5: onnxruntime.dll next to the VST3 bundle.
+Source: "{#OrtDll}"; DestDir: "{commoncf}\VST3"; Flags: ignoreversion
+; Standalone exe + its R5 DLL copy.
+Source: "{#StandaloneExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#OrtDll}"; DestDir: "{app}"; Flags: ignoreversion
+; JUCE licence notice (R1 placeholder; included automatically once created).
+#if HaveLicenceNotice
+Source: "{#LicenceNotice}"; DestDir: "{app}"; Flags: ignoreversion
+#endif
+
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent

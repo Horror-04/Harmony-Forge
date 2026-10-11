@@ -2,7 +2,11 @@ juce_add_plugin(HarmonyForge
   COMPANY_NAME "HarmonyForge"
   PLUGIN_MANUFACTURER_CODE HfMf
   PLUGIN_CODE HfF1
-  FORMATS VST3 Standalone
+  # AU is requested for macOS distribution (packaging/macos/build_pkg.sh).
+  # JUCE only adds the AU target on Darwin (see _juce_get_platform_plugin_kinds
+  # in JUCE/extras/Build/CMake/JUCEModuleSupport.cmake), so on Windows this
+  # entry expands to no extra targets and JucePlugin_Build_AU stays 0.
+  FORMATS VST3 AU Standalone
   PRODUCT_NAME "Harmony Forge"
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT FALSE
