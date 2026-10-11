@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import evaluate as E
 import theory as T
+import tokenizer as tok
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRAINING = os.path.join(HERE, "..")
@@ -62,9 +63,86 @@ def check_gates() -> None:
           f"scored={report['n_scored']}/{report['n_val']}")
 
 
+def check_novelty_metrics() -> None:
+    """Phase 3 Task 1 (measurement only, NOT gates): eval_report.json must
+    carry ``new_notes_ratio`` (fraction of generated notes absent from the
+    memo id_8 n-gram index) and ``prefix_only_compliance`` (compliance of
+    the generated notes alone, i.e. excluding prefix-carried notes)."""
+    model = os.path.join(TRAINING, "model.onnx")
+    assert os.path.exists(model), "export model.onnx first"
+    report = E.evaluate(model)
+
+    for key in ("new_notes_ratio", "prefix_only_compliance"):
+        assert key in report, f"eval_report.json missing key {key!r}"
+        v = report[key]
+        assert isinstance(v, float) and 0.0 <= v <= 1.0, f"{key}={v!r}"
+        print(f"PASS novelty key {key}={v:.3f}")
+
+    recs = {r["id"]: r for r in report["records"]}
+    ratios = [r["new_notes_ratio"] for r in report["records"]
+              if r["new_notes_ratio"] is not None]
+    pocs = [r["prefix_only_compliance"] for r in report["records"]
+            if r["prefix_only_compliance"] is not None]
+    # Means are derived from per-record values (no hardcoded numbers).
+    assert abs(report["new_notes_ratio"]
+               - sum(ratios) / len(ratios)) < 1e-9
+    assert abs(report["prefix_only_compliance"]
+               - sum(pocs) / len(pocs)) < 1e-9
+    assert report["n_new_notes_ratio_scored"] == len(ratios)
+    assert report["n_prefix_only_scored"] == len(pocs)
+
+    val = {r["id"]: r for r in E.load_jsonl("val.jsonl")}
+    for r in report["records"]:
+        for key in ("new_notes_ratio", "prefix_only_compliance"):
+            assert key in r, f"record {r['id']} missing key {key!r}"
+            v = r[key]
+            assert v is None or (isinstance(v, float) and 0.0 <= v <= 1.0), \
+                f"record {r['id']} {key}={v!r}"
+        # prefix_only is the Phase-3 name for the new-notes-only score.
+        assert (r["prefix_only_compliance"] is None) == \
+               (r["newonly_compliance"] is None), r["id"]
+        if r["prefix_only_compliance"] is not None:
+            assert abs(r["prefix_only_compliance"]
+                       - r["newonly_compliance"]) < 1e-9, r["id"]
+        # Ratio defined exactly when whole new notes were generated.
+        assert (r["new_notes_ratio"] is None) == (r["new_notes"] == 0), r["id"]
+        # Ratio/novelty consistent with the verbatim-run measurement on the
+        # same finalized ids: novel notes admit no memorized touching window.
+        if r["new_notes_ratio"] == 1.0:
+            assert r["verbatim_run"] == 0, r["id"]
+        if r["new_notes_ratio"] is not None and r["new_notes_ratio"] < 1.0:
+            assert r["verbatim_run"] >= 1, r["id"]
+        # Whole compliance mixes prefix + new notes, so where the prefix
+        # alone scores clean (derived per record, not hardcoded), the
+        # prefix-excluded score cannot beat the carried whole.
+        if r["decodable"] and r["prefix_only_compliance"] is not None:
+            rec = val[r["id"]]
+            pref = E.finalize(rec["ids"][:r["prefix_len"]])
+            pref_pat = tok.decode_tokens(pref)
+            if pref_pat is not None:
+                bars = 1
+                for t in pref_pat["tracks"]:
+                    for n in t["notes"]:
+                        bars = max(bars,
+                                   n["start_tick"] // tok.BAR_TICKS + 1)
+                pref_comp = T.strict_compliance(
+                    pref_pat, E.extended_chords(rec, bars),
+                    rec["tonic"], rec["scale"])
+                if pref_comp == 1.0:
+                    assert r["prefix_only_compliance"] <= \
+                        r["compliance"] + 1e-9, \
+                        f"{r['id']}: prefix_only={r['prefix_only_compliance']} " \
+                        f"> whole={r['compliance']} with clean prefix"
+    print(f"PASS novelty metrics: ratio={report['new_notes_ratio']:.3f} "
+          f"({len(ratios)} scored) "
+          f"prefix_only={report['prefix_only_compliance']:.3f} "
+          f"({len(pocs)} scored)")
+
+
 def main() -> int:
     check_mirror()
     check_gates()
+    check_novelty_metrics()
     print("ALL eval tests PASS")
     return 0
 

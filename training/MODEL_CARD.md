@@ -56,6 +56,33 @@
 - determinism (R6): PASS via two independent ORT sessions, byte-identical;
   C++ `fixed seed gives identical outputs` green on the new weights.
 
+## Novelty baseline (Phase 3 Task 1 — measurement only, NOT gates;
+   `training/eval_report.json`)
+- Headline compliance (0.907) is prefix-carried: only 4/33 val
+  continuations grew new whole notes (mean 0.3), and the generated-notes
+  score is far below the carried whole (`prefix_only_compliance` 0.333,
+  n=3; the 4th new-notes record fails strict decode so its new-only
+  score is unscored).
+
+| metric (`eval_report.json`) | baseline (this model) | n scored |
+|---|---|---|
+| `mean_compliance` (gate ≥ 0.90) | 0.907 | 32/33 |
+| `prefix_only_compliance` (new notes only) | 0.333 (1.0, 0.0, 0.0) | 3 |
+| `new_notes_ratio` (novel generated notes) | 0.000 | 4 |
+| `mean_new_notes` | 0.3 | 33 |
+| `mean_verbatim_run_filtered` | 0.2 | 33 |
+- `new_notes_ratio` = fraction of generated whole notes whose every
+  touching flat-id 8-gram window is absent from the train memo index
+  (`corpus/memo_ngrams.json::id_8`); a single memorized touching window
+  marks the note carried. All 4 new-notes records score 0.0 — every
+  generated note touches a memorized window (their filtered verbatim
+  runs are 3, 1, 1, 3, all < 4 so the §10 filter still passes, but the
+  model emits almost nothing beyond the prefix and what it emits is
+  corpus-carried).
+- `prefix_only_compliance` reuses the `newonly_compliance` absolute-bar
+  decode under the Phase-3 name; per-record values are identical.
+- Not gated: no seed, sample, or threshold changed for these numbers.
+
 ## Drop-in (R6: new hashes expected and justified)
 - `OnnxRunner` loads the real weights with ZERO C++ production change
   (same input/output names, dtypes, dynamic axes). `ctest` green.

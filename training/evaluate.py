@@ -9,6 +9,16 @@ Gates (ALL must pass, exit 0):
      flat-id 8-grams verbatim from the train memo set (i.e. never copies
      >= 11 tokens straight from training data).
 
+Informational only (Phase 3 Task 1 — MEASUREMENT, never gates; headline
+compliance is prefix-carried and hides novelty):
+  ``new_notes_ratio`` — fraction of generated whole notes absent from the
+  memo ``id_8`` n-gram index (a new note counts as novel when every
+  8-gram window touching its 6 tokens is absent from the index; ``None``
+  for a record with no new whole notes).
+  ``prefix_only_compliance`` — compliance of the generated notes alone,
+  i.e. excluding prefix-carried notes (same absolute-bar decode as the
+  long-standing ``newonly_compliance`` measurement, kept under both names).
+
 Method: for each val record, feed the first half of its ids (cut to a
 6-multiple) as prefix to the exported model.onnx via onnxruntime, greedily
 generate 48 tokens (deterministic; each continuation is generated TWICE and
@@ -105,6 +115,37 @@ def longest_verbatim_run(ids: list[int], memo_id8: set, start_min: int = 0) -> i
     return best
 
 
+def new_notes_ratio_for(full_ids: list[int], prefix_len: int,
+                        memo_id8: set) -> float | None:
+    """Fraction of generated whole notes absent from the memo id_8 index.
+
+    A new note counts as novel when every flat-id 8-gram window touching
+    its 6 tokens (windows starting at >= ``prefix_len - 7``, i.e. the same
+    generated-region floor the §10 filter uses) is absent from the index.
+    ``None`` when the finalized continuation holds no new whole notes.
+    Conservative by construction: one memorized touching window suffices
+    to mark the note as carried, so ``ratio < 1.0`` implies a verbatim
+    run >= 1 and ``ratio == 1.0`` implies a verbatim run of 0."""
+    total_notes = (len(full_ids) - 1) // tok.TOKENS_PER_NOTE
+    prefix_notes = (prefix_len - 1) // tok.TOKENS_PER_NOTE
+    n_new = total_notes - prefix_notes
+    if n_new <= 0:
+        return None
+    floor = prefix_len - 7
+    novel = 0
+    for j in range(n_new):
+        s = 1 + (prefix_notes + j) * tok.TOKENS_PER_NOTE
+        e = s + tok.TOKENS_PER_NOTE
+        ks = [k for k in range(max(floor, s - 7), min(e, len(full_ids) - 7))
+              if k >= 0]
+        if not ks:
+            novel += 1  # no checkable window: nothing to copy from
+            continue
+        if all(tuple(full_ids[k:k + 8]) not in memo_id8 for k in ks):
+            novel += 1
+    return novel / n_new
+
+
 def finalize(ids: list[int]) -> list[int]:
     """Repair the count head and cut to whole notes for decode."""
     n = (len(ids) - 1) // tok.TOKENS_PER_NOTE
@@ -157,6 +198,7 @@ def evaluate(model_path: str) -> dict:
         filt["verbatim_run_raw"] = longest_verbatim_run(finalize(raw), id8, floor)
         filt["verbatim_run"] = longest_verbatim_run(filt["ids"], id8, floor)
         filt["new_notes"] = max(0, (len(seq_a) - len(prefix)) // tok.TOKENS_PER_NOTE)
+        filt["new_notes_ratio"] = new_notes_ratio_for(filt["ids"], len(prefix), id8)
         # Informational (NOT a gate): compliance of the NEW notes alone, so
         # short filtered continuations cannot hide behind the prefix.
         new_body = seq_a[len(prefix):]
@@ -174,6 +216,8 @@ def evaluate(model_path: str) -> dict:
                     new_pat, extended_chords(rec, bars), rec["tonic"], rec["scale"])
         filt["exact_corpus_match"] = tuple(filt["ids"]) in corpus_vecs
         filt["deterministic"] = True
+        # Phase-3 name for the new-notes-only score (measurement, not a gate).
+        filt["prefix_only_compliance"] = filt["newonly_compliance"]
         per_rec.append(filt)
 
     decodable = [r for r in per_rec if r["decodable"]]
@@ -182,6 +226,9 @@ def evaluate(model_path: str) -> dict:
     newonly = [r["newonly_compliance"] for r in per_rec
                if r["newonly_compliance"] is not None]
     mean_newonly = sum(newonly) / len(newonly) if newonly else 0.0
+    ratios = [r["new_notes_ratio"] for r in per_rec
+              if r["new_notes_ratio"] is not None]
+    mean_ratio = sum(ratios) / len(ratios) if ratios else 0.0
     gates = {
         "compliance_ge_0.90": mean_comp >= COMPLIANCE_GATE,
         "novelty_no_exact_copy": not any(r["exact_corpus_match"] for r in per_rec),
@@ -194,13 +241,18 @@ def evaluate(model_path: str) -> dict:
             "mean_compliance": mean_comp,
             "mean_newonly_compliance": mean_newonly,
             "n_newonly_scored": len(newonly),
+            "new_notes_ratio": mean_ratio,
+            "n_new_notes_ratio_scored": len(ratios),
+            "prefix_only_compliance": mean_newonly,
+            "n_prefix_only_scored": len(newonly),
             "mean_new_notes": sum(r["new_notes"] for r in per_rec) / len(per_rec),
             "mean_verbatim_run_raw": sum(r["verbatim_run_raw"] for r in per_rec) / len(per_rec),
             "mean_verbatim_run_filtered": sum(r["verbatim_run"] for r in per_rec) / len(per_rec),
             "gates": gates, "all_pass": all(gates.values()),
             "records": [{k: r[k] for k in
                          ("id", "decodable", "compliance", "notes", "prefix_len",
-                          "new_notes", "newonly_compliance",
+                          "new_notes", "new_notes_ratio", "newonly_compliance",
+                          "prefix_only_compliance",
                           "verbatim_run_raw", "verbatim_run",
                           "exact_corpus_match", "deterministic")}
                         for r in per_rec]}
@@ -217,6 +269,10 @@ def main() -> int:
           f"mean_compliance={report['mean_compliance']:.3f} "
           f"mean_newonly={report['mean_newonly_compliance']:.3f} "
           f"({report['n_newonly_scored']}) "
+          f"new_notes_ratio={report['new_notes_ratio']:.3f} "
+          f"({report['n_new_notes_ratio_scored']}) "
+          f"prefix_only={report['prefix_only_compliance']:.3f} "
+          f"({report['n_prefix_only_scored']}) "
           f"mean_new_notes={report['mean_new_notes']:.1f} "
           f"verbatim_raw={report['mean_verbatim_run_raw']:.1f} "
           f"verbatim_filt={report['mean_verbatim_run_filtered']:.1f}")
