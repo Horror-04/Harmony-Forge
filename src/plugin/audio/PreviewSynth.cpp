@@ -62,5 +62,17 @@ PreviewSynth::PreviewSynth() {
 void PreviewSynth::prepare(double sampleRate) { synth.setCurrentPlaybackSampleRate(sampleRate); }
 
 void PreviewSynth::render(juce::AudioBuffer<float>& buffer) {
+  // Audio thread: apply queued message-thread note events first (bounded
+  // drain so one block never does unbounded work), then render voices.
+  PreviewNoteEvent e;
+  for (int i = 0; i < PreviewNoteQueue::kCapacity; ++i) {
+    if (!queue.pop(e)) break;
+    if (e.allOff)
+      synth.allNotesOff(1, false);
+    else if (e.on)
+      synth.noteOn(1, e.pitch, e.velocity);
+    else
+      synth.noteOff(1, e.pitch, 0.0f, false);
+  }
   synth.renderNextBlock(buffer, noMidi, 0, buffer.getNumSamples());
 }

@@ -103,8 +103,9 @@ class HarmonyForgeProcessor : public juce::AudioProcessor {
     return v;
   }
 
-  // Message thread: preview synth hooks (standard Synthesiser pattern —
-  // generation happens on the message thread, e.g. at button press; only
+  // Message thread: preview synth hooks. These only enqueue lock-free
+  // note events consumed by PreviewSynth::render on the audio thread
+  // (generation happens on the message thread, e.g. at button press; only
   // rendering runs on the audio thread).
   void previewNoteOn(int pitch, float velocity) {
     preview.noteOn(juce::jlimit(0, 127, pitch), juce::jlimit(0.0f, 1.0f, velocity));
