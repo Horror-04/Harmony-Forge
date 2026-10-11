@@ -39,6 +39,9 @@
 #define StandaloneExe AddBackslash(ArtefactsDir) + "Standalone\Harmony Forge.exe"
 #define OrtDll AddBackslash(ArtefactsDir) + "Standalone\onnxruntime.dll"
 #define LicenceNotice "..\LICENSE-JUCE-NOTICE.txt"
+; AGPL §§4/6 (fix round 1): the full licence text ships in the payload.
+; Two levels up from packaging\windows\ = repo root, where LICENSE lives.
+#define LicenceFull "..\..\LICENSE"
 
 ; --- Preflight: fail at compile time if the payload is not built -------------
 ; R5 explicitly requires the onnxruntime.dll assertion; the other two catch a
@@ -51,6 +54,10 @@
 #endif
 #if !FileExists(OrtDll)
   #error "Preflight: onnxruntime.dll not found under build-full (R5). Build first: cmake --build build-full --config Release"
+#endif
+
+#if !FileExists(LicenceFull)
+  #error "Preflight: root LICENSE not found (AGPL §§4/6 require shipping the licence text). Refusing to build."
 #endif
 
 ; R1 resolved (AGPLv3, 2026-10-12): the notice file must exist; iscc fails
@@ -101,6 +108,8 @@ Source: "{#OrtDll}"; DestDir: "{app}"; Flags: ignoreversion
 #if HaveLicenceNotice
 Source: "{#LicenceNotice}"; DestDir: "{app}"; Flags: ignoreversion
 #endif
+; AGPL §§4/6 (fix round 1): the full licence text, installed next to the exe.
+Source: "{#LicenceFull}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

@@ -122,6 +122,31 @@ foreach ($a in $artefacts) {
 # --- 4. docs\SPEC.md must NOT be shipped -------------------------------------
 Add-Result 'docs\SPEC.md not referenced by .iss' (-not ($iss -like '*SPEC.md*')) "(deliberately not shipped)"
 
+# --- 6. AGPL §§4/6 (fix round 1, HARD): the full licence text ships --------
+$licenceFullOk = $false
+$licenceFullDetail = 'no #define LicenceFull found in .iss'
+$licenceHashOk = $false
+$licenceHashDetail = 'payload file not resolved'
+if ($iss -match '(?m)^\s*#define\s+LicenceFull\s+"([^"]+)"') {
+  $licencePayloadFile = [System.IO.Path]::GetFullPath((Join-Path $scriptDir $Matches[1]))
+  $referenced = $iss -match '(?m)^\s*Source:\s*"\{#LicenceFull\}"\s*;\s*DestDir:\s*"\{app\}"'
+  $licenceFullOk = (Test-Path -LiteralPath $licencePayloadFile -PathType Leaf) -and $referenced
+  $licenceFullDetail = "file=$licencePayloadFile; shipped-to-{app}=$referenced"
+  if (Test-Path -LiteralPath $licencePayloadFile -PathType Leaf) {
+    $rootLicence = Join-Path $repoRoot 'LICENSE'
+    if (Test-Path -LiteralPath $rootLicence -PathType Leaf) {
+      $hPayload = (Get-FileHash -LiteralPath $licencePayloadFile -Algorithm SHA256).Hash
+      $hRoot = (Get-FileHash -LiteralPath $rootLicence -Algorithm SHA256).Hash
+      $licenceHashOk = ($hPayload -eq $hRoot)
+      $licenceHashDetail = "payload=$hPayload; root=$hRoot"
+    } else {
+      $licenceHashDetail = "root LICENSE missing: $rootLicence"
+    }
+  }
+}
+Add-Result '.iss ships root LICENSE to {app} (AGPL §§4/6)' $licenceFullOk $licenceFullDetail
+Add-Result 'shipped LICENSE byte-identical to root LICENSE' $licenceHashOk $licenceHashDetail
+
 # --- 5. Informational (never fails this check) --------------------------------
 $iscc = $null
 $cmd = Get-Command iscc.exe -ErrorAction SilentlyContinue

@@ -121,14 +121,14 @@ fi
 
 # R1 resolved (AGPLv3, 2026-10-12): packaging/LICENSE-JUCE-NOTICE.txt exists
 # and is picked up automatically here and in the Windows installer.
+# AGPL §§4/6 (fix round 1): the full licence text (root LICENSE) is staged
+# alongside the notice so every binary recipient gets a copy of the licence.
 NOTICE_SRC="${ROOT_DIR}/packaging/LICENSE-JUCE-NOTICE.txt"
-if [ -f "${NOTICE_SRC}" ]; then
-  mkdir -p "${STAGE}/Library/Application Support/Harmony Forge"
-  cp "${NOTICE_SRC}" "${STAGE}/Library/Application Support/Harmony Forge/LICENSE-JUCE-NOTICE.txt"
-  echo "info: included the JUCE licence notice from packaging/LICENSE-JUCE-NOTICE.txt"
-else
-  echo "WARNING: packaging/LICENSE-JUCE-NOTICE.txt is missing (TODO(R1)); building a pkg WITHOUT a licence notice -- do NOT distribute it"
-fi
+SUPPORT_DIR="${STAGE}/Library/Application Support/Harmony Forge"
+mkdir -p "${SUPPORT_DIR}"
+cp "${NOTICE_SRC}" "${SUPPORT_DIR}/LICENSE-JUCE-NOTICE.txt"
+cp "${ROOT_DIR}/LICENSE" "${SUPPORT_DIR}/LICENSE"
+echo "info: included the licence notice + full AGPL text (LICENSE)"
 
 # --- Optional codesigning (stub; documented in docs/DISTRIBUTION.md) ---------
 # TODO(signing): not exercised yet. When signing identities are available:

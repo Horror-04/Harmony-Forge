@@ -35,7 +35,7 @@ powershell -File packaging\windows\check_payload.ps1
 | AU bundle (`Harmony Forge.component`) | n/a | yes (untested) |
 | Standalone app | `Harmony Forge.exe` | `Harmony Forge.app` |
 | `onnxruntime` library (R5, §7) | next to VST3 bundle + Standalone exe | next to Standalone app, if the build has a dylib |
-| AGPL licence notice (`packaging/LICENSE-JUCE-NOTICE.txt`) | installed next to the Standalone exe, see §4 | installed to `/Library/Application Support/Harmony Forge/`, see §4 |
+| AGPL licence notice + full licence text (`packaging/LICENSE-JUCE-NOTICE.txt`, root `LICENSE`) | installed next to the Standalone exe, see §4 | installed to `/Library/Application Support/Harmony Forge/`, see §4 |
 | `docs/SPEC.md` | deliberately **not** shipped | deliberately not shipped |
 
 Build prerequisites (Windows): Visual Studio + CMake 3.22+, ONNX Runtime is
@@ -125,11 +125,15 @@ keeping licence notices intact (including JUCE's).
   testers; the R4 clean-machine install counts as distribution).
 - After publishing, replace the `TODO: repo URL` markers in `README.md`,
   `packaging/LICENSE-JUCE-NOTICE.txt` and this section with the URL.
-- The installers surface the notice: the Windows `.iss` shows
-  `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=` and installs it
-  next to the Standalone exe; `packaging/macos/build_pkg.sh` stages it to
-  `/Library/Application Support/Harmony Forge/`. `check_payload.ps1`
-  reports the notice presence as an INFO line.
+- The installers surface the notice AND the full licence text (AGPL §§4/6,
+  fix round 1): the Windows `.iss` shows
+  `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=`, installs it next
+  to the Standalone exe together with a byte-identical copy of the root
+  `LICENSE` (`#define LicenceFull "..\..\LICENSE"` + ISPP `#error`
+  preflight if missing); `packaging/macos/build_pkg.sh` stages both files
+  to `/Library/Application Support/Harmony Forge/`. `check_payload.ps1`
+  enforces this with HARD checks (LICENSE shipped to `{app}` + SHA256
+  hash-compare against root LICENSE) plus the notice INFO line.
 
 ### Trademark compliance
 
@@ -245,6 +249,7 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 - macOS AU + pkg: **never executed** on a Mac (§3).
 - macOS inference: offline stub only; the ONNX Runtime delivery is win-x64 only.
 - Licence notice: present (`packaging/LICENSE-JUCE-NOTICE.txt`, R1 resolved §4);
+  full licence text (`LICENSE`) ships in both installers (fix round 1, §4);
   installers must still not be distributed until the source is public (§4).
 - No signing/notarization (§6).
 - Installer version is a manual `#define` in the `.iss`; the version-sync check

@@ -47,6 +47,7 @@ What the installer does:
 | `Harmony Forge.exe` | `C:\Program Files\Harmony Forge\` |
 | `onnxruntime.dll` (R5) | `C:\Program Files\Harmony Forge\` (next to the exe) |
 | `LICENSE-JUCE-NOTICE.txt` (R1, AGPL) | `C:\Program Files\Harmony Forge\` |
+| `LICENSE` (full AGPL text, §§4/6) | `C:\Program Files\Harmony Forge\` |
 
 Machine-wide install (`PrivilegesRequired=admin`); a desktop shortcut is offered.
 
