@@ -3,6 +3,13 @@
 namespace hf::ser {
 namespace {
 
+// Final vocab caps (Sprint 2, shared with training/tokenizer.py):
+// at most 16 bars (bar index 0..15) and 1024 ids of context.
+constexpr int kMaxBars = 16;
+constexpr int kMaxTokens = 1024;
+constexpr int kTokensPerNote = 6;
+constexpr int kMaxNotes = (kMaxTokens - 1) / kTokensPerNote;  // 170
+
 int vel_to_bin(int vel) {
   if (vel < 1) vel = 1;
   if (vel > 127) vel = 127;
@@ -21,30 +28,39 @@ std::vector<int> encode_pattern(const core::Pattern& pattern) {
   const int bar_ticks = pattern.ticks_per_beat * pattern.beats_per_bar;
   const int subbeat_ticks = pattern.ticks_per_beat / 4 > 0 ? pattern.ticks_per_beat / 4 : 120;
   std::vector<int> ids;
+  ids.reserve(kMaxTokens);
+  ids.push_back(0);  // patched below
   int total = 0;
-  for (const auto& t : pattern.tracks) total += static_cast<int>(t.notes.size());
-  ids.reserve(static_cast<size_t>(1 + total * 6));
-  ids.push_back(total);
   for (const auto& t : pattern.tracks) {
     for (const auto& n : t.notes) {
-      const int bar = bar_ticks > 0 ? n.start_tick / bar_ticks : 0;
-      const int sub = subbeat_ticks > 0 ? (n.start_tick % (bar_ticks > 0 ? bar_ticks : 480)) / subbeat_ticks : 0;
+      if (total >= kMaxNotes) break;  // 1024-token cap: first notes win
+      const int clamped_start = n.start_tick < 0 ? 0 : n.start_tick;
+      const int bar = bar_ticks > 0 ? clamped_start / bar_ticks : 0;
+      if (bar < 0 || bar >= kMaxBars) continue;  // 16-bar cap: drop
+      const int tt = static_cast<int>(t.type);
+      if (tt < 0 || tt > 5) continue;  // mirrors Python: unknown track types skipped
+      const int sub =
+          subbeat_ticks > 0 ? (clamped_start % (bar_ticks > 0 ? bar_ticks : 480)) / subbeat_ticks : 0;
       const int dur = subbeat_ticks > 0 ? (n.duration_ticks + subbeat_ticks - 1) / subbeat_ticks : 1;
-      ids.push_back(bar < 0 ? 0 : bar);
+      ids.push_back(bar);
       ids.push_back(sub < 0 ? 0 : (sub > 15 ? 15 : sub));
-      ids.push_back(static_cast<int>(t.type));
+      ids.push_back(tt);
       ids.push_back(n.pitch < 0 ? 0 : (n.pitch > 127 ? 127 : n.pitch));
       ids.push_back(dur < 1 ? 1 : (dur > 64 ? 64 : dur));
       ids.push_back(vel_to_bin(n.velocity));
+      ++total;
     }
+    if (total >= kMaxNotes) break;
   }
+  ids[0] = total;
   return ids;
 }
 
 std::optional<core::Pattern> decode_tokens(const std::vector<int>& ids) {
   if (ids.empty()) return std::nullopt;
+  if (ids.size() > static_cast<size_t>(kMaxTokens)) return std::nullopt;  // 1024-token cap
   const int total = ids[0];
-  if (total < 0) return std::nullopt;
+  if (total < 0 || total > kMaxNotes) return std::nullopt;  // also blocks total*6 overflow
   if (ids.size() != static_cast<size_t>(1 + total * 6)) return std::nullopt;
   core::Pattern p;
   size_t k = 1;
@@ -53,7 +69,7 @@ std::optional<core::Pattern> decode_tokens(const std::vector<int>& ids) {
     const int pitch = ids[k++], dur = ids[k++], vb = ids[k++];
     if (tt < 0 || tt > 5 || pitch < 0 || pitch > 127 || dur < 1 || dur > 64 || vb < 0 || vb > 7)
       return std::nullopt;
-    if (bar < 0 || sub < 0 || sub > 15) return std::nullopt;
+    if (bar < 0 || bar >= kMaxBars || sub < 0 || sub > 15) return std::nullopt;
     // Find or create track of this type on channel 0.
     core::Track* tr = nullptr;
     for (auto& t : p.tracks) {
