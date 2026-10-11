@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "candidates.h"
+#include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
 #include "core/serialization/midi_file.h"
 #include "PluginProcessor.h"
@@ -56,7 +57,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       chordTrack(doc),
       roll(doc),
       candidateBar(doc) {
-  setSize(1024, 720);
+  setSize(1024, 844);
 
   transportLabel.setText("Transport: --", juce::dontSendNotification);
   addAndMakeVisible(transportLabel);
@@ -199,6 +200,11 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   candidateBar.setSeedAndBars(hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
   addAndMakeVisible(candidateBar);
 
+  arrangeBar.onBuild = [this](const std::vector<hf::arr::Section>& sections) {
+    doBuildArrangement(sections);
+  };
+  addAndMakeVisible(arrangeBar);
+
   roll.setKey(hf::plugin::rootKey(proc.state()),
               hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
   chordTrack.setKey(hf::plugin::rootKey(proc.state()),
@@ -278,6 +284,9 @@ void HarmonyForgeEditor::resized() {
   chordRow.removeFromLeft(6);
   invDownButton.setBounds(chordRow.removeFromLeft(60));
   r.removeFromTop(4);
+  auto arrange = r.removeFromBottom(120);
+  arrangeBar.setBounds(arrange);
+  r.removeFromBottom(4);
   auto cand = r.removeFromBottom(40);
   candidateBar.setBounds(cand);
   r.removeFromBottom(4);
@@ -423,6 +432,33 @@ void HarmonyForgeEditor::doRegenerate() {
 
 void HarmonyForgeEditor::doKeep(int i) {
   if (doc.keepCandidate(i)) stopPreview();
+}
+
+void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>& sections) {
+  // Message thread: build_arrangement is CPU-bound but fast (tens of ms for
+  // a 150-bar arrangement — measured, see the Task 5 report), so it runs
+  // synchronously here with a status readout instead of a chunked progress
+  // flow. Never touches audio state; the result commits undoably and
+  // previews through the existing working-pattern path.
+  hf::arr::Arrangement arr;
+  arr.sections = sections;
+  // Per-section seeds/bars rule generation and layout; the state seed/bars
+  // below are unused placeholders (bars is clamped by makeParamsWithModel).
+  const auto gp = PatternDocument::makeParamsWithModel(
+      hf::plugin::seed(proc.state()), 4, hf::plugin::rootKey(proc.state()),
+      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
+      hf::plugin::modelPath(proc.state()).toStdString());
+  hf::arr::ArrangeParams ap;
+  ap.base = gp;
+  const auto t0 = juce::Time::getMillisecondCounter();
+  hf::core::Pattern pat = hf::arr::build_arrangement(arr, ap);
+  const auto prog = hf::arr::arrangement_progression(arr, ap);
+  const auto ms = juce::Time::getMillisecondCounter() - t0;
+  const int notes = hf::core::pattern_note_count(pat);
+  doc.adoptArrangement(pat, prog);
+  arrangeBar.setStatus("Built " + juce::String(arr.total_bars()) + " bars, " +
+                       juce::String(notes) + " notes in " + juce::String(ms) + " ms");
+  startPreview();
 }
 
 void HarmonyForgeEditor::stopPreview() {

@@ -26,6 +26,7 @@ target_sources(HarmonyForge PRIVATE
   ui/ChordTrack.h
   ui/ChordTrack.cpp
   ui/CandidateBar.h
+  ui/ArrangeBar.h
 )
 
 target_include_directories(HarmonyForge PRIVATE

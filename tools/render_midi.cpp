@@ -1,9 +1,11 @@
 // render_midi: headless deterministic MIDI render (Sprint 4 regression proof,
-// extended Sprint 5 with multitrack export).
+// extended Sprint 5 with multitrack export, Phase 2 Task 5 with arrangement
+// builds).
 //
 // Usage: render_midi --seed N --bars B --out file.mid [--multi]
-// Generates the 4 candidates with fixed GenParams (Strict, tonic 60 = C3,
-// "major"). Default writes track 0 (Melody of the Safe candidate) via
+//     or render_midi --arrange SPEC --out file.mid [--multi]
+// (SPEC documented in usage() below; Strict, tonic 60 = C3, "major".)
+// Default writes track 0 (Melody of the Safe candidate / arrangement) via
 // write_smf0 at 480 PPQ; --multi writes all Safe tracks via write_smf1
 // (default channels) at 480 PPQ. Same args -> byte-identical file
 // (generate_candidates and both writers are deterministic; no timestamps or
@@ -16,13 +18,22 @@
 #include <vector>
 
 #include "candidates.h"
+#include "core/arrangement/arrangement.h"
 #include "core/model/note.h"
 #include "core/serialization/midi_file.h"
 
 namespace {
 
 void usage(const char* argv0) {
-  std::printf("usage: %s --seed N --bars B --out file.mid [--multi]\n", argv0);
+  std::printf("usage:\n");
+  std::printf("  %s --seed N --bars B --out file.mid [--multi]\n", argv0);
+  std::printf("  %s --arrange SPEC --out file.mid [--multi]\n", argv0);
+  std::printf("arrange SPEC format: Type:bars:energy:variation:seed,... e.g.\n");
+  std::printf("  Intro:4:0.3:0.2:7,Verse:8:0.5:0.3:7,Chorus:8:0.9:0.4:8\n");
+  std::printf("  Types: Intro Verse PreChorus Chorus Bridge Breakdown Buildup Drop Outro\n");
+  std::printf("Both modes build with Strict/tonic 60 (C3)/major and write SMF-0\n");
+  std::printf("melody by default, SMF-1 multitrack with --multi. Same args ->\n");
+  std::printf("byte-identical file (deterministic generation + writers).\n");
 }
 
 bool parse_int(const char* s, int& out) {
@@ -40,7 +51,9 @@ int main(int argc, char** argv) {
   int seed = 0;
   int bars = 4;
   std::string out;
+  std::string arrange_spec;
   bool have_seed = false, have_bars = false, have_out = false;
+  bool have_arrange = false;
   bool multi = false;
 
   for (int i = 1; i < argc; ++i) {
@@ -49,6 +62,9 @@ int main(int argc, char** argv) {
       have_seed = true;
     } else if (a == "--bars" && i + 1 < argc && parse_int(argv[++i], bars)) {
       have_bars = true;
+    } else if (a == "--arrange" && i + 1 < argc) {
+      arrange_spec = argv[++i];
+      have_arrange = true;
     } else if (a == "--out" && i + 1 < argc) {
       out = argv[++i];
       have_out = true;
@@ -59,20 +75,43 @@ int main(int argc, char** argv) {
       return 2;
     }
   }
-  if (!have_seed || !have_bars || !have_out) {
-    usage(argv[0]);
+  if (!have_out || (have_arrange == (have_seed || have_bars))) {
+    usage(argv[0]);  // exactly one of --arrange / --seed+--bars, plus --out
     return 2;
   }
 
-  hf::infer::GenParams gp;
-  gp.mode = hf::infer::GenMode::Strict;
-  gp.seed = seed;
-  gp.bars = bars;
-  gp.tonic = 60;
-  gp.scale = "major";
+  hf::core::Pattern safe;
+  std::string tag;
+  if (have_arrange) {
+    const auto arr = hf::arr::parse_arrange_spec(arrange_spec);
+    if (!arr.has_value()) {
+      std::printf("render_midi: bad --arrange spec (see usage)\n");
+      return 2;
+    }
+    hf::arr::ArrangeParams ap;
+    ap.base.mode = hf::infer::GenMode::Strict;
+    ap.base.seed = 0;
+    ap.base.bars = 4;
+    ap.base.tonic = 60;
+    ap.base.scale = "major";
+    safe = hf::arr::build_arrangement(*arr, ap);
+    tag = "arrange bars=" + std::to_string(arr->total_bars());
+  } else {
+    if (!have_seed || !have_bars) {
+      usage(argv[0]);
+      return 2;
+    }
+    hf::infer::GenParams gp;
+    gp.mode = hf::infer::GenMode::Strict;
+    gp.seed = seed;
+    gp.bars = bars;
+    gp.tonic = 60;
+    gp.scale = "major";
 
-  const auto cands = hf::infer::generate_candidates(gp);
-  const hf::core::Pattern& safe = cands[0];
+    const auto cands = hf::infer::generate_candidates(gp);
+    safe = cands[0];
+    tag = "seed=" + std::to_string(seed) + " bars=" + std::to_string(bars);
+  }
 
   std::vector<std::uint8_t> bytes;
   int note_count = 0;
@@ -104,7 +143,7 @@ int main(int argc, char** argv) {
     std::printf("render_midi: failed writing '%s'\n", out.c_str());
     return 1;
   }
-  std::printf("render_midi: seed=%d bars=%d multi=%d notes=%d bytes=%d -> %s\n", seed, bars,
+  std::printf("render_midi: %s multi=%d notes=%d bytes=%d -> %s\n", tag.c_str(),
               multi ? 1 : 0, note_count, static_cast<int>(bytes.size()), out.c_str());
   return 0;
 }

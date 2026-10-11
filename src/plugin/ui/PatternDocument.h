@@ -118,6 +118,12 @@ class PatternDocument : public juce::ChangeBroadcaster {
   // Commit candidate i as the working pattern (undoable). Marks the history
   // entry kept. Returns false for a bad index / no candidates.
   bool keepCandidate(int i);
+  // Arrangement build (Phase 2 Task 5): adopt a build_arrangement result as
+  // the working pattern in one undo step (freeze kept as-is; candidates
+  // cleared). The Arrange tab builds on the message thread and the result
+  // previews through the existing preview path (the working pattern).
+  // Message thread only.
+  void adoptArrangement(hf::core::Pattern pattern, hf::core::ChordProgression chords);
 
  private:
   class SnapshotAction;

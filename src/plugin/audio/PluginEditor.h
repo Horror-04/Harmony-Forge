@@ -6,6 +6,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include "../state/PluginState.h"
+#include "../ui/ArrangeBar.h"
 #include "../ui/CandidateBar.h"
 #include "../ui/ChordTrack.h"
 #include "../ui/PatternDocument.h"
@@ -68,6 +69,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void exportMultitrack();
   void doRegenerate();
   void doKeep(int i);
+  void doBuildArrangement(const std::vector<hf::arr::Section>& sections);
   void applyZoom();
   void refreshTrackBox();
   void refreshChordRow(int bar);
@@ -116,6 +118,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   PianoRoll roll;
   juce::Viewport viewport;
   CandidateBar candidateBar;
+  ArrangeBar arrangeBar;
 
   std::vector<PreviewEvent> previewQueue;
   size_t previewNext = 0;

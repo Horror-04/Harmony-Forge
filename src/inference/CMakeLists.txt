@@ -14,6 +14,11 @@ add_library(harmony_forge_inference STATIC
   job_queue.cpp
   model_path.cpp
   async_generate.cpp
+  # Arrangement Builder lives under src/core/arrangement (JUCE-free, pure
+  # C++20) but compiles here: it orchestrates generate_candidates, and
+  # compiling it into the inference archive keeps the core archive itself
+  # free of inference dependencies (no link-order cycle).
+  ../core/arrangement/arrangement.cpp
 )
 
 target_include_directories(harmony_forge_inference PUBLIC

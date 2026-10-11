@@ -367,3 +367,10 @@ bool PatternDocument::keepCandidate(int i) {
   sendChangeMessage();
   return true;
 }
+
+void PatternDocument::adoptArrangement(hf::core::Pattern pattern,
+                                       hf::core::ChordProgression chords) {
+  hasCandidates_ = false;
+  auditionIndex_ = -1;
+  commit(pattern, chords, freeze_, "Build arrangement");
+}
