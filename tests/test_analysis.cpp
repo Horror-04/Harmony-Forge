@@ -1,10 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "constraints.h"
 #include "core/model/note.h"
 #include "core/model/track_pattern.h"
 #include "core/music/chord_detect.h"
 #include "core/music/key_detect.h"
 #include "core/music/voice_leading.h"
+#include "ranking.h"
 
 namespace {
 
@@ -287,4 +289,50 @@ TEST_CASE("recognize_chord clamps out-of-range roots", "[analysis][chord]") {
   const auto with_extra = hf::music::recognize_chord({60, 64, 67, 200});
   CHECK(with_extra.root % 12 == 0);
   CHECK(with_extra.type == "maj");
+}
+
+TEST_CASE("strong-beat is start_tick % 480 == 0 in audit, resolve and scorer",
+          "[analysis][voice][phase2]") {
+  // Phase 2 Task 1 (A): single strong-beat definition shared by
+  // validate_voice_leading, resolve_harmonic_conflicts and strict_compliance.
+  // F (65) is in C major but a minor 2nd above E, so it rubs C maj only on
+  // strong beats. Beats 0..3 (ticks 0/480/960/1440) must flag identically.
+  hf::core::ChordProgression chords;
+  chords.push_back(hf::core::ChordSymbol{60, "maj"});
+
+  auto one_note = [](int pitch, int start) {
+    hf::core::Pattern p;
+    p.ticks_per_beat = 480;
+    p.beats_per_bar = 4;
+    hf::core::Track t;
+    t.type = hf::core::TrackType::Melody;
+    t.notes.push_back(hf::core::Note{pitch, start, 480, 100});
+    p.tracks.push_back(t);
+    return p;
+  };
+
+  for (int start : {0, 480, 960, 1440}) {
+    const auto p = one_note(65, start);
+    CHECK(hf::music::validate_voice_leading(p, chords).strong_beat_dissonances == 1);
+    auto q = one_note(65, start);
+    hf::infer::resolve_harmonic_conflicts(q, chords);
+    CHECK(q.tracks[0].notes[0].pitch == 64);  // nearest chord tone (E, down 1)
+    CHECK(hf::infer::strict_compliance(p, chords, 60, "major") == 0.0f);
+  }
+
+  // Weak-beat tension is invisible to all three (policy: preserved).
+  const auto w = one_note(65, 240);
+  CHECK(hf::music::validate_voice_leading(w, chords).strong_beat_dissonances == 0);
+  auto wq = one_note(65, 240);
+  hf::infer::resolve_harmonic_conflicts(wq, chords);
+  CHECK(wq.tracks[0].notes[0].pitch == 65);
+  CHECK(hf::infer::strict_compliance(w, chords, 60, "major") == 1.0f);
+
+  // Past the progression end all three agree it is safe (no chord to judge).
+  const auto past = one_note(65, 2400);
+  CHECK(hf::music::validate_voice_leading(past, chords).strong_beat_dissonances == 0);
+  auto pastq = one_note(65, 2400);
+  hf::infer::resolve_harmonic_conflicts(pastq, chords);
+  CHECK(pastq.tracks[0].notes[0].pitch == 65);
+  CHECK(hf::infer::strict_compliance(past, chords, 60, "major") == 1.0f);
 }

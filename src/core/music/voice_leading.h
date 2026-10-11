@@ -19,8 +19,10 @@ namespace hf::music {
 //   multiple of 12 (octave; unison excluded).
 // - range_violations: notes failing in_register() for their track type
 //   (also catches pitches outside 0..127).
-// - strong_beat_dissonances: notes starting on a strong beat (beat 0 or 2
-//   of a bar in ticks) whose pitch class is a minor 2nd (1 or 11 semitones)
+// - strong_beat_dissonances: notes starting on a strong beat
+//   (start_tick % 480 == 0, every quarter-note line at 480 PPQ — the single
+//   project-wide definition shared with resolve_harmonic_conflicts and the
+//   scorer) whose pitch class is a minor 2nd (1 or 11 semitones)
 //   above/below any tone of the bar's chord. Chord i covers bar i; bars past
 //   the progression end, and chords with no known intervals, are skipped.
 struct VoiceReport {

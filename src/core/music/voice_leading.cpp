@@ -15,6 +15,11 @@ int mod12(int v) { return ((v % 12) + 12) % 12; }
 
 int sign_of(int v) { return (v > 0) - (v < 0); }
 
+// Single project-wide strong-beat definition, shared with
+// resolve_harmonic_conflicts and strict_compliance/strong_beat_rub:
+// every quarter-note line at 480 PPQ.
+constexpr int kStrongBeatMod = 480;
+
 }  // namespace
 
 VoiceReport validate_voice_leading(const hf::core::Pattern& p,
@@ -65,15 +70,13 @@ VoiceReport validate_voice_leading(const hf::core::Pattern& p,
   }
 
   // Strong-beat dissonance audit against one-chord-per-bar mapping.
+  // Strong beat is start_tick % 480 == 0 (kStrongBeatMod above).
   const int bar_ticks = p.ticks_per_beat * p.beats_per_bar;
-  const int beat_ticks = p.ticks_per_beat;
-  if (bar_ticks > 0 && beat_ticks > 0 && !chords.empty()) {
+  if (bar_ticks > 0 && !chords.empty()) {
     for (const auto& t : p.tracks) {
       if (t.type == hf::core::TrackType::Drums) continue;  // unpitched map
       for (const auto& n : t.notes) {
-        const int pos_in_bar = n.start_tick % bar_ticks;
-        const int beat = pos_in_bar / beat_ticks;
-        if (beat != 0 && beat != 2) continue;  // weak beat: skip
+        if (n.start_tick % kStrongBeatMod != 0) continue;  // weak beat: skip
         const int bar = n.start_tick / bar_ticks;
         if (bar < 0 || bar >= static_cast<int>(chords.size())) continue;
         const auto& chord = chords[static_cast<size_t>(bar)];
