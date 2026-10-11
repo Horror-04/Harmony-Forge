@@ -143,12 +143,13 @@ def evaluate(model_path: str) -> dict:
         ids = rec["ids"]
         cut = 1 + ((len(ids) - 1) // 2 // tok.TOKENS_PER_NOTE) * tok.TOKENS_PER_NOTE
         prefix = ids[:max(1 + tok.TOKENS_PER_NOTE, cut)]
-        # R6: same-seed -> identical bytes (two independent runs, one session).
-        sess = make_session(model_path)
-        seq_a = greedy_continue(sess, prefix, id8, True)
-        seq_b = greedy_continue(sess, prefix, id8, True)
+        # R6: same-seed -> identical bytes (two independent sessions).
+        sess_a = make_session(model_path)
+        sess_b = make_session(model_path)
+        seq_a = greedy_continue(sess_a, prefix, id8, True)
+        seq_b = greedy_continue(sess_b, prefix, id8, True)
         assert seq_a == seq_b, f"non-deterministic continuation {rec['id']}"
-        raw = greedy_continue(sess, prefix, id8, False)
+        raw = greedy_continue(sess_a, prefix, id8, False)
         filt = score_continuation(rec, seq_a)
         filt["id"] = rec["id"]
         filt["prefix_len"] = len(prefix)

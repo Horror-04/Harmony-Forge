@@ -1,8 +1,11 @@
 """Tiny decoder-only transformer trainer (Phase 2 Task 3, R3/R4).
 
 Arch (R3: <= ~2 M params, 4 layers, 4 heads, d_model 128, ctx <= 1024):
-  token emb (256 x 128) + learned pos emb (1024 x 128) + 4 x pre-norm
-  decoder blocks (4-head causal attn, ff 256) + final norm + LM head.
+  token emb (256 x 128) + learned pos emb (1024 x 128)
+  + learned slot emb (7 x 128: position-0 count head + 6 note slots,
+  the phase signal keeping heterogeneous codec slots aligned)
+  + 4 x pre-norm decoder blocks (4-head causal attn, ff 256)
+  + final norm + LM head.
   ~0.75 M params. VOCAB=256 covers every flat codec id (count <= 170,
   bar <= 15, pitch <= 127, dur <= 64 by construction; asserted on load).
 
@@ -55,12 +58,22 @@ def batchify(recs: list[dict], batch_size: int, shuffle: bool, rng) -> list[list
 
 
 def pad_batch(batch: list[list[int]], torch):
-    m = max(len(s) for s in batch)
+    # NOTE (fix round 1): pad id 0 collides with valid token id 0 (bar and
+    # subbeat zeros are real data). Mask ONLY true pad-tail positions via
+    # explicit per-row lengths; real zeros train normally. The input column
+    # keeps zero-fill (harmless: never a loss target), the target gets -100
+    # strictly past each row's true length.
+    lens = [len(s) for s in batch]
+    m = max(lens)
     assert m + 1 <= CTX, "sequence exceeds 1024-token context cap"
     x = torch.zeros(len(batch), m + 1, dtype=torch.long)
     for i, s in enumerate(batch):
         x[i, :len(s)] = torch.tensor(s, dtype=torch.long)
-    return x[:, :-1], x[:, 1:].masked_fill(x[:, 1:] == 0, -100)
+    tgt = x[:, 1:].clone()
+    for i, ln in enumerate(lens):
+        # Row i's true targets are tgt[i, :ln - 1]; the rest is pad-tail.
+        tgt[i, max(0, ln - 1):] = -100
+    return x[:, :-1], tgt
 
 
 def run_epoch(model, opt, loss_fn, batches, train: bool, torch) -> float:
@@ -92,7 +105,7 @@ def main() -> int:
     import torch.nn as nn
 
     torch.manual_seed(args.seed)
-    torch.set_num_threads(max(1, os.cpu_count() - 1))
+    torch.set_num_threads(max(1, (os.cpu_count() or 2) - 1))
     train_recs = load_corpus("train")
     val_recs = load_corpus("val")
     for r in train_recs + val_recs:
