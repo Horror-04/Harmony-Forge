@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Runtime §10 memo-filter. See memo_filter.h for the exact policy.
 // Pure C++20, no JUCE. Never throws (domain/file errors -> nullopt/no-op).
 #include "memo_filter.h"

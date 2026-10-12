@@ -150,7 +150,7 @@ keeping licence notices intact (including JUCE's).
 
 | Component | Licence | Notes |
 | --- | --- | --- |
-| Our code (`src/`, `tests/`, `tools/`, `packaging/`, root `LICENSE`) | AGPL-3.0-or-later (© 2026 Horror-04) | headers added 2026-10-12; `training/` excluded from this pass — headers follow-up after the Phase 3 merge |
+| Our code (`src/`, `tests/`, `tools/`, `packaging/`, root `LICENSE`) | AGPL-3.0-or-later (© 2026 Horror-04) | headers added 2026-10-12 including `training/` (follow-up commit d46440d) |
 | JUCE 9.0.3 framework (`JUCE/`, unmodified) | AGPLv3 (dual AGPLv3/commercial; AGPL side used) | see `JUCE/LICENSE.md`; never re-headered |
 | Steinberg VST3 SDK (bundled inside JUCE) | MIT | per its README §"License & Usage guidelines"; AGPL-compatible |
 | ONNX Runtime (`onnxruntime.dll`, downloaded at configure, R5) | MIT | AGPL-compatible; shipped next to VST3 bundle + Standalone exe |

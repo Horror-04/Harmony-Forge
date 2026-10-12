@@ -1,3 +1,5 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Runtime §10 memo-filter tests (Phase 3 Task 3, item D). TDD: written
 // BEFORE src/inference/memo_filter.h/.cpp existed (RED first).
 #include <catch2/catch_test_macros.hpp>

@@ -60,7 +60,7 @@ _norub_cache: dict = {}
 def resolve_device(torch, name: str):
     """Centralized --device selection (single choke point).
 
-    cpu: single-thread policy as before. cuda: assert availability and
+    cpu: single-thread policy as before. cuda: require availability (raise RuntimeError) and
     set best-effort determinism flags (cuDNN may still introduce
     non-bit-exact variance vs CPU — see module docstring)."""
     if name == "cuda":

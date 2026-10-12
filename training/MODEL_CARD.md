@@ -113,7 +113,7 @@
 ## Runtime §10 memo-filter (Phase 3 Task 3, shipped C++ path)
 - `training/export_memo_index.py` (stdlib only) builds
   `training/memo_index.bin` (`HFMI` v1: u32 count + count × 8 × int32 LE,
-  sorted; 16,551 8-grams, 529,644 bytes / 0.51 MB < 1 MB budget) from the
+  sorted; 6,749 8-grams, 215,980 bytes / 216 KB < 1 MB budget) from the
   SAME `corpus/train.jsonl` ids + window loop as `dataset.py`, and REFUSES
   to write on mismatch vs `corpus/memo_ngrams.json::id_8` (eval/filter
   agreement proof). Ship `memo_index.bin` as a sibling of the weights file.
