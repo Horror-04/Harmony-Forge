@@ -29,24 +29,37 @@ void push_vlq(std::vector<std::uint8_t>& out, std::uint32_t v) {
 }  // namespace
 
 std::vector<std::uint8_t> write_smf0(const core::Pattern& pattern, int ticks_per_beat) {
+  // One absolute-time event per on/off; offs sort before ons at the same
+  // tick (mirrors write_smf1). The cursor advances across BOTH ons and
+  // offs so sequential notes keep exact starts (cf. F1 fix in smf1).
+  struct AbsEvent {
+    int tick = 0;
+    bool on = true;
+    int pitch = 60;
+    int velocity = 100;
+  };
+  std::vector<AbsEvent> events;
+  for (const auto& t : pattern.tracks) {
+    for (const auto& n : t.notes) {
+      const int tick = std::max(0, n.start_tick);
+      const int pitch = std::clamp(n.pitch, 0, 127);
+      const int dur = std::max(1, n.duration_ticks);
+      events.push_back({tick, true, pitch, n.velocity});
+      events.push_back({tick + dur, false, pitch, 0x40});
+    }
+  }
+  std::stable_sort(events.begin(), events.end(), [](const AbsEvent& a, const AbsEvent& b) {
+    if (a.tick != b.tick) return a.tick < b.tick;
+    return !a.on && b.on;  // offs before ons
+  });
   std::vector<std::uint8_t> track;
-  int cursor = 0;
-  // Collect all notes sorted by start.
-  std::vector<std::pair<int, core::Note>> events;
-  for (const auto& t : pattern.tracks)
-    for (const auto& n : t.notes) events.emplace_back(n.start_tick, n);
-  std::sort(events.begin(), events.end(),
-            [](const auto& a, const auto& b) { return a.first < b.first; });
-  for (const auto& [start, n] : events) {
-    push_vlq(track, static_cast<std::uint32_t>(start - cursor));
-    cursor = start;
-    track.push_back(0x90);
-    track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
-    track.push_back(static_cast<std::uint8_t>(n.velocity & 0x7F));
-    push_vlq(track, static_cast<std::uint32_t>(n.duration_ticks));
-    track.push_back(0x80);
-    track.push_back(static_cast<std::uint8_t>(n.pitch & 0x7F));
-    track.push_back(0x40);
+  int cursor = 0;  // absolute-time cursor across BOTH ons and offs
+  for (const auto& e : events) {
+    push_vlq(track, static_cast<std::uint32_t>(e.tick - cursor));
+    cursor = e.tick;
+    track.push_back(e.on ? 0x90 : 0x80);
+    track.push_back(static_cast<std::uint8_t>(e.pitch & 0x7F));
+    track.push_back(static_cast<std::uint8_t>(e.velocity & 0x7F));
   }
   push_vlq(track, 0);
   track.insert(track.end(), {0xFF, 0x2F, 0x00});
@@ -54,7 +67,7 @@ std::vector<std::uint8_t> write_smf0(const core::Pattern& pattern, int ticks_per
   std::vector<std::uint8_t> out;
   out.insert(out.end(), {'M', 'T', 'h', 'd'});
   push_be32(out, 6);
-  out.insert(out.end(), {0x00, 0x00, 0x00, 0x00});
+  out.insert(out.end(), {0x00, 0x00, 0x00, 0x01});
   out.push_back(static_cast<std::uint8_t>((ticks_per_beat >> 8) & 0xFF));
   out.push_back(static_cast<std::uint8_t>(ticks_per_beat & 0xFF));
   out.insert(out.end(), {'M', 'T', 'r', 'k'});

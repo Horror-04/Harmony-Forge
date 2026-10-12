@@ -12,6 +12,7 @@ add_library(harmony_forge_core STATIC
   model/selection.cpp
   serialization/tokenizer.cpp
   serialization/midi_file.cpp
+  serialization/midi_read.cpp
 )
 
 target_include_directories(harmony_forge_core PUBLIC

@@ -39,6 +39,7 @@ hf_add_test(test_model_preview test_model_preview.cpp)
 target_compile_definitions(test_model_preview PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_arrangement test_arrangement.cpp)
+hf_add_test(test_midi_read test_midi_read.cpp)
 hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
