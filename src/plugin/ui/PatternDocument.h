@@ -126,6 +126,13 @@ class PatternDocument : public juce::ChangeBroadcaster {
   // previews through the existing preview path (the working pattern).
   // Message thread only.
   void adoptArrangement(hf::core::Pattern pattern, hf::core::ChordProgression chords);
+  // Reference import (Phase 5 Task 2): merge per-bar reference chords
+  // (analyze_reference output: index == bar, "unknown" = missing bar) into
+  // the ChordTrack in one undo step. Only bars present in the report change
+  // (replace in place, extend when the report is longer); missing bars stay
+  // untouched. Returns false (no commit) when nothing changes. Message
+  // thread only.
+  bool adoptReferenceChords(const std::vector<hf::core::ChordSymbol>& perBar);
 
  private:
   class SnapshotAction;

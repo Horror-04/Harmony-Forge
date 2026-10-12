@@ -7,6 +7,7 @@ add_library(harmony_forge_core STATIC
   music/quantizer.cpp
   music/key_detect.cpp
   music/chord_detect.cpp
+  music/reference_analyze.cpp
   model/track_pattern.cpp
   model/pattern_ops.cpp
   model/selection.cpp

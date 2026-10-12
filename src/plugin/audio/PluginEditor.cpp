@@ -3,11 +3,15 @@
 #include "PluginEditor.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <vector>
 
 #include "candidates.h"
 #include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
+#include "core/music/reference_analyze.h"
 #include "core/serialization/midi_file.h"
+#include "core/serialization/midi_read.h"
 #include "model_path.h"
 #include "PluginProcessor.h"
 
@@ -52,6 +56,30 @@ juce::String trackName(hf::core::TrackType t) {
   return "?";
 }
 
+// Phase 5 Task 2: reference-report text helpers (message thread only).
+juce::String smfErrorText(hf::ser::SmfError e) {
+  switch (e) {
+    case hf::ser::SmfError::Ok:
+      return "ok";
+    case hf::ser::SmfError::Truncated:
+      return "file is truncated";
+    case hf::ser::SmfError::BadHeader:
+      return "not a supported MIDI header";
+    case hf::ser::SmfError::UnsupportedType:
+      return "MIDI format not supported (type 0/1 only)";
+    case hf::ser::SmfError::BadEvent:
+      return "corrupt MIDI events";
+  }
+  return "?";
+}
+
+juce::String refKeyName(const hf::music::KeyEstimate& k) {
+  static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
+                                   "F#", "G",  "G#", "A",  "A#", "B"};
+  const int pc = ((k.tonic % 12) + 12) % 12;
+  return juce::String(kNames[static_cast<size_t>(pc)]) + " " + juce::String(k.scale);
+}
+
 }  // namespace
 
 HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
@@ -62,7 +90,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       roll(doc),
       candidateBar(doc),
       previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
-  setSize(1024, 844);
+  setSize(1024, 876);
 
   transportLabel.setText("Transport: --", juce::dontSendNotification);
   addAndMakeVisible(transportLabel);
@@ -199,6 +227,18 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   addAndMakeVisible(statusLabel);
   refreshModelRow();
 
+  // Phase 5 Task 2: reference import row (message thread; never audio).
+  refImportButton.onClick = [this] { chooseReferenceFile(); };
+  addAndMakeVisible(refImportButton);
+  addAndMakeVisible(refReportLabel);
+  refKeyButton.onClick = [this] { adoptReferenceKey(); };
+  addAndMakeVisible(refKeyButton);
+  refChordsButton.onClick = [this] { adoptReferenceChords(); };
+  addAndMakeVisible(refChordsButton);
+  refSeedButton.onClick = [this] { seedFromReference(); };
+  addAndMakeVisible(refSeedButton);
+  refreshReferenceRow();
+
   // Roll stack in a viewport (one scroller for chords + roll).
   rollStack.chords = &chordTrack;
   rollStack.roll = &roll;
@@ -314,6 +354,18 @@ void HarmonyForgeEditor::resized() {
   r.removeFromTop(4);
   auto hintRow = r.removeFromTop(22);
   modelHintLabel.setBounds(hintRow);
+  r.removeFromTop(4);
+  // Phase 5 Task 2: reference report row (import + adopt actions).
+  auto refRow = r.removeFromTop(28);
+  refImportButton.setBounds(refRow.removeFromLeft(110));
+  refRow.removeFromLeft(6);
+  refSeedButton.setBounds(refRow.removeFromRight(90));
+  refRow.removeFromRight(6);
+  refChordsButton.setBounds(refRow.removeFromRight(110));
+  refRow.removeFromRight(6);
+  refKeyButton.setBounds(refRow.removeFromRight(90));
+  refRow.removeFromRight(6);
+  refReportLabel.setBounds(refRow);
   r.removeFromTop(4);
   auto arrange = r.removeFromBottom(120);
   arrangeBar.setBounds(arrange);
@@ -670,4 +722,98 @@ bool HarmonyForgeEditor::pollPreviewExport() {
     finishExport(got->candidates[0]);
   }
   return true;
+}
+
+void HarmonyForgeEditor::chooseReferenceFile() {
+  // Message thread: *.mid-restricted picker. A cancelled dialog is neither
+  // an import nor a rejection (report and hint stay as they were).
+  auto chooser =
+      std::make_shared<juce::FileChooser>("Select reference MIDI file", juce::File{}, "*.mid");
+  chooser->launchAsync(juce::FileBrowserComponent::openMode |
+                           juce::FileBrowserComponent::canSelectFiles,
+                       [this, chooser](const juce::FileChooser& fc) {
+                         const juce::File f = fc.getResult();
+                         if (f == juce::File{}) return;
+                         importReferenceMidi(f);
+                       });
+}
+
+void HarmonyForgeEditor::importReferenceMidi(const juce::File& f) {
+  // Message thread file I/O + parse + analysis (processBlock untouched).
+  // A corrupt file writes a hint into the report row (replacing it and
+  // disabling the adopt buttons) and leaves both the ValueTree state and
+  // the PatternDocument untouched: no mutation happens before analysis
+  // succeeds.
+  juce::MemoryBlock data;
+  if (!f.loadFileAsData(data) || data.getSize() == 0) {
+    hasRefReport_ = false;
+    refStatus_ = "Reference not imported (" + f.getFileName() + "): unreadable file";
+    refreshReferenceRow();
+    return;
+  }
+  const auto* bytes = static_cast<const std::uint8_t*>(data.getData());
+  const std::vector<std::uint8_t> image(bytes, bytes + data.getSize());
+  const hf::ser::SmfReadResult r = hf::ser::read_smf(image);
+  if (r.error != hf::ser::SmfError::Ok) {
+    hasRefReport_ = false;
+    refStatus_ = "Reference not imported (" + f.getFileName() +
+                 "): " + smfErrorText(r.error) + " — state untouched";
+    refreshReferenceRow();
+    return;
+  }
+  refReport_ = hf::music::analyze_reference(r.pattern);
+  refBars_ = juce::jmax(1, hf::core::pattern_num_bars(r.pattern));
+  hasRefReport_ = true;
+  if (!refReport_.enough_data) {
+    refStatus_ = "Ref " + f.getFileName() +
+                 ": too little pitched material — key/chords not adopted";
+  } else {
+    juce::String chords;
+    const size_t shown = std::min(refReport_.chords.size(), size_t{4});
+    for (size_t i = 0; i < shown; ++i) {
+      if (i > 0) chords += " | ";
+      chords += refReport_.chords[i].type == "unknown"
+                    ? "?"
+                    : juce::String(ChordTrack::chordName(refReport_.chords[i]));
+    }
+    if (refReport_.chords.size() > shown) chords += " | ...";
+    refStatus_ = "Ref " + f.getFileName() + ": key " + refKeyName(refReport_.key) + " (" +
+                 juce::String(refReport_.key.confidence, 2) + ") · chords " + chords + " · " +
+                 juce::String(refReport_.density_notes_per_bar, 1) + " notes/bar · " +
+                 juce::String(refReport_.drum_note_count) + " drums";
+  }
+  refreshReferenceRow();
+}
+
+void HarmonyForgeEditor::adoptReferenceKey() {
+  if (!hasRefReport_ || !refReport_.enough_data) return;
+  proc.undo().beginNewTransaction("Adopt reference key");
+  hf::plugin::setRootKey(proc.state(), refReport_.key.tonic, &proc.undo());
+  hf::plugin::setScale(proc.state(), juce::String(refReport_.key.scale), &proc.undo());
+}
+
+void HarmonyForgeEditor::adoptReferenceChords() {
+  if (!hasRefReport_ || !refReport_.enough_data) return;
+  doc.adoptReferenceChords(refReport_.chords);
+}
+
+void HarmonyForgeEditor::seedFromReference() {
+  // Seed the candidate generator from the report: tonic/scale/bars drive
+  // the next Regenerate's GenParams (one undo step; the candidate bar picks
+  // the values up via valueTreePropertyChanged). Full motif transfer
+  // (reference notes -> candidates) is OUT of scope: only key/scale/bars
+  // are adopted, the reference notes themselves are never copied.
+  if (!hasRefReport_ || !refReport_.enough_data) return;
+  proc.undo().beginNewTransaction("Seed from reference");
+  hf::plugin::setRootKey(proc.state(), refReport_.key.tonic, &proc.undo());
+  hf::plugin::setScale(proc.state(), juce::String(refReport_.key.scale), &proc.undo());
+  hf::plugin::setBars(proc.state(), refBars_, &proc.undo());
+}
+
+void HarmonyForgeEditor::refreshReferenceRow() {
+  const bool ok = hasRefReport_ && refReport_.enough_data;
+  refKeyButton.setEnabled(ok);
+  refChordsButton.setEnabled(ok);
+  refSeedButton.setEnabled(ok);
+  refReportLabel.setText(refStatus_, juce::dontSendNotification);
 }

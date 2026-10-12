@@ -14,6 +14,7 @@
 #include "../ui/ChordTrack.h"
 #include "../ui/PatternDocument.h"
 #include "../ui/PianoRoll.h"
+#include "core/music/reference_analyze.h"
 
 class HarmonyForgeProcessor;
 
@@ -118,6 +119,16 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void cancelPendingPreviewExport();  // sync take wins: drop the pending async job (last-wins)
   void finishExport(const hf::core::Pattern& pat);  // bytes + save chooser
   void finishDrag(const hf::core::Pattern& pat);    // temp file + OS drag
+  // Phase 5 Task 2 (ADD-only additions; existing signatures frozen):
+  // reference-MIDI import + analysis. All file I/O, read_smf parsing and
+  // analyze_reference run on the message thread — never the audio thread
+  // (processBlock untouched; audio contact stays preview-queue-only).
+  void chooseReferenceFile();  // *.mid picker -> importReferenceMidi / hint
+  void importReferenceMidi(const juce::File& f);  // read -> parse -> report row
+  void adoptReferenceKey();     // report key/scale -> state, ONE undo step
+  void adoptReferenceChords();  // report chords -> ChordTrack, ONE undo step
+  void seedFromReference();     // report tonic/scale/bars -> next Regenerate params, ONE undo step
+  void refreshReferenceRow();   // report label text + adopt-button enablement
 
   struct PreviewEvent {
     int timeMs = 0;
@@ -165,6 +176,17 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   juce::Label modelHintLabel;  // rejection hint; empty otherwise
   // Phase 3 Task 4 item B: async preview/export progress readout.
   juce::Label statusLabel;
+
+  // Phase 5 Task 2: reference-import row (report label + adopt buttons).
+  juce::TextButton refImportButton{"Import ref..."};
+  juce::Label refReportLabel;
+  juce::TextButton refKeyButton{"Adopt key"};
+  juce::TextButton refChordsButton{"Adopt chords"};
+  juce::TextButton refSeedButton{"Seed gen"};
+  hf::music::AnalysisReport refReport_;
+  bool hasRefReport_ = false;
+  int refBars_ = 0;
+  juce::String refStatus_{"Reference: none"};
 
   RollStack rollStack;
   ChordTrack chordTrack;

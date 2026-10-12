@@ -9,6 +9,7 @@
 
 #include "constraints.h"
 #include "core/model/pattern_ops.h"
+#include "core/model/track_pattern.h"
 #include "core/music/chord.h"
 #include "core/music/quantizer.h"
 
@@ -375,4 +376,12 @@ void PatternDocument::adoptArrangement(hf::core::Pattern pattern,
   hasCandidates_ = false;
   auditionIndex_ = -1;
   commit(pattern, chords, freeze_, "Build arrangement");
+}
+
+bool PatternDocument::adoptReferenceChords(
+    const std::vector<hf::core::ChordSymbol>& perBar) {
+  const hf::core::ChordMergeResult merged = hf::core::merge_reference_chords(chords_, perBar);
+  if (!merged.changed) return false;
+  commit(pattern_, merged.merged, freeze_, "Adopt reference chords");
+  return true;
 }

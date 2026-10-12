@@ -24,4 +24,32 @@ int pattern_note_count(const Pattern& p) {
   return n;
 }
 
+namespace {
+
+bool same_chord(const ChordSymbol& a, const ChordSymbol& b) {
+  return a.root == b.root && a.type == b.type && a.inversion == b.inversion &&
+         a.tension == b.tension;
+}
+
+}  // namespace
+
+ChordMergeResult merge_reference_chords(const ChordProgression& existing,
+                                        const std::vector<ChordSymbol>& ref) {
+  ChordMergeResult out;
+  out.merged = existing;
+  for (size_t i = 0; i < ref.size(); ++i) {
+    if (ref[i].type == "unknown") continue;  // missing bar: untouched
+    if (i < out.merged.size()) {
+      if (!same_chord(out.merged[i], ref[i])) {
+        out.merged[i] = ref[i];
+        out.changed = true;
+      }
+    } else {
+      out.merged.push_back(ref[i]);
+      out.changed = true;
+    }
+  }
+  return out;
+}
+
 }  // namespace hf::core

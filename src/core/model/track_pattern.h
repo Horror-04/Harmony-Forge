@@ -15,4 +15,17 @@ int pattern_num_bars(const Pattern& p);
 /// Total note count across all tracks.
 int pattern_note_count(const Pattern& p);
 
+// Result of merging per-bar reference chords into a working progression.
+struct ChordMergeResult {
+  ChordProgression merged;
+  bool changed = false;
+};
+
+/// Merge per-bar reference chords (analyze_reference output: index == bar,
+/// "unknown" = missing bar) into an existing progression. Known-type entries
+/// replace the bar in place or extend the progression when the report is
+/// longer; "unknown" entries leave that bar untouched. Never throws.
+ChordMergeResult merge_reference_chords(const ChordProgression& existing,
+                                        const std::vector<ChordSymbol>& ref);
+
 }  // namespace hf::core
