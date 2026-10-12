@@ -395,8 +395,13 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
     // Empty model path (the default) runs the verbatim pre-Task-4 statements
     // so default output cannot drift; model/override paths share the same
     // core with their runner choice made explicit.
+    // F1: the resolved runner state keys the §10 hook below — material from
+    // any runner (real model OR override) is filter-eligible; only the pure
+    // deterministic fallback (no runner, empty path) stays unfiltered.
+    const bool runner_path =
+        (runner_override != nullptr || !p.model_path.empty());
     core::Pattern material =
-        (runner_override != nullptr || !p.model_path.empty())
+        runner_path
             ? material_from_runner_with(base, static_cast<unsigned>(p.seed + i), p.model_path,
                                         runner_override)
             : material_from_runner(base, static_cast<unsigned>(p.seed + i));
@@ -414,8 +419,10 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
     // code, not a memorizing model, so it is never filtered (empty
     // model path -> no-op -> default output bit-identical everywhere).
     // With a real model configured the sibling memo_index.bin next to the
-    // weights is enforced; missing/unreadable index -> no-op.
-    apply_memo_filter_for_model(material, p.model_path);
+    // weights is enforced; a bare filename falls back to the working
+    // directory (F2); missing/unreadable index -> no-op + one-time stderr
+    // diagnostic for non-empty model paths.
+    apply_memo_filter_for_model(material, p.model_path, runner_path);
     out[i] = std::move(material);
   }
   return out;

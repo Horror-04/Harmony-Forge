@@ -3,6 +3,8 @@
 #include "memo_filter.h"
 
 #include <algorithm>
+#include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -97,8 +99,30 @@ std::string resolve_index_path(const std::string& model_path) {
   if (model_path.empty()) return std::string{};
   const std::filesystem::path mp(model_path);
   const std::filesystem::path parent = mp.parent_path();
-  if (parent.empty()) return std::string{};
-  return (parent / "memo_index.bin").string();
+  if (!parent.empty()) return (parent / "memo_index.bin").string();
+  // F2: bare filename — no sibling to name, so read it as relative to the
+  // working directory and probe the index there.
+  std::error_code ec;
+  const std::filesystem::path cwd = std::filesystem::current_path(ec);
+  if (ec) return std::string{};
+  return (cwd / "memo_index.bin").string();
+}
+
+// One-time stderr diagnostic for an unsatisfiable non-empty model path
+// (background threads only; lock-free flag, no-throw C I/O).
+void memo_index_missing_once(const std::string& model_path,
+                             const std::string& resolved) noexcept {
+  try {
+    static std::atomic_flag warned;
+    if (!warned.test_and_set(std::memory_order_relaxed)) {
+      const std::string msg =
+          "[harmony-forge] memo index unavailable for model '" + model_path +
+          "' (tried '" + resolved +
+          "'); runtime plagiarism filter (SPEC 10) inactive for this session.\n";
+      std::fwrite(msg.c_str(), 1, msg.size(), stderr);
+    }
+  } catch (...) {
+  }
 }
 
 }  // namespace
@@ -193,8 +217,28 @@ std::string memo_index_path_for_model(const std::string& model_path) noexcept {
 void apply_memo_filter_for_model(core::Pattern& p,
                                  const std::string& model_path) noexcept {
   try {
-    const std::string path = memo_index_path_for_model(model_path);
-    if (path.empty()) return;  // no model configured -> never filtered
+    apply_memo_filter_for_model(p, model_path, !model_path.empty());
+  } catch (...) {
+  }
+}
+
+void apply_memo_filter_for_model(core::Pattern& p, const std::string& model_path,
+                                 bool runner_involved) noexcept {
+  try {
+    // F1: the pure deterministic fallback (no runner, no model) is never
+    // filtered, so its output stays bit-identical everywhere (tripwire).
+    if (!runner_involved && model_path.empty()) return;
+    // F1: a runner with no model file (test/override seam) can only probe
+    // the working directory; F2: a bare filename resolves there too.
+    std::string path;
+    if (!model_path.empty())
+      path = memo_index_path_for_model(model_path);
+    else {
+      std::error_code ec;
+      const std::filesystem::path cwd = std::filesystem::current_path(ec);
+      if (!ec) path = (cwd / "memo_index.bin").string();
+    }
+    if (path.empty()) return;
     std::shared_ptr<const MemoIndex> hit;
     {
       const std::lock_guard<std::mutex> lock(cache_mutex());
@@ -207,7 +251,11 @@ void apply_memo_filter_for_model(core::Pattern& p,
         const std::lock_guard<std::mutex> lock(cache_mutex());
         index_cache()[path] = hit;
       } else {
-        return;  // missing/corrupt -> safe no-op default
+        // F2: unsatisfiable non-empty model path -> safe no-op + one-time
+        // diagnostic (never on the audio thread; empty-path test seams
+        // stay silent to keep test logs clean).
+        if (!model_path.empty()) memo_index_missing_once(model_path, path);
+        return;
       }
     }
     apply_memo_filter(p, *hit);

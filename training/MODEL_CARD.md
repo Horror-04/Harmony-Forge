@@ -120,12 +120,19 @@
   input returns untouched). Wired at the END of `generate_candidates_impl`
   (post `enforce_caps`) — the only point where the guarantee holds for
   shipped output, since seeded transforms/mode processing add notes after
-  the material stage. Resolution is model-sibling-only: empty model path
-  (deterministic fallback, fixed code — not a memorizing model) is never
-  filtered, so default output is bit-identical everywhere; missing index
-  → safe no-op.
-- `tests/test_memo_filter.cpp` (10 cases): truncation at the offending
+  the material stage. Filter eligibility keys on runner involvement (fix
+  round 1): any runner-produced material (real model OR test/override
+  runner) is filtered; only the pure deterministic fallback (no runner,
+  empty path) is never filtered, so default output is bit-identical
+  everywhere. Resolution: sibling `memo_index.bin` next to the weights;
+  a bare filename (no directory part) falls back to the working directory;
+  missing/unreadable index → safe no-op + one-time stderr diagnostic for
+  non-empty model paths (background threads only).
+- `tests/test_memo_filter.cpp` (12 cases): truncation at the offending
   window, byte-identical pass-through, missing-file/empty-index no-op,
   determinism, drums untouched, loader round-trip + garbage rejection,
-  committed-index smoke, sibling-only resolution, wired-path truncation
-  with a reciting stub, wired-path byte-identity without an index.
+  committed-index smoke, sibling/working-dir resolution, wired-path
+  truncation with a reciting stub, wired-path byte-identity without an
+  index, override-with-empty-path filtered via the working dir (no-runner
+  fallback provably untouched by it), bare-filename resolution via the
+  working dir (absent file stays a no-op).

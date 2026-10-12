@@ -60,16 +60,36 @@ void apply_memo_filter(core::Pattern& p, const MemoIndex& idx) noexcept;
 
 // Resolves the runtime index for a configured model: the sibling
 // `memo_index.bin` next to the weights file (`training/export_memo_index.py`
-// output, shipped alongside the model). An EMPTY model path -> empty result
-// (the no-model fallback is fixed composer code, not a memorizing model, so
-// it is never filtered and its output stays bit-identical everywhere).
+// output, shipped alongside the model). A BARE filename (no directory part)
+// cannot name a sibling, so it falls back to `memo_index.bin` in the process
+// working directory (i.e. the bare name is read as "in my working
+// directory"); an EMPTY model path -> empty result (the no-model fallback is
+// fixed composer code, not a memorizing model, so it is never filtered and
+// its output stays bit-identical everywhere). Pure path math, no probing:
+// a resolved-but-absent file simply fails to load downstream (safe no-op).
 // Never throws.
 std::string memo_index_path_for_model(const std::string& model_path) noexcept;
 
 // Loads the resolved index through a process-wide positive-hit cache and
 // applies it; empty path or missing/unreadable index -> no-op (safe
-// default). Never throws; background threads only (file I/O + cache lock).
+// default). The 2-arg form keeps round-0 behavior (a non-empty model path
+// implies runner involvement). Never throws; background threads only
+// (file I/O + cache lock).
 void apply_memo_filter_for_model(core::Pattern& p,
                                  const std::string& model_path) noexcept;
+
+// Same, with runner involvement made explicit (F1): `runner_involved` must
+// mirror the material-stage branch — true when the material came from a
+// runner (real model OR test/override runner), false only for the
+// deterministic no-model fallback (`material_from_runner`). Override +
+// empty path therefore probes the working-directory index (the only hint
+// available with no model file); no-runner + empty path still returns
+// without touching the pattern (seed-7 tripwire). When `model_path` is
+// non-empty but no index can be loaded (bare name with nothing in the
+// working directory, missing/corrupt sibling), a ONE-TIME stderr diagnostic
+// names the tried path (background threads only, never the audio thread).
+// Never throws.
+void apply_memo_filter_for_model(core::Pattern& p, const std::string& model_path,
+                                 bool runner_involved) noexcept;
 
 }  // namespace hf::infer

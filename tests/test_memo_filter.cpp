@@ -251,14 +251,63 @@ std::filesystem::path fresh_tmp(const char* name) {
   return dir;
 }
 
+// RAII working-directory switch (no-throw; restores on scope exit).
+struct CwdGuard {
+  std::filesystem::path saved;
+  bool ok = false;
+  explicit CwdGuard(const std::filesystem::path& dir) {
+    std::error_code ec;
+    saved = std::filesystem::current_path(ec);
+    if (ec) return;
+    std::filesystem::current_path(dir, ec);
+    ok = !ec;
+  }
+  ~CwdGuard() {
+    if (!ok) return;
+    std::error_code ec;
+    std::filesystem::current_path(saved, ec);
+  }
+};
+
+void collect_windows(const std::array<hf::core::Pattern, 4>& cands,
+                     std::vector<std::array<int32_t, 8>>& ws) {
+  for (int i = 0; i < 4; ++i) {
+    const auto ids = hf::ser::encode_pattern(cands[size_t(i)]);
+    for (size_t k = 0; k + 8 <= ids.size(); ++k) {
+      std::array<int32_t, 8> w;
+      for (int q = 0; q < 8; ++q) w[size_t(q)] = ids[k + q];
+      ws.push_back(w);
+    }
+  }
+}
+
+int longest_run_vs(const std::vector<int>& ids,
+                   const hf::infer::MemoIndex& idx) {
+  int best = 0, cur = 0;
+  for (size_t k = 0; k + 8 <= ids.size(); ++k) {
+    std::array<int32_t, 8> w;
+    for (int q = 0; q < 8; ++q) w[size_t(q)] = ids[k + q];
+    cur = idx.contains(w) ? cur + 1 : 0;
+    best = std::max(best, cur);
+  }
+  return best;
+}
+
 }  // namespace
 
-TEST_CASE("index path resolves to the model sibling only", "[memo]") {
+TEST_CASE("index path resolves to sibling, bare names to the working dir",
+          "[memo]") {
   std::string got;
   REQUIRE_NOTHROW(got = hf::infer::memo_index_path_for_model(""));
   CHECK(got.empty());  // no model -> never filtered
   REQUIRE_NOTHROW(got = hf::infer::memo_index_path_for_model("model.onnx"));
-  CHECK(got.empty());  // bare filename has no sibling directory
+  {  // F2: bare filename -> working-directory sibling
+    std::error_code ec;
+    const std::string want =
+        (std::filesystem::current_path(ec) / "memo_index.bin").string();
+    REQUIRE(!ec);
+    CHECK(got == want);
+  }
   REQUIRE_NOTHROW(
       got = hf::infer::memo_index_path_for_model("a/b/model.onnx"));
   CHECK(got == (std::filesystem::path("a/b") / "memo_index.bin").string());
@@ -335,4 +384,108 @@ TEST_CASE("wired path without sibling index is byte-identical", "[memo]") {
     CHECK(encoded_all(got, i) == encoded_all(ref, i));
   std::error_code ec;
   std::filesystem::remove_all(dir, ec);
+}
+
+TEST_CASE("override with empty path filters via the working dir", "[memo]") {
+  EchoRunner echo;
+  // Precondition: no index next to the test working directory.
+  CHECK_FALSE(
+      hf::infer::load_memo_index("memo_index.bin").has_value());
+  // Reference: override + empty path, nothing resolvable -> unfiltered.
+  const auto ref = hf::infer::generate_candidates_with_runner(
+      wired_params(""), echo);
+  std::vector<std::array<int32_t, 8>> ws;
+  collect_windows(ref, ws);
+  REQUIRE(!ws.empty());
+
+  // F1: same call with the working directory holding the index -> filtered.
+  const auto dir_hit = fresh_tmp("hf_memo_f1_hit");
+  write_memo_bin((dir_hit / "memo_index.bin").string(), ws);
+  auto idx =
+      hf::infer::load_memo_index((dir_hit / "memo_index.bin").string());
+  REQUIRE(idx.has_value());
+  {
+    CwdGuard g(dir_hit);
+    REQUIRE(g.ok);
+    const auto got = hf::infer::generate_candidates_with_runner(
+        wired_params(""), echo);
+    for (int i = 0; i < 4; ++i) {
+      const auto ref_ids = encoded_all(ref, i);
+      const auto got_ids = encoded_all(got, i);
+      CHECK(longest_run_vs(got_ids, *idx) < 4);
+      if (ref_ids[0] > 2) CHECK(got_ids[0] < ref_ids[0]);  // hook fired
+    }
+  }
+  // Same call, working directory without an index -> byte-identical no-op.
+  const auto dir_miss = fresh_tmp("hf_memo_f1_miss");
+  {
+    CwdGuard g(dir_miss);
+    REQUIRE(g.ok);
+    const auto got = hf::infer::generate_candidates_with_runner(
+        wired_params(""), echo);
+    for (int i = 0; i < 4; ++i)
+      CHECK(encoded_all(got, i) == encoded_all(ref, i));
+  }
+  // Tripwire: the no-runner fallback ignores the working-dir index entirely.
+  const auto plain = hf::infer::generate_candidates(wired_params(""));
+  {
+    CwdGuard g(dir_hit);
+    REQUIRE(g.ok);
+    const auto d1 = hf::infer::generate_candidates(wired_params(""));
+    const auto d2 = hf::infer::generate_candidates(wired_params(""));
+    for (int i = 0; i < 4; ++i) {
+      CHECK(encoded_all(d1, i) == encoded_all(d2, i));
+      CHECK(encoded_all(d1, i) == encoded_all(plain, i));
+    }
+  }
+  std::error_code ec;
+  std::filesystem::remove_all(dir_hit, ec);
+  std::filesystem::remove_all(dir_miss, ec);
+}
+
+TEST_CASE("bare model filename resolves via the working dir", "[memo]") {
+  // Precondition: no index next to the test working directory.
+  CHECK_FALSE(
+      hf::infer::load_memo_index("memo_index.bin").has_value());
+  auto bare = wired_params("");
+  bare.model_path = "hf-memo-f2.onnx";  // no directory part (F2)
+  // Reference without any resolvable index -> unfiltered (production path,
+  // no override; bogus model degrades to the unloaded stub, never throws).
+  std::array<hf::core::Pattern, 4> ref;
+  REQUIRE_NOTHROW(ref = hf::infer::generate_candidates(bare));
+  std::vector<std::array<int32_t, 8>> ws;
+  collect_windows(ref, ws);
+  REQUIRE(!ws.empty());
+
+  // F2: working directory holding the index -> filtered.
+  const auto dir_hit = fresh_tmp("hf_memo_f2_hit");
+  write_memo_bin((dir_hit / "memo_index.bin").string(), ws);
+  auto idx =
+      hf::infer::load_memo_index((dir_hit / "memo_index.bin").string());
+  REQUIRE(idx.has_value());
+  {
+    CwdGuard g(dir_hit);
+    REQUIRE(g.ok);
+    std::array<hf::core::Pattern, 4> got;
+    REQUIRE_NOTHROW(got = hf::infer::generate_candidates(bare));
+    for (int i = 0; i < 4; ++i) {
+      const auto ref_ids = encoded_all(ref, i);
+      const auto got_ids = encoded_all(got, i);
+      CHECK(longest_run_vs(got_ids, *idx) < 4);
+      if (ref_ids[0] > 2) CHECK(got_ids[0] < ref_ids[0]);  // hook fired
+    }
+  }
+  // Absent file stays a safe no-op (plus the one-time stderr diagnostic).
+  const auto dir_miss = fresh_tmp("hf_memo_f2_miss");
+  {
+    CwdGuard g(dir_miss);
+    REQUIRE(g.ok);
+    std::array<hf::core::Pattern, 4> got;
+    REQUIRE_NOTHROW(got = hf::infer::generate_candidates(bare));
+    for (int i = 0; i < 4; ++i)
+      CHECK(encoded_all(got, i) == encoded_all(ref, i));
+  }
+  std::error_code ec;
+  std::filesystem::remove_all(dir_hit, ec);
+  std::filesystem::remove_all(dir_miss, ec);
 }
