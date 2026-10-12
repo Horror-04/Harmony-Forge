@@ -81,6 +81,9 @@
   corpus-carried).
 - `prefix_only_compliance` reuses the `newonly_compliance` absolute-bar
   decode under the Phase-3 name; per-record values are identical.
+- Experimental retrains on an expanded 37-record val set (held-out AU/AV heads,
+  different val — not directly comparable) reached novelty ratio ~0.11 with
+  compliance ~0.88 (gate red); see history. Shipped weights stay this baseline.
 - Not gated: no seed, sample, or threshold changed for these numbers.
 
 ## Drop-in (R6: new hashes expected and justified)
