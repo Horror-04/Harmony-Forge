@@ -352,7 +352,7 @@ TEST_CASE("wired path truncates reciting model output, stays deterministic",
     const auto ref_ids = encoded_all(ref, i);
     const auto a_ids = encoded_all(a, i);
     CHECK(encoded_all(b, i) == a_ids);  // deterministic (cache path too)
-    // The shipped �10 guarantee on final candidates:
+    // The shipped §10 guarantee on final candidates:
     int best = 0, cur = 0;
     for (size_t k = 0; k + 8 <= a_ids.size(); ++k) {
       std::array<int32_t, 8> w;
