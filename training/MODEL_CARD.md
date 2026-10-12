@@ -104,3 +104,28 @@
   for future use). No drums-heavy styles; drums appear in 25% of
   procedural data. Not a general composer — first real weights proving the
   path; arrangement/cloud remain later phases.
+
+## Runtime §10 memo-filter (Phase 3 Task 3, shipped C++ path)
+- `training/export_memo_index.py` (stdlib only) builds
+  `training/memo_index.bin` (`HFMI` v1: u32 count + count × 8 × int32 LE,
+  sorted; 16,551 8-grams, 529,644 bytes / 0.51 MB < 1 MB budget) from the
+  SAME `corpus/train.jsonl` ids + window loop as `dataset.py`, and REFUSES
+  to write on mismatch vs `corpus/memo_ngrams.json::id_8` (eval/filter
+  agreement proof). Ship `memo_index.bin` as a sibling of the weights file.
+- `src/inference/memo_filter.h/.cpp` (`hf::infer`, JUCE-free, no-throw):
+  `load_memo_index` (missing/corrupt → `nullopt`) + `apply_memo_filter`
+  (first run of ≥ 4 consecutive memorized 8-windows → cut before the
+  completing token, repair to whole notes as in `evaluate.finalize`;
+  drums excluded from the check and reattached byte-identical; clean
+  input returns untouched). Wired at the END of `generate_candidates_impl`
+  (post `enforce_caps`) — the only point where the guarantee holds for
+  shipped output, since seeded transforms/mode processing add notes after
+  the material stage. Resolution is model-sibling-only: empty model path
+  (deterministic fallback, fixed code — not a memorizing model) is never
+  filtered, so default output is bit-identical everywhere; missing index
+  → safe no-op.
+- `tests/test_memo_filter.cpp` (10 cases): truncation at the offending
+  window, byte-identical pass-through, missing-file/empty-index no-op,
+  determinism, drums untouched, loader round-trip + garbage rejection,
+  committed-index smoke, sibling-only resolution, wired-path truncation
+  with a reciting stub, wired-path byte-identity without an index.

@@ -14,6 +14,7 @@
 #include "core/music/scale.h"
 #include "core/serialization/tokenizer.h"
 #include "inference_runner.h"
+#include "memo_filter.h"
 #include "onnx_runner.h"
 
 namespace hf::infer {
@@ -404,6 +405,17 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
     apply_candidate_transform(material, p, i, iv, rng);
     apply_mode(material, p, prog, iv, rng);
     enforce_caps(material, p.bars);
+    // Phase 3 Task 3 (item C): runtime §10 memo-filter on the FINAL
+    // candidate. The filter MUST run here, not in material_from_runner:
+    // (a) the seeded transforms + mode post-processing above add notes
+    // after the material stage, so a material-stage check cannot guarantee
+    // the shipped output (probed: residual runs of 4-5 windows survived a
+    // material-stage hook); (b) the no-model fallback is fixed composer
+    // code, not a memorizing model, so it is never filtered (empty
+    // model path -> no-op -> default output bit-identical everywhere).
+    // With a real model configured the sibling memo_index.bin next to the
+    // weights is enforced; missing/unreadable index -> no-op.
+    apply_memo_filter_for_model(material, p.model_path);
     out[i] = std::move(material);
   }
   return out;

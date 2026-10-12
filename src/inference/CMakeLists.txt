@@ -10,6 +10,7 @@ add_library(harmony_forge_inference STATIC
   constraints.cpp
   candidates.cpp
   ranking.cpp
+  memo_filter.cpp
   onnx_runner.cpp
   job_queue.cpp
   model_path.cpp
