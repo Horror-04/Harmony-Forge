@@ -56,8 +56,12 @@ the AU kind only on Darwin (`_juce_get_platform_plugin_kinds` in
 - no `HarmonyForge_AU.vcxproj` is generated (targets: `HarmonyForge`,
   `HarmonyForge_Standalone`, `HarmonyForge_VST3`, helper/rc libs);
 - `cmake --build build-full --config Release` rebuilt the VST3 + Standalone
-  artefacts, `ctest` stayed 94/94 in both modes and the seed-7 render hash is
-  unchanged (`817FDB02…1B20E`) — i.e. no runtime change.
+  artefacts, `ctest` stayed green in both modes and the seed-7 render is
+  deterministic (byte-identical double render). NOTE (2026-10-12, Phase 5):
+  the render hash is now `8CECE0C2…AEE22` (16 notes, 170 bytes), superseding
+  the older `817FDB02…1B20E` — the delta comes from the reviewed `write_smf0`
+  byte-correctness fix (header track count + offs-aware cursor), not from a
+  behavior regression; determinism is the property that matters.
 
 Note: this was verified by re-configure + incremental rebuild on the existing
 `build-full` tree, not by a from-scratch build in a new directory. The AU/Windows
