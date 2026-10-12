@@ -42,6 +42,20 @@ hf_add_test(test_arrangement test_arrangement.cpp)
 hf_add_test(test_midi_read test_midi_read.cpp)
 hf_add_test(test_reference_analyze test_reference_analyze.cpp)
 hf_add_test(test_explain test_explain.cpp)
+
+# Phase 5 Task 3 fix F1: ChordTrack delegation pin. Links the real
+# ChordTrack.cpp (JUCE), so it only builds where the plugin is configured.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_chordtrack_pin test_chordtrack_pin.cpp
+    ../src/plugin/ui/ChordTrack.cpp ../src/plugin/ui/PatternDocument.cpp)
+  target_link_libraries(test_chordtrack_pin PRIVATE
+    harmony_forge_core harmony_forge_inference juce::juce_gui_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_chordtrack_pin PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_chordtrack_pin PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_chordtrack_pin)
+  catch_discover_tests(test_chordtrack_pin)
+endif()
 hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")

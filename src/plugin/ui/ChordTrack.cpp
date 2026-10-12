@@ -3,23 +3,20 @@
 #include "ChordTrack.h"
 
 #include "core/model/track_pattern.h"
+#include "core/music/explain.h"
 #include "core/music/scale.h"
 
 namespace {
 
+// Roman-numeral case convention only (no public core counterpart: the core
+// twin lives in the anonymous namespace of core/music/explain.cpp —
+// exposing it would need a new core API, out of scope; pinned in sync by
+// tests/test_chordtrack_pin.cpp). Degree LOOKUP itself delegates to
+// ScaleDatabase::degree, function lookup to hf::music::chord_function_name.
 bool minor_family(const std::string& scale) {
   if (scale.find("minor") != std::string::npos) return true;
   return scale == "dorian" || scale == "phrygian" || scale == "locrian" ||
          scale == "minor_pent";
-}
-
-int degree_index(const hf::core::ChordSymbol& ch, int tonic, const std::string& scale) {
-  const auto iv = hf::music::ScaleDatabase::intervals(scale);
-  if (iv.empty()) return -1;
-  const int pc = ((ch.root - tonic) % 12 + 12) % 12;
-  for (size_t i = 0; i < iv.size(); ++i)
-    if (iv[i] == pc) return static_cast<int>(i);
-  return -1;
 }
 
 }  // namespace
@@ -56,18 +53,14 @@ std::string ChordTrack::degreeName(const hf::core::ChordSymbol& ch, int tonic,
                                    const std::string& scale) {
   static const char* kMajor[7] = {"I", "II", "III", "IV", "V", "VI", "VII"};
   static const char* kMinor[7] = {"i", "ii", "iii", "iv", "v", "vi", "vii"};
-  const int d = degree_index(ch, tonic, scale);
+  const int d = hf::music::ScaleDatabase::degree(ch.root, tonic, scale);
   if (d < 0 || d >= 7) return d < 0 ? "chr" : std::to_string(d + 1);
   return minor_family(scale) ? kMinor[d] : kMajor[d];
 }
 
 std::string ChordTrack::functionName(const hf::core::ChordSymbol& ch, int tonic,
                                      const std::string& scale) {
-  static const char* kFn[7] = {"Tonic", "Supertonic", "Mediant", "Subdominant",
-                               "Dominant", "Submediant", "Leading"};
-  const int d = degree_index(ch, tonic, scale);
-  if (d < 0 || d >= 7) return "Borrowed";
-  return kFn[d];
+  return hf::music::chord_function_name(ch, tonic, scale);
 }
 
 void ChordTrack::refreshSize() {
