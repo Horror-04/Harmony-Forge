@@ -89,6 +89,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       chordTrack(doc),
       roll(doc),
       candidateBar(doc),
+      explainView(doc),
       previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
   setSize(1024, 876);
 
@@ -247,6 +248,17 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   viewport.setViewedComponent(&rollStack, false);
   addAndMakeVisible(viewport);
 
+  // Phase 5 Task 3: Edit/Explain tab row (minimal toggle; no editor redesign).
+  editTabButton.setToggleState(true, juce::dontSendNotification);
+  editTabButton.onClick = [this] { showExplainTab(false); };
+  addAndMakeVisible(editTabButton);
+  explainTabButton.setToggleState(false, juce::dontSendNotification);
+  explainTabButton.onClick = [this] { showExplainTab(true); };
+  addAndMakeVisible(explainTabButton);
+  explainViewport.setViewedComponent(&explainView, false);
+  explainViewport.setVisible(false);
+  addAndMakeVisible(explainViewport);
+
   chordTrack.onBarSelected = [this](int bar) { refreshChordRow(bar); };
 
   candidateBar.onRegenerate = [this] { doRegenerate(); };
@@ -267,6 +279,8 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
               hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
   chordTrack.setKey(hf::plugin::rootKey(proc.state()),
                     hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
+  explainView.setKey(hf::plugin::rootKey(proc.state()),
+                     hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
 
   doc.addChangeListener(this);
   proc.state().addListener(this);
@@ -367,6 +381,12 @@ void HarmonyForgeEditor::resized() {
   refRow.removeFromRight(6);
   refReportLabel.setBounds(refRow);
   r.removeFromTop(4);
+  // Phase 5 Task 3: Edit/Explain tab row (viewport and Explain share the rest).
+  auto tabRow = r.removeFromTop(26);
+  editTabButton.setBounds(tabRow.removeFromLeft(90));
+  tabRow.removeFromLeft(6);
+  explainTabButton.setBounds(tabRow.removeFromLeft(90));
+  r.removeFromTop(4);
   auto arrange = r.removeFromBottom(120);
   arrangeBar.setBounds(arrange);
   r.removeFromBottom(4);
@@ -374,6 +394,8 @@ void HarmonyForgeEditor::resized() {
   candidateBar.setBounds(cand);
   r.removeFromBottom(4);
   viewport.setBounds(r);
+  explainViewport.setBounds(r);
+  explainView.setSize(r.getWidth(), explainView.contentHeight());
   rollStack.setSize(std::max(viewport.getWidth(), roll.getWidth()),
                     68 + roll.getHeight());
 }
@@ -422,6 +444,8 @@ void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
               hf::plugin::scaleName(tree).toLowerCase().toStdString());
   chordTrack.setKey(hf::plugin::rootKey(tree),
                     hf::plugin::scaleName(tree).toLowerCase().toStdString());
+  explainView.setKey(hf::plugin::rootKey(tree),
+                     hf::plugin::scaleName(tree).toLowerCase().toStdString());
   // Phase 3 Task 4 item A: undo/redo of the picker reflects in the label.
   if (id.toString() == juce::String(hf::plugin::StateID::kModelPath)) refreshModelRow();
 }
@@ -816,4 +840,14 @@ void HarmonyForgeEditor::refreshReferenceRow() {
   refChordsButton.setEnabled(ok);
   refSeedButton.setEnabled(ok);
   refReportLabel.setText(refStatus_, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::showExplainTab(bool show) {
+  // Message thread view swap only: no document/state mutation, the working
+  // pattern and undo history are untouched.
+  showExplain_ = show;
+  viewport.setVisible(!show);
+  explainViewport.setVisible(show);
+  editTabButton.setToggleState(!show, juce::dontSendNotification);
+  explainTabButton.setToggleState(show, juce::dontSendNotification);
 }

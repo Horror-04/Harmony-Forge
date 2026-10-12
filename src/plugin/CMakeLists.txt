@@ -31,6 +31,8 @@ target_sources(HarmonyForge PRIVATE
   ui/PianoRoll.cpp
   ui/ChordTrack.h
   ui/ChordTrack.cpp
+  ui/ExplainView.h
+  ui/ExplainView.cpp
   ui/CandidateBar.h
   ui/ArrangeBar.h
 )

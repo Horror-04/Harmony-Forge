@@ -8,6 +8,7 @@ add_library(harmony_forge_core STATIC
   music/key_detect.cpp
   music/chord_detect.cpp
   music/reference_analyze.cpp
+  music/explain.cpp
   model/track_pattern.cpp
   model/pattern_ops.cpp
   model/selection.cpp

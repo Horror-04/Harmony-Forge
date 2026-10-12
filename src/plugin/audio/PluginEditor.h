@@ -12,6 +12,7 @@
 #include "../ui/ArrangeBar.h"
 #include "../ui/CandidateBar.h"
 #include "../ui/ChordTrack.h"
+#include "../ui/ExplainView.h"
 #include "../ui/PatternDocument.h"
 #include "../ui/PianoRoll.h"
 #include "core/music/reference_analyze.h"
@@ -129,6 +130,12 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void adoptReferenceChords();  // report chords -> ChordTrack, ONE undo step
   void seedFromReference();     // report tonic/scale/bars -> next Regenerate params, ONE undo step
   void refreshReferenceRow();   // report label text + adopt-button enablement
+  // Phase 5 Task 3 (ADD-only additions; existing signatures frozen):
+  // read-only Explain tab. Two toggle buttons ("Edit"/"Explain") swap the
+  // roll viewport with the ExplainView; the view listens to the document
+  // itself (refresh on every commit, no polling) and takes the state key
+  // via the same valueTreePropertyChanged feed as ChordTrack.
+  void showExplainTab(bool show);  // swap roll viewport <-> ExplainView
 
   struct PreviewEvent {
     int timeMs = 0;
@@ -194,6 +201,13 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   juce::Viewport viewport;
   CandidateBar candidateBar;
   ArrangeBar arrangeBar;
+
+  // Phase 5 Task 3: Explain tab (read-only; declared after doc so it can listen).
+  juce::TextButton editTabButton{"Edit"};
+  juce::TextButton explainTabButton{"Explain"};
+  ExplainView explainView;
+  juce::Viewport explainViewport;
+  bool showExplain_ = false;
 
   std::vector<PreviewEvent> previewQueue;
   size_t previewNext = 0;
