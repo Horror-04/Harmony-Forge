@@ -12,7 +12,7 @@ human steps.
 | Windows build with `AU` in `FORMATS` | Verified unaffected (JUCE skips AU on non-Apple; see §2) |
 | Windows installer script (`iscc`) | Compiled: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,578,025 bytes, SHA256 `AAB2EE0EF1CDDFA7F562EE2C5D2FF361541C4ABC3F4EED9A5971DA1E05C2BC87`) |
 | Executing any installer / pkg | **NOT-RUN by design** (system side effect; human step — §5) |
-| macOS AU build + `.pkg` | **UNTESTED** (no Mac on the development machine; §3) |
+| macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3) |
 | Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) |
 | Licence decision (R1) | **DECIDED: AGPLv3** — our code under AGPL-3.0-or-later, JUCE under its AGPL side (§4) |
 | Code signing / notarization | Not implemented; plan stub in §6 |
@@ -68,7 +68,13 @@ Note: this was verified by re-configure + incremental rebuild on the existing
 decision is entirely CMake-side (platform kind list), which is exactly the code
 path a fresh configure exercises.
 
-## 3. macOS build + `.pkg` — UNTESTED procedure for the human
+## 3. macOS build + `.pkg` — SKIPPED (postponed by owner decision, 2026-10-13)
+
+**Status: macOS work is shelved — no Mac build, no pkg, no AU validation until
+revisited on demand.** `packaging/macos/build_pkg.sh` stays in-tree untested;
+the AU format request in CMakeLists.txt is harmless on Windows (skipped by the
+platform kind list, verified in §2). The procedure below is preserved for the day
+macOS is revisited.
 
 **Status: the AU bundle and the pkg have never been built or run on this
 machine; `packaging/macos/build_pkg.sh` is untested.** What *is* verified is
