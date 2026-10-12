@@ -52,6 +52,10 @@ struct CompletedGeneration {
 
 class AsyncGenerateQueue {
  public:
+  // Spawns `workers` threads (0 is clamped to 1). May throw if thread
+  // creation fails (e.g. std::system_error): already-started workers are
+  // joined before the exception propagates, so a throwing ctor leaves no
+  // detached threads behind; the half-built object must not be used.
   explicit AsyncGenerateQueue(std::size_t workers = 1);
   // Test seam (item D): every job delegates its runner stage to `runner`
   // (e.g. a 50 ms fake-latency stub proving the message flow is async).

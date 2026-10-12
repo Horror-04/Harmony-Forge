@@ -64,8 +64,8 @@ def resolve_device(torch, name: str):
     set best-effort determinism flags (cuDNN may still introduce
     non-bit-exact variance vs CPU — see module docstring)."""
     if name == "cuda":
-        assert torch.cuda.is_available(), \
-            "no CUDA device (torch.cuda unavailable)"
+        if not torch.cuda.is_available():
+            raise RuntimeError("no CUDA device (torch.cuda unavailable)")
         device = torch.device("cuda")
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False

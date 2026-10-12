@@ -115,6 +115,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void setPreviewBusy(bool busy, const juce::String& status);
   void submitPreviewExport(PendingOp op);  // async when a model is configured
   bool pollPreviewExport();  // Timer collector; true when one was applied
+  void cancelPendingPreviewExport();  // sync take wins: drop the pending async job (last-wins)
   void finishExport(const hf::core::Pattern& pat);  // bytes + save chooser
   void finishDrag(const hf::core::Pattern& pat);    // temp file + OS drag
 

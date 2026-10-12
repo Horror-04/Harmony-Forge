@@ -24,7 +24,12 @@ namespace hf::infer {
 //   completing token (index j+7, the last token of window j), repaired to
 //   whole notes (count head + 6-token truncation, same as
 //   `evaluate.finalize`), decoded, and the non-drum tracks are replaced.
-//   Decoded tracks regroup by type with drums appended last.
+//   Decoded tracks regroup by type with drums appended last. The regroup is
+//   intended: decode emits tracks in first-token order and every downstream
+//   consumer resolves tracks by TrackType (melodyOf, candidate transforms,
+//   caps, ranking, channel assignment, SMF export), never by vector index;
+//   UI track indices address the working pattern, which the filter never
+//   reorders in place (it only shapes fresh candidates before adoption).
 // - Drums are EXCLUDED from the check and reattached byte-identical: drum
 //   notes never trigger the filter and are never removed or rebinned.
 //   (Deviation from eval, which scans full vectors incl. drums: the runtime

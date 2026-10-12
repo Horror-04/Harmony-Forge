@@ -67,8 +67,11 @@ std::array<core::Pattern, 4> generate_candidates(const GenParams& params);
 // but the runner stage delegates to `runner` instead of the OnnxRunner built
 // from `params.model_path`. A stub returning empty reproduces the
 // deterministic fallback; a fake-latency stub proves the async message flow
-// without touching production timing. Never throws. Stable alongside
-// generate_candidates for arrangement/distribution tasks.
+// without touching production timing. Never throws provided `runner` itself
+// never throws (production OnnxRunner::predict catches everything and falls
+// back to empty output; a throwing custom runner propagates to the caller —
+// only the AsyncGenerateQueue worker path is unconditionally no-throw).
+// Stable alongside generate_candidates for arrangement/distribution tasks.
 std::array<core::Pattern, 4> generate_candidates_with_runner(const GenParams& params,
                                                              IInferenceRunner& runner);
 

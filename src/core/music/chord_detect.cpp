@@ -31,6 +31,16 @@ int root_pitch(int bass, int root_pc, const std::vector<int>& valid) {
   return out;
 }
 
+// Shared construction for both return sites below (exact-match and
+// best-superset): resolves the sounding root pitch, then pairs it with the
+// winning type. No behavior change.
+hf::core::ChordSymbol make_symbol(int bass, int root_pc,
+                                  const std::vector<int>& valid,
+                                  std::string_view type) {
+  return hf::core::ChordSymbol{root_pitch(bass, root_pc, valid),
+                               std::string(type)};
+}
+
 }  // namespace
 
 hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
@@ -88,11 +98,11 @@ hf::core::ChordSymbol recognize_chord(const std::vector<int>& pitches) {
       // Exact matches (size == distinct) beat supersets; first hit at a
       // given specificity wins (bass root first, richer types first).
       if (size == distinct) {
-        return hf::core::ChordSymbol{root_pitch(bass, root_pc, valid), std::string(type)};
+        return make_symbol(bass, root_pc, valid, type);
       }
       if (size > best_size) {
         best_size = size;
-        best = hf::core::ChordSymbol{root_pitch(bass, root_pc, valid), std::string(type)};
+        best = make_symbol(bass, root_pc, valid, type);
       }
     }
   }

@@ -77,7 +77,11 @@ class ArrangeBar : public juce::Component {
     removeButton_.onClick = [this] {
       if (selected_ < 0 || selected_ >= static_cast<int>(sections_.size())) return;
       sections_.erase(sections_.begin() + selected_);
-      selected_ = juce::jlimit(0, static_cast<int>(sections_.size()) - 1, selected_);
+      // Guard: erasing the last section leaves size 0, where
+      // jlimit(0, -1, ...) would trip the JUCE Debug assert (min > max).
+      selected_ = sections_.empty()
+                      ? -1
+                      : juce::jlimit(0, static_cast<int>(sections_.size()) - 1, selected_);
       refresh();
     };
     addAndMakeVisible(removeButton_);

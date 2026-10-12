@@ -441,10 +441,12 @@ void HarmonyForgeEditor::startPreview() {
   // (progress UI, supersede-safe); the empty-path sync call below is
   // byte-identical to before (tripwire).
   if (hf::core::pattern_note_count(doc.pattern()) > 0) {
+    cancelPendingPreviewExport();
     schedulePattern(doc.pattern(), doc.trackShown());
     return;
   }
   if (hf::plugin::modelPath(proc.state()).isEmpty()) {
+    cancelPendingPreviewExport();
     schedulePattern(patternForState(proc.state()));
     return;
   }
@@ -546,10 +548,12 @@ void HarmonyForgeEditor::exportMultitrack() {
   // synchronously, byte-identical to before (tripwire). Empty pattern plus
   // a configured model goes async with progress + supersede.
   if (hf::core::pattern_note_count(doc.pattern()) > 0) {
+    cancelPendingPreviewExport();
     finishExport(doc.pattern());
     return;
   }
   if (hf::plugin::modelPath(proc.state()).isEmpty()) {
+    cancelPendingPreviewExport();
     finishExport(patternForState(proc.state()));
     return;
   }
@@ -605,6 +609,11 @@ void HarmonyForgeEditor::clearModel() {
 }
 
 void HarmonyForgeEditor::refreshModelRow() {
+  // Undo/redo of ModelPath (or Clear/pick) lands here: drop any stale
+  // rejection hint so the row always describes the stored value.
+  // (Rejections set the hint without touching state, so they never pass
+  // through here and are never cleared prematurely.)
+  modelHintLabel.setText("", juce::dontSendNotification);
   const juce::String stored = hf::plugin::modelPath(proc.state());
   const std::string disp = hf::infer::model_display_name(stored.toStdString());
   juce::String text = juce::String("Model: ") + juce::String(disp);
@@ -617,6 +626,17 @@ void HarmonyForgeEditor::setPreviewBusy(bool busy, const juce::String& status) {
   previewButton.setEnabled(!busy);
   exportButton.setEnabled(!busy);
   statusLabel.setText(status, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::cancelPendingPreviewExport() {
+  // Last-wins: a synchronous preview/export (working pattern present, or no
+  // model configured) supersedes any in-flight async job — e.g. Build
+  // arrangement adopting a pattern while a preview generation is pending.
+  // The worker completion, if any, stays queued but is never collected while
+  // previewBusy_ is false; a later submit drains it via try_take_latest.
+  pendingOp_ = PendingOp::None;
+  pendingPreviewId_ = 0;  // 0 is never issued (ids start at 1)
+  setPreviewBusy(false, "");
 }
 
 void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {

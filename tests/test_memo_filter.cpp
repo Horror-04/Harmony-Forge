@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -16,6 +17,23 @@
 #include "memo_filter.h"
 
 namespace {
+
+// Lowest-risk .bin field writers: explicit little-endian bytes (the on-disk
+// layout is LE per training/export_memo_index.py; the previous
+// reinterpret_cast writes were correct only on LE hosts).
+void write_u32_le(std::ofstream& f, uint32_t v) {
+  const char b[4] = {static_cast<char>(v & 0xFF),
+                     static_cast<char>((v >> 8) & 0xFF),
+                     static_cast<char>((v >> 16) & 0xFF),
+                     static_cast<char>((v >> 24) & 0xFF)};
+  f.write(b, 4);
+}
+
+void write_i32_le(std::ofstream& f, int32_t v) {
+  uint32_t u = 0;
+  std::memcpy(&u, &v, 4);
+  write_u32_le(f, u);
+}
 
 constexpr int kWindow = 8;
 constexpr int kMinRun = 4;
@@ -166,11 +184,10 @@ TEST_CASE("loader round-trips the binary format and rejects garbage", "[memo]") 
     REQUIRE(f.good());
     const char magic[4] = {'H', 'F', 'M', 'I'};
     f.write(magic, 4);
-    const uint32_t version = 1, count = 2;
-    f.write(reinterpret_cast<const char*>(&version), 4);
-    f.write(reinterpret_cast<const char*>(&count), 4);
+    write_u32_le(f, 1);  // version
+    write_u32_le(f, 2);  // count
     const int32_t w[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
-    f.write(reinterpret_cast<const char*>(w), sizeof(w));
+    for (int32_t v : w) write_i32_le(f, v);
   }
   auto idx = hf::infer::load_memo_index(tmp);
   REQUIRE(idx.has_value());
@@ -234,11 +251,10 @@ void write_memo_bin(const std::string& path,
   std::ofstream f(path, std::ios::binary);
   REQUIRE(f.good());
   f.write("HFMI", 4);
-  const uint32_t version = 1, count = static_cast<uint32_t>(ws.size());
-  f.write(reinterpret_cast<const char*>(&version), 4);
-  f.write(reinterpret_cast<const char*>(&count), 4);
+  write_u32_le(f, 1);
+  write_u32_le(f, static_cast<uint32_t>(ws.size()));
   for (const auto& w : ws)
-    f.write(reinterpret_cast<const char*>(w.data()), 32);
+    for (int32_t v : w) write_i32_le(f, v);
   f.flush();
   REQUIRE(f.good());
 }
