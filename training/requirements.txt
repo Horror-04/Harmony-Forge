@@ -2,6 +2,10 @@
 # Pinned after verifying install on Python 3.14.6 (2026-10-11, venv).
 # torch CPU wheels come from the PyTorch CPU index:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# CUDA note (Phase 4 Task 2): the GPU venv (training/.venv-cuda) uses
+# torch 2.14.1+cu130 from the cu130 index. cu128 maxes at torch 2.11,
+# so do NOT point the CUDA install at the cu128 index for 2.14.x:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu130
 # onnxruntime (Python) is a verification-only dep: export/eval scripts
 # smoke-run model.onnx through it. onnxscript (+onnx_ir) is required by
 # torch 2.14's dynamo ONNX exporter (used by export_onnx.py).

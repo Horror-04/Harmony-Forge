@@ -30,6 +30,8 @@
 - Train tokens: 60,515. Val tokens: 6,183. Max pattern: 457 ids.
 
 ## Training (R4 time-box)
+- Device flag: `training/train.py --device {cpu,cuda}` (default `cpu`;
+  CUDA torch lives in `training/.venv-cuda`, torch 2.14.1+cu130).
 - Smoke (overfit single batch, pure CE — loop proof): final loss 0.0146
   (< 0.05 gate) in 2.8 s wall.
 - Full run (fix round 2, rung 2: loss = CE + 1.0 * compliance-penalty):
