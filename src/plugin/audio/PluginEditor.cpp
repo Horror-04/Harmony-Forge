@@ -6,16 +6,18 @@
 #include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
 #include "core/serialization/midi_file.h"
+#include "model_path.h"
 #include "PluginProcessor.h"
 
 namespace {
 
 hf::core::Pattern patternForState(const juce::ValueTree& tree) {
-  // Synchronous preview/export fallback (Task 4 judgment: drag/export need
-  // synchronous bytes, and the empty-path fallback is sub-millisecond, so
-  // this path stays sync; only Regenerate goes through the async queue).
-  // The model path IS threaded from state here, so a configured model
-  // applies to previews as well as Regenerate.
+  // Fallback pattern for the current state (Sprint 4 behaviour, now with
+  // state seed/bars/model). Synchronous: used byte-identically when no model
+  // is configured (tripwire) and as the documented drag fallback with a
+  // model (see PluginEditor.h). Async preview/export completes to
+  // candidates[0] of these same params — that projection is asserted
+  // bit-identical in tests/test_model_preview.cpp.
   hf::infer::GenParams gp = PatternDocument::makeParamsWithModel(
       hf::plugin::seed(tree), hf::plugin::bars(tree), hf::plugin::rootKey(tree),
       hf::plugin::scaleName(tree).toLowerCase().toStdString(),
@@ -56,7 +58,8 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       doc(&p.undo()),
       chordTrack(doc),
       roll(doc),
-      candidateBar(doc) {
+      candidateBar(doc),
+      previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
   setSize(1024, 844);
 
   transportLabel.setText("Transport: --", juce::dontSendNotification);
@@ -181,6 +184,19 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   };
   addAndMakeVisible(invDownButton);
 
+  // Phase 3 Task 4 item A: ModelPath picker (message thread, undoable).
+  modelLabel.setText("Model:", juce::dontSendNotification);
+  addAndMakeVisible(modelLabel);
+  modelButton.onClick = [this] { chooseModelFile(); };
+  addAndMakeVisible(modelButton);
+  modelClearButton.onClick = [this] { clearModel(); };
+  addAndMakeVisible(modelClearButton);
+  modelHintLabel.setText("", juce::dontSendNotification);
+  addAndMakeVisible(modelHintLabel);
+  statusLabel.setText("", juce::dontSendNotification);
+  addAndMakeVisible(statusLabel);
+  refreshModelRow();
+
   // Roll stack in a viewport (one scroller for chords + roll).
   rollStack.chords = &chordTrack;
   rollStack.roll = &roll;
@@ -284,6 +300,19 @@ void HarmonyForgeEditor::resized() {
   chordRow.removeFromLeft(6);
   invDownButton.setBounds(chordRow.removeFromLeft(60));
   r.removeFromTop(4);
+  // Phase 3 Task 4 item A/B: model picker row + hint/progress row.
+  auto modelRow = r.removeFromTop(28);
+  modelLabel.setBounds(modelRow.removeFromLeft(340));
+  modelRow.removeFromLeft(6);
+  modelButton.setBounds(modelRow.removeFromLeft(100));
+  modelRow.removeFromLeft(6);
+  modelClearButton.setBounds(modelRow.removeFromLeft(80));
+  modelRow.removeFromLeft(6);
+  statusLabel.setBounds(modelRow);
+  r.removeFromTop(4);
+  auto hintRow = r.removeFromTop(22);
+  modelHintLabel.setBounds(hintRow);
+  r.removeFromTop(4);
   auto arrange = r.removeFromBottom(120);
   arrangeBar.setBounds(arrange);
   r.removeFromBottom(4);
@@ -299,6 +328,9 @@ void HarmonyForgeEditor::timerCallback() {
   // Async Regenerate collector (Task 4 item C): apply the latest finished
   // generation, drop stale superseded ones. Non-blocking poll only.
   doc.poll_regenerate();
+  // Phase 3 Task 4 item B: async preview/export collector (same supersede
+  // discipline, dedicated queue). Non-blocking poll only.
+  pollPreviewExport();
   // Keep the chord strip as wide as the roll (shared scroller).
   const int w = std::max(viewport.getWidth(), roll.getWidth());
   chordTrack.setSize(w, 64);
@@ -327,7 +359,7 @@ void HarmonyForgeEditor::timerCallback() {
 }
 
 void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
-                                                  const juce::Identifier&) {
+                                                  const juce::Identifier& id) {
   // Reflect undo/redo without feeding back into the tree.
   bpmSlider.setValue(hf::plugin::bpm(tree), juce::dontSendNotification);
   densitySlider.setValue(hf::plugin::density(tree), juce::dontSendNotification);
@@ -336,6 +368,8 @@ void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
               hf::plugin::scaleName(tree).toLowerCase().toStdString());
   chordTrack.setKey(hf::plugin::rootKey(tree),
                     hf::plugin::scaleName(tree).toLowerCase().toStdString());
+  // Phase 3 Task 4 item A: undo/redo of the picker reflects in the label.
+  if (id.toString() == juce::String(hf::plugin::StateID::kModelPath)) refreshModelRow();
 }
 
 void HarmonyForgeEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -400,11 +434,19 @@ void HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int prefe
 void HarmonyForgeEditor::startPreview() {
   // Message thread: the working pattern when present, else the Safe
   // candidate for the current state (Sprint 4 behaviour, now with
-  // state seed/bars).
-  if (hf::core::pattern_note_count(doc.pattern()) > 0)
+  // state seed/bars). Phase 3 Task 4 item B: with a model configured and
+  // no working pattern yet, generation goes through the async queue
+  // (progress UI, supersede-safe); the empty-path sync call below is
+  // byte-identical to before (tripwire).
+  if (hf::core::pattern_note_count(doc.pattern()) > 0) {
     schedulePattern(doc.pattern(), doc.trackShown());
-  else
+    return;
+  }
+  if (hf::plugin::modelPath(proc.state()).isEmpty()) {
     schedulePattern(patternForState(proc.state()));
+    return;
+  }
+  submitPreviewExport(PendingOp::Preview);
 }
 
 void HarmonyForgeEditor::auditionCandidate(int i) {
@@ -471,11 +513,24 @@ void HarmonyForgeEditor::startMidiDrag() {
   // Message thread file I/O is fine (never the audio thread). Drags the
   // working pattern as multitrack MIDI (all tracks, correct channels); with
   // no pattern yet, the Safe candidate for the current state.
-  hf::core::Pattern pat = hf::core::pattern_note_count(doc.pattern()) > 0
-                              ? doc.pattern()
-                              : patternForState(proc.state());
-  hf::ser::assign_default_channels(pat);
-  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(pat, 480);
+  // Phase 3 Task 4 item B proviso: drag stays synchronous even with a model
+  // configured (documented fallback in PluginEditor.h — the OS drag must
+  // start inside this mouseDown gesture). Empty path is byte-identical.
+  if (hf::core::pattern_note_count(doc.pattern()) > 0) {
+    finishDrag(doc.pattern());
+    return;
+  }
+  if (!hf::plugin::modelPath(proc.state()).isEmpty())
+    statusLabel.setText("Rendering MIDI...", juce::dontSendNotification);
+  hf::core::Pattern pat = patternForState(proc.state());
+  statusLabel.setText("", juce::dontSendNotification);
+  finishDrag(pat);
+}
+
+void HarmonyForgeEditor::finishDrag(const hf::core::Pattern& pat) {
+  hf::core::Pattern copy = pat;
+  hf::ser::assign_default_channels(copy);
+  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(copy, 480);
   juce::File mid =
       juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("HarmonyForge-drag.mid");
   if (!mid.replaceWithData(bytes.data(), bytes.size())) return;
@@ -485,11 +540,24 @@ void HarmonyForgeEditor::startMidiDrag() {
 }
 
 void HarmonyForgeEditor::exportMultitrack() {
-  hf::core::Pattern pat = hf::core::pattern_note_count(doc.pattern()) > 0
-                              ? doc.pattern()
-                              : patternForState(proc.state());
-  hf::ser::assign_default_channels(pat);
-  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(pat, 480);
+  // Phase 3 Task 4 item B: working pattern or empty model path export
+  // synchronously, byte-identical to before (tripwire). Empty pattern plus
+  // a configured model goes async with progress + supersede.
+  if (hf::core::pattern_note_count(doc.pattern()) > 0) {
+    finishExport(doc.pattern());
+    return;
+  }
+  if (hf::plugin::modelPath(proc.state()).isEmpty()) {
+    finishExport(patternForState(proc.state()));
+    return;
+  }
+  submitPreviewExport(PendingOp::Export);
+}
+
+void HarmonyForgeEditor::finishExport(const hf::core::Pattern& pat) {
+  hf::core::Pattern copy = pat;
+  hf::ser::assign_default_channels(copy);
+  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(copy, 480);
   auto chooser = std::make_shared<juce::FileChooser>("Export multitrack MIDI",
                                                      juce::File::getSpecialLocation(
                                                          juce::File::userDocumentsDirectory),
@@ -500,4 +568,84 @@ void HarmonyForgeEditor::exportMultitrack() {
                          const auto f = fc.getResult();
                          if (f != juce::File{}) f.replaceWithData(bytes.data(), bytes.size());
                        });
+}
+
+void HarmonyForgeEditor::chooseModelFile() {
+  // Message thread: *.onnx-restricted picker. A cancelled dialog is not a
+  // rejection (no hint); a chosen-but-unusable file keeps the stored value
+  // and shows the hint (never a silent ignore).
+  auto chooser =
+      std::make_shared<juce::FileChooser>("Select model file", juce::File{}, "*.onnx");
+  chooser->launchAsync(juce::FileBrowserComponent::openMode |
+                           juce::FileBrowserComponent::canSelectFiles,
+                       [this, chooser](const juce::FileChooser& fc) {
+                         const juce::File f = fc.getResult();
+                         if (f == juce::File{}) return;
+                         if (!hf::infer::is_usable_model_path(
+                                 f.getFullPathName().toStdString())) {
+                           modelHintLabel.setText(hf::infer::model_rejection_hint(),
+                                                  juce::dontSendNotification);
+                           return;
+                         }
+                         proc.undo().beginNewTransaction("Model");
+                         hf::plugin::setModelPath(proc.state(), f.getFullPathName(),
+                                                  &proc.undo());
+                         modelHintLabel.setText("", juce::dontSendNotification);
+                         refreshModelRow();
+                       });
+}
+
+void HarmonyForgeEditor::clearModel() {
+  proc.undo().beginNewTransaction("Model");
+  hf::plugin::setModelPath(proc.state(), "", &proc.undo());
+  modelHintLabel.setText("", juce::dontSendNotification);
+  refreshModelRow();
+}
+
+void HarmonyForgeEditor::refreshModelRow() {
+  const juce::String stored = hf::plugin::modelPath(proc.state());
+  const std::string disp = hf::infer::model_display_name(stored.toStdString());
+  juce::String text = juce::String("Model: ") + juce::String(disp);
+  if (!stored.isEmpty()) text += " (loaded)";
+  modelLabel.setText(text, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::setPreviewBusy(bool busy, const juce::String& status) {
+  previewBusy_ = busy;
+  previewButton.setEnabled(!busy);
+  exportButton.setEnabled(!busy);
+  statusLabel.setText(status, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
+  // Message thread: same params as the sync fallback; the worker runs the
+  // identical generate_candidates, so the completion's candidates[0] equals
+  // patternForState bit-identically (asserted in test_model_preview). A new
+  // request supersedes a pending one by id (see pollPreviewExport).
+  const auto gp = PatternDocument::makeParamsWithModel(
+      hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()),
+      hf::plugin::rootKey(proc.state()),
+      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
+      hf::plugin::modelPath(proc.state()).toStdString());
+  pendingPreviewId_ = previewGen_->generate_async(gp);
+  pendingOp_ = op;
+  setPreviewBusy(true, op == PendingOp::Preview ? "Generating preview..."
+                                                : "Generating MIDI for export...");
+}
+
+bool HarmonyForgeEditor::pollPreviewExport() {
+  // Message-thread Timer poll: apply the latest completion for the pending
+  // id, drop stale superseded ones. No-op unless a job is pending.
+  if (!previewBusy_) return false;
+  auto got = previewGen_->try_take_latest(pendingPreviewId_);
+  if (!got.has_value()) return false;  // worker still generating
+  const PendingOp op = pendingOp_;
+  pendingOp_ = PendingOp::None;
+  setPreviewBusy(false, "");
+  if (op == PendingOp::Preview) {
+    schedulePattern(got->candidates[0], doc.trackShown());
+  } else if (op == PendingOp::Export) {
+    finishExport(got->candidates[0]);
+  }
+  return true;
 }

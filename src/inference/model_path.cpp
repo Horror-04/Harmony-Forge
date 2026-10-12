@@ -34,4 +34,18 @@ std::string sanitised_model_path(const std::string& path) noexcept {
   return is_usable_model_path(path) ? path : std::string{};
 }
 
+std::string model_display_name(const std::string& sanitised_path) noexcept {
+  if (sanitised_path.empty()) return "No model (deterministic)";
+  try {
+    const std::string base = std::filesystem::path(sanitised_path).filename().string();
+    return base.empty() ? sanitised_path : base;
+  } catch (...) {
+    return sanitised_path;
+  }
+}
+
+const char* model_rejection_hint() noexcept {
+  return "Model not set: choose an existing .onnx file.";
+}
+
 }  // namespace hf::infer
