@@ -1,14 +1,18 @@
 """Corpus prep for Phase 2 Task 3 (R1: licensed-clean ONLY).
 
 Sources (no Lakh/MAESTRO downloads in this task):
-  1. ``composed`` — short hymn-style heads (see dataset_heads.py): 8 heads
-     "after" well-known public-domain Bach-chorale tunes (Bach d. 1750; the
-     tunes themselves are public domain, our encodings/harmonizations are
-     original) + 8 original heads in chorale idiom. Each realized in 2 keys.
+  1. ``composed`` — short hymn-style heads (see dataset_heads.py): 30 heads
+     "after" well-known public-domain chorale tunes (the tunes themselves
+     are public domain, our encodings/harmonizations are original) + 48
+     original heads in varied modes/feels, each realized in 2 keys
+     (156 patterns, ~35%).
   2. ``procedural`` — augmentation from OUR OWN theory engine: a Python
      mirror of ``src/inference/candidates.cpp::compose_base`` (chord-tone
-     biased scale-walk melody, roots-and-fifths bass, sustained triads over
-     I-V-vi-IV) plus light drums on 25%. Clean by construction.
+     biased scale-walk melody, roots-and-fifths bass, sustained triads)
+     over SIX progressions (I-V-vi-IV, I-vi-IV-V, I-IV-V-V, vi-IV-I-V,
+     ii-V-I-vi, I-V-IV-vi), FIVE melody feels (quarters, halves, eighths,
+     dotted, syncopated) and THREE bass styles (roots-and-fifths, walking,
+     sustained), plus light drums on 25%. Clean by construction.
 
 Outputs (``training/corpus/``):
   train.jsonl / val.jsonl  — one JSON object per line:
@@ -17,7 +21,8 @@ Outputs (``training/corpus/``):
   memo_ngrams.json — melody interval 6-grams + flat-id 8-grams (eval
     memorization filter reference).
 
-Split: heads O,P (all keys) + ~10% of procedural -> val (unseen heads).
+Split: heads O,P,AU,AV (all keys) + ~10% of procedural -> val (unseen
+heads). AU/AV are held out so val covers the expansion's new idiom too.
 Dedup (§10 filter): exact id-vector duplicates are dropped with a report;
 near-dups (same transposition-invariant melody signature) are kept as
 legitimate augmentation and counted in the manifest.
@@ -44,16 +49,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CORPUS_DIR = os.path.join(HERE, "corpus")
 
 LICENCE_COMPOSED = (
-    "Heads 'after' J.S. Bach chorale tunes (public domain, composer d. 1750; "
+    "Heads 'after' public-domain chorale tunes (composers long deceased; "
     "pitches re-encoded and harmonized originally for this repo) + original "
-    "heads in chorale idiom (original work, same licence as repo)."
+    "heads in varied modes/feels (original work, same licence as repo)."
 )
 LICENCE_PROCEDURAL = (
     "Procedural augmentation from Harmony Forge's own theory engine "
     "(Python mirror of src/inference/candidates.cpp); clean by construction."
 )
 
-HELD_OUT_HEADS = ("O", "P")  # reserved for val in every key
+HELD_OUT_HEADS = ("O", "P", "AU", "AV")  # reserved for val in every key
 VAL_PROCEDURAL_FRAC = 0.10
 
 SUB = tok.SUBBEAT_TICKS  # 120 ticks
@@ -90,21 +95,51 @@ def _realize(head_name: str, head: dict, semis: int, key_tag: str) -> dict:
 
 
 # ---------------------------------------------------------- procedural ------
-# Mirror of candidates.cpp compose_base: deterministic quarter-note base with
-# chord-tone-biased scale walk (melody 60..84), roots-and-fifths bass,
-# sustained triads, I-V-vi-IV progression with scale-derived chord quality.
+# Mirror of candidates.cpp compose_base: chord-tone-biased scale-walk
+# melody (60..84), roots-and-fifths/walking/sustained bass, sustained
+# triads. Phase 3 Task 2 (R1) variants: 6 progressions x 5 melody feels x
+# 3 bass styles x 7 scales, drawn per pattern from the seeded rng
+# (deterministic for a fixed seed). All feels stay on the 4/4 16th grid
+# the frozen codec assumes; every pattern still roundtrips through
+# tokenizer.py (asserted in build()).
 
 TONICS = [48, 50, 52, 53, 55, 57]
-SCALES = ["major", "natural_minor", "dorian", "mixolydian"]
-DEGREES = [0, 4, 5, 3]  # I V vi IV
+SCALES = ["major", "natural_minor", "dorian", "mixolydian",
+          "phrygian", "lydian", "harmonic_minor"]
+PROGRESSIONS = [
+    [0, 4, 5, 3],  # I-V-vi-IV (legacy)
+    [0, 5, 3, 4],  # I-vi-IV-V
+    [0, 3, 4, 4],  # I-IV-V-V
+    [5, 3, 0, 4],  # vi-IV-I-V
+    [1, 4, 0, 5],  # ii-V-I-vi
+    [0, 4, 3, 5],  # I-V-IV-vi
+]
+MELODY_FEELS = ["quarters", "halves", "eighths", "dotted", "syncopated"]
+BASS_STYLES = ["roots_fifths", "walking", "sustained"]
 
 
-def _prog_chords(tonic: int, scale: str, bars: int) -> list[tuple]:
+def _melody_slots(feel: str) -> list[tuple]:
+    """(start_offset_ticks, dur_ticks) within one 1920-tick bar."""
+    if feel == "halves":
+        return [(0, 960), (960, 960)]
+    if feel == "eighths":
+        return [(q * 240, 240) for q in range(8)]
+    if feel == "dotted":  # quarter, eighth, eighth, quarter, eighth, eighth
+        return [(0, 480), (480, 240), (720, 240),
+                (960, 480), (1440, 240), (1680, 240)]
+    if feel == "syncopated":  # offbeat eighths + rest before beat 3
+        return [(0, 480), (480, 240), (720, 240),
+                (1200, 240), (1440, 480)]
+    return [(q * 480, 480) for q in range(4)]  # quarters (legacy)
+
+
+def _prog_chords(tonic: int, scale: str, bars: int,
+                 prog: list[int]) -> list[tuple]:
     iv = T.SCALES[scale]
     n = len(iv)
     out = []
     for b in range(bars):
-        deg = DEGREES[b % 4] % n
+        deg = prog[b % len(prog)] % n
         third = (iv[(deg + 2) % n] - iv[deg]) % 12
         fifth = (iv[(deg + 4) % n] - iv[deg]) % 12
         ctype = "maj"
@@ -122,9 +157,12 @@ def _procedural_one(rng: random.Random, idx: int) -> dict:
     tonic = rng.choice(TONICS)
     scale = rng.choice(SCALES)
     bars = rng.choice([2, 3, 4, 4])
+    prog = rng.choice(PROGRESSIONS)
+    feel = rng.choice(MELODY_FEELS)
+    bass_style = rng.choice(BASS_STYLES)
     iv = T.SCALES[scale]
     n = len(iv)
-    chords = _prog_chords(tonic, scale, bars)
+    chords = _prog_chords(tonic, scale, bars, prog)
 
     center = tonic
     while center + 12 <= 84:
@@ -141,32 +179,51 @@ def _procedural_one(rng: random.Random, idx: int) -> dict:
             p += 12
         return p
 
-    deg = rng.randrange(2 * n)
+    def pick_pitch(pcs: list[int], deg: list[int]) -> int:
+        if pcs and rng.randrange(100) < 70:
+            want = rng.choice(pcs)
+            delta = T.mod12(want - T.mod12(center))
+            signed = delta if delta <= 6 else delta - 12
+            return pull(center + signed)
+        deg[0] = max(0, min(2 * n - 1, deg[0] + rng.randrange(5) - 2))
+        d = deg[0]
+        return pull(center + (iv[d % n] - iv[0]) + 12 * (d // n))
+
+    deg = [rng.randrange(2 * n)]
+    slots = _melody_slots(feel)
     mel, bass, chnotes = [], [], []
     for b, (root, ctype) in enumerate(chords):
         pcs = T.chord_tone_pcs(root, ctype)
-        for q in range(4):
-            if pcs and rng.randrange(100) < 70:
-                want = rng.choice(pcs)
-                delta = T.mod12(want - T.mod12(center))
-                signed = delta if delta <= 6 else delta - 12
-                pitch = pull(center + signed)
-            else:
-                deg = max(0, min(2 * n - 1, deg + rng.randrange(5) - 2))
-                pitch = pull(center + (iv[deg % n] - iv[0]) + 12 * (deg // n))
-            mel.append({"pitch": pitch, "start_tick": b * tok.BAR_TICKS + q * 480,
-                        "duration_ticks": 480, "velocity": 88 + (8 if q == 0 else 0)})
+        for off, dur in slots:
+            pitch = pick_pitch(pcs, deg)
+            mel.append({"pitch": pitch,
+                        "start_tick": b * tok.BAR_TICKS + off,
+                        "duration_ticks": dur,
+                        "velocity": 96 if off % 480 == 0 else 88})
         r = root
         while r > 60:
             r -= 12
         while r < 24:
             r += 12
-        bass.append({"pitch": r, "start_tick": b * tok.BAR_TICKS,
-                     "duration_ticks": 480, "velocity": 96})
         fifth = r + 7
-        bass.append({"pitch": fifth if fifth <= 60 else r,
-                     "start_tick": b * tok.BAR_TICKS + 960,
-                     "duration_ticks": 480, "velocity": 84})
+        if fifth > 60:
+            fifth = r
+        if bass_style == "walking":  # quarter-note root-fifth-octave walk
+            octv = r + 12 if r + 12 <= 60 else r
+            for q, p in enumerate((r, fifth, octv, fifth)):
+                bass.append({"pitch": p,
+                             "start_tick": b * tok.BAR_TICKS + q * 480,
+                             "duration_ticks": 480,
+                             "velocity": 96 if q == 0 else 84})
+        elif bass_style == "sustained":  # whole-note roots
+            bass.append({"pitch": r, "start_tick": b * tok.BAR_TICKS,
+                         "duration_ticks": tok.BAR_TICKS, "velocity": 92})
+        else:  # roots-and-fifths half notes (legacy)
+            bass.append({"pitch": r, "start_tick": b * tok.BAR_TICKS,
+                         "duration_ticks": 480, "velocity": 96})
+            bass.append({"pitch": fifth,
+                         "start_tick": b * tok.BAR_TICKS + 960,
+                         "duration_ticks": 480, "velocity": 84})
         cr = root
         while cr > 60:
             cr -= 12
@@ -198,7 +255,9 @@ def _procedural_one(rng: random.Random, idx: int) -> dict:
             "licence": LICENCE_PROCEDURAL, "tonic": tonic, "scale": scale,
             "bars": bars,
             "chords": [{"root": r, "type": t} for r, t in chords],
-            "after": None, "pattern": pattern}
+            "after": None, "pattern": pattern,
+            "variant": {"prog": list(prog), "feel": feel,
+                        "bass": bass_style}}
 
 
 # ----------------------------------------------------------------- build ----
@@ -288,6 +347,18 @@ def build(procedural_n: int = 288, seed: int = 7) -> dict:
             {"name": "procedural", "licence": LICENCE_PROCEDURAL,
              "count": sum(1 for i in kept if i["source"] == "procedural")},
         ],
+        "procedural_variants": {
+            "progressions": PROGRESSIONS,
+            "feels": MELODY_FEELS,
+            "bass_styles": BASS_STYLES,
+            "scales": SCALES,
+            "feel_counts": {f: sum(1 for i in kept
+                                   if i.get("variant", {}).get("feel") == f)
+                            for f in MELODY_FEELS},
+            "bass_counts": {s: sum(1 for i in kept
+                                   if i.get("variant", {}).get("bass") == s)
+                            for s in BASS_STYLES},
+        },
         "total_kept": len(kept),
         "exact_dupes_dropped": exact_dupes,
         "near_dup_signature_groups": near_dup_groups,

@@ -3,8 +3,8 @@
  "sources": [
   {
    "name": "composed",
-   "licence": "Heads 'after' J.S. Bach chorale tunes (public domain, composer d. 1750; pitches re-encoded and harmonized originally for this repo) + original heads in chorale idiom (original work, same licence as repo).",
-   "count": 32
+   "licence": "Heads 'after' public-domain chorale tunes (composers long deceased; pitches re-encoded and harmonized originally for this repo) + original heads in varied modes/feels (original work, same licence as repo).",
+   "count": 156
   },
   {
    "name": "procedural",
@@ -12,26 +12,101 @@
    "count": 288
   }
  ],
- "total_kept": 320,
+ "procedural_variants": {
+  "progressions": [
+   [
+    0,
+    4,
+    5,
+    3
+   ],
+   [
+    0,
+    5,
+    3,
+    4
+   ],
+   [
+    0,
+    3,
+    4,
+    4
+   ],
+   [
+    5,
+    3,
+    0,
+    4
+   ],
+   [
+    1,
+    4,
+    0,
+    5
+   ],
+   [
+    0,
+    4,
+    3,
+    5
+   ]
+  ],
+  "feels": [
+   "quarters",
+   "halves",
+   "eighths",
+   "dotted",
+   "syncopated"
+  ],
+  "bass_styles": [
+   "roots_fifths",
+   "walking",
+   "sustained"
+  ],
+  "scales": [
+   "major",
+   "natural_minor",
+   "dorian",
+   "mixolydian",
+   "phrygian",
+   "lydian",
+   "harmonic_minor"
+  ],
+  "feel_counts": {
+   "quarters": 57,
+   "halves": 52,
+   "eighths": 64,
+   "dotted": 56,
+   "syncopated": 59
+  },
+  "bass_counts": {
+   "roots_fifths": 92,
+   "walking": 94,
+   "sustained": 102
+  }
+ },
+ "total_kept": 444,
  "exact_dupes_dropped": 0,
- "near_dup_signature_groups": 15,
+ "near_dup_signature_groups": 71,
  "near_dup_note": "Transposed/same-shape melodies share a signature; kept as legitimate augmentation, counted here.",
  "split": {
-  "train": 287,
-  "val": 33,
+  "train": 407,
+  "val": 37,
   "held_out_heads": [
    "O",
-   "P"
+   "P",
+   "AU",
+   "AV"
   ],
   "val_procedural_rule": "procedural-NNNN with NNNN % 10 == 0"
  },
  "token_stats": {
-  "train_ids": 60515,
-  "val_ids": 6183,
-  "max_ids": 457
+  "train_ids": 84629,
+  "val_ids": 7609,
+  "max_ids": 601
  },
  "memo_reference": {
-  "melody_interval_6grams": 1913,
-  "flat_id_8grams": 6749
+  "melody_interval_6grams": 2992,
+  "flat_id_8grams": 16551
  }
 }

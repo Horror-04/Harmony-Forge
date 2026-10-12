@@ -1,12 +1,13 @@
 """Tiny decoder-only transformer trainer (Phase 2 Task 3, R3/R4).
 
-Arch (R3: <= ~2 M params, 4 layers, 4 heads, d_model 128, ctx <= 1024):
-  token emb (256 x 128) + learned pos emb (1024 x 128)
-  + learned slot emb (7 x 128: position-0 count head + 6 note slots,
+Arch (Round-2 scale-up, bounded per controller ruling: <= 4 M params,
+6 layers, 6 heads, d_model 192, ctx <= 1024):
+  token emb (256 x 192) + learned pos emb (1024 x 192)
+  + learned slot emb (7 x 192: position-0 count head + 6 note slots,
   the phase signal keeping heterogeneous codec slots aligned)
-  + 4 x pre-norm decoder blocks (4-head causal attn, ff 256)
+  + 6 x pre-norm decoder blocks (6-head causal attn, ff 768)
   + final norm + LM head.
-  ~0.75 M params. VOCAB=256 covers every flat codec id (count <= 170,
+  ~2.9 M params. VOCAB=256 covers every flat codec id (count <= 170,
   bar <= 15, pitch <= 127, dur <= 64 by construction; asserted on load).
 
 Modes:
@@ -21,7 +22,12 @@ R4 time-box: calibrate --epochs so the full run fits ~2 h; the smoke timing
 printed here guides that choice (do NOT ship smoke-overfit as the model).
 
 Run (venv): ``training/.venv/Scripts/python training/train.py [--smoke]``
-Deterministic for a fixed --seed (torch manual_seed + single-thread CPU).
+GPU (round 2): ``training/.venv-cuda/Scripts/python training/train.py --device cuda``
+Round 3: ``--penalty-w {1,2,4}`` sweep + ``--composed-weight 2`` (train-only
+composed upweighting; val batching unweighted, split untouched).
+Deterministic for a fixed --seed on CPU (torch manual_seed + single-thread
+CPU). On CUDA the same seed is set (best-effort; cuDNN may introduce
+non-bit-exact variance — device is recorded in logs/report).
 """
 
 from __future__ import annotations
@@ -42,9 +48,18 @@ import theory as T
 from tinilm import CONFIG, CTX, VOCAB, build_model, param_count
 
 # Fix round 2, rung 2: compliance-penalty weight. Single a priori choice
-# (equal footing with CE), disclosed in MODEL_CARD + report. ONE shot —
-# re-tuning it against eval results would be gate-tuning, so there is none.
+# (equal footing with CE), disclosed in MODEL_CARD + report. Round 3
+# ruling authorizes a ONE-time disclosed sweep over {1, 2, 4} via
+# --penalty-w (fixed val, best-val-compliance selection, all three
+# numbers reported) — NOT open-ended gate-tuning.
 PENALTY_W = 1.0
+
+# Round 3 lever (b): composed-head upweighting xN in TRAIN sampling
+# (targets the failing unseen-composed slice; disclosed; val split
+# untouched — val batching never calls this). Implemented as index
+# duplication inside each epoch's shuffled pool (deterministic for a
+# fixed seed). Default 1 = legacy batchify behaviour exactly.
+COMPOSED_WEIGHT = 1
 
 # Mask caches: static per (tonic, scale) / (root, type); built once.
 _scale_cache: dict = {}
@@ -111,14 +126,14 @@ def compliance_penalty(logits, inp, lens: list[int], metas: list[dict], torch):
             if track not in (1, 2):
                 continue
             bar, sub = int(inp[b, t - 3]), int(inp[b, t - 2])
-            safe = ok_scale
+            safe = ok_scale.to(logits.device)
             if sub % 4 == 0 and 0 <= bar < len(chords):
                 ch = chords[bar]
-                safe = safe * _norub_ok(ch["root"], ch["type"], torch)
+                safe = safe * _norub_ok(ch["root"], ch["type"], torch).to(logits.device)
             total = total + (1.0 - (probs[b, t] * safe).sum())
             count += 1
     if count == 0:
-        return torch.tensor(0.0)
+        return logits.new_zeros(())
     return total / count
 
 
@@ -140,7 +155,28 @@ def batchify(recs: list[dict], batch_size: int, shuffle: bool, rng) -> list[list
     return [idx[k:k + batch_size] for k in range(0, len(idx), batch_size)]
 
 
-def pad_batch(batch: list[list[int]], torch):
+def batchify_weighted(recs: list[dict], batch_size: int, shuffle: bool, rng,
+                      composed_weight: int = 1) -> list[list[int]]:
+    """Train-only weighted batching (round 3 lever b).
+
+    Each ``source == "composed"`` record appears `composed_weight` times
+    in the epoch pool; procedural records once. Pool is then shuffled
+    with the run rng (deterministic for a fixed seed) and chunked.
+    composed_weight=1 degrades to batchify exactly (same order for the
+    same rng state). NEVER used for val (val split untouched)."""
+    assert composed_weight >= 1, "composed weight must be >= 1"
+    if composed_weight == 1:
+        return batchify(recs, batch_size, shuffle, rng)
+    pool: list[int] = []
+    for i, r in enumerate(recs):
+        pool.extend([i] * (composed_weight
+                           if r.get("source") == "composed" else 1))
+    if shuffle:
+        rng.shuffle(pool)
+    return [pool[k:k + batch_size] for k in range(0, len(pool), batch_size)]
+
+
+def pad_batch(batch: list[list[int]], torch, device=None):
     # NOTE (fix round 1): pad id 0 collides with valid token id 0 (bar and
     # subbeat zeros are real data). Mask ONLY true pad-tail positions via
     # explicit per-row lengths; real zeros train normally. The input column
@@ -149,9 +185,9 @@ def pad_batch(batch: list[list[int]], torch):
     lens = [len(s) for s in batch]
     m = max(lens)
     assert m + 1 <= CTX, "sequence exceeds 1024-token context cap"
-    x = torch.zeros(len(batch), m + 1, dtype=torch.long)
+    x = torch.zeros(len(batch), m + 1, dtype=torch.long, device=device)
     for i, s in enumerate(batch):
-        x[i, :len(s)] = torch.tensor(s, dtype=torch.long)
+        x[i, :len(s)] = torch.tensor(s, dtype=torch.long, device=device)
     tgt = x[:, 1:].clone()
     for i, ln in enumerate(lens):
         # Row i's true targets are tgt[i, :ln - 1]; the rest is pad-tail.
@@ -160,7 +196,7 @@ def pad_batch(batch: list[list[int]], torch):
 
 
 def run_epoch(model, opt, loss_fn, recs: list[dict], idx_batches,
-              train: bool, torch, penalty_w: float = 0.0):
+              train: bool, torch, penalty_w: float = 0.0, device=None):
     """One epoch. Train: loss = CE + penalty_w * compliance_penalty.
     Val/smoke: pure CE (penalty_w=0); best.pt selection stays pure-CE."""
     model.train(train)
@@ -168,7 +204,7 @@ def run_epoch(model, opt, loss_fn, recs: list[dict], idx_batches,
     for idx in idx_batches:
         rows = [recs[i] for i in idx]
         ids = [r["ids"] for r in rows]
-        inp, tgt = pad_batch(ids, torch)
+        inp, tgt = pad_batch(ids, torch, device)
         logits = model(inp)
         ce = loss_fn(logits.reshape(-1, VOCAB), tgt.reshape(-1))
         if train and penalty_w > 0:
@@ -195,29 +231,44 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--device", choices=("cpu", "cuda"), default="cpu",
+                    help="explicit compute device (round 2; default cpu)")
+    ap.add_argument("--penalty-w", type=float, default=PENALTY_W,
+                    help="compliance-penalty weight (round 3: sweep {1,2,4})")
+    ap.add_argument("--composed-weight", type=int, default=COMPOSED_WEIGHT,
+                    help="train-sampling multiplicity of composed records "
+                    "(round 3 lever b: 2; val never weighted)")
     args = ap.parse_args()
 
     import torch
     import torch.nn as nn
 
     torch.manual_seed(args.seed)
-    torch.set_num_threads(max(1, (os.cpu_count() or 2) - 1))
+    if args.device == "cuda":
+        assert torch.cuda.is_available(), "no CUDA device (torch.cuda unavailable)"
+        device = torch.device("cuda")
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    else:
+        device = torch.device("cpu")
+        torch.set_num_threads(max(1, (os.cpu_count() or 2) - 1))
     train_recs = load_corpus("train")
     val_recs = load_corpus("val")
     for r in train_recs + val_recs:
         assert max(r["ids"]) < VOCAB, f"vocab overflow in {r['id']}"
-    print(f"train={len(train_recs)} val={len(val_recs)} torch={torch.__version__}")
+    print(f"train={len(train_recs)} val={len(val_recs)} torch={torch.__version__} device={args.device} "
+          f"penalty_w={args.penalty_w} composed_weight={args.composed_weight}")
 
-    model = build_model()
+    model = build_model().to(device)
     print(f"params: {param_count(model)} ({param_count(model) / 1e6:.2f} M,"
-          " budget <= ~2 M)")
+          " budget <= 4 M)")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
     t0 = time.time()
 
     if args.smoke:
         rec = [train_recs[0]["ids"]]
-        inp, tgt = pad_batch(rec, torch)
+        inp, tgt = pad_batch(rec, torch, device)
         curve = []
         for step in range(300):
             model.train()
@@ -245,11 +296,12 @@ def main() -> int:
     best = (float("inf"), -1)
     for ep in range(args.epochs):
         tce, tpen = run_epoch(model, opt, loss_fn, train_recs,
-                              batchify(train_recs, args.batch, True, rng),
-                              True, torch, PENALTY_W)
+                              batchify_weighted(train_recs, args.batch, True,
+                                                rng, args.composed_weight),
+                              True, torch, args.penalty_w, device)
         vl, _ = run_epoch(model, None, loss_fn, val_recs,
                           batchify(val_recs, args.batch, False, rng),
-                          False, torch)
+                          False, torch, 0.0, device)
         curve.append((ep, tce, tpen, vl))
         if vl < best[0]:
             best = (vl, ep)

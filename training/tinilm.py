@@ -1,4 +1,12 @@
-"""Shared tiny decoder-only transformer (Phase 2 Task 3, R3).
+"""Shared tiny decoder-only transformer (Phase 2 Task 3, R3; Phase 3 Task 2
+round 2: bounded scale-up per controller ruling).
+
+Arch: token emb (256 x 192) + learned pos emb (1024 x 192) + learned
+slot emb (7 x 192: position-0 count head + 6 note slots) + 6 x pre-norm
+decoder blocks (6-head causal attn, ff 768) + final norm + LM head.
+~2.9 M params (round-2 budget <= 4 M; decoder-only, same REMI vocab 256,
+same ctx 1024). VOCAB=256 covers every flat codec id.
+Context cap 1024 tokens / 16 bars (same caps as the C++ codec).
 
 Arch: token emb (256 x 128) + learned pos emb (1024 x 128) + learned
 slot emb (7 x 128: position-0 count head + 6 note slots) + 4 x pre-norm
@@ -20,10 +28,10 @@ key layout is frozen by checkpoints/best.pt — do not rename submodules.
 from __future__ import annotations
 
 VOCAB = 256
-D_MODEL = 128
-N_LAYER = 4
-N_HEAD = 4
-D_FF = 256
+D_MODEL = 192
+N_LAYER = 6
+N_HEAD = 6
+D_FF = 768
 CTX = 1024
 
 CONFIG = {"vocab": VOCAB, "d_model": D_MODEL, "n_layer": N_LAYER,
@@ -98,7 +106,7 @@ def build_model():
 
     model = TinyLM()
     n = sum(p.numel() for p in model.parameters())
-    assert n <= 2_000_000, "R3 param budget exceeded"
+    assert n <= 4_000_000, "round-2 param budget exceeded"
     return model
 
 
