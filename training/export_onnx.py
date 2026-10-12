@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Export Task 3 real weights to ONNX (replaces the Sprint 2 mock exporter).
 
 Graph (drop-in contract with ``src/inference/onnx_runner.cpp`` — ZERO C++

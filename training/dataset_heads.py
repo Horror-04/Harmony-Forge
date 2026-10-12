@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Corpus prep for Phase 2 Task 3 (R1: licensed-clean ONLY).
 
 Sources (no Lakh/MAESTRO downloads in this task):

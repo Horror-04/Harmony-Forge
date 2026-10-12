@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Tiny decoder-only transformer trainer (Phase 2 Task 3, R3/R4).
 
 Arch (R3: <= ~2 M params, 4 layers, 4 heads, d_model 128, ctx <= 1024):

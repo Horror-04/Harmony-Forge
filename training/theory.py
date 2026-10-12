@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Python mirror of the C++ music-theory tables used by the eval gates.
 
 Exact copies (values, not code) of:

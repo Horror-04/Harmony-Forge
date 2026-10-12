@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Export the runtime §10 memo n-gram index (Phase 3 Task 3, item A).
 
 Builds ``training/memo_index.bin`` from the SAME corpus + window definition

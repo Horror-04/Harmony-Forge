@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Shared tiny decoder-only transformer (Phase 2 Task 3, R3).
 
 Arch: token emb (256 x 128) + learned pos emb (1024 x 128) + learned

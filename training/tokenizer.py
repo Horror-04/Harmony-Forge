@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """REMI-style flat codec — full vocab (Sprint 2).
 
 Shared, frozen layout with ``src/core/serialization/tokenizer.cpp``::

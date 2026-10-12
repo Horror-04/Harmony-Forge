@@ -1,3 +1,5 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Eval-gate tests: theory mirror spot-checks + full evaluate() gates.
 
 Run: ``python training/tests/test_eval.py`` (needs onnxruntime + numpy;
