@@ -1,8 +1,11 @@
 // Copyright (C) 2026 Horror-04
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Phase 6 Task 3: non-color note cues. Headless coverage (no peer —
-// roll.paint(g) renders into an Image, same harness as test_keyboard_moves):
+// Phase 6 Task 3: non-color note cues. Phase 7 Task 1: exact-ARGB pins
+// re-based onto the dark-studio palette (design 2.1) — the pin contract
+// (byte-identical fill colours per class) is unchanged, the values moved.
+// Headless coverage (no peer — roll.paint(g) renders into an Image, same
+// harness as test_keyboard_moves):
 //
 // - Fill colours are BYTE-IDENTICAL (exact-ARGB center pixels for chord,
 //   scale, chromatic, drums, plus the conflict hatch base; change any literal
@@ -103,14 +106,15 @@ int count_matching(const juce::Image& img, juce::Rectangle<int> area, juce::Colo
 TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
   juce::UndoManager undo;
   // (note, expected ARGB): chord green, scale blue, chromatic purple — all
-  // with the Cmaj bar-0 chord, tonic 60 / major (the roll defaults).
+  // with the Cmaj bar-0 chord, tonic 60 / major (the roll defaults). Values
+  // are the Phase 7 palette (design 2.1).
   const struct {
     hf::core::Note note;
     std::uint32_t argb;
   } cases[] = {
-      {{60, 0, 480, 90}, 0xff4caf50},
-      {{62, 0, 480, 90}, 0xff2196f3},
-      {{61, 240, 480, 90}, 0xff9c27b0},
+      {{60, 0, 480, 90}, 0xff57b15c},
+      {{62, 0, 480, 90}, 0xff4c8dff},
+      {{61, 240, 480, 90}, 0xffb07ce8},
   };
   for (const auto& tc : cases) {
     auto doc = make_doc(undo, {tc.note}, {{60, "maj"}});
@@ -133,7 +137,7 @@ TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
     const auto r = note_rect(36, 0, 120);
     CHECK(img.getPixelAt(static_cast<int>(r.getCentreX()),
                          static_cast<int>(r.getCentreY())) ==
-          juce::Colour(0xff8a8f98));
+          juce::Colour(0xff8f97a6));
   }
 }
 
@@ -154,7 +158,7 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const int cy = static_cast<int>(r.getY() + r.getHeight() / 2.0f);
     // Interior shows the (black-key, 61 = C#) lane: nothing fills it, with or
     // without the selection frame (the frame never reaches the center).
-    CHECK(img.getPixelAt(cx, cy) == juce::Colour(0xff141518));
+    CHECK(img.getPixelAt(cx, cy) == juce::Colour(0xff101216));
   }
   // Unselected hollow edge: the class-colour outline is drawn (dimmed by the
   // standard 0.85 unselected alpha, so pinned as "drawn, not lane" rather
@@ -168,7 +172,7 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Colour edge =
         img.getPixelAt(static_cast<int>(r.getX() + r.getWidth() / 2.0f),
                        static_cast<int>(r.getY()));
-    CHECK(edge != juce::Colour(0xff141518));
+    CHECK(edge != juce::Colour(0xff101216));
     CHECK(edge != juce::Colour(0xffffffff));
   }
   // Conflict: F on a strong beat against Cmaj — hatched red (opaque when
@@ -183,11 +187,11 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Rectangle<int> band(static_cast<int>(r.getX()) + 6,
                                     static_cast<int>(r.getY()) + 2,
                                     static_cast<int>(r.getWidth()) - 12, 2);
-    const int base = count_matching(img, band, juce::Colour(0xfff44336));
+    const int base = count_matching(img, band, juce::Colour(0xffe5484d));
     int stripe = 0;
     for (int y = band.getY(); y < band.getBottom(); ++y)
       for (int x = band.getX(); x < band.getRight(); ++x)
-        if (img.getPixelAt(x, y) != juce::Colour(0xfff44336)) ++stripe;
+        if (img.getPixelAt(x, y) != juce::Colour(0xffe5484d)) ++stripe;
     CHECK(base > 20);
     CHECK(stripe > 20);
   }

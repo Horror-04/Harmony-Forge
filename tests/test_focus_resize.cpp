@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
 // Phase 6 Task 2: focus rings + resizable window + contrast pass.
+// Phase 7 Task 1: pins re-based onto the dark-studio palette (design
+// 2026-10-13-visual-redesign-design.md section 2.1); the kFocusRing value
+// pin + every contrast pin below are the new computed pairs (ratios in the
+// Phase 7 Task 1 report). Name stability is the Phase-6 contract; values
+// change with the palette.
 // Headless coverage (no peer, no message loop beyond a MessageManager for
 // async change messages — same harness as test_keyboard_moves):
 //
@@ -85,9 +90,11 @@ int count_pixels(const juce::Image& img, juce::Colour c) {
 }  // namespace
 
 TEST_CASE("focus ring token value is the reserved accent", "[focus][task2]") {
-  static_assert(hf::ui::UITokens::kFocusRing == 0xff2563eb,
-                "Task 4 adopts this verbatim — do not rename/revalue");
-  CHECK(hf::ui::UITokens::kFocusRing == 0xff2563eb);
+  // Phase 7 Task 1: value re-based to the new accent (design 2.1); the NAME
+  // is the Phase-6 contract and stays adopted verbatim.
+  static_assert(hf::ui::UITokens::kFocusRing == 0xff4c8dff,
+                "Phase 7 palette: focus ring = kAccent #4C8DFF — do not rename");
+  CHECK(hf::ui::UITokens::kFocusRing == 0xff4c8dff);
 }
 
 TEST_CASE("paintFocusRing emits 2px accent stroke pixels", "[focus][task2]") {
@@ -113,21 +120,28 @@ TEST_CASE("roll and chord surfaces opt into keyboard focus", "[focus][task2]") {
 }
 
 TEST_CASE("Task 2 contrast ratios meet their gates", "[contrast][task2]") {
-  // Secondary/small text gate: >= 3:1. Body text gate: >= 4.5:1.
-  // Octave note names (10 px, secondary) on both lane backgrounds.
-  CHECK(contrast(0x808080, 0x22252b) >= 3.0);
-  CHECK(contrast(0x808080, 0x141518) >= 3.0);
-  // Chord degree/function + freeze hint (secondary) on both cell states.
-  CHECK(contrast(0x9aa0a8, 0x2b2f35) >= 3.0);
-  CHECK(contrast(0x9aa0a8, 0x39424e) >= 3.0);
-  // Empty-state "No pattern" (body-classified): Task 2 fix grey -> 0x9aa0a8.
-  CHECK(contrast(0x9aa0a8, 0x1a1d21) >= 4.5);
-  // Explain body + title.
-  CHECK(contrast(0xc8ccd2, 0x23262b) >= 4.5);
-  CHECK(contrast(0xffffff, 0x23262b) >= 4.5);
+  // Phase 7 Task 1: pins re-based onto the design 2.1 palette. Secondary/small
+  // text gate: >= 3:1. Body text gate: >= 4.5:1. Ratios in the comments are
+  // the computed WCAG values (full table in the Phase 7 Task 1 report).
+  // Octave note names (10 px, secondary, kTextDim) on both lane backgrounds
+  // (kLaneBlackKey = kBgApp, kLaneWhiteKey = kBgPanel per design 2.5).
+  CHECK(contrast(0x5e6673, 0x101216) >= 3.0);  // 3.24:1
+  CHECK(contrast(0x5e6673, 0x171a20) >= 3.0);  // 3.01:1
+  // Chord degree/function + freeze hint (secondary, kTextMuted) on both cell
+  // states (kCard = kBgCard, kCardSelected = kBgCardHover).
+  CHECK(contrast(0x8f97a6, 0x1e222a) >= 3.0);  // 5.42:1
+  CHECK(contrast(0x8f97a6, 0x262b35) >= 3.0);  // 4.83:1
+  // Chord bar names (body, kTextBright) on both cell states.
+  CHECK(contrast(0xf2f4f8, 0x1e222a) >= 4.5);  // 14.48:1
+  CHECK(contrast(0xf2f4f8, 0x262b35) >= 4.5);  // 12.89:1
+  // Empty-state "No pattern" (body-classified, kTextMuted) on kBgRoll.
+  CHECK(contrast(0x8f97a6, 0x101216) >= 4.5);  // 6.38:1
+  // Explain body + title on kBgPanel.
+  CHECK(contrast(0xc9ced8, 0x171a20) >= 4.5);  // 11.04:1
+  CHECK(contrast(0xf2f4f8, 0x171a20) >= 4.5);  // 15.83:1
   // Model/status/hint labels: default look-and-feel label text is white on
-  // the darkgrey editor background (no colour change needed).
-  CHECK(contrast(0xffffff, 0x555555) >= 4.5);
+  // the new kEditorBg window background.
+  CHECK(contrast(0xffffff, 0x101216) >= 4.5);  // 18.75:1
 }
 
 // NOTE (headless-harness limitation, verified): instantiating real JUCE
