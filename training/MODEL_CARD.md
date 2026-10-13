@@ -208,5 +208,6 @@
   trivially adaptable tokenizer; outputs could not pass our compliance
   filters). Anticipatory Music Transformer — DROP, no canonical open
   repo/weights found (only third-party wrappers), no verifiable licence.
-- Consequence: v2 student training (Task 2) proceeds on self-distillation
-  only. Full evidence table: `.superpowers/sdd/2026-10-13-phase-8/task-3-report.md`.
+- Consequence: self-distillation remains the standing approach (Task 2 ran on it and
+  was shelved on the gate with WIP preserved in history, not shipped); no external
+  teacher enters the loop. Full evidence table: `.superpowers/sdd/2026-10-13-phase-8/task-3-report.md`.
