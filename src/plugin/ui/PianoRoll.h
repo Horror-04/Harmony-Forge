@@ -29,13 +29,11 @@
 //
 // Outline disambiguation (selection always wins over frozen — unchanged
 // precedence, see hf::core::frame_style_for_state):
-//   selected -> SOLID white, 2.0 px (kNoteSelFrame*);
-//   frozen   -> DASHED white 0xaaffffff, 1.5 px, dash 4 on / 2 off
-//               (kNoteFrozenFrame* + kNoteFrozenDash).
-// Task 4: adopt kNoteSelFrameWidth / kNoteSelFrameArgb /
-// kNoteFrozenFrameWidth / kNoteFrozenFrameArgb / kNoteFrozenDash /
-// kNoteHollowWidth / kNoteHatchWidth / kNoteHatchStep / kNoteHatchArgb into
-// UITokens verbatim (same ruling as the Task 2 kFocusRing move).
+//   selected -> SOLID white, 2.0 px (UITokens::kNoteSelFrame*);
+//   frozen   -> DASHED white, 1.5 px, dash 4 on / 2 off
+//               (UITokens::kNoteFrozenFrame* + UITokens::kNoteFrozenDash).
+// Phase 6 Task 4: the Task-3 cue constants now live verbatim in UITokens
+// (single source); the palette literals in colourFor moved there too.
 //
 // Message thread only. Interaction: click selects, drag moves (snap),
 // double-click adds, right-click deletes, Delete key removes the selection,
@@ -83,7 +81,7 @@ class PianoRoll : public juce::Component, private juce::ChangeListener {
   juce::Colour colourFor(int pitch, int start) const;
   // Phase 6 Task 3 (A5): display class for one note; std::nullopt = drums
   // (unpitched map, never classified). colourFor() is a pure function of
-  // this — its ARGB literals are unchanged.
+  // this — its ARGB values are unchanged (now hf::ui::UITokens).
   std::optional<hf::core::NoteClass> classFor(int pitch, int start) const;
   bool noteFrozen(int note) const;
   // Phase 6 Task 3 (A5) paint helpers (message thread only).
@@ -92,17 +90,8 @@ class PianoRoll : public juce::Component, private juce::ChangeListener {
   void paintNoteFrame(juce::Graphics& g, juce::Rectangle<float> r,
                       hf::core::NoteFrameStyle frame) const;
 
-  // Phase 6 Task 3 (A5) outline/fill metrics — Task 4 token candidates, see
-  // the class comment. Widths in px; dash = on/off lengths in px.
-  static constexpr float kNoteSelFrameWidth = 2.0f;
-  static constexpr std::uint32_t kNoteSelFrameArgb = 0xffffffff;
-  static constexpr float kNoteFrozenFrameWidth = 1.5f;
-  static constexpr std::uint32_t kNoteFrozenFrameArgb = 0xaaffffff;
-  static constexpr float kNoteFrozenDash[2] = {4.0f, 2.0f};
-  static constexpr float kNoteHollowWidth = 1.5f;
-  static constexpr float kNoteHatchWidth = 1.0f;
-  static constexpr float kNoteHatchStep = 5.0f;
-  static constexpr std::uint32_t kNoteHatchArgb = 0x59000000;  // black, 35%
+  // Phase 6 Task 4: outline/fill metrics live verbatim in hf::ui::UITokens
+  // (single source); see UITokens::kNoteSelFrameWidth and siblings.
 
   static constexpr int kKeysW = 48;
   static constexpr int kLaneH = 56;

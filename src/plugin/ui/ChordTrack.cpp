@@ -92,7 +92,7 @@ bool ChordTrack::barFrozen(int bar) const {
 }
 
 void ChordTrack::paint(juce::Graphics& g) {
-  g.fillAll(juce::Colour(0xff23262b));
+  g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
   const auto& pat = doc_.pattern();
   const int bar_ticks = pat.ticks_per_beat * pat.beats_per_bar;
   const auto& chords = doc_.chords();
@@ -101,19 +101,20 @@ void ChordTrack::paint(juce::Graphics& g) {
     const float x = b * bar_ticks * pxPerTick_;
     const float w = bar_ticks * pxPerTick_;
     const bool sel = (b == selectedBar_);
-    g.setColour(sel ? juce::Colour(0xff39424e) : juce::Colour(0xff2b2f35));
+    g.setColour(sel ? juce::Colour(hf::ui::UITokens::kCardSelected)
+                    : juce::Colour(hf::ui::UITokens::kCard));
     g.fillRect(x + 1.0f, 2.0f, w - 2.0f, 60.0f);
     if (barFrozen(b)) {
-      g.setColour(juce::Colour(0xaaffffff));
-      g.drawRect(x + 1.0f, 2.0f, w - 2.0f, 60.0f, 1.5f);
+      g.setColour(juce::Colour(hf::ui::UITokens::kNoteFrozenFrameArgb));
+      g.drawRect(x + 1.0f, 2.0f, w - 2.0f, 60.0f, hf::ui::UITokens::kNoteFrozenFrameWidth);
     }
     g.setFont(13.0f);
-    g.setColour(juce::Colours::white);
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
     const std::string name =
         (b < static_cast<int>(chords.size())) ? chordName(chords[static_cast<size_t>(b)]) : "-";
     g.drawText(name, (int)x + 4, 4, (int)w - 8, 18, juce::Justification::centredLeft, false);
     g.setFont(11.0f);
-    g.setColour(juce::Colour(0xff9aa0a8));
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
     const std::string sub =
         (b < static_cast<int>(chords.size()))
             ? degreeName(chords[static_cast<size_t>(b)], tonic_, scale_) + " · " +

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "UITokens.h"
 #include "core/model/track_pattern.h"
 #include "core/music/explain.h"
 #include "core/music/key_detect.h"
@@ -12,7 +13,8 @@
 
 namespace {
 
-constexpr int kPad = 8;       // 8px rhythm (section gaps, insets)
+// Phase 6 Task 4: the 8 px rhythm pad lives in hf::ui::UITokens::kRhythmPx
+// (single source); line metrics stay local (out of Task 4 scope).
 constexpr int kLineH = 20;    // body line height
 constexpr int kTitleH = 24;   // title row height
 
@@ -45,7 +47,7 @@ void ExplainView::refresh() {
 
   if (notes == 0 && chords.empty()) {
     lines_.push_back({false, "No material - generate or import first"});
-    contentHeight_ = kPad + kTitleH + kPad + kLineH + kPad;
+    contentHeight_ = hf::ui::UITokens::kRhythmPx + kTitleH + hf::ui::UITokens::kRhythmPx + kLineH + hf::ui::UITokens::kRhythmPx;
     if (getWidth() > 0) setSize(getWidth(), contentHeight_);
     repaint();
     return;
@@ -98,32 +100,32 @@ void ExplainView::refresh() {
     }
   }
 
-  int h = kPad + kTitleH + kPad;
+  int h = hf::ui::UITokens::kRhythmPx + kTitleH + hf::ui::UITokens::kRhythmPx;
   for (size_t i = 1; i < lines_.size(); ++i)
-    h += lines_[i].header ? (kPad + kLineH) : kLineH;
-  contentHeight_ = h + kPad;
+    h += lines_[i].header ? (hf::ui::UITokens::kRhythmPx + kLineH) : kLineH;
+  contentHeight_ = h + hf::ui::UITokens::kRhythmPx;
   if (getWidth() > 0) setSize(getWidth(), contentHeight_);
   repaint();
 }
 
 void ExplainView::paint(juce::Graphics& g) {
-  g.fillAll(juce::Colour(0xff23262b));
-  int y = kPad;
+  g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
+  int y = hf::ui::UITokens::kRhythmPx;
   g.setFont(14.0f);
-  g.setColour(juce::Colours::white);
-  g.drawText(lines_.empty() ? juce::String() : lines_[0].text, kPad, y, getWidth() - 2 * kPad,
+  g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
+  g.drawText(lines_.empty() ? juce::String() : lines_[0].text, hf::ui::UITokens::kRhythmPx, y, getWidth() - 2 * hf::ui::UITokens::kRhythmPx,
              kTitleH, juce::Justification::centredLeft, false);
-  y += kTitleH + kPad;
+  y += kTitleH + hf::ui::UITokens::kRhythmPx;
   for (size_t i = 1; i < lines_.size(); ++i) {
     if (lines_[i].header) {
-      y += kPad;
+      y += hf::ui::UITokens::kRhythmPx;
       g.setFont(juce::Font(13.0f, juce::Font::bold));
-      g.setColour(juce::Colours::white);
+      g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
     } else {
       g.setFont(12.0f);
-      g.setColour(juce::Colour(0xffc8ccd2));
+      g.setColour(juce::Colour(hf::ui::UITokens::kTextBody));
     }
-    g.drawText(lines_[i].text, kPad, y, getWidth() - 2 * kPad, kLineH,
+    g.drawText(lines_[i].text, hf::ui::UITokens::kRhythmPx, y, getWidth() - 2 * hf::ui::UITokens::kRhythmPx, kLineH,
                juce::Justification::centredLeft, false);
     y += kLineH;
   }

@@ -331,7 +331,8 @@ void HarmonyForgeEditor::applyZoom() {
 }
 
 void HarmonyForgeEditor::paint(juce::Graphics& g) {
-  g.fillAll(juce::Colours::darkgrey);
+  // Phase 6 Task 4: token (value == juce::Colours::darkgrey it replaces).
+  g.fillAll(juce::Colour(hf::ui::UITokens::kEditorBg));
 }
 
 void HarmonyForgeEditor::resized() {

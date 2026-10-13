@@ -181,8 +181,9 @@ class ArrangeBar : public juce::Component {
     ArrangeBar* owner = nullptr;
     int getNumRows() override { return static_cast<int>(owner->sections_.size()); }
     void paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) override {
-      if (selected) g.fillAll(juce::Colours::darkblue);
-      g.setColour(juce::Colours::white);
+      // Phase 6 Task 4: tokens (values equal the Colours they replace).
+      if (selected) g.fillAll(juce::Colour(hf::ui::UITokens::kListSelected));
+      g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
       g.drawText(owner->rowText(row), 4, 0, w - 8, h, juce::Justification::centredLeft, true);
     }
     void selectedRowsChanged(int last) override { owner->selectRow(last); }

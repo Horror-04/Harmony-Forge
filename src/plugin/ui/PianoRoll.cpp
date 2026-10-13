@@ -133,22 +133,22 @@ std::optional<hf::core::NoteClass> PianoRoll::classFor(int pitch, int start) con
 }
 
 juce::Colour PianoRoll::colourFor(int pitch, int start) const {
-  // Phase 6 Task 3 (A5): literals below are BYTE-IDENTICAL to the pre-Task-3
-  // palette (Task 4 owns revaluation). Pinned by exact-ARGB pixel CHECKs in
-  // tests/test_note_cues.cpp — change any value and that test fails.
+  // Phase 6 Task 4: fills below are UITokens (values BYTE-IDENTICAL to the
+  // pre-Task-3 palette). Pinned by exact-ARGB pixel CHECKs in
+  // tests/test_note_cues.cpp — change any token value and that test fails.
   const auto cls = classFor(pitch, start);
-  if (!cls) return juce::Colour(0xff8a8f98);
+  if (!cls) return juce::Colour(hf::ui::UITokens::kNoteDrums);
   switch (*cls) {
     case hf::core::NoteClass::ChordTone:
-      return juce::Colour(0xff4caf50);
+      return juce::Colour(hf::ui::UITokens::kNoteChord);
     case hf::core::NoteClass::ScaleTone:
-      return juce::Colour(0xff2196f3);
+      return juce::Colour(hf::ui::UITokens::kNoteScale);
     case hf::core::NoteClass::Tension:
-      return juce::Colour(0xfffbc02d);
+      return juce::Colour(hf::ui::UITokens::kNoteTension);
     case hf::core::NoteClass::Conflict:
-      return juce::Colour(0xfff44336);
+      return juce::Colour(hf::ui::UITokens::kNoteConflict);
     case hf::core::NoteClass::Chromatic:
-      return juce::Colour(0xff9c27b0);
+      return juce::Colour(hf::ui::UITokens::kNoteChromatic);
   }
   return juce::Colours::grey;
 }
@@ -160,7 +160,7 @@ void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce:
     // Tension: class-colour outline only; the pitch lane shows through the
     // interior (inset keeps the 1.5 px stroke inside the note rect).
     g.setColour(fill);
-    g.drawRoundedRectangle(r.reduced(0.75f), 2.0f, kNoteHollowWidth);
+    g.drawRoundedRectangle(r.reduced(0.75f), 2.0f, hf::ui::UITokens::kNoteHollowWidth);
     return;
   }
   g.setColour(fill);
@@ -172,9 +172,9 @@ void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce:
     clip.addRoundedRectangle(r, 2.0f);
     g.saveState();
     g.reduceClipRegion(clip);
-    g.setColour(juce::Colour(kNoteHatchArgb));
-    for (float x = r.getX() - r.getHeight(); x < r.getRight(); x += kNoteHatchStep)
-      g.drawLine(x, r.getBottom(), x + r.getHeight(), r.getY(), kNoteHatchWidth);
+    g.setColour(juce::Colour(hf::ui::UITokens::kNoteHatchArgb));
+    for (float x = r.getX() - r.getHeight(); x < r.getRight(); x += hf::ui::UITokens::kNoteHatchStep)
+      g.drawLine(x, r.getBottom(), x + r.getHeight(), r.getY(), hf::ui::UITokens::kNoteHatchWidth);
     g.restoreState();
   }
 }
@@ -183,21 +183,21 @@ void PianoRoll::paintNoteFrame(juce::Graphics& g, juce::Rectangle<float> r,
                                hf::core::NoteFrameStyle frame) const {
   using hf::core::NoteFrameStyle;
   if (frame == NoteFrameStyle::Selected) {
-    g.setColour(juce::Colour(kNoteSelFrameArgb));
-    g.drawRoundedRectangle(r, 2.0f, kNoteSelFrameWidth);
+    g.setColour(juce::Colour(hf::ui::UITokens::kNoteSelFrameArgb));
+    g.drawRoundedRectangle(r, 2.0f, hf::ui::UITokens::kNoteSelFrameWidth);
   } else if (frame == NoteFrameStyle::Frozen) {
     juce::Path box;
     box.addRoundedRectangle(r, 2.0f);
     juce::Path dashed;
-    juce::PathStrokeType(kNoteFrozenFrameWidth)
-        .createDashedStroke(dashed, box, kNoteFrozenDash, 2);
-    g.setColour(juce::Colour(kNoteFrozenFrameArgb));
+    juce::PathStrokeType(hf::ui::UITokens::kNoteFrozenFrameWidth)
+        .createDashedStroke(dashed, box, hf::ui::UITokens::kNoteFrozenDash, 2);
+    g.setColour(juce::Colour(hf::ui::UITokens::kNoteFrozenFrameArgb));
     g.fillPath(dashed);
   }
 }
 
 void PianoRoll::paint(juce::Graphics& g) {
-  g.fillAll(juce::Colour(0xff1a1d21));
+  g.fillAll(juce::Colour(hf::ui::UITokens::kBgRoll));
   const auto& pat = doc_.pattern();
   const int gridH = static_cast<int>(128 * pxPerPitch_);
   const int ticks = totalTicks();
@@ -206,12 +206,13 @@ void PianoRoll::paint(juce::Graphics& g) {
   // Pitch lanes + piano keys.
   for (int p = 0; p < 128; ++p) {
     const float y = yForPitch(p);
-    g.setColour(is_black_key(p) ? juce::Colour(0xff141518) : juce::Colour(0xff22252b));
+    g.setColour(is_black_key(p) ? juce::Colour(hf::ui::UITokens::kLaneBlackKey)
+                                : juce::Colour(hf::ui::UITokens::kLaneWhiteKey));
     g.fillRect(0.0f, y, (float)getWidth(), pxPerPitch_);
     if (p % 12 == 0) {
-      g.setColour(juce::Colour(0xff3a3e45));
+      g.setColour(juce::Colour(hf::ui::UITokens::kOctaveLine));
       g.drawLine(0.0f, y, (float)getWidth(), y, 1.0f);
-      g.setColour(juce::Colours::grey);
+      g.setColour(juce::Colour(hf::ui::UITokens::kTextDim));
       g.setFont(10.0f);
       g.drawText(juce::MidiMessage::getMidiNoteName(p, true, true, 3), 2, (int)y, kKeysW - 4,
                  (int)pxPerPitch_, juce::Justification::centredLeft, false);
@@ -221,7 +222,8 @@ void PianoRoll::paint(juce::Graphics& g) {
   for (int t = 0; t <= ticks; t += pat.ticks_per_beat) {
     const float x = xForTick(t);
     const bool bar = (bar_ticks > 0 && t % bar_ticks == 0);
-    g.setColour(bar ? juce::Colour(0xff4a4e55) : juce::Colour(0xff2c2f35));
+    g.setColour(bar ? juce::Colour(hf::ui::UITokens::kBarLine)
+                    : juce::Colour(hf::ui::UITokens::kBeatLine));
     g.drawLine(x, 0.0f, x, (float)gridH, bar ? 1.5f : 1.0f);
   }
   // Notes of the shown track.
@@ -261,21 +263,22 @@ void PianoRoll::paint(juce::Graphics& g) {
     }
   } else {
     // Phase 6 Task 2 (C): lightened from Colours::grey (4.28:1, just under
-    // the 4.5:1 body gate) to 0xff9aa0a8 — measured 6.42:1 on 0xff1a1d21.
-    g.setColour(juce::Colour(0xff9aa0a8));
+    // the 4.5:1 body gate) to kTextMuted — measured 6.42:1 on kBgRoll
+    // (values in UITokens.h).
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
     g.setFont(14.0f);
     g.drawText("No pattern — press Generate", kKeysW, 8, getWidth() - kKeysW, 24,
                juce::Justification::centredLeft, false);
   }
   // Rubber band.
   if (rubber_) {
-    g.setColour(juce::Colours::white.withAlpha(0.8f));
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextBright).withAlpha(0.8f));
     g.drawRect(rubberRect_, 1);
-    g.setColour(juce::Colours::white.withAlpha(0.15f));
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextBright).withAlpha(0.15f));
     g.fillRect(rubberRect_);
   }
   // Lane separator.
-  g.setColour(juce::Colour(0xff4a4e55));
+  g.setColour(juce::Colour(hf::ui::UITokens::kBarLine));
   g.drawLine(0.0f, (float)gridH, (float)getWidth(), (float)gridH, 1.0f);
   // Phase 6 Task 2 (A2): 2 px accent ring when focused (child-inclusive;
   // this surface has no focusable children). Standard buttons/sliders keep
