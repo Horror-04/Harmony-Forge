@@ -149,6 +149,8 @@ bool ChordTrack::keyPressed(const juce::KeyPress& key) {
   // setBarFrozenAllTracks toggle (same one-step undo) as right-click.
   const int code = key.getKeyCode();
   if (code == juce::KeyPress::leftKey || code == juce::KeyPress::rightKey) {
+    // Fix round 1: no bars, no-op (propagate; never synthesize a bar 0).
+    if (doc_.chords().empty()) return false;
     const int bars = std::max(static_cast<int>(doc_.chords().size()), 1);
     int bar = 0;
     if (selectedBar_ >= 0)

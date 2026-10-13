@@ -78,8 +78,10 @@ class PatternDocument : public juce::ChangeBroadcaster {
   void setFreezeAxis(int track, hf::core::FreezeAxis axis);
   void clearFreeze();
 
-  // Note edits (all undoable snapshot actions; drums pitched rules follow
-  // pattern_ops: pitch edits skip drums, timing edits apply to all).
+  // Note edits (all undoable snapshot actions; drums pitched rules: the pitch
+  // skip applies to pattern_ops BULK edits only — single-note edits (moveNote,
+  // nudgeSelection) pitch every track, drums included, exactly like the mouse
+  // drag path (keyboard parity requires it; no behavior change).
   bool addNote(int track, hf::core::Note note);  // snaps + clamps, false if bad track
   bool moveNote(int track, int note, int newPitch, int newStart);
   bool deleteNote(int track, int note);

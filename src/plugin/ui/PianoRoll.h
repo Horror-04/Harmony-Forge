@@ -23,7 +23,8 @@
 // Phase 6 Task 1 (keyboard alternatives for all drag ops): with a non-empty
 // selection, arrows nudge (Up/Down = pitch ±1 semitone, Left/Right = time
 // ±snap grid step), Shift+arrows resize the duration end (Up/Right grow,
-// Down/Left shrink, one snap step), Alt+arrows adjust velocity ±5
+// Down/Left shrink, one snap step — Up means "more", mirroring the pitch-nudge
+// direction, Right means forward in time), Alt+arrows adjust velocity ±5
 // (Up/Right up, Down/Left down, clamped 1..127). Alt wins when both Alt and
 // Shift are held. Every key gesture commits through the same snap/bounds
 // code (PatternDocument::nudgeSelection / resizeSelectionEnd /
