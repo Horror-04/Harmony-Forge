@@ -184,3 +184,29 @@
   index, override-with-empty-path filtered via the working dir (no-runner
   fallback provably untouched by it), bare-filename resolution via the
   working dir (absent file stays a no-op).
+
+## External teacher spike (Phase 8 Task 3 — DROP, no sampling, weights untouched)
+
+- Boxed survey (6 candidates, licence-first, Oct 2026): no external open
+  teacher exists that is simultaneously permissive-licensed on BOTH code
+  and weights, PyTorch + runnable on our box, and format-fitting our
+  SATB-chorale 6-phase codec. DECISION: DROP — no candidate accepted for
+  sampling, 0 run attempts (none cleared all three gates), NO training,
+  NO corpus/weight changes in this task.
+- Verdicts: DeepBach (`Ghadjeres/DeepBach`, code MIT) — REJECT, weights =
+  unlicensed Dropbox tarball (`dl_dataset_and_models.sh`, no licence
+  statement; no proof = reject). Compound Word Transformer
+  (`YatingMusic/compound-word-transformer`) — REJECT, `GPL-3.0` (repo
+  About box). pop2piano (`sweetcocoa/pop2piano`) — REJECT, no licence
+  (`license: NONE` via API) + audio-in (not symbolic). Magenta MusicVAE /
+  MelodyRNN (`magenta/magenta`, code `Apache-2.0`) — DROP, TF-only stack
+  (`tensorflow == 2.9.1` pinned in `setup.py`), not PyTorch, not in our
+  torch-only venvs. TunesFormer (`sander-wood/tunesformer`, code MIT +
+  weights `license:mit` via HF API — the ONLY licence-clean candidate) —
+  DROP, format fit: monophonic ABC Irish folk melodies vs our
+  melody+bass+chords chorale codec (voice-structure mismatch is not a
+  trivially adaptable tokenizer; outputs could not pass our compliance
+  filters). Anticipatory Music Transformer — DROP, no canonical open
+  repo/weights found (only third-party wrappers), no verifiable licence.
+- Consequence: v2 student training (Task 2) proceeds on self-distillation
+  only. Full evidence table: `.superpowers/sdd/2026-10-13-phase-8/task-3-report.md`.
