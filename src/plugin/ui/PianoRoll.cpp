@@ -159,20 +159,26 @@ juce::Colour PianoRoll::colourFor(int pitch, int start) const {
 void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill,
                               hf::core::NoteFillStyle style) const {
   using hf::core::NoteFillStyle;
+  // Phase 7 Task 3 (C): studio note geometry — the note rect is inset 0.5 px
+  // (lanes/grid breathe between adjacent notes), corner radius kRadiusNote.
+  // Cue semantics untouched: hollow/hatch rules below are unchanged, only the
+  // rect + radius they operate on moved.
+  r = r.reduced(0.5f);
+  constexpr float kR = hf::ui::UITokens::kRadiusNote;
   if (style == NoteFillStyle::Hollow) {
     // Tension: class-colour outline only; the pitch lane shows through the
     // interior (inset keeps the 1.5 px stroke inside the note rect).
     g.setColour(fill);
-    g.drawRoundedRectangle(r.reduced(0.75f), 2.0f, hf::ui::UITokens::kNoteHollowWidth);
+    g.drawRoundedRectangle(r.reduced(0.75f), kR, hf::ui::UITokens::kNoteHollowWidth);
     return;
   }
   g.setColour(fill);
-  g.fillRoundedRectangle(r, 2.0f);
+  g.fillRoundedRectangle(r, kR);
   if (style == NoteFillStyle::Hatched) {
     // Conflict: dark diagonal stripes over the solid fill, clipped to the
     // note shape so neighbouring notes stay clean.
     juce::Path clip;
-    clip.addRoundedRectangle(r, 2.0f);
+    clip.addRoundedRectangle(r, kR);
     g.saveState();
     g.reduceClipRegion(clip);
     g.setColour(juce::Colour(hf::ui::UITokens::kNoteHatchArgb));
@@ -185,12 +191,16 @@ void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce:
 void PianoRoll::paintNoteFrame(juce::Graphics& g, juce::Rectangle<float> r,
                                hf::core::NoteFrameStyle frame) const {
   using hf::core::NoteFrameStyle;
+  // Phase 7 Task 3 (C): same 0.5 px inset + kRadiusNote as the fill so frame
+  // and fill stay aligned (selection-beats-frozen precedence unchanged).
+  r = r.reduced(0.5f);
+  constexpr float kR = hf::ui::UITokens::kRadiusNote;
   if (frame == NoteFrameStyle::Selected) {
     g.setColour(juce::Colour(hf::ui::UITokens::kNoteSelFrameArgb));
-    g.drawRoundedRectangle(r, 2.0f, hf::ui::UITokens::kNoteSelFrameWidth);
+    g.drawRoundedRectangle(r, kR, hf::ui::UITokens::kNoteSelFrameWidth);
   } else if (frame == NoteFrameStyle::Frozen) {
     juce::Path box;
-    box.addRoundedRectangle(r, 2.0f);
+    box.addRoundedRectangle(r, kR);
     juce::Path dashed;
     juce::PathStrokeType(hf::ui::UITokens::kNoteFrozenFrameWidth)
         .createDashedStroke(dashed, box, hf::ui::UITokens::kNoteFrozenDash, 2);
@@ -258,11 +268,11 @@ void PianoRoll::paint(juce::Graphics& g) {
       // even when frozen (frame_style_for_state encodes it; noteFrozen is
       // still short-circuited under selection as before).
       paintNoteFrame(g, r, hf::core::frame_style_for_state(sel, !sel && noteFrozen(i)));
-      // Velocity lane stem.
+      // Velocity lane stem (Phase 7 Task 3 (C): 2 px stems, design 2.5).
       const float vx = xForTick(start);
       const float vh = (velDrag_ && i == dragNote_ ? dragVel_ : n.velocity) / 127.0f * kLaneH;
       g.setColour(colourFor(n.pitch, n.start_tick).withAlpha(0.6f));
-      g.fillRect(vx, gridH + kLaneH - vh, 3.0f, vh);
+      g.fillRect(vx, gridH + kLaneH - vh, 2.0f, vh);
     }
   } else {
     // Phase 6 Task 2 (C): lightened from Colours::grey (4.28:1, just under

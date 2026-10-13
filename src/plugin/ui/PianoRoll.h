@@ -35,6 +35,12 @@
 // Phase 6 Task 4: the Task-3 cue constants now live verbatim in UITokens
 // (single source); the palette literals in colourFor moved there too.
 //
+// Phase 7 Task 3 (D, known limit — playhead SKIPPED): the DAW transport
+// snapshot (TransportView) lives in the processor and is polled by the
+// editor's timer; the roll only sees the PatternDocument, so feeding ppq
+// into the roll would be new plumbing, which the brief forbids. No new
+// members, no timer, no audio-thread contact added here.
+//
 // Message thread only. Interaction: click selects, drag moves (snap),
 // double-click adds, right-click deletes, Delete key removes the selection,
 // vertical drag in the velocity lane edits velocity. All commits happen on
