@@ -39,6 +39,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dataset_heads as H
+import evaluate as E
 import theory as T
 import tokenizer as tok
 
@@ -309,6 +310,94 @@ def build(procedural_n: int = 288, seed: int = 7) -> dict:
     return {"train": train, "val": val, "manifest": manifest,
             "memo": {"mel_6": sorted(map(list, mel_6)),
                      "id_8": sorted(map(list, id_8))}}
+
+
+# --------------------------------------- distilled split (Phase 8 Task 1) ----
+def dedupe_distilled_against_val(distilled: list[dict], val: list[dict]
+                                 ) -> tuple[list[dict], list[dict]]:
+    """Drop any distilled record copying a val passage: a run of >= 4
+    consecutive shared flat-id 8-gram windows (>= 11 tokens straight — the
+    §10 copy definition; same window def and run threshold as eval).
+
+    A single shared 8-window is NOT a drop: measured 100% of the committed
+    train set shares one with val (structural slots collide), so
+    single-window matching is noise, not leakage. Returns (kept,
+    dropped[{id, reason}]); pure (no I/O).
+    """
+    val_8: set[tuple] = set()
+    for rec in val:
+        ids = rec["ids"]
+        for k in range(max(0, len(ids) - 7)):
+            val_8.add(tuple(ids[k:k + 8]))
+    kept, dropped = [], []
+    for rec in distilled:
+        run = E.longest_verbatim_run(rec["ids"], val_8, 0)
+        if run >= E.MIN_VERBATIM_RUN:
+            dropped.append({"id": rec["id"],
+                            "reason": f"val-8gram-run-{run}"})
+        else:
+            kept.append(rec)
+    return kept, dropped
+
+
+def build_distilled_split(distilled_path: str | None = None,
+                          val_path: str | None = None,
+                          out_kept: str | None = None,
+                          out_report: str | None = None) -> dict:
+    """Val-dedupe the distilled corpus; write kept records + report.
+
+    The reference is the val HEAD records (source == "composed": held-out
+    heads O,P in all keys) — the generalization probe the student must not
+    train on. Val procedural records are excluded by design: they share the
+    theory-engine idiom with any procedural material (the committed train
+    set itself carries val-overlap runs to 361 windows), and the original
+    split accepts that as legitimate augmentation.
+    Defaults live under training/corpus/. Returns the report dict.
+    """
+    distilled_path = distilled_path or os.path.join(CORPUS_DIR,
+                                                    "distilled.jsonl")
+    val_path = val_path or os.path.join(CORPUS_DIR, "val.jsonl")
+    out_kept = out_kept or os.path.join(CORPUS_DIR, "distilled_split.jsonl")
+    out_report = out_report or os.path.join(
+        CORPUS_DIR, "distilled_split_report.json")
+    distilled = []
+    with open(distilled_path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                distilled.append(json.loads(line))
+    val = []
+    with open(val_path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                val.append(json.loads(line))
+    heads = [r for r in val if r.get("source") == "composed"]
+    kept, dropped = dedupe_distilled_against_val(distilled, heads)
+    with open(out_kept, "w") as f:
+        for rec in kept:
+            f.write(json.dumps(rec) + "\n")
+    n_windows = 0
+    seen: set[tuple] = set()
+    for rec in heads:
+        for k in range(max(0, len(rec["ids"]) - 7)):
+            w = tuple(rec["ids"][k:k + 8])
+            if w not in seen:
+                seen.add(w)
+                n_windows += 1
+    report = {"n_in": len(distilled), "n_kept": len(kept),
+              "n_dropped_val_head_run": len(dropped),
+              "dropped_ids": [d["id"] for d in dropped],
+              "val_heads": [r["id"] for r in heads],
+              "val_head_windows": n_windows,
+              "run_threshold": E.MIN_VERBATIM_RUN}
+    with open(out_report, "w") as f:
+        json.dump(report, f, indent=1)
+    print(f"distilled_split: in={report['n_in']} kept={report['n_kept']} "
+          f"dropped_val_head_run={report['n_dropped_val_head_run']} "
+          f"(heads={len(heads)}, windows={n_windows})")
+    print(f"wrote {out_kept} {out_report}")
+    return report
 
 
 def main() -> int:

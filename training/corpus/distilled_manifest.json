@@ -1,0 +1,20 @@
+{
+ "teacher": "model.onnx",
+ "teacher_sha256": "fc29e74520a03d849ade6dbb80dda007985d701411321a22004bbdc47926f3c1",
+ "seed": 7,
+ "n_attempted": 1000,
+ "n_accepted": 196,
+ "accept_rate": 0.196,
+ "compliance_floor": 0.9,
+ "memo_run": 4,
+ "gen_tokens": 48,
+ "hw_backend": "ort-cpu",
+ "wall_s": 19.284647703170776,
+ "reject_reasons": {
+  "undecodable": 21,
+  "no_new_notes": 602,
+  "exact_copy": 0,
+  "memo_copy": 0,
+  "low_compliance": 181
+ }
+}

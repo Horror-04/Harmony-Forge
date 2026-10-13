@@ -110,7 +110,50 @@
   procedural data. Not a general composer — first real weights proving the
   path; arrangement/cloud remain later phases.
 
+## Distillation corpus (Phase 8 Task 1 — self-distillation, DATA only)
+
+- Teacher: committed `training/model.onnx` ONLY (the 0.907 set above; sha256
+  in `corpus/distilled_manifest.json`). No external weights. Fixed seed 7;
+  val split untouched — seeds are fresh procedural material from our own
+  theory engine (never val records, never held-out heads O/P); thresholds
+  unchanged (compliance floor 0.90, memo run < 4, same defs as `evaluate.py`).
+- Method (`training/distill.py`, generation loop imported from
+  `evaluate.py` — `greedy_continue`/`finalize`/`score_continuation`, not
+  duplicated): N=1000 attempts; per-attempt seed params bars 4–8 (attempt
+  split 511 Strict / 489 Creative modes across all 12 tonic pcs and the 4
+  scales) → 2-bar seed prefix (Strict = scale-snapped engine idiom;
+  Creative = + chromatic passing tones on weak-beat eighth offbeats, the
+  candidates.cpp Creative rule) → greedy continuation (budget 48 tokens,
+  memo-ban early-stop) → filters in fixed order undecodable → no_new_notes
+  → exact_copy → memo_copy → low_compliance.
+- Result (`corpus/distilled.jsonl` + `distilled_manifest.json`): 196/1000
+  accepted (19.6% — above the 5% floor, no param adjustment needed), wall
+  19.3 s. Rejects: no_new_notes 602, low_compliance 181, undecodable 21,
+  exact_copy 0, memo_copy 0 (the memo-ban truncates during generation, so
+  filtered outputs never complete a 4-run — same as eval).
+- Hardware: `ort-cpu` — 10-sequence probe 0.6 s (0.06 s/seq) vs torch CUDA
+  (`checkpoints/best.pt` + `tinilm`) 2.6 s (0.26 s/seq); small model, GPU
+  launch overhead dominates.
+- FINDING (selection effect, no cherry-picking — full counts above): all
+  196 accepted records are Creative-seeded; 0/511 Strict attempts passed
+  (Strict seeds sit on the memorized manifold → recite-and-truncate or
+  drift; chromatic weak-beat tones break the recitation attractor and the
+  teacher continues compliantly). Mean accepted compliance 0.938, mean
+  2.55 new notes. Task 2 note: the student corpus carries weak-beat
+  chromatic passing tones in every seed — watch that the student does not
+  learn them as standard vocabulary.
+- Val-dedupe (`dataset.build_distilled_split` → `corpus/distilled_split.jsonl`
+  + `distilled_split_report.json`): reference = the 4 val HEAD records
+  (composed O/P, 277 windows); drop = run of >= 4 consecutive shared flat-id
+  8-windows (the §10 copy def). Single-window matching is noise — measured
+  100% of the committed train set shares one with val — so it is not a drop
+  criterion (deviation from a literal single-window read, evidence in the
+  Task 1 report). Val procedurals excluded by design (engine-idiom overlap
+  is accepted augmentation, as in the original split). Outcome: 57 kept /
+  139 dropped head-run records — thin corpus, flagged for Task 2.
+
 ## Runtime §10 memo-filter (Phase 3 Task 3, shipped C++ path)
+
 - `training/export_memo_index.py` (stdlib only) builds
   `training/memo_index.bin` (`HFMI` v1: u32 count + count × 8 × int32 LE,
   sorted; 6,749 8-grams, 215,980 bytes / 216 KB < 1 MB budget) from the
