@@ -97,6 +97,18 @@ void ChordTrack::paint(juce::Graphics& g) {
   const int bar_ticks = pat.ticks_per_beat * pat.beats_per_bar;
   const auto& chords = doc_.chords();
   const int bars = std::max(static_cast<int>(chords.size()), 1);
+  // Phase 6 Task 5 (D): honest empty state - with no chords the "-" cell +
+  // freeze hint below read as content; name the real routes instead (ASCII
+  // hyphen: this file draws strings, same rule as ExplainView).
+  if (chords.empty()) {
+    g.setFont(13.0f);
+    g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
+    g.drawText("No chords - adopt or seed a progression", 4, 4, getWidth() - 8, 18,
+               juce::Justification::centredLeft, false);
+    // Same focus ring as below (single return path for the empty state).
+    if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
+    return;
+  }
   for (int b = 0; b < bars; ++b) {
     const float x = b * bar_ticks * pxPerTick_;
     const float w = bar_ticks * pxPerTick_;

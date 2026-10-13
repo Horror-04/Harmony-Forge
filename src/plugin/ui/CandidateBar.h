@@ -63,6 +63,9 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
       if (id > 0 && static_cast<size_t>(id) <= doc_.history().size() && onRecallHistory)
         onRecallHistory(doc_.history().at(static_cast<size_t>(id) - 1));
     };
+    // Phase 6 Task 5 (D): honest empty state - an empty box with no hint
+    // reads as broken; this placeholder shows until the first Regenerate.
+    historyBox_.setTextWhenNothingSelected("No history yet");
     addAndMakeVisible(historyBox_);
 
     doc_.addChangeListener(this);

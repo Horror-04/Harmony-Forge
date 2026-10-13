@@ -105,7 +105,16 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   transportLabel.setText("Transport: --", juce::dontSendNotification);
   addAndMakeVisible(transportLabel);
 
-  previewButton.onClick = [this] { startPreview(); };
+  // Phase 6 Task 5 (A): while an async preview/export job is pending this
+  // button is its Cancel affordance (drops the pending id; the bounded
+  // worker still finishes but the completion is discarded - no new threads).
+  // Otherwise it starts the preview as before.
+  previewButton.onClick = [this] {
+    if (previewBusy_)
+      cancelPreviewExport();
+    else
+      startPreview();
+  };
   addAndMakeVisible(previewButton);
 
   // External file drag must start from a mouse event: run it on mouseDown.
@@ -284,8 +293,12 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   explainTabButton.onClick = [this] { showExplainTab(true); };
   addAndMakeVisible(explainTabButton);
   explainViewport.setViewedComponent(&explainView, false);
-  explainViewport.setVisible(false);
   addAndMakeVisible(explainViewport);
+  // Phase 6 Task 5 (pre-existing Task 1 concern 3, root-caused): hiding MUST
+  // come after addAndMakeVisible - the latter re-shows the component, so the
+  // old order (hide-then-add) left ExplainView painting over the roll until
+  // Edit was pressed. Statement order is the whole fix (one focused change).
+  explainViewport.setVisible(false);
 
   chordTrack.onBarSelected = [this](int bar) { refreshChordRow(bar); };
 
@@ -445,6 +458,18 @@ void HarmonyForgeEditor::timerCallback() {
   // Phase 3 Task 4 item B: async preview/export collector (same supersede
   // discipline, dedicated queue). Non-blocking poll only.
   pollPreviewExport();
+  // Phase 6 Task 5 (A): indeterminate progress - while busy, the status text
+  // gains a cycling 1..3-dot ellipsis (~300 ms steps) on this message-thread
+  // Timer. No new threads; the worker is untouched. Redraws only on change.
+  if (previewBusy_) {
+    const int dots = (tick / 12) % 3 + 1;
+    if (dots != previewAnimDots_) {
+      previewAnimDots_ = dots;
+      juce::String animated = previewStatusBase_;
+      for (int d = 0; d < dots; ++d) animated += ".";
+      statusLabel.setText(animated, juce::dontSendNotification);
+    }
+  }
   // Keep the chord strip as wide as the roll (shared scroller).
   const int w = std::max(viewport.getWidth(), roll.getWidth());
   chordTrack.setSize(w, 64);
@@ -620,7 +645,7 @@ void HarmonyForgeEditor::doKeep(int i) {
 
 void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>& sections) {
   // Message thread: build_arrangement is CPU-bound but fast (tens of ms for
-  // a 150-bar arrangement — measured, see the Task 5 report), so it runs
+  // a 150-bar arrangement - measured, see the Task 5 report), so it runs
   // synchronously here with a status readout instead of a chunked progress
   // flow. Never touches audio state; the result commits undoably and
   // previews through the existing working-pattern path.
@@ -761,9 +786,26 @@ void HarmonyForgeEditor::refreshModelRow() {
 
 void HarmonyForgeEditor::setPreviewBusy(bool busy, const juce::String& status) {
   previewBusy_ = busy;
-  previewButton.setEnabled(!busy);
+  // Phase 6 Task 5 (A): the base text carries no dots - the Timer animation
+  // above appends the cycling ellipsis. The button doubles as Cancel while
+  // busy (always enabled) so a pending job can be dropped from the UI;
+  // Export stays disabled (one in-flight job only).
+  previewStatusBase_ = status;
+  previewAnimDots_ = -1;
+  previewButton.setButtonText(busy ? "Cancel" : "Preview");
+  previewButton.setEnabled(true);
   exportButton.setEnabled(!busy);
   statusLabel.setText(status, juce::dontSendNotification);
+}
+
+void HarmonyForgeEditor::cancelPreviewExport() {
+  // User-pressed Cancel: same id-drop as the sync-takeover path, then an
+  // honest status (a cancel is never silent). The worker, if still running,
+  // completes bounded and its completion is discarded by id.
+  const PendingOp op = pendingOp_;
+  cancelPendingPreviewExport();
+  statusLabel.setText(op == PendingOp::Export ? "Export cancelled." : "Preview cancelled.",
+                      juce::dontSendNotification);
 }
 
 void HarmonyForgeEditor::cancelPendingPreviewExport() {
@@ -789,8 +831,9 @@ void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
       hf::plugin::modelPath(proc.state()).toStdString());
   pendingPreviewId_ = previewGen_->generate_async(gp);
   pendingOp_ = op;
-  setPreviewBusy(true, op == PendingOp::Preview ? "Generating preview..."
-                                                : "Generating MIDI for export...");
+  // Phase 6 Task 5 (A): dot-free base - the Timer appends the ellipsis.
+  setPreviewBusy(true, op == PendingOp::Preview ? "Generating preview"
+                                                : "Generating MIDI for export");
 }
 
 bool HarmonyForgeEditor::pollPreviewExport() {
@@ -843,7 +886,7 @@ void HarmonyForgeEditor::importReferenceMidi(const juce::File& f) {
   if (r.error != hf::ser::SmfError::Ok) {
     hasRefReport_ = false;
     refStatus_ = "Reference not imported (" + f.getFileName() +
-                 "): " + smfErrorText(r.error) + " — state untouched";
+                 "): " + smfErrorText(r.error) + " - state untouched";
     refreshReferenceRow();
     return;
   }
@@ -852,7 +895,7 @@ void HarmonyForgeEditor::importReferenceMidi(const juce::File& f) {
   hasRefReport_ = true;
   if (!refReport_.enough_data) {
     refStatus_ = "Ref " + f.getFileName() +
-                 ": too little pitched material — key/chords not adopted";
+                 ": too little pitched material - key/chords not adopted";
   } else {
     juce::String chords;
     const size_t shown = std::min(refReport_.chords.size(), size_t{4});

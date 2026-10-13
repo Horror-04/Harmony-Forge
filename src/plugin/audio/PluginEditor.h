@@ -45,9 +45,26 @@ class HarmonyForgeProcessor;
 // or the stored ModelPath is empty, the synchronous path runs byte-identical
 // to before (tripwire). Only the empty-pattern + configured-model case goes
 // through previewGen_ (AsyncGenerateQueue, same supersede-by-id discipline
-// as regenerate): submit -> preview/export buttons disabled + status label
-// -> the Timer poll applies the completion (candidates[0], the same
-// projection as the sync path). A new request supersedes a pending one.
+// as regenerate): submit -> Export disabled + Preview retargeted to Cancel
+// (Task 5 item A) + status label -> the Timer poll applies the completion
+// (candidates[0], the same projection as the sync path). A new request
+// supersedes a pending one.
+//
+// Phase 6 Task 5 (A) async-feedback contract, per control (no new threads;
+// all workers run to completion bounded - "cancel"/"supersede" always means
+// the UI drops the pending id and discards the late completion by id):
+//   Preview/Export: while a job is pending the Preview button becomes a
+//     Cancel affordance (Export stays disabled - one in-flight job only) and
+//     the status text gains a cycling 1..3-dot ellipsis on the message
+//     Timer (~300 ms steps; the same Timer that already polls). Cancel says
+//     "Preview/Export cancelled." (never silent); a sync preview/export
+//     still supersedes silently by construction (last-wins, documented in
+//     cancelPendingPreviewExport).
+//   Regenerate: NO progress text and NO cancel (CandidateBar owns no status
+//     readout; adding one is out of scope) - a second Regenerate supersedes
+//     the first by job id (pre-existing, AsyncGenerateQueue contract).
+//   Drag: stays synchronous with the best-effort "Rendering MIDI..." text
+//     (OS-gesture constraint, item B proviso above - do not touch).
 //
 // Documented fallback (item B proviso): DRAG stays synchronous even with a
 // model configured. Rationale: the OS drag (performExternalDragDropOfFiles)
@@ -135,6 +152,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void submitPreviewExport(PendingOp op);  // async when a model is configured
   bool pollPreviewExport();  // Timer collector; true when one was applied
   void cancelPendingPreviewExport();  // sync take wins: drop the pending async job (last-wins)
+  void cancelPreviewExport();  // Phase 6 Task 5 (A): user-pressed Cancel - same drop + "cancelled" status (never silent)
   void finishExport(const hf::core::Pattern& pat);  // bytes + save chooser
   void finishDrag(const hf::core::Pattern& pat);    // temp file + OS drag
   // Phase 5 Task 2 (ADD-only additions; existing signatures frozen):
@@ -253,6 +271,10 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   PendingOp pendingOp_ = PendingOp::None;
   hf::infer::GenJobId pendingPreviewId_ = 0;
   bool previewBusy_ = false;
+  // Phase 6 Task 5 (A): ellipsis animation base (status without dots) + last
+  // drawn dot count (-1 = force redraw on the next Timer tick).
+  juce::String previewStatusBase_;
+  int previewAnimDots_ = -1;
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HarmonyForgeEditor)
 };

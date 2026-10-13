@@ -112,9 +112,17 @@ class ArrangeBar : public juce::Component {
       if (onBuild) onBuild(sections_);
     };
     addAndMakeVisible(buildButton_);
-    status_.setText("Arrange: 3 sections", juce::dontSendNotification);
     addAndMakeVisible(status_);
-    refresh();
+    refresh();  // sets the live count text (no hardcoded placeholder)
+  }
+
+  // Phase 6 Task 5 (B): pure live-count text for the status label - pinned
+  // headless in tests/test_visual_polish.cpp (ArrangeBar itself owns widgets
+  // and cannot be instantiated headless; see test_focus_resize.cpp NOTE).
+  static juce::String countTextFor(int nSections, int totalBars) {
+    return "Arrange: " + juce::String(nSections) +
+           (nSections == 1 ? " section, " : " sections, ") + juce::String(totalBars) +
+           (totalBars == 1 ? " bar" : " bars");
   }
 
   void setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
@@ -239,6 +247,18 @@ class ArrangeBar : public juce::Component {
     list_.updateContent();
     list_.selectRow(selected_);
     refreshEditors();
+    // Phase 6 Task 5 (B): honest live counts bound to the section model -
+    // every add/delete/reorder lands here, so the label can never go stale.
+    // A Build result written via setStatus() stays until the next section
+    // edit restores the live count (documented transient); totals sum bars.
+    int totalBars = 0;
+    for (const auto& s : sections_) totalBars += s.bars;
+    status_.setText(countTextFor(static_cast<int>(sections_.size()), totalBars),
+                    juce::dontSendNotification);
+    // Phase 6 Task 5 (D): no sections, no build - the disabled button (with
+    // the "0 sections" count above) is the honest empty state, not a
+    // silent no-op Build.
+    buildButton_.setEnabled(!sections_.empty());
     repaint();
   }
 

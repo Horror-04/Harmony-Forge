@@ -94,6 +94,32 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   hf_copy_ort_runtime(test_focus_resize)
   catch_discover_tests(test_focus_resize)
 endif()
+# Phase 6 Task 5: visual-polish pins (ArrangeBar live counts, ExplainView
+# wrap metrics + narrow-paint bottom-band proxy, ChordTrack empty-state
+# probe). Links the real ArrangeBar (header-only, pure static under test),
+# ExplainView.cpp + ChordTrack.cpp + PatternDocument.cpp (JUCE), plugin-ON
+# only. Headless paint/drawText/TextLayout is assertion-safe but exits
+# nonzero at teardown (see below), so all paint evidence lives here.
+# Deliberately NOT registered with catch_discover_tests (test_note_cues
+# precedent): PROBED - 9/9 assertions pass, but the process exits 0xC0000374
+# at teardown headless. Bisected to the TextLayout/font measuring path
+# (width-0 construction alone is clean; the first setSize->relayout that
+# creates a Font/TextLayout trips it - same DirectWrite headless family as
+# drawText). The binary never appears in `ctest -N`. Explicit run from the
+# repo root:
+#   .\build-full\tests\Release\test_visual_polish.exe
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_visual_polish test_visual_polish.cpp
+    ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/ExplainView.cpp
+    ../src/plugin/ui/ChordTrack.cpp)
+  target_link_libraries(test_visual_polish PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_gui_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_visual_polish PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_visual_polish PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_visual_polish)
+endif()
 # Phase 6 Task 3: non-color note cues. Links the real
 # PianoRoll.cpp + PatternDocument.cpp (JUCE), plugin-ON only. Headless:
 # roll.paint(g) into an Image; exact-ARGB pins (fill colours byte-identical,

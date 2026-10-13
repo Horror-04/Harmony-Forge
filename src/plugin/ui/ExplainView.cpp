@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "ExplainView.h"
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -15,8 +17,16 @@ namespace {
 
 // Phase 6 Task 4: the 8 px rhythm pad lives in hf::ui::UITokens::kRhythmPx
 // (single source); line metrics stay local (out of Task 4 scope).
-constexpr int kLineH = 20;    // body line height
-constexpr int kTitleH = 24;   // title row height
+constexpr int kLineH = 20;    // body line height (floor: wrapped rows grow)
+constexpr int kTitleH = 24;   // title row height (floor: same rule)
+
+// Phase 6 Task 5 (C): one construction site per row font, shared by measure
+// (relayout) and draw (paint) so the two can never disagree (disagreement =
+// clipping). Legacy ctors kept byte-identical (same C4996 family as before,
+// no new warning kinds).
+juce::Font titleFont() { return juce::Font(14.0f); }
+juce::Font headerFont() { return juce::Font(13.0f, juce::Font::bold); }
+juce::Font bodyFont() { return juce::Font(12.0f); }
 
 juce::String pcName(int pitch) {
   static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
@@ -46,8 +56,10 @@ void ExplainView::refresh() {
   lines_.push_back({true, "Explain - read-only analysis"});
 
   if (notes == 0 && chords.empty()) {
-    lines_.push_back({false, "No material - generate or import first"});
-    contentHeight_ = hf::ui::UITokens::kRhythmPx + kTitleH + hf::ui::UITokens::kRhythmPx + kLineH + hf::ui::UITokens::kRhythmPx;
+    // Phase 6 Task 5 (D): honest empty state names the real controls (there
+    // is no "Generate" button - generation starts from Regenerate).
+    lines_.push_back({false, "No material - press Regenerate or import a reference"});
+    relayout();
     if (getWidth() > 0) setSize(getWidth(), contentHeight_);
     repaint();
     return;
@@ -100,33 +112,85 @@ void ExplainView::refresh() {
     }
   }
 
-  int h = hf::ui::UITokens::kRhythmPx + kTitleH + hf::ui::UITokens::kRhythmPx;
-  for (size_t i = 1; i < lines_.size(); ++i)
-    h += lines_[i].header ? (hf::ui::UITokens::kRhythmPx + kLineH) : kLineH;
-  contentHeight_ = h + hf::ui::UITokens::kRhythmPx;
+  // Phase 6 Task 5 (C): measure rows for the current width via relayout()
+  // (floored at the legacy single-line metrics, so wide windows render
+  // pixel-identical to before; narrow windows grow contentHeight_ instead of
+  // clipping).
+  relayout();
   if (getWidth() > 0) setSize(getWidth(), contentHeight_);
   repaint();
 }
 
+void ExplainView::relayout() {
+  heights_.clear();
+  heights_.reserve(lines_.size());
+  const int availW = getWidth() - 2 * hf::ui::UITokens::kRhythmPx;
+  for (size_t i = 0; i < lines_.size(); ++i) {
+    const int floor = (i == 0) ? kTitleH : kLineH;
+    int lh = floor;
+    if (availW > 0 && !lines_[i].text.isEmpty()) {
+      const juce::Font f =
+          (i == 0) ? titleFont() : (lines_[i].header ? headerFont() : bodyFont());
+      juce::AttributedString attr;
+      attr.append(lines_[i].text, f,
+                  juce::Colour(i == 0 || lines_[i].header ? hf::ui::UITokens::kTextBright
+                                                          : hf::ui::UITokens::kTextBody));
+      juce::TextLayout layout;
+      layout.createLayout(attr, static_cast<float>(availW));
+      lh = std::max(floor, static_cast<int>(std::ceil(layout.getHeight())));
+    }
+    heights_.push_back(lh);
+  }
+  if (heights_.empty()) heights_.push_back(kTitleH);
+  int h = hf::ui::UITokens::kRhythmPx + heights_[0] + hf::ui::UITokens::kRhythmPx;
+  for (size_t i = 1; i < lines_.size(); ++i)
+    h += lines_[i].header ? (hf::ui::UITokens::kRhythmPx + heights_[i]) : heights_[i];
+  contentHeight_ = h + hf::ui::UITokens::kRhythmPx;
+}
+
+void ExplainView::resized() {
+  // Width changed (editor resize or first setSize): re-measure, then adopt
+  // the new height. setSize with identical dims is a no-op, so this settles
+  // after at most one nested pass - no loop.
+  relayout();
+  if (getHeight() != contentHeight_) setSize(getWidth(), contentHeight_);
+}
+
 void ExplainView::paint(juce::Graphics& g) {
   g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
-  int y = hf::ui::UITokens::kRhythmPx;
-  g.setFont(14.0f);
-  g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
-  g.drawText(lines_.empty() ? juce::String() : lines_[0].text, hf::ui::UITokens::kRhythmPx, y, getWidth() - 2 * hf::ui::UITokens::kRhythmPx,
-             kTitleH, juce::Justification::centredLeft, false);
-  y += kTitleH + hf::ui::UITokens::kRhythmPx;
-  for (size_t i = 1; i < lines_.size(); ++i) {
-    if (lines_[i].header) {
-      y += hf::ui::UITokens::kRhythmPx;
-      g.setFont(juce::Font(13.0f, juce::Font::bold));
-      g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
+  if (lines_.empty()) return;
+  // Safety: a width change always routes through resized()->relayout(), but
+  // a first paint before any resized (headless/peerless) re-measures here so
+  // draw and metrics can never disagree (disagreement = clipping).
+  if (heights_.size() != lines_.size()) relayout();
+  const int pad = hf::ui::UITokens::kRhythmPx;
+  const int availW = std::max(0, getWidth() - 2 * pad);
+  int y = pad;
+  for (size_t i = 0; i < lines_.size(); ++i) {
+    if (i > 0 && lines_[i].header) y += pad;
+    const bool bright = (i == 0) || lines_[i].header;
+    const juce::Font f = (i == 0) ? titleFont() : (bright ? headerFont() : bodyFont());
+    const juce::Colour c = juce::Colour(
+        bright ? hf::ui::UITokens::kTextBright : hf::ui::UITokens::kTextBody);
+    const int floor = (i == 0) ? kTitleH : kLineH;
+    if (heights_[i] <= floor) {
+      // Legacy single-line path (pixel-identical to pre-Task-5 paint).
+      g.setFont(f);
+      g.setColour(c);
+      g.drawText(lines_[i].text, pad, y, availW, floor,
+                 juce::Justification::centredLeft, false);
     } else {
-      g.setFont(12.0f);
-      g.setColour(juce::Colour(hf::ui::UITokens::kTextBody));
+      // Phase 6 Task 5 (C): wrapped row - same font/colour, TextLayout draws
+      // the flowed lines into the measured height (measured with the same
+      // font in relayout, so nothing clips).
+      juce::AttributedString attr;
+      attr.append(lines_[i].text, f, c);
+      juce::TextLayout layout;
+      layout.createLayout(attr, static_cast<float>(availW));
+      layout.draw(g, juce::Rectangle<float>(static_cast<float>(pad), static_cast<float>(y),
+                                            static_cast<float>(availW),
+                                            static_cast<float>(heights_[i])));
     }
-    g.drawText(lines_[i].text, hf::ui::UITokens::kRhythmPx, y, getWidth() - 2 * hf::ui::UITokens::kRhythmPx, kLineH,
-               juce::Justification::centredLeft, false);
-    y += kLineH;
+    y += heights_[i];
   }
 }

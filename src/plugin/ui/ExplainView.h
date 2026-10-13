@@ -31,6 +31,13 @@
 // mutating commit. Refreshes on every document commit via the existing
 // ChangeListener pattern (NOT polling); message thread only, never the
 // audio thread.
+//
+// Phase 6 Task 5 (C): long lines WRAP instead of clipping. Each logical line
+// measures itself with juce::TextLayout against the current width (floored at
+// the legacy single-line metrics, so wide windows render pixel-identical to
+// before); paint draws single-line rows with the legacy drawText path and
+// wrapped rows with TextLayout. Heights recompute in relayout() (called from
+// refresh() and resized()), so contentHeight() grows as the window narrows.
 class ExplainView : public juce::Component, private juce::ChangeListener {
  public:
   explicit ExplainView(PatternDocument& doc);
@@ -42,6 +49,7 @@ class ExplainView : public juce::Component, private juce::ChangeListener {
   int contentHeight() const { return contentHeight_; }
 
   void paint(juce::Graphics& g) override;
+  void resized() override;
 
  private:
   struct Line {
@@ -50,11 +58,13 @@ class ExplainView : public juce::Component, private juce::ChangeListener {
   };
 
   void changeListenerCallback(juce::ChangeBroadcaster*) override { refresh(); }
-  void refresh();  // recompute cached lines from the document (message thread)
+  void refresh();   // recompute cached lines from the document (message thread)
+  void relayout();  // re-measure row heights for the current width (message thread)
 
   PatternDocument& doc_;
   int tonic_ = 60;
   std::string scale_ = "major";
   std::vector<Line> lines_;
+  std::vector<int> heights_;  // drawn height per line (== floor when unwrapped)
   int contentHeight_ = 0;
 };

@@ -150,7 +150,10 @@ juce::Colour PianoRoll::colourFor(int pitch, int start) const {
     case hf::core::NoteClass::Chromatic:
       return juce::Colour(hf::ui::UITokens::kNoteChromatic);
   }
-  return juce::Colours::grey;
+  // Phase 6 Task 5: the fallthrough is unreachable (every NoteClass case
+  // returns) - kept as a token (kTextDim == Colours::grey it replaces) per
+  // the no-raw-literal guard; value-identical.
+  return juce::Colour(hf::ui::UITokens::kTextDim);
 }
 
 void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill,
@@ -267,7 +270,7 @@ void PianoRoll::paint(juce::Graphics& g) {
     // (values in UITokens.h).
     g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
     g.setFont(14.0f);
-    g.drawText("No pattern — press Generate", kKeysW, 8, getWidth() - kKeysW, 24,
+    g.drawText("No pattern - press Regenerate", kKeysW, 8, getWidth() - kKeysW, 24,
                juce::Justification::centredLeft, false);
   }
   // Rubber band.
