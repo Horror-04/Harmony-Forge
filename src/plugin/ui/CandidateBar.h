@@ -71,6 +71,17 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     // reads as broken; this placeholder shows until the first Regenerate.
     historyBox_.setTextWhenNothingSelected("No history yet");
     addAndMakeVisible(historyBox_);
+    // Phase 7 Task 4 (B): field labels are 11 px kTextMuted captions for
+    // their boxes. No section header here: the bar is 40 px tall
+    // (Phase-6-owned geometry) with no title surface — a header row would
+    // steal control height and force an editor relayout, which the brief
+    // forbids. The audition toggle (kAccent border via HFLookAndFeel) stays
+    // the selection cue. Hover: N/A, no mouseMove tracking exists and the
+    // brief forbids adding any (buttons get hover via HFLookAndFeel).
+    for (auto* l : {&seedLabel_, &barsLabel_, &historyLabel_}) {
+      l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
+      l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
+    }
 
     doc_.addChangeListener(this);
     refreshFromDoc();
@@ -119,8 +130,14 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     historyBox_.setBounds(r.removeFromLeft(histW));
   }
 
-  // Phase 6 Task 2 (A2): ring only — no fill, children keep JUCE defaults.
+  // Phase 6 Task 2 (A2): ring preserved — the panel fill below is the bar's
+  // own kBgPanel surface (message-thread paint; no layout change).
   void paint(juce::Graphics& g) override {
+    g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
+    // Phase 7 Task 4 (B): 1 px kBorder top separator, mirroring the editor
+    // toolbar rows' bottom separators.
+    g.setColour(juce::Colour(hf::ui::UITokens::kBorder));
+    g.fillRect(0, 0, getWidth(), 1);
     if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
   }
 

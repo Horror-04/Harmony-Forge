@@ -101,7 +101,9 @@ void ChordTrack::paint(juce::Graphics& g) {
   // freeze hint below read as content; name the real routes instead (ASCII
   // hyphen: this file draws strings, same rule as ExplainView).
   if (chords.empty()) {
-    g.setFont(13.0f);
+    // Phase 7 Task 4 (B): caption scale token (value-identical 13 px; headers
+    // stay non-bold here — the empty line is a hint, not a section header).
+    g.setFont(hf::ui::UITokens::kFontBody);
     g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
     g.drawText("No chords - adopt or seed a progression", 4, 4, getWidth() - 8, 18,
                juce::Justification::centredLeft, false);
@@ -120,12 +122,19 @@ void ChordTrack::paint(juce::Graphics& g) {
       g.setColour(juce::Colour(hf::ui::UITokens::kNoteFrozenFrameArgb));
       g.drawRect(x + 1.0f, 2.0f, w - 2.0f, 60.0f, hf::ui::UITokens::kNoteFrozenFrameWidth);
     }
-    g.setFont(13.0f);
+    // Phase 7 Task 4 (B): chord names are the strip's section headers —
+    // 13 px bold (kFontBody) kTextBright. Sub-lines stay 11 px kTextMuted
+    // captions; the freeze hint moves 10 px -> kFontCaption (Task-1 scale
+    // only; still fits its 14 px slot). Cells already on
+    // kCard/kCardSelected — untouched. Hover: N/A, no mouseMove tracking
+    // exists here and the brief forbids adding any (buttons get hover via
+    // HFLookAndFeel).
+    g.setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontBody).withStyle("Bold")));
     g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
     const std::string name =
         (b < static_cast<int>(chords.size())) ? chordName(chords[static_cast<size_t>(b)]) : "-";
     g.drawText(name, (int)x + 4, 4, (int)w - 8, 18, juce::Justification::centredLeft, false);
-    g.setFont(11.0f);
+    g.setFont(hf::ui::UITokens::kFontCaption);
     g.setColour(juce::Colour(hf::ui::UITokens::kTextMuted));
     const std::string sub =
         (b < static_cast<int>(chords.size()))
@@ -133,7 +142,7 @@ void ChordTrack::paint(juce::Graphics& g) {
                   functionName(chords[static_cast<size_t>(b)], tonic_, scale_)
             : "";
     g.drawText(sub, (int)x + 4, 24, (int)w - 8, 16, juce::Justification::centredLeft, false);
-    g.setFont(10.0f);
+    g.setFont(hf::ui::UITokens::kFontCaption);
     g.drawText(barFrozen(b) ? "frozen (R-click to thaw)" : "R-click to freeze", (int)x + 4, 42,
                (int)w - 8, 14, juce::Justification::centredLeft, false);
   }

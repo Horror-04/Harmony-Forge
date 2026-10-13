@@ -80,6 +80,13 @@ juce::String refKeyName(const hf::music::KeyEstimate& k) {
   return juce::String(kNames[static_cast<size_t>(pc)]) + " " + juce::String(k.scale);
 }
 
+// Phase 7 Task 4 (A): 12 px group gap -> 1 px kBorder vertical fade-divider.
+// Takes the gap rect (already removed from the row) and returns the centred
+// 1 px strip, inset 5 px top/bottom so the fade never touches the row edge.
+juce::Rectangle<int> groupDivider(const juce::Rectangle<int>& gap) {
+  return {gap.getCentreX(), gap.getY() + 5, 1, juce::jmax(0, gap.getHeight() - 10)};
+}
+
 }  // namespace
 
 HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
@@ -332,6 +339,17 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   doc.addChangeListener(this);
   proc.state().addListener(this);
   refreshTrackBox();
+  // Phase 7 Task 4 (A): toolbar field labels are 11 px (kFontCaption)
+  // kTextMuted caption pairs for their controls. They stay side-by-side
+  // within the existing 26 px rows — label-above-control would need taller
+  // rows, which are Phase-6-owned geometry, so the scale/colour land and
+  // the positions stay. Readout labels (transport/chord-bar/model/status/
+  // report/hint) keep the default look-and-feel text (white, contrast-
+  // pinned in test_focus_resize.cpp).
+  for (auto* l : {&bpmLabel, &densityLabel, &trackLabel, &snapLabel}) {
+    l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
+    l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
+  }
   startTimer(25);  // transport poll + preview scheduler + width sync
 }
 
@@ -357,58 +375,95 @@ void HarmonyForgeEditor::applyZoom() {
 void HarmonyForgeEditor::paint(juce::Graphics& g) {
   // Phase 6 Task 4: token (value == juce::Colours::darkgrey it replaces).
   g.fillAll(juce::Colour(hf::ui::UITokens::kEditorBg));
+  // Phase 7 Task 4 (A): each toolbar row is a kBgPanel panel with a 1 px
+  // kBorder bottom separator; group dividers are 1 px kBorder strips fading
+  // to transparent at both ends. All rects come from resized() — paint
+  // duplicates no layout math. Guards: pre-first-resized paint sees empty
+  // rects and draws nothing (isEmpty skips).
+  for (const auto& pr : panelRows_) {
+    if (pr.isEmpty()) continue;
+    g.setColour(juce::Colour(hf::ui::UITokens::kBgPanel));
+    g.fillRect(pr);
+    g.setColour(juce::Colour(hf::ui::UITokens::kBorder));
+    g.fillRect(pr.getX(), pr.getBottom() - 1, pr.getWidth(), 1);
+  }
+  for (const auto& d : dividers_) {
+    if (d.isEmpty()) continue;
+    const float cx = static_cast<float>(d.getCentreX());
+    const juce::Colour clear =
+        juce::Colour(hf::ui::UITokens::kBorder).withAlpha(0.0f);
+    juce::ColourGradient fade(clear, cx, static_cast<float>(d.getY()), clear, cx,
+                              static_cast<float>(d.getBottom()), false);
+    fade.addColour(0.5, juce::Colour(hf::ui::UITokens::kBorder));
+    g.setGradientFill(fade);
+    g.fillRect(d);
+  }
 }
 
 void HarmonyForgeEditor::resized() {
   auto r = getLocalBounds().reduced(8);
-  transportLabel.setBounds(r.removeFromTop(22));
+  // Phase 7 Task 4 (A): paint-only divider strips are rebuilt every layout
+  // pass (message thread). Row rects are captured into panelRows_ as each
+  // row is consumed; child bounds keep their Phase-6 sizes, row heights and
+  // the 4 px inter-row rhythm are unchanged. Group-boundary gaps widen
+  // 6 -> 12 px to seat the 1 px divider (≈ the brief's 12 px group padding;
+  // intra-group 6 px gaps ≈ the 8 px base; vertical rhythm untouched).
+  dividers_.clear();
+  panelRows_[kPanelTransport] = r.removeFromTop(22);
+  transportLabel.setBounds(panelRows_[kPanelTransport]);
   r.removeFromTop(4);
   auto row = r.removeFromTop(28);
+  panelRows_[kPanelButtons] = row;
   previewButton.setBounds(row.removeFromLeft(100));
   row.removeFromLeft(6);
   dragButton.setBounds(row.removeFromLeft(100));
   row.removeFromLeft(6);
   exportButton.setBounds(row.removeFromLeft(110));
-  row.removeFromLeft(6);
+  dividers_.push_back(groupDivider(row.removeFromLeft(12)));
   undoButton.setBounds(row.removeFromLeft(70));
   row.removeFromLeft(6);
   redoButton.setBounds(row.removeFromLeft(70));
   r.removeFromTop(4);
   auto bpmRow = r.removeFromTop(26);
+  panelRows_[kPanelBpm] = bpmRow;
   bpmLabel.setBounds(bpmRow.removeFromLeft(60));
   bpmSlider.setBounds(bpmRow.removeFromLeft(220));
-  bpmRow.removeFromLeft(8);
+  dividers_.push_back(groupDivider(bpmRow.removeFromLeft(12)));
   densityLabel.setBounds(bpmRow.removeFromLeft(60));
   densitySlider.setBounds(bpmRow);
   r.removeFromTop(4);
   auto trackRow = r.removeFromTop(26);
+  panelRows_[kPanelTrack] = trackRow;
   trackLabel.setBounds(trackRow.removeFromLeft(48));
   trackBox.setBounds(trackRow.removeFromLeft(140));
-  trackRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
   freezeTrackButton.setBounds(trackRow.removeFromLeft(110));
   trackRow.removeFromLeft(6);
   axisBox.setBounds(trackRow.removeFromLeft(90));
-  trackRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
   snapLabel.setBounds(trackRow.removeFromLeft(44));
   snapBox.setBounds(trackRow.removeFromLeft(70));
   trackRow.removeFromLeft(6);
   quantButton.setBounds(trackRow.removeFromLeft(90));
-  trackRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
   // Phase 6 Task 2 (B): zoom sliders split the remainder evenly (were 2 ×
-  // 120 px fixed, overflowing narrow windows). 161 px each at the minimum.
+  // 120 px fixed, overflowing narrow windows). ~152 px each at the minimum
+  // (was 161 px: three group gaps widened 6 -> 12 px above, −18 px total).
   const int zoomEach = juce::jmax(0, trackRow.getWidth() / 2);
   zoomHSlider.setBounds(trackRow.removeFromLeft(zoomEach));
   trackRow.removeFromLeft(6);
   zoomVSlider.setBounds(trackRow);
   r.removeFromTop(4);
   auto chordRow = r.removeFromTop(26);
+  panelRows_[kPanelChord] = chordRow;
   chordBarLabel.setBounds(chordRow.removeFromLeft(110));
+  dividers_.push_back(groupDivider(chordRow.removeFromLeft(12)));
   chordRootBox.setBounds(chordRow.removeFromLeft(70));
   chordRow.removeFromLeft(6);
   chordTypeBox.setBounds(chordRow.removeFromLeft(90));
   chordRow.removeFromLeft(6);
   chordReplaceButton.setBounds(chordRow.removeFromLeft(120));
-  chordRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(chordRow.removeFromLeft(12)));
   invUpButton.setBounds(chordRow.removeFromLeft(60));
   chordRow.removeFromLeft(6);
   invDownButton.setBounds(chordRow.removeFromLeft(60));
@@ -417,34 +472,37 @@ void HarmonyForgeEditor::resized() {
   // Phase 6 Task 2 (B+C): the model label takes a proportional 38% (was a
   // fixed 340 px, which squeezed the status label against long paths); the
   // status label keeps the rest so both stay visible at the minimum width
-  // (358 / 388 px). Both use the default look-and-feel label colour (white,
+  // (358 / 376 px). Both use the default look-and-feel label colour (white,
   // measured 7.46:1 on the editor background — no colour change needed).
   auto modelRow = r.removeFromTop(28);
+  panelRows_[kPanelModel] = modelRow;
   modelLabel.setBounds(modelRow.removeFromLeft(modelRow.getWidth() * 38 / 100));
-  modelRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(modelRow.removeFromLeft(12)));
   modelButton.setBounds(modelRow.removeFromLeft(100));
   modelRow.removeFromLeft(6);
   modelClearButton.setBounds(modelRow.removeFromLeft(80));
-  modelRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(modelRow.removeFromLeft(12)));
   statusLabel.setBounds(modelRow);
   r.removeFromTop(4);
-  auto hintRow = r.removeFromTop(22);
-  modelHintLabel.setBounds(hintRow);
+  panelRows_[kPanelHint] = r.removeFromTop(22);
+  modelHintLabel.setBounds(panelRows_[kPanelHint]);
   r.removeFromTop(4);
   // Phase 5 Task 2: reference report row (import + adopt actions).
   auto refRow = r.removeFromTop(28);
+  panelRows_[kPanelRef] = refRow;
   refImportButton.setBounds(refRow.removeFromLeft(110));
-  refRow.removeFromLeft(6);
+  dividers_.push_back(groupDivider(refRow.removeFromLeft(12)));
   refSeedButton.setBounds(refRow.removeFromRight(90));
   refRow.removeFromRight(6);
   refChordsButton.setBounds(refRow.removeFromRight(110));
   refRow.removeFromRight(6);
   refKeyButton.setBounds(refRow.removeFromRight(90));
-  refRow.removeFromRight(6);
+  dividers_.push_back(groupDivider(refRow.removeFromRight(12)));
   refReportLabel.setBounds(refRow);
   r.removeFromTop(4);
   // Phase 5 Task 3: Edit/Explain tab row (viewport and Explain share the rest).
   auto tabRow = r.removeFromTop(26);
+  panelRows_[kPanelTab] = tabRow;
   editTabButton.setBounds(tabRow.removeFromLeft(90));
   tabRow.removeFromLeft(6);
   explainTabButton.setBounds(tabRow.removeFromLeft(90));

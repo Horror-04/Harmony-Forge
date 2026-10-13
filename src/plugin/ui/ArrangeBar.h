@@ -116,6 +116,15 @@ class ArrangeBar : public juce::Component {
     buildButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
     addAndMakeVisible(buildButton_);
     addAndMakeVisible(status_);
+    // Phase 7 Task 4 (B): field labels are 11 px kTextMuted captions for
+    // their controls; the live-count status doubles as the bar's section
+    // header (13 px bold kTextBright). Positions/sizes untouched.
+    for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_}) {
+      l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
+      l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
+    }
+    status_.setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontBody).withStyle("Bold")));
+    status_.setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextBright));
     refresh();  // sets the live count text (no hardcoded placeholder)
   }
 
@@ -130,9 +139,14 @@ class ArrangeBar : public juce::Component {
 
   void setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
 
-  // Phase 6 Task 2 (A2): ring only — the background stays the editor's; no
-  // fill here so child controls keep their JUCE look.
+  // Phase 6 Task 2 (A2): ring only — the panel fill below is the bar's own
+  // kBgPanel surface (message-thread paint; no layout change).
   void paint(juce::Graphics& g) override {
+    g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
+    // Phase 7 Task 4 (B): 1 px kBorder top separator, mirroring the editor
+    // toolbar rows' bottom separators.
+    g.setColour(juce::Colour(hf::ui::UITokens::kBorder));
+    g.fillRect(0, 0, getWidth(), 1);
     if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
   }
 
@@ -193,7 +207,12 @@ class ArrangeBar : public juce::Component {
     int getNumRows() override { return static_cast<int>(owner->sections_.size()); }
     void paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) override {
       // Phase 6 Task 4: tokens (values equal the Colours they replace).
-      if (selected) g.fillAll(juce::Colour(hf::ui::UITokens::kListSelected));
+      // Phase 7 Task 4 (B): cells on kBgCard, selected cell on
+      // kCardSelected (brief-mandated; replaces the Phase-6 kListSelected
+      // fill). Hover: N/A — ListBox exposes no hover state to the model and
+      // the brief forbids adding new mouse tracking.
+      g.fillAll(juce::Colour(selected ? hf::ui::UITokens::kCardSelected
+                                     : hf::ui::UITokens::kBgCard));
       g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
       g.drawText(owner->rowText(row), 4, 0, w - 8, h, juce::Justification::centredLeft, true);
     }

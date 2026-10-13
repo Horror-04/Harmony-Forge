@@ -187,6 +187,27 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   // only, propagated to children via the JUCE hierarchy lookup.
   hf::ui::HFLookAndFeel laf_;
 
+  // Phase 7 Task 4 (A): toolbar row panels + group dividers are paint-only.
+  // resized() captures each row's rect and each 12 px group gap's 1 px strip
+  // (message thread, alongside the existing setBounds calls); paint() fills
+  // the panels (kBgPanel + 1 px kBorder bottom separator) and the
+  // fade-dividers. Row heights, child sizes and the inter-row 4 px rhythm
+  // are untouched (Phase-6-owned geometry).
+  enum RowPanel {
+    kPanelTransport,
+    kPanelButtons,
+    kPanelBpm,
+    kPanelTrack,
+    kPanelChord,
+    kPanelModel,
+    kPanelHint,
+    kPanelRef,
+    kPanelTab,
+    kNumPanels
+  };
+  juce::Rectangle<int> panelRows_[kNumPanels];
+  std::vector<juce::Rectangle<int>> dividers_;
+
   HarmonyForgeProcessor& proc;
   PatternDocument doc;
 
