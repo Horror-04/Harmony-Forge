@@ -23,9 +23,9 @@
 //  4. Recommendations: recommendation_for() lines, or a clean line.
 //
 // Empty material (no notes and no chords) shows the honest empty state
-// ("No material - generate or import first", ASCII hyphen: this codebase
-// builds MSVC without /utf-8 and sources carry no BOM, so non-ASCII
-// literals are avoided in drawn strings).
+// ("No material - press Regenerate or import a reference", ASCII hyphen:
+// this codebase builds MSVC without /utf-8 and sources carry no BOM, so
+// non-ASCII literals are avoided in drawn strings).
 //
 // Read-only by construction: only pattern()/chords() are touched, never a
 // mutating commit. Refreshes on every document commit via the existing

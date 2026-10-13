@@ -268,7 +268,7 @@ void PianoRoll::paint(juce::Graphics& g) {
       // even when frozen (frame_style_for_state encodes it; noteFrozen is
       // still short-circuited under selection as before).
       paintNoteFrame(g, r, hf::core::frame_style_for_state(sel, !sel && noteFrozen(i)));
-      // Velocity lane stem (Phase 7 Task 3 (C): 2 px stems, design 2.5).
+      // Velocity lane stem (Phase 7 Task 3 (C), design §2.5: 2 px stems).
       const float vx = xForTick(start);
       const float vh = (velDrag_ && i == dragNote_ ? dragVel_ : n.velocity) / 127.0f * kLaneH;
       g.setColour(colourFor(n.pitch, n.start_tick).withAlpha(0.6f));

@@ -188,6 +188,10 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
     const int id = trackBox.getSelectedId();
     if (id > 0) doc.setTrackShown(id - 1);
   };
+  // Phase 7 Task 5 (D): honest empty state — a fresh document has no tracks,
+  // so the box would read as broken-blank until the first Regenerate/Keep.
+  // Display-only (selection logic untouched; hidden once a track is shown).
+  trackBox.setTextWhenNothingSelected("No tracks yet");
   addAndMakeVisible(trackBox);
 
   freezeTrackButton.onClick = [this] {

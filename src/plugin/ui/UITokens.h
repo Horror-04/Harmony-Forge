@@ -44,6 +44,9 @@ struct UITokens {
   static constexpr std::uint32_t kAccentDim = 0xff2e5aa8;     // pressed/secondary accent
   static constexpr std::uint32_t kSuccess = 0xff3ecf8e;       // play/preview/keep
   static constexpr std::uint32_t kDanger = 0xffe5484d;        // delete/errors
+  // Phase 7 Task 5: tooltip fill (design 2.3 mandates #000000CC verbatim) now
+  // lives here so no raw hex remains outside this header (design section 3).
+  static constexpr std::uint32_t kTooltipBg = 0xCC000000;
 
   // Focus ring (Task 2 name adopted verbatim; Phase 7 value = the new accent,
   // design 2.1) + its geometry (2 px accent rounded-rect outline, inset 1 px,
@@ -60,7 +63,7 @@ struct UITokens {
   static constexpr std::uint32_t kEditorBg = kBgApp;            // PluginEditor window background
   static constexpr std::uint32_t kCard = kBgCard;               // ChordTrack unselected cell
   static constexpr std::uint32_t kCardSelected = kBgCardHover;  // ChordTrack selected cell
-  static constexpr std::uint32_t kListSelected = kAccentDim;    // ArrangeBar selected row
+  static constexpr std::uint32_t kListSelected = kAccentDim;    // retained alias, unused since Task 4 (ArrangeBar selected row is kCardSelected)
 
   // PianoRoll lanes + grid (design 2.5: black keys darker -> kBgApp, white
   // keys lighter -> kBgPanel; beat = kBorder 40% alpha, bar = kBorderStrong,

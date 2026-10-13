@@ -10,8 +10,8 @@ namespace hf::ui {
 
 // Phase 7 Task 2: core visual identity (design 2026-10-13-visual-redesign
 // section 2.3). Paint-only: no component callbacks are touched; every colour
-// and size comes from UITokens (zero raw hex here — the single 0xCC000000 in
-// drawTooltip is the brief-mandated tooltip fill, which has no token).
+// and size comes from UITokens (zero raw hex here — including the tooltip
+// fill, which reads kTooltipBg since Task 5).
 //
 // Primary CTA variant: tag a TextButton ONCE at creation with
 //   getProperties().set (HFLookAndFeel::kPrimaryProperty, true)
@@ -66,14 +66,17 @@ class HFLookAndFeel : public juce::LookAndFeel_V4 {
                      int thumbStartPosition, int thumbSize, bool isMouseOver,
                      bool isMouseDown) override;
 
-  // Tooltip: 11 px (kFontCaption) kTextBody on the brief-mandated
-  // Colour(0xCC000000) with a kBorder outline.
+  // Tooltip: 11 px (kFontCaption) kTextBody on kTooltipBg (design 2.3
+  // #000000CC) with a kBorder outline.
   void drawTooltip(juce::Graphics& g, const juce::String& text, int width,
                    int height) override;
 
   // ProgressBar: background kBgInput, fill kAccent, r=kRadius. NOTE: no
   // ProgressBar exists in the app yet (preview/export busy state is a
   // status-label ellipsis) — this override is forward cover, currently N/A.
+  // Repaint-driver note (Task 5): an indeterminate bar only animates behind a
+  // repaint driver (e.g. a Timer calling repaint); wire one up if a bar is
+  // ever added, otherwise the cycling block above paints exactly once.
   void drawProgressBar(juce::Graphics& g, juce::ProgressBar& bar, int width,
                        int height, double progress,
                        const juce::String& textToShow) override;

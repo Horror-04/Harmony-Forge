@@ -147,9 +147,9 @@ void HFLookAndFeel::drawScrollbar(
 
 void HFLookAndFeel::drawTooltip(juce::Graphics& g, const juce::String& text,
                                 int width, int height) {
-  // The 0xCC000000 fill is brief-mandated verbatim (no UITokens entry for
-  // tooltip black); everything else is tokens.
-  g.fillAll(juce::Colour(0xCC000000));
+  // The tooltip fill reads kTooltipBg (design 2.3 #000000CC, single-sourced
+  // in UITokens.h); everything else here is tokens too.
+  g.fillAll(juce::Colour(UITokens::kTooltipBg));
   g.setColour(juce::Colour(UITokens::kBorder));
   g.drawRect(0, 0, width, height, 1);
   g.setColour(juce::Colour(UITokens::kTextBody));
