@@ -13,6 +13,7 @@
 #include "../ui/CandidateBar.h"
 #include "../ui/ChordTrack.h"
 #include "../ui/ExplainView.h"
+#include "../ui/HFLookAndFeel.h"
 #include "../ui/PatternDocument.h"
 #include "../ui/PianoRoll.h"
 #include "core/music/reference_analyze.h"
@@ -179,6 +180,12 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
     int velocity = 90;
   };
   void schedulePattern(const hf::core::Pattern& pat, int preferTrack = -1);
+
+  // Phase 7 Task 2: LookAndFeel storage. Declared FIRST so it outlives every
+  // child component below (members die in reverse declaration order) and the
+  // dtor's setLookAndFeel(nullptr) always finds it alive. No logic — paint
+  // only, propagated to children via the JUCE hierarchy lookup.
+  hf::ui::HFLookAndFeel laf_;
 
   HarmonyForgeProcessor& proc;
   PatternDocument doc;

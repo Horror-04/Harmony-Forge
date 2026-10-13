@@ -9,6 +9,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "UITokens.h"
+#include "HFLookAndFeel.h"
 #include "core/arrangement/arrangement.h"
 
 // Arrange tab skeleton (Phase 2 Task 5, SPEC §4.5): owns the section list
@@ -111,6 +112,8 @@ class ArrangeBar : public juce::Component {
     buildButton_.onClick = [this] {
       if (onBuild) onBuild(sections_);
     };
+    // Phase 7 Task 2: primary CTA tag (paint only — callback untouched).
+    buildButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
     addAndMakeVisible(buildButton_);
     addAndMakeVisible(status_);
     refresh();  // sets the live count text (no hardcoded placeholder)

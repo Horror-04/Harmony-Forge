@@ -91,6 +91,12 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       candidateBar(doc),
       explainView(doc),
       previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
+  // Phase 7 Task 2: single LookAndFeel point — propagates to all children via
+  // the JUCE hierarchy lookup (restored in the dtor). Paint only; no
+  // callbacks change. The Preview CTA gets the primary variant tag here, at
+  // creation (Generate/Keep/Build are tagged in CandidateBar/ArrangeBar).
+  setLookAndFeel(&laf_);
+  previewButton.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
   // Phase 6 Task 2 (B): resizable window. Minimum 960x600: every fixed row
   // still fits at 944 px content width (trackRow zooms flex, CandidateBar
   // buttons share with a reserved history slice, ArrangeBar splits are
@@ -330,6 +336,11 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
 }
 
 HarmonyForgeEditor::~HarmonyForgeEditor() {
+  // Phase 7 Task 2 ordering constraint: detach FIRST, while laf_ (declared
+  // first, so destroyed last) is still alive. Children below hold a raw
+  // back-pointer to laf_; without this a host re-opening the editor would
+  // leave dangling pointers across open/close cycles.
+  setLookAndFeel(nullptr);
   stopTimer();
   dragButton.removeKeyListener(&dragSpaceKey_);
   proc.state().removeListener(this);

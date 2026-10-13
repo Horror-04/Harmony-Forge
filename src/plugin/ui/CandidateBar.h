@@ -7,6 +7,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PatternDocument.h"
+#include "HFLookAndFeel.h"
 #include "UITokens.h"
 
 // Sprint 5 candidate bar (SPEC §§5.2, 13): Regenerate runs
@@ -38,6 +39,9 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     regenButton_.onClick = [this] {
       if (onRegenerate) onRegenerate();
     };
+    // Phase 7 Task 2: primary CTA tags (paint only — callbacks untouched).
+    regenButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
+    keepButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
     addAndMakeVisible(regenButton_);
     keepButton_.onClick = [this] {
       if (onKeep) onKeep(audition_);
