@@ -205,7 +205,9 @@ void PianoRoll::paint(juce::Graphics& g) {
       g.fillRect(vx, gridH + kLaneH - vh, 3.0f, vh);
     }
   } else {
-    g.setColour(juce::Colours::grey);
+    // Phase 6 Task 2 (C): lightened from Colours::grey (4.28:1, just under
+    // the 4.5:1 body gate) to 0xff9aa0a8 — measured 6.42:1 on 0xff1a1d21.
+    g.setColour(juce::Colour(0xff9aa0a8));
     g.setFont(14.0f);
     g.drawText("No pattern — press Generate", kKeysW, 8, getWidth() - kKeysW, 24,
                juce::Justification::centredLeft, false);
@@ -220,6 +222,10 @@ void PianoRoll::paint(juce::Graphics& g) {
   // Lane separator.
   g.setColour(juce::Colour(0xff4a4e55));
   g.drawLine(0.0f, (float)gridH, (float)getWidth(), (float)gridH, 1.0f);
+  // Phase 6 Task 2 (A2): 2 px accent ring when focused (child-inclusive;
+  // this surface has no focusable children). Standard buttons/sliders keep
+  // JUCE defaults — only the four custom surfaces paint this ring.
+  if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
 }
 
 void PianoRoll::mouseDown(const juce::MouseEvent& e) {

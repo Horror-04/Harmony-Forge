@@ -8,6 +8,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "UITokens.h"
 #include "core/arrangement/arrangement.h"
 
 // Arrange tab skeleton (Phase 2 Task 5, SPEC §4.5): owns the section list
@@ -26,6 +27,9 @@ class ArrangeBar : public juce::Component {
   std::function<void(const std::vector<hf::arr::Section>&)> onBuild;
 
   ArrangeBar() {
+    // Phase 6 Task 2 (A2): custom surface — keyboard-focusable with a 2 px
+    // accent ring (standard buttons/sliders inside keep JUCE defaults).
+    setWantsKeyboardFocus(true);
     sections_ = {
         {hf::arr::SectionType::Intro, 4, 0.3f, 0.2f, 7},
         {hf::arr::SectionType::Verse, 8, 0.5f, 0.3f, 7},
@@ -115,14 +119,32 @@ class ArrangeBar : public juce::Component {
 
   void setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
 
+  // Phase 6 Task 2 (A2): ring only — the background stays the editor's; no
+  // fill here so child controls keep their JUCE look.
+  void paint(juce::Graphics& g) override {
+    if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
+  }
+
+  void focusGained(FocusChangeType) override { repaint(); }
+  void focusLost(FocusChangeType) override { repaint(); }
+
+  void mouseDown(const juce::MouseEvent&) override { grabKeyboardFocus(); }
+
   void resized() override {
+    // Phase 6 Task 2 (B): relative splits (were fixed 300 + 400 px, which
+    // clipped on narrow windows). list 28% / editors 40% / build+status the
+    // rest; at the 960 px editor minimum that is 262 / 374 / 294.
     auto r = getLocalBounds().reduced(4);
-    list_.setBounds(r.removeFromLeft(300));
+    const int w = juce::jmax(0, r.getWidth());
+    list_.setBounds(r.removeFromLeft(w * 28 / 100));
     r.removeFromLeft(6);
-    auto mid = r.removeFromLeft(400);
+    const int midW = w * 40 / 100;
+    auto mid = r.removeFromLeft(midW);
     auto row1 = mid.removeFromTop(30);
     typeLabel_.setBounds(row1.removeFromLeft(36));
-    typeBox_.setBounds(row1.removeFromLeft(110));
+    // Fixed labels/boxes in row1 take 236 px (36+6+34+48+6+36+70); the type
+    // box flexes with whatever is left (138 px at the editor minimum).
+    typeBox_.setBounds(row1.removeFromLeft(juce::jmax(0, midW - 236)));
     row1.removeFromLeft(6);
     barsLabel_.setBounds(row1.removeFromLeft(34));
     barsBox_.setBounds(row1.removeFromLeft(48));
@@ -132,10 +154,13 @@ class ArrangeBar : public juce::Component {
     mid.removeFromTop(4);
     auto row2 = mid.removeFromTop(30);
     energyLabel_.setBounds(row2.removeFromLeft(52));
-    energySlider_.setBounds(row2.removeFromLeft(140));
+    // Fixed labels take 94 px (52+6+36); the two sliders split the rest
+    // evenly (140 px each at the editor minimum).
+    const int each = juce::jmax(0, (midW - 94) / 2);
+    energySlider_.setBounds(row2.removeFromLeft(each));
     row2.removeFromLeft(6);
     variationLabel_.setBounds(row2.removeFromLeft(36));
-    variationSlider_.setBounds(row2.removeFromLeft(140));
+    variationSlider_.setBounds(row2.removeFromLeft(each));
     mid.removeFromTop(4);
     auto row3 = mid.removeFromTop(28);
     addButton_.setBounds(row3.removeFromLeft(60));

@@ -8,6 +8,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PatternDocument.h"
+#include "UITokens.h"
 
 // Sprint 5 Chord Track (SPEC §6.2): one cell per bar showing the chord name,
 // scale degree, and harmonic function. Left-click selects the bar (drives
@@ -43,6 +44,9 @@ class ChordTrack : public juce::Component, private juce::ChangeListener {
   void paint(juce::Graphics& g) override;
   void mouseDown(const juce::MouseEvent& e) override;
   bool keyPressed(const juce::KeyPress& key) override;
+  // Phase 6 Task 2 (A2): repaint so the focus ring tracks keyboard focus.
+  void focusGained(FocusChangeType) override { repaint(); }
+  void focusLost(FocusChangeType) override { repaint(); }
 
   // Currently selected bar for the shared editor row, -1 when none.
   int selectedBar() const { return selectedBar_; }

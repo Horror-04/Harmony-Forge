@@ -7,6 +7,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PatternDocument.h"
+#include "UITokens.h"
 
 // Sprint 5 candidate bar (SPEC §§5.2, 13): Regenerate runs
 // generate_candidates on the message thread and fills A/B/C/D
@@ -23,6 +24,9 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
   std::function<void(const hf::core::HistoryEntry&)> onRecallHistory;
 
   explicit CandidateBar(PatternDocument& doc) : doc_(doc) {
+    // Phase 6 Task 2 (A2): custom surface — keyboard-focusable with a 2 px
+    // accent ring (standard buttons/sliders inside keep JUCE defaults).
+    setWantsKeyboardFocus(true);
     for (int i = 0; i < 4; ++i) {
       auto b = std::make_unique<juce::TextButton>(PatternDocument::kCandidateNames[i]);
       b->onClick = [this, i] {
@@ -75,13 +79,27 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
   }
 
   void resized() override {
+    // Phase 6 Task 2 (B): the history box reserves a clamped share of the
+    // free space (120..220 px, so a long seed/bars recall list never
+    // squeezes it to zero) and the four candidate buttons split the rest
+    // (were 4 x 110 px fixed, which overflowed narrow windows). Fixed total
+    // besides candidates + history: 110+6+80+6 (regen/keep) + 4x4 (gaps) +
+    // 40+60+6+36+44+6+52 (tail labels/boxes) = 462 px. At the 960 px editor
+    // minimum (928 px bar inner): free 466, history 142, candidates
+    // (466-142)/4 = 83 px each ("A - Safe" needs ~65).
     auto r = getLocalBounds().reduced(4);
     regenButton_.setBounds(r.removeFromLeft(110));
     r.removeFromLeft(6);
     keepButton_.setBounds(r.removeFromLeft(80));
     r.removeFromLeft(6);
+    const int fixed = 110 + 6 + 80 + 6 + 4 * 4 + 40 + 60 + 6 + 36 + 44 + 6 + 52;
+    // r is the inner width minus the 202 px regen/keep prefix, so free
+    // (candidates + gaps + history) = r + 202 - fixed.
+    const int free = juce::jmax(0, r.getWidth() + 202 - fixed);
+    const int histW = juce::jmin(220, juce::jmax(120, free * 30 / 100));
+    const int each = juce::jmax(0, (free - histW) / 4);
     for (int i = 0; i < 4; ++i) {
-      candButtons_[i]->setBounds(r.removeFromLeft(110));
+      candButtons_[i]->setBounds(r.removeFromLeft(each));
       r.removeFromLeft(4);
     }
     seedLabel_.setBounds(r.removeFromLeft(40));
@@ -91,8 +109,18 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     barsBox_.setBounds(r.removeFromLeft(44));
     r.removeFromLeft(6);
     historyLabel_.setBounds(r.removeFromLeft(52));
-    if (r.getWidth() > 40) historyBox_.setBounds(r);
+    historyBox_.setBounds(r.removeFromLeft(histW));
   }
+
+  // Phase 6 Task 2 (A2): ring only — no fill, children keep JUCE defaults.
+  void paint(juce::Graphics& g) override {
+    if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
+  }
+
+  void focusGained(FocusChangeType) override { repaint(); }
+  void focusLost(FocusChangeType) override { repaint(); }
+
+  void mouseDown(const juce::MouseEvent&) override { grabKeyboardFocus(); }
 
  private:
   void changeListenerCallback(juce::ChangeBroadcaster*) override { refreshFromDoc(); }

@@ -7,6 +7,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PatternDocument.h"
+#include "UITokens.h"
 
 // Sprint 5 Piano Roll (SPEC §6.1): zoom, snap, quantize (via the editor's
 // controls calling quantizeSelection), velocity lane, undo/redo (every edit
@@ -44,6 +45,9 @@ class PianoRoll : public juce::Component, private juce::ChangeListener {
   void mouseDrag(const juce::MouseEvent& e) override;
   void mouseUp(const juce::MouseEvent& e) override;
   bool keyPressed(const juce::KeyPress& key) override;
+  // Phase 6 Task 2 (A2): repaint so the focus ring tracks keyboard focus.
+  void focusGained(FocusChangeType) override { repaint(); }
+  void focusLost(FocusChangeType) override { repaint(); }
 
  private:
   void changeListenerCallback(juce::ChangeBroadcaster*) override { refreshSize(); }

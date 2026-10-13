@@ -35,6 +35,7 @@ target_sources(HarmonyForge PRIVATE
   ui/ExplainView.cpp
   ui/CandidateBar.h
   ui/ArrangeBar.h
+  ui/UITokens.h
 )
 
 target_include_directories(HarmonyForge PRIVATE

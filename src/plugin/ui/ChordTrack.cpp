@@ -124,6 +124,8 @@ void ChordTrack::paint(juce::Graphics& g) {
     g.drawText(barFrozen(b) ? "frozen (R-click to thaw)" : "R-click to freeze", (int)x + 4, 42,
                (int)w - 8, 14, juce::Justification::centredLeft, false);
   }
+  // Phase 6 Task 2 (A2): 2 px accent ring when focused (see PianoRoll).
+  if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
 }
 
 void ChordTrack::mouseDown(const juce::MouseEvent& e) {

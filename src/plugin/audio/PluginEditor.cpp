@@ -91,6 +91,15 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       candidateBar(doc),
       explainView(doc),
       previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
+  // Phase 6 Task 2 (B): resizable window. Minimum 960x600: every fixed row
+  // still fits at 944 px content width (trackRow zooms flex, CandidateBar
+  // buttons share with a reserved history slice, ArrangeBar splits are
+  // relative, model/status split proportionally — see resized()); the
+  // CandidateBar history box needs the extra room (below ~860 px it would
+  // squeeze to zero). Maximum 2048x1752 (2x the default 1024x876) bounds
+  // host-driven growth.
+  setResizable(true, true);
+  setResizeLimits(960, 600, 2048, 1752);
   setSize(1024, 876);
 
   transportLabel.setText("Transport: --", juce::dontSendNotification);
@@ -360,9 +369,12 @@ void HarmonyForgeEditor::resized() {
   trackRow.removeFromLeft(6);
   quantButton.setBounds(trackRow.removeFromLeft(90));
   trackRow.removeFromLeft(6);
-  zoomHSlider.setBounds(trackRow.removeFromLeft(120));
+  // Phase 6 Task 2 (B): zoom sliders split the remainder evenly (were 2 ×
+  // 120 px fixed, overflowing narrow windows). 161 px each at the minimum.
+  const int zoomEach = juce::jmax(0, trackRow.getWidth() / 2);
+  zoomHSlider.setBounds(trackRow.removeFromLeft(zoomEach));
   trackRow.removeFromLeft(6);
-  zoomVSlider.setBounds(trackRow.removeFromLeft(120));
+  zoomVSlider.setBounds(trackRow);
   r.removeFromTop(4);
   auto chordRow = r.removeFromTop(26);
   chordBarLabel.setBounds(chordRow.removeFromLeft(110));
@@ -377,8 +389,13 @@ void HarmonyForgeEditor::resized() {
   invDownButton.setBounds(chordRow.removeFromLeft(60));
   r.removeFromTop(4);
   // Phase 3 Task 4 item A/B: model picker row + hint/progress row.
+  // Phase 6 Task 2 (B+C): the model label takes a proportional 38% (was a
+  // fixed 340 px, which squeezed the status label against long paths); the
+  // status label keeps the rest so both stay visible at the minimum width
+  // (358 / 388 px). Both use the default look-and-feel label colour (white,
+  // measured 7.46:1 on the editor background — no colour change needed).
   auto modelRow = r.removeFromTop(28);
-  modelLabel.setBounds(modelRow.removeFromLeft(340));
+  modelLabel.setBounds(modelRow.removeFromLeft(modelRow.getWidth() * 38 / 100));
   modelRow.removeFromLeft(6);
   modelButton.setBounds(modelRow.removeFromLeft(100));
   modelRow.removeFromLeft(6);
