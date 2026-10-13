@@ -57,6 +57,22 @@ class HarmonyForgeProcessor;
 // can jank the message thread for one synchronous generation during drag;
 // the status label is set to "Rendering MIDI..." first (best-effort
 // indeterminate progress). Preview + Export are fully async.
+//
+// Phase 6 Task 1 item C (keyboard alternative for the dragButton drag op):
+// the button is keyboard-focusable (JUCE Button default) and Enter/Space
+// both funnel into onClick, which calls the SAME startMidiDrag() as the
+// mouseDown gesture. A mouse click arms dragMouseArmed_ in mouseDown so the
+// follow-up onClick from that same click is skipped (no double modal drag);
+// keyboard-triggered onClick finds the flag clear and runs the drag. mouseUp
+// clears a stale flag when the press is released off-button (an aborted
+// press produces no click); onClick additionally requires the cursor over
+// the button to skip, so a stale arm can swallow at most one keyboard
+// activation while hovering (documented edge, no stuck state).
+// OS-gesture limitation: a keyboard-triggered
+// performExternalDragDropOfFiles is NOT inside a mouse gesture, so on
+// platforms whose native drag (e.g. Windows DoDragDrop) requires one it may
+// cancel instantly — recorded in the Task 1 report, not faked around (same
+// constraint class as the item B proviso above).
 class HarmonyForgeEditor : public juce::AudioProcessorEditor,
                            private juce::DragAndDropContainer,
                            private juce::Timer,
@@ -69,6 +85,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void paint(juce::Graphics& g) override;
   void resized() override;
   void mouseDown(const juce::MouseEvent& e) override;
+  void mouseUp(const juce::MouseEvent& e) override;
 
  private:
   // Stacks the chord track above the roll so one Viewport scrolls both.
@@ -151,6 +168,20 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   juce::Label transportLabel;
   juce::TextButton previewButton{"Preview"};
   juce::TextButton dragButton{"Drag MIDI"};
+  // Phase 6 Task 1 item C: focus-local Space key for the drag button.
+  // Button::keyPressed handles Return natively; Space needs this listener
+  // (a Space addShortcut would fire app-wide even when the button is not
+  // focused). Both keys funnel into onClick -> startMidiDrag(). Registered
+  // in the ctor, removed in the dtor.
+  struct DragSpaceKey : public juce::KeyListener {
+    bool keyPressed(const juce::KeyPress& key, juce::Component* origin) override;
+    juce::TextButton* target = nullptr;
+  };
+  DragSpaceKey dragSpaceKey_;
+  // True between the dragButton mouseDown gesture and its follow-up onClick;
+  // lets onClick skip the mouse path (already dragged) but run the keyboard
+  // path. Cleared by mouseUp on an aborted (released-off-button) press.
+  bool dragMouseArmed_ = false;
   juce::TextButton exportButton{"Export MIDI"};
   juce::TextButton undoButton{"Undo"};
   juce::TextButton redoButton{"Redo"};

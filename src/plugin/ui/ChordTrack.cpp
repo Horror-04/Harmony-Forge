@@ -22,6 +22,7 @@ bool minor_family(const std::string& scale) {
 }  // namespace
 
 ChordTrack::ChordTrack(PatternDocument& doc) : doc_(doc) {
+  setWantsKeyboardFocus(true);
   doc_.addChangeListener(this);
   refreshSize();
 }
@@ -126,13 +127,40 @@ void ChordTrack::paint(juce::Graphics& g) {
 }
 
 void ChordTrack::mouseDown(const juce::MouseEvent& e) {
+  grabKeyboardFocus();
   const int bar = barAtX((float)e.x);
   if (bar < 0) return;
   if (e.mods.isRightButtonDown()) {
     doc_.setBarFrozenAllTracks(bar, !barFrozen(bar));
     return;
   }
+  selectBar(bar);
+}
+
+void ChordTrack::selectBar(int bar) {
   selectedBar_ = bar;
   if (onBarSelected) onBarSelected(bar);
   repaint();
+}
+
+bool ChordTrack::keyPressed(const juce::KeyPress& key) {
+  // Phase 6 Task 1: keyboard bar navigation + freeze toggle. Navigation
+  // reuses selectBar (same notify/repaint as mouse); freeze reuses the exact
+  // setBarFrozenAllTracks toggle (same one-step undo) as right-click.
+  const int code = key.getKeyCode();
+  if (code == juce::KeyPress::leftKey || code == juce::KeyPress::rightKey) {
+    const int bars = std::max(static_cast<int>(doc_.chords().size()), 1);
+    int bar = 0;
+    if (selectedBar_ >= 0)
+      bar = juce::jlimit(0, bars - 1,
+                         selectedBar_ + (code == juce::KeyPress::rightKey ? 1 : -1));
+    selectBar(bar);
+    return true;
+  }
+  if (code == 'f' || code == 'F') {
+    if (selectedBar_ < 0) return false;
+    doc_.setBarFrozenAllTracks(selectedBar_, !barFrozen(selectedBar_));
+    return true;
+  }
+  return false;
 }

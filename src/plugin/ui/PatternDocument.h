@@ -84,6 +84,17 @@ class PatternDocument : public juce::ChangeBroadcaster {
   bool moveNote(int track, int note, int newPitch, int newStart);
   bool deleteNote(int track, int note);
   bool setNoteVelocity(int track, int note, int velocity);
+  // Phase 6 Task 1 (keyboard alternatives for drag ops, ADD-only): batch
+  // undoable edits over the current selection — one call = one undo step
+  // (same commit path as the single-note edits above). These reuse the drag
+  // math exactly: pitch clamped 0..127, starts never < 0 and snapped with
+  // quantize_tick(start, snapGrid, 100), durations > 0, velocity 1..127.
+  // All run on the message thread; no audio-thread contact. Each returns
+  // false (no commit, no undo step) when nothing was applied — in particular
+  // when the selection is empty (the keyboard handlers treat that as no-op).
+  bool nudgeSelection(int dPitch, int dTick, int snapGrid);
+  bool resizeSelectionEnd(int dTicks, int snapGrid);
+  bool adjustSelectionVelocity(int dVelocity);
   void quantizeSelection(int grid, int strength_percent);
   // Delete every selected note in one undo step. No-op when empty.
   void deleteSelection();

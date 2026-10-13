@@ -16,6 +16,14 @@
 // inversions commit through PatternDocument (undoable) and drive
 // resolve_harmonic_conflicts on the message thread.
 //
+// Phase 6 Task 1 (keyboard alternatives for the bar click/freeze drag ops):
+// Left/Right move the bar selection (first press selects bar 0 when none is
+// selected), and the `F` key toggles freeze for the selected bar on all
+// tracks — the same setBarFrozenAllTracks call (same one-step undo) as
+// right-click. Both paths funnel through selectBar so the shared editor row
+// (onBarSelected) reflects keyboard navigation exactly like mouse clicks.
+// The component takes keyboard focus (click focuses it, like PianoRoll).
+//
 // Message thread only. Width tracks the PianoRoll zoom via setPxPerTick.
 class ChordTrack : public juce::Component, private juce::ChangeListener {
  public:
@@ -34,6 +42,7 @@ class ChordTrack : public juce::Component, private juce::ChangeListener {
 
   void paint(juce::Graphics& g) override;
   void mouseDown(const juce::MouseEvent& e) override;
+  bool keyPressed(const juce::KeyPress& key) override;
 
   // Currently selected bar for the shared editor row, -1 when none.
   int selectedBar() const { return selectedBar_; }
@@ -43,6 +52,7 @@ class ChordTrack : public juce::Component, private juce::ChangeListener {
  private:
   void changeListenerCallback(juce::ChangeBroadcaster*) override { refreshSize(); }
   void refreshSize();
+  void selectBar(int bar);  // shared mouse/keyboard path: select + notify + repaint
   int barAtX(float x) const;
   bool barFrozen(int bar) const;
 

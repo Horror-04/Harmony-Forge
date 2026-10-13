@@ -56,6 +56,24 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   hf_copy_ort_runtime(test_chordtrack_pin)
   catch_discover_tests(test_chordtrack_pin)
 endif()
+
+# Phase 6 Task 1: keyboard-alternative coverage. Links the real
+# PianoRoll.cpp + ChordTrack.cpp + PatternDocument.cpp (JUCE), so it only
+# builds where the plugin is configured. Headless: synthetic KeyPresses are
+# dispatched directly into keyPressed (no peer/message loop needed beyond a
+# MessageManager for async change messages).
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_keyboard_moves test_keyboard_moves.cpp
+    ../src/plugin/ui/PianoRoll.cpp ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/PatternDocument.cpp)
+  target_link_libraries(test_keyboard_moves PRIVATE
+    harmony_forge_core harmony_forge_inference juce::juce_gui_basics
+    juce::juce_audio_basics Catch2::Catch2WithMain)
+  target_include_directories(test_keyboard_moves PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_keyboard_moves PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_keyboard_moves)
+  catch_discover_tests(test_keyboard_moves)
+endif()
 hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")

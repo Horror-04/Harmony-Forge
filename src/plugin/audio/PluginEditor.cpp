@@ -100,7 +100,26 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   addAndMakeVisible(previewButton);
 
   // External file drag must start from a mouse event: run it on mouseDown.
+  // Phase 6 Task 1 item C: keyboard Enter/Space funnel into onClick below
+  // (same startMidiDrag call); dragMouseArmed_ skips the onClick that
+  // follows a mouse click (that gesture already dragged in mouseDown).
+  dragButton.onClick = [this] {
+    // Mouse clicks already dragged in mouseDown (flag armed, cursor over the
+    // button) — skip to avoid a second modal drag. Keyboard activation runs
+    // the same startMidiDrag(); a stale arm from an aborted press is cleared
+    // here too (cursor is not over the button then). Residual edge: an
+    // aborted press followed by keyboard activation while the cursor happens
+    // to hover the button swallows one keystroke (flag consumed, no drag).
+    if (dragMouseArmed_ && dragButton.isMouseOver()) {
+      dragMouseArmed_ = false;
+      return;
+    }
+    dragMouseArmed_ = false;
+    startMidiDrag();
+  };
   dragButton.addMouseListener(this, false);
+  dragSpaceKey_.target = &dragButton;
+  dragButton.addKeyListener(&dragSpaceKey_);
   addAndMakeVisible(dragButton);
 
   exportButton.onClick = [this] { exportMultitrack(); };
@@ -290,6 +309,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
 
 HarmonyForgeEditor::~HarmonyForgeEditor() {
   stopTimer();
+  dragButton.removeKeyListener(&dragSpaceKey_);
   proc.state().removeListener(this);
   proc.previewAllNotesOff();
 }
@@ -484,7 +504,31 @@ void HarmonyForgeEditor::refreshChordRow(int bar) {
 
 void HarmonyForgeEditor::mouseDown(const juce::MouseEvent& e) {
   // External file drag must start from a mouse event.
-  if (e.eventComponent == &dragButton) startMidiDrag();
+  if (e.eventComponent == &dragButton) {
+    dragMouseArmed_ = true;
+    startMidiDrag();
+  }
+}
+
+void HarmonyForgeEditor::mouseUp(const juce::MouseEvent& e) {
+  // Phase 6 Task 1 item C: an aborted dragButton press (released off-button)
+  // produces no onClick — clear the stale arm so a later keyboard activation
+  // is not skipped. A release on-button keeps the arm for the follow-up
+  // onClick to consume.
+  if (e.eventComponent == &dragButton &&
+      !dragButton.getLocalBounds().contains(e.getPosition()))
+    dragMouseArmed_ = false;
+}
+
+bool HarmonyForgeEditor::DragSpaceKey::keyPressed(const juce::KeyPress& key,
+                                                 juce::Component*) {
+  // Focus-local Space (Button::keyPressed already covers Return): funnel
+  // into the same onClick path as Enter and mouse.
+  if (key.isKeyCode(juce::KeyPress::spaceKey) && target != nullptr) {
+    target->triggerClick();
+    return true;
+  }
+  return false;
 }
 
 void HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int preferTrack) {

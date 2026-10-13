@@ -232,6 +232,72 @@ bool PatternDocument::setNoteVelocity(int track, int note, int velocity) {
   return true;
 }
 
+// Phase 6 Task 1: keyboard alternatives for the note-drag ops. Each method
+// applies to every selected note in ONE snapshot commit (one gesture = one
+// undo step, identical granularity to the mouse drags) using the same
+// snap/bounds helpers (quantize_tick, 0..127 / >= 0 / 1..127 clamps).
+bool PatternDocument::nudgeSelection(int dPitch, int dTick, int snapGrid) {
+  if (selection_.notes.empty()) return false;
+  const int grid = snapGrid > 0 ? snapGrid : 120;
+  auto next = pattern_;
+  int applied = 0;
+  for (const auto& ref : selection_.notes) {
+    if (ref.track < 0 || ref.track >= static_cast<int>(next.tracks.size())) continue;
+    auto& notes = next.tracks[static_cast<size_t>(ref.track)].notes;
+    if (ref.note < 0 || ref.note >= static_cast<int>(notes.size())) continue;
+    auto& n = notes[static_cast<size_t>(ref.note)];
+    // Same bounds/snap as the mouse drag (mouseDrag/moveNote): clamped pitch,
+    // non-negative quantized start. Pitch applies to drums too, matching
+    // moveNote (drum exclusion lives in pattern_ops bulk edits, not here).
+    n.pitch = std::clamp(n.pitch + dPitch, 0, 127);
+    n.start_tick =
+        std::max(0, hf::music::quantize_tick(n.start_tick + dTick, grid, 100));
+    ++applied;
+  }
+  if (applied == 0) return false;
+  commit(next, chords_, freeze_, "Move notes");
+  return true;
+}
+
+bool PatternDocument::resizeSelectionEnd(int dTicks, int snapGrid) {
+  if (selection_.notes.empty()) return false;
+  const int grid = snapGrid > 0 ? snapGrid : 120;
+  auto next = pattern_;
+  int applied = 0;
+  for (const auto& ref : selection_.notes) {
+    if (ref.track < 0 || ref.track >= static_cast<int>(next.tracks.size())) continue;
+    auto& notes = next.tracks[static_cast<size_t>(ref.track)].notes;
+    if (ref.note < 0 || ref.note >= static_cast<int>(notes.size())) continue;
+    auto& n = notes[static_cast<size_t>(ref.note)];
+    // Duration end moves by the grid step and the end snaps like a drag
+    // position; the note never collapses (duration_ticks > 0 invariant).
+    const int end = hf::music::quantize_tick(n.start_tick + n.duration_ticks + dTicks, grid, 100);
+    n.duration_ticks = std::max(1, end - n.start_tick);
+    ++applied;
+  }
+  if (applied == 0) return false;
+  commit(next, chords_, freeze_, "Resize notes");
+  return true;
+}
+
+bool PatternDocument::adjustSelectionVelocity(int dVelocity) {
+  if (selection_.notes.empty()) return false;
+  auto next = pattern_;
+  int applied = 0;
+  for (const auto& ref : selection_.notes) {
+    if (ref.track < 0 || ref.track >= static_cast<int>(next.tracks.size())) continue;
+    auto& notes = next.tracks[static_cast<size_t>(ref.track)].notes;
+    if (ref.note < 0 || ref.note >= static_cast<int>(notes.size())) continue;
+    // Same 1..127 clamp as setNoteVelocity (velocity-lane drag path).
+    notes[static_cast<size_t>(ref.note)].velocity =
+        std::clamp(notes[static_cast<size_t>(ref.note)].velocity + dVelocity, 1, 127);
+    ++applied;
+  }
+  if (applied == 0) return false;
+  commit(next, chords_, freeze_, "Velocity");
+  return true;
+}
+
 void PatternDocument::quantizeSelection(int grid, int strength_percent) {
   if (selection_.notes.empty()) return;
   auto next = pattern_;

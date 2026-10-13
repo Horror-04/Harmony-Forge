@@ -365,5 +365,29 @@ bool PianoRoll::keyPressed(const juce::KeyPress& key) {
     doc_.deleteSelection();
     return true;
   }
-  return false;
+  // Phase 6 Task 1: keyboard nudge/resize/velocity for the selected notes.
+  // Maps onto the same PatternDocument batch edits (same snap/bounds/undo)
+  // as the mouse drags; empty selection is a no-op (propagate).
+  const int code = key.getKeyCode();
+  const bool isUp = (code == juce::KeyPress::upKey);
+  const bool isDown = (code == juce::KeyPress::downKey);
+  const bool isLeft = (code == juce::KeyPress::leftKey);
+  const bool isRight = (code == juce::KeyPress::rightKey);
+  if (!isUp && !isDown && !isLeft && !isRight) return false;
+  if (doc_.selection().notes.empty()) return false;
+  const auto mods = key.getModifiers();
+  if (mods.isAltDown()) {
+    // Alt+arrows: velocity ±5 (same 1..127 clamp as the velocity-lane drag).
+    const int dv = (isUp || isRight) ? 5 : -5;
+    return doc_.adjustSelectionVelocity(dv);
+  }
+  if (mods.isShiftDown()) {
+    // Shift+arrows: resize the duration end by one snap grid step.
+    const int dt = (isUp || isRight) ? snapGrid_ : -snapGrid_;
+    return doc_.resizeSelectionEnd(dt, snapGrid_);
+  }
+  // Plain arrows: Up/Down = pitch ±1 semitone (same 0..127 clamp as drag),
+  // Left/Right = time ±snap grid step (same quantize_tick snap as drag).
+  if (isUp || isDown) return doc_.nudgeSelection(isUp ? 1 : -1, 0, snapGrid_);
+  return doc_.nudgeSelection(0, isRight ? snapGrid_ : -snapGrid_, snapGrid_);
 }
