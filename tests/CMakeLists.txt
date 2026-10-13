@@ -94,6 +94,27 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   hf_copy_ort_runtime(test_focus_resize)
   catch_discover_tests(test_focus_resize)
 endif()
+# Phase 6 Task 3: non-color note cues. Links the real
+# PianoRoll.cpp + PatternDocument.cpp (JUCE), plugin-ON only. Headless:
+# roll.paint(g) into an Image; exact-ARGB pins (fill colours byte-identical,
+# hollow/hatched treatments, solid-vs-dashed outlines).
+# Deliberately NOT registered with catch_discover_tests (same precedent as
+# test_memo_e2e): PianoRoll::paint draws text, and any headless drawText —
+# even bare, with no production code — exits 0xC0000374 at process teardown
+# after all assertions pass (see NOTE in the test file). The binary never
+# appears in `ctest -N`. Explicit run from the repo root:
+#   .\build-full\tests\Release\test_note_cues.exe
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_note_cues test_note_cues.cpp
+    ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/PianoRoll.cpp)
+  target_link_libraries(test_note_cues PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_gui_basics juce::juce_audio_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_note_cues PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_note_cues PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_note_cues)
+endif()
 hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")

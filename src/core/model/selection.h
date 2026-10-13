@@ -125,6 +125,50 @@ enum class NoteClass { ChordTone, ScaleTone, Tension, Conflict, Chromatic };
 NoteClass classify_note(int pitch, int start_tick, const ChordSymbol* chord,
                         int tonic, std::string_view scale_name);
 
+// Phase 6 Task 3 (Stage A, A5): redundant non-color cue per note class. The
+// roll keeps every fill colour byte-identical (Task 4 owns the palette) and
+// adds a fill treatment driven by this pure, GUI-free mapping:
+//
+//   ChordTone -> Solid   (green solid — unchanged)
+//   ScaleTone -> Solid   (blue solid — unchanged)
+//   Tension   -> Hollow  (class-colour outline, unfilled interior shows lane)
+//   Conflict  -> Hatched (solid fill + dark diagonal stripes; the "striped"
+//                        half of the design's "striped/outlined" option)
+//   Chromatic -> Solid   (purple solid — unchanged)
+//
+// Chord/scale/chromatic share Solid deliberately: the gate targets the two
+// risk-carrying classes (conflict/tension). Drums stay a neutral solid; the
+// caller never classifies them (see PianoRoll::colourFor). Pure and noexcept
+// so the mapping is unit-pinnable without JUCE; PIANO-ROLL paint consumes it
+// via PianoRoll::classFor. Pinned in tests/test_selection.cpp ("[task3]").
+enum class NoteFillStyle { Solid, Hollow, Hatched };
+
+constexpr NoteFillStyle fill_style_for_class(NoteClass c) noexcept {
+  switch (c) {
+    case NoteClass::Tension:
+      return NoteFillStyle::Hollow;
+    case NoteClass::Conflict:
+      return NoteFillStyle::Hatched;
+    case NoteClass::ChordTone:
+    case NoteClass::ScaleTone:
+    case NoteClass::Chromatic:
+      return NoteFillStyle::Solid;
+  }
+  return NoteFillStyle::Solid;
+}
+
+// Selection vs frozen outline precedence (paint-side metrics live in
+// PianoRoll.h as Task 4 token candidates): a selected note always shows the
+// selection outline even when frozen (unchanged precedence — the frozen cue
+// returns on deselect). Pure and noexcept; pinned in tests/test_selection.cpp.
+enum class NoteFrameStyle { None, Selected, Frozen };
+
+constexpr NoteFrameStyle frame_style_for_state(bool selected, bool frozen) noexcept {
+  if (selected) return NoteFrameStyle::Selected;
+  if (frozen) return NoteFrameStyle::Frozen;
+  return NoteFrameStyle::None;
+}
+
 // Seed + generation history entry (SPEC §13: same params + seed reproduce).
 struct HistoryEntry {
   int seed = 0;

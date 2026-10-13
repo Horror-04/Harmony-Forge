@@ -276,6 +276,32 @@ TEST_CASE("note colours follow SPEC 6.1", "[selection][sprint5]") {
   CHECK(hf::core::classify_note(62, 0, nullptr, 60, "major") == NoteClass::ScaleTone);
 }
 
+TEST_CASE("note fill cues map each class beyond colour", "[selection][task3]") {
+  using hf::core::NoteClass;
+  using hf::core::NoteFillStyle;
+  // Phase 6 Task 3 (A5): conflict/tension carry a redundant fill treatment;
+  // chord/scale/chromatic keep solid fills. Colours are untouched — the
+  // palette stays pinned by "note colours follow SPEC 6.1" above, and the
+  // byte-identical fills are pinned by exact-ARGB pixels in
+  // tests/test_note_cues.cpp.
+  CHECK(hf::core::fill_style_for_class(NoteClass::ChordTone) == NoteFillStyle::Solid);
+  CHECK(hf::core::fill_style_for_class(NoteClass::ScaleTone) == NoteFillStyle::Solid);
+  CHECK(hf::core::fill_style_for_class(NoteClass::Chromatic) == NoteFillStyle::Solid);
+  CHECK(hf::core::fill_style_for_class(NoteClass::Tension) == NoteFillStyle::Hollow);
+  CHECK(hf::core::fill_style_for_class(NoteClass::Conflict) == NoteFillStyle::Hatched);
+}
+
+TEST_CASE("note frame precedence keeps selection over frozen", "[selection][task3]") {
+  using hf::core::NoteFrameStyle;
+  // Phase 6 Task 3 (A5): outlines disambiguated — Selected is solid 2 px
+  // white, Frozen is dashed 1.5 px (metrics in PianoRoll.h for Task 4).
+  CHECK(hf::core::frame_style_for_state(false, false) == NoteFrameStyle::None);
+  CHECK(hf::core::frame_style_for_state(true, false) == NoteFrameStyle::Selected);
+  CHECK(hf::core::frame_style_for_state(false, true) == NoteFrameStyle::Frozen);
+  // Selected + frozen shows the selection outline (frozen returns on deselect).
+  CHECK(hf::core::frame_style_for_state(true, true) == NoteFrameStyle::Selected);
+}
+
 TEST_CASE("seed history is bounded and ordered", "[selection][sprint5]") {
   hf::core::SeedHistory h;
   CHECK(h.empty());

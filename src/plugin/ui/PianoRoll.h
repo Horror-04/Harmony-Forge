@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <string>
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -15,6 +17,25 @@
 // track at a time, chosen with setTrackShown). Note colours map
 // hf::core::classify_note: chord=green, scale=blue, tension=yellow,
 // conflict=red, chromatic=purple. Frozen notes get a white frame.
+//
+// Phase 6 Task 3 (Stage A, A5): every class also carries a redundant
+// non-color cue while all fill colours stay BYTE-IDENTICAL (Task 4 owns the
+// palette — do NOT revalue the literals in colourFor):
+//   chord/scale/chromatic -> solid fill (unchanged);
+//   tension -> hollow fill (class-colour outline, lane shows through);
+//   conflict -> hatched fill (solid + dark diagonal stripes);
+//   drums -> neutral solid (unchanged, never classified).
+// Class->fill mapping is hf::core::fill_style_for_class (pure, core-pinned).
+//
+// Outline disambiguation (selection always wins over frozen — unchanged
+// precedence, see hf::core::frame_style_for_state):
+//   selected -> SOLID white, 2.0 px (kNoteSelFrame*);
+//   frozen   -> DASHED white 0xaaffffff, 1.5 px, dash 4 on / 2 off
+//               (kNoteFrozenFrame* + kNoteFrozenDash).
+// Task 4: adopt kNoteSelFrameWidth / kNoteSelFrameArgb /
+// kNoteFrozenFrameWidth / kNoteFrozenFrameArgb / kNoteFrozenDash /
+// kNoteHollowWidth / kNoteHatchWidth / kNoteHatchStep / kNoteHatchArgb into
+// UITokens verbatim (same ruling as the Task 2 kFocusRing move).
 //
 // Message thread only. Interaction: click selects, drag moves (snap),
 // double-click adds, right-click deletes, Delete key removes the selection,
@@ -60,7 +81,28 @@ class PianoRoll : public juce::Component, private juce::ChangeListener {
   int pitchForY(float y) const;
   int noteAt(juce::Point<int> p) const;  // note index or -1
   juce::Colour colourFor(int pitch, int start) const;
+  // Phase 6 Task 3 (A5): display class for one note; std::nullopt = drums
+  // (unpitched map, never classified). colourFor() is a pure function of
+  // this — its ARGB literals are unchanged.
+  std::optional<hf::core::NoteClass> classFor(int pitch, int start) const;
   bool noteFrozen(int note) const;
+  // Phase 6 Task 3 (A5) paint helpers (message thread only).
+  void paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill,
+                     hf::core::NoteFillStyle style) const;
+  void paintNoteFrame(juce::Graphics& g, juce::Rectangle<float> r,
+                      hf::core::NoteFrameStyle frame) const;
+
+  // Phase 6 Task 3 (A5) outline/fill metrics — Task 4 token candidates, see
+  // the class comment. Widths in px; dash = on/off lengths in px.
+  static constexpr float kNoteSelFrameWidth = 2.0f;
+  static constexpr std::uint32_t kNoteSelFrameArgb = 0xffffffff;
+  static constexpr float kNoteFrozenFrameWidth = 1.5f;
+  static constexpr std::uint32_t kNoteFrozenFrameArgb = 0xaaffffff;
+  static constexpr float kNoteFrozenDash[2] = {4.0f, 2.0f};
+  static constexpr float kNoteHollowWidth = 1.5f;
+  static constexpr float kNoteHatchWidth = 1.0f;
+  static constexpr float kNoteHatchStep = 5.0f;
+  static constexpr std::uint32_t kNoteHatchArgb = 0x59000000;  // black, 35%
 
   static constexpr int kKeysW = 48;
   static constexpr int kLaneH = 56;

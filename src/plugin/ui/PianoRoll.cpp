@@ -116,7 +116,7 @@ bool PianoRoll::noteFrozen(int note) const {
   return false;
 }
 
-juce::Colour PianoRoll::colourFor(int pitch, int start) const {
+std::optional<hf::core::NoteClass> PianoRoll::classFor(int pitch, int start) const {
   const auto& chords = doc_.chords();
   const auto& pat = doc_.pattern();
   const int shown = doc_.trackShown();
@@ -124,12 +124,21 @@ juce::Colour PianoRoll::colourFor(int pitch, int start) const {
   // analysis) — one neutral color, no classify_note.
   if (shown >= 0 && shown < static_cast<int>(pat.tracks.size()) &&
       pat.tracks[static_cast<size_t>(shown)].type == hf::core::TrackType::Drums)
-    return juce::Colour(0xff8a8f98);
+    return std::nullopt;
   const int bar = hf::core::bar_of_tick(pat, start);
   const hf::core::ChordSymbol* ch =
       (bar >= 0 && bar < static_cast<int>(chords.size())) ? &chords[static_cast<size_t>(bar)]
                                                           : nullptr;
-  switch (hf::core::classify_note(pitch, start, ch, tonic_, scale_)) {
+  return hf::core::classify_note(pitch, start, ch, tonic_, scale_);
+}
+
+juce::Colour PianoRoll::colourFor(int pitch, int start) const {
+  // Phase 6 Task 3 (A5): literals below are BYTE-IDENTICAL to the pre-Task-3
+  // palette (Task 4 owns revaluation). Pinned by exact-ARGB pixel CHECKs in
+  // tests/test_note_cues.cpp — change any value and that test fails.
+  const auto cls = classFor(pitch, start);
+  if (!cls) return juce::Colour(0xff8a8f98);
+  switch (*cls) {
     case hf::core::NoteClass::ChordTone:
       return juce::Colour(0xff4caf50);
     case hf::core::NoteClass::ScaleTone:
@@ -142,6 +151,49 @@ juce::Colour PianoRoll::colourFor(int pitch, int start) const {
       return juce::Colour(0xff9c27b0);
   }
   return juce::Colours::grey;
+}
+
+void PianoRoll::paintNoteFill(juce::Graphics& g, juce::Rectangle<float> r, juce::Colour fill,
+                              hf::core::NoteFillStyle style) const {
+  using hf::core::NoteFillStyle;
+  if (style == NoteFillStyle::Hollow) {
+    // Tension: class-colour outline only; the pitch lane shows through the
+    // interior (inset keeps the 1.5 px stroke inside the note rect).
+    g.setColour(fill);
+    g.drawRoundedRectangle(r.reduced(0.75f), 2.0f, kNoteHollowWidth);
+    return;
+  }
+  g.setColour(fill);
+  g.fillRoundedRectangle(r, 2.0f);
+  if (style == NoteFillStyle::Hatched) {
+    // Conflict: dark diagonal stripes over the solid fill, clipped to the
+    // note shape so neighbouring notes stay clean.
+    juce::Path clip;
+    clip.addRoundedRectangle(r, 2.0f);
+    g.saveState();
+    g.reduceClipRegion(clip);
+    g.setColour(juce::Colour(kNoteHatchArgb));
+    for (float x = r.getX() - r.getHeight(); x < r.getRight(); x += kNoteHatchStep)
+      g.drawLine(x, r.getBottom(), x + r.getHeight(), r.getY(), kNoteHatchWidth);
+    g.restoreState();
+  }
+}
+
+void PianoRoll::paintNoteFrame(juce::Graphics& g, juce::Rectangle<float> r,
+                               hf::core::NoteFrameStyle frame) const {
+  using hf::core::NoteFrameStyle;
+  if (frame == NoteFrameStyle::Selected) {
+    g.setColour(juce::Colour(kNoteSelFrameArgb));
+    g.drawRoundedRectangle(r, 2.0f, kNoteSelFrameWidth);
+  } else if (frame == NoteFrameStyle::Frozen) {
+    juce::Path box;
+    box.addRoundedRectangle(r, 2.0f);
+    juce::Path dashed;
+    juce::PathStrokeType(kNoteFrozenFrameWidth)
+        .createDashedStroke(dashed, box, kNoteFrozenDash, 2);
+    g.setColour(juce::Colour(kNoteFrozenFrameArgb));
+    g.fillPath(dashed);
+  }
 }
 
 void PianoRoll::paint(juce::Graphics& g) {
@@ -189,15 +241,18 @@ void PianoRoll::paint(juce::Graphics& g) {
       juce::Rectangle<float> r(xForTick(start), yForPitch(pitch),
                                std::max(3.0f, n.duration_ticks * pxPerTick_), pxPerPitch_);
       const bool sel = hf::core::is_note_selected(doc_.selection(), {shown, i});
-      g.setColour(colourFor(n.pitch, n.start_tick).withAlpha(sel ? 1.0f : 0.85f));
-      g.fillRoundedRectangle(r, 2.0f);
-      if (sel) {
-        g.setColour(juce::Colours::white);
-        g.drawRoundedRectangle(r, 2.0f, 1.5f);
-      } else if (noteFrozen(i)) {
-        g.setColour(juce::Colour(0xaaffffff));
-        g.drawRoundedRectangle(r, 2.0f, 1.0f);
-      }
+      // Phase 6 Task 3 (A5): redundant fill cue per class (colours from
+      // colourFor, byte-identical) + disambiguated selection/frozen outline.
+      // Drums (classFor == nullopt) stay a neutral solid.
+      const auto cls = classFor(n.pitch, n.start_tick);
+      const auto fillStyle = cls ? hf::core::fill_style_for_class(*cls)
+                                 : hf::core::NoteFillStyle::Solid;
+      paintNoteFill(g, r, colourFor(n.pitch, n.start_tick).withAlpha(sel ? 1.0f : 0.85f),
+                    fillStyle);
+      // Unchanged precedence: a selected note shows the selection outline
+      // even when frozen (frame_style_for_state encodes it; noteFrozen is
+      // still short-circuited under selection as before).
+      paintNoteFrame(g, r, hf::core::frame_style_for_state(sel, !sel && noteFrozen(i)));
       // Velocity lane stem.
       const float vx = xForTick(start);
       const float vh = (velDrag_ && i == dragNote_ ? dragVel_ : n.velocity) / 127.0f * kLaneH;
