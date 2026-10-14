@@ -212,9 +212,45 @@ def check_deterministic_seed7() -> None:
     print("PASS determinism (seed 7 twice-identical)")
 
 
+def check_temperature_effect() -> None:
+    """Temperature must shape the distribution: tiny T sticks to the stub
+    argmax on every step; invalid T/top_p/lambda reject in Cfg."""
+    note = [0, 0, 1, 60, 4, 4]
+    prefix = [4] + note * 4
+    recite = note * 4
+    nxt = lambda seq: recite[(len(seq) - 1) % len(recite)]  # noqa: E731
+    stub = _peaked_stub(nxt)
+    meta = {"tonic": 60, "scale": "major",
+            "chords": [{"root": 48, "type": "maj"}]}
+    tiny = D.Cfg(T=0.01, top_p=1.0, memo_block_run=2,
+                 strict_mask=False, fsm_mask=False, lambda_theory=0.0)
+    exp = list(prefix)
+    for _ in range(D.GEN_TOKENS):
+        exp.append(nxt(exp))
+    # 20 seeds: exact every time (T=0.01 pins p(argmax) to 1.0 in
+    # floating point). Without the /T scaling the per-step hit rate is
+    # ~0.989, so an unscaled build fails this at ~1 - 0.577**20.
+    for s in range(20):
+        out = D.sample_continue(stub, prefix, meta, tiny, random.Random(s))
+        assert out == exp, f"T=0.01 must pin every step (seed {s})"
+    for bad in ({"T": 0.0}, {"T": -1.0}, {"top_p": 0.0}, {"top_p": 1.5},
+                {"lambda_theory": -0.5}, {"memo_block_run": 0}):
+        kw = {"T": 1.0, "top_p": 0.9, "memo_block_run": 2,
+              "strict_mask": True, "fsm_mask": True, "lambda_theory": 0.0}
+        kw.update(bad)
+        try:
+            D.Cfg(**kw)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"Cfg{bad} must raise ValueError")
+    print("PASS temperature shapes sampling (T=0.01 pins argmax; bad Cfg)")
+
+
 def main() -> int:
     check_contract()
     check_slot_ranges_not_forked()
+    check_temperature_effect()
     check_fsm_fuzz_decodable()
     check_memo_block_turns_from_recitation()
     check_strict_only_violations()

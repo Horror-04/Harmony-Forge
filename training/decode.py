@@ -310,8 +310,9 @@ def sample_continue(logits_fn, prefix_ids: list[int], meta: dict,
                                         if i not in banned]
                     # All forbidden: keep the step unblocked (documented).
         # Temperature softmax over the allowed set.
+        t = float(cfg.T)
         mx = max(adj[i] for i in allowed_list)
-        exps = {i: math.exp(adj[i] - mx) for i in allowed_list}
+        exps = {i: math.exp((adj[i] - mx) / t) for i in allowed_list}
         tot = sum(exps.values())
         if not math.isfinite(tot) or tot <= 0.0:
             probs = [0.0] * VOCAB
