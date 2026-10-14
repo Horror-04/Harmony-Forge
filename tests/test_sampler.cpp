@@ -134,10 +134,10 @@ std::vector<int> greedy_reference(ISamplerLogits& stub, const std::vector<int>& 
   return seq;
 }
 
-int cycle_next(const int* seq, size_t n) {
+int cycle_next(const int* /*seq*/, size_t n) {
   static const int kNote[6] = {0, 0, 1, 60, 4, 4};
-  static const int kLen = 24;
-  return kNote[(n - 1 + 24u) % 24u];
+  if (n == 0) return 0;
+  return kNote[(n - 1) % 6];
 }
 
 // Local finalize mirror (evaluate.finalize): repair count head, cut to
@@ -248,9 +248,9 @@ TEST_CASE("sampler tiny temperature pins the stub argmax", "[sampler]") {
     REQUIRE(hf::infer::sample_continue(stub, prefix.data(), prefix.size(), cmajor_meta(),
                                        cfg, seed, out.data(), out.size(), out_n, stats,
                                        scratch));
-    // Recitation expectation: cycle the 24-id pattern.
+    // Recitation expectation: cycle the 6-id note pattern.
     for (size_t j = prefix.size(); j < out_n; ++j) {
-      const int want = kNote[(j - 1) % 24];
+      const int want = kNote[(j - 1) % 6];
       CHECK(out[j] == want);
     }
   }
