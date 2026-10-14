@@ -413,14 +413,12 @@ def run_v2(args, torch, device) -> int:
     if best[1] is not None:
         model.load_state_dict({k: v.to(device)
                                for k, v in best[1].items()})
-        torch.save({"config": dict(model_config(args.arch)),
-                    "arch": args.arch,
-                    "recipe": {"penalty": args.penalty,
-                               "keynorm": args.keynorm,
-                               "seed": args.seed,
-                               "stage1_epochs": args.stage1_epochs,
-                               "stage2_max": args.stage2_max}},
-                   args.ckpt_out)
+        # Same payload as the incremental saves (state included — a
+        # metadata-only final save once clobbered good ckpts; test_ckpt
+        # pins the full state dict here).
+        save_v2_ckpt(best[1], args.arch, args.penalty, args.keynorm,
+                     args.seed, args.stage1_epochs, args.stage2_max,
+                     args.ckpt_out, torch)
     import csv as _csv
 
     with open(args.curve_out, "w", newline="") as f:

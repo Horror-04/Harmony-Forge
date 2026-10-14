@@ -56,15 +56,43 @@ def check_progress_roundtrip():
     assert (back["stage"], back["epoch"]) == (2, 12), back
 
 
+MINI_CKPT = os.path.join(os.path.dirname(__file__), "test_ckpt_mini.pt")
+MINI_CURVE = os.path.join(os.path.dirname(__file__), "test_ckpt_mini.csv")
+
+
+def check_run_v2_final_ckpt_carries_state():
+    """End-to-end wiring regression (Task 6 incident 2026-10-14: the final
+    save omitted the weights, clobbering good incremental ckpts with
+    metadata-only files). Mini run_v2 on CPU (small, 1+1 epochs); the
+    FINAL ckpt must carry the full state dict."""
+    import types
+
+    import torch
+
+    args = types.SimpleNamespace(
+        arch="small", penalty=0.0, keynorm=True, seed=7,
+        stage1_epochs=1, stage2_max=1, time_box=900, batch=16,
+        ckpt_out=MINI_CKPT, curve_out=MINI_CURVE, device="cpu")
+    assert TR.run_v2(args, torch, torch.device("cpu")) == 0
+    back = torch.load(MINI_CKPT, map_location="cpu", weights_only=False)
+    assert "state" in back and len(back["state"]) > 0, sorted(back.keys())
+    n = sum(v.numel() for v in back["state"].values())
+    expect = TR.param_count(TR.build_model(arch="small", dropout=0.0))
+    assert n == expect, (n, expect)
+    assert back["recipe"]["seed"] == 7
+
+
 def main() -> int:
     try:
         check_save_roundtrip()
         check_progress_roundtrip()
+        check_run_v2_final_ckpt_carries_state()
     finally:
-        for p in (TMP, PROG):
+        for p in (TMP, PROG, MINI_CKPT, MINI_CKPT + ".progress.json",
+                  MINI_CURVE):
             if os.path.exists(p):
                 os.remove(p)
-    print("test_ckpt: PASS (save-roundtrip/progress-sidecar)")
+    print("test_ckpt: PASS (save-roundtrip/progress-sidecar/final-carries-state)")
     return 0
 
 
