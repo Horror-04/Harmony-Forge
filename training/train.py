@@ -164,33 +164,41 @@ def goldfish_keep(ids: list[int], k: int = GOLDFISH_K,
 def masked_ce_loss(logits, tgt, keep: list[bool], slot_eps=None):
     """Mean CE over kept, non-pad targets with per-slot label smoothing.
 
-    ``logits`` [T, V], ``tgt`` [T] (pad-tail = -100, always skipped),
-    ``keep`` goldfish bools, ``slot_eps`` optional per-target smoothing
-    weights (default 0.0 = plain CE). Per target: (1-eps)*NLL(true) +
-    eps*mean_vocab(NLL). Dropped/pad positions contribute EXACTLY zero
-    gradient (masked before the mean, never -inf tricks). Empty kept set ->
-    grad-safe zero scalar on the logits graph."""
-    import torch.nn.functional as F
+    ``logits`` [T, V] or [B, T, V]; ``tgt`` matching leading dims (pad-tail
+    = -100, always skipped); ``keep`` goldfish bools (flat length T or
+    nested [B][T]); ``slot_eps`` optional smoothing weights (default 0.0 =
+    plain CE). Per target: (1-eps)*NLL(true) + eps*mean_vocab(NLL).
+    Dropped/pad positions carry EXACTLY zero gradient (zero-weighted before
+    the mean). Empty kept set -> grad-safe zero scalar on the logits graph.
+    Fully vectorized (no per-position python: CUDA-safe, no syncs)."""
     import torch as _torch
+    import torch.nn.functional as F
 
-    logp = F.log_softmax(logits, dim=-1)
-    T_ = logits.shape[0]
+    flat_logits = logits if logits.dim() == 2 else logits.reshape(-1, logits.shape[-1])
+    flat_tgt = tgt if tgt.dim() == 1 else tgt.reshape(-1)
+    if isinstance(keep, list) and keep and isinstance(keep[0], list):
+        flat_keep = [k for row in keep for k in row]
+    else:
+        flat_keep = list(keep)
     if slot_eps is None:
-        slot_eps = [0.0] * T_
-    losses = []
-    for t in range(T_):
-        y = int(tgt[t]) if not hasattr(tgt[t], "item") else int(tgt[t].item())
-        if y == -100 or not keep[t]:
-            continue
-        eps = slot_eps[t]
-        nll_true = -logp[t, y]
-        if eps == 0.0:
-            losses.append(nll_true)
-        else:
-            losses.append((1.0 - eps) * nll_true - eps * logp[t].mean())
-    if not losses:
+        flat_eps = [0.0] * flat_logits.shape[0]
+    elif isinstance(slot_eps, list) and slot_eps and isinstance(slot_eps[0], list):
+        flat_eps = [e for row in slot_eps for e in row]
+    else:
+        flat_eps = list(slot_eps)
+    dev = flat_logits.device
+    keep_t = _torch.tensor(flat_keep, dtype=_torch.bool, device=dev)
+    valid = (flat_tgt != -100) & keep_t
+    if not bool(valid.any()):
         return (logits * 0).sum()
-    return _torch.stack(losses).mean()
+    logp = F.log_softmax(flat_logits, dim=-1)
+    gather_tgt = flat_tgt.clamp(min=0)
+    nll_true = -logp[_torch.arange(flat_logits.shape[0], device=dev),
+                     gather_tgt]
+    mean_nll = -logp.mean(dim=-1)
+    eps = _torch.tensor(flat_eps, dtype=logp.dtype, device=dev)
+    per = (1.0 - eps) * nll_true + eps * mean_nll
+    return per[valid].mean()
 
 
 def pitch_dropout_ids(ids: list[int], tonic: int, rate: float,
@@ -223,27 +231,41 @@ def compliance_penalty(logits, inp, lens: list[int], metas: list[dict], torch):
     a bar-indexed chord tone; out-of-range bars / unknown chords are safe;
     only Melody(1)/Bass(2) tracks count. Context (bar/sub/track) comes from
     teacher-forced inputs; positions past each row's true length are skipped.
-    Fully differentiable (expectation under softmax)."""
+    Fully differentiable (expectation under softmax). Vectorized per batch:
+    context reads go through a CPU copy (no per-position CUDA syncs) and
+    each mask is moved to the logits device ONCE per batch."""
     _, T_, _ = logits.shape
     probs = torch.softmax(logits, dim=-1)
+    dev = logits.device
+    inp_cpu = inp.cpu() if inp.is_cuda else inp
+    scale_dev: dict = {}
+    norub_dev: dict = {}
     total, count = 0.0, 0
     for b, meta in enumerate(metas):
         ln = lens[b]
         if ln < 5:
             continue
-        ok_scale = _scale_ok(meta["tonic"], meta["scale"], torch)
+        key_s = (meta["tonic"], meta["scale"])
+        if key_s not in scale_dev:
+            scale_dev[key_s] = _scale_ok(meta["tonic"], meta["scale"],
+                                         torch).to(dev)
+        ok_scale = scale_dev[key_s]
         chords = meta["chords"]
         for t in range(4, min(T_, ln - 1)):
             if not is_pitch_slot(t):  # pitch slots only
                 continue
-            track = int(inp[b, t - 1])
+            track = int(inp_cpu[b, t - 1])
             if track not in (1, 2):
                 continue
-            bar, sub = int(inp[b, t - 3]), int(inp[b, t - 2])
-            safe = ok_scale.to(logits.device)
+            bar, sub = int(inp_cpu[b, t - 3]), int(inp_cpu[b, t - 2])
+            safe = ok_scale
             if sub % 4 == 0 and 0 <= bar < len(chords):
                 ch = chords[bar]
-                safe = safe * _norub_ok(ch["root"], ch["type"], torch).to(logits.device)
+                key_r = (ch["root"], ch["type"])
+                if key_r not in norub_dev:
+                    norub_dev[key_r] = _norub_ok(ch["root"], ch["type"],
+                                                 torch).to(dev)
+                safe = safe * norub_dev[key_r]
             total = total + (1.0 - (probs[b, t] * safe).sum())
             count += 1
     if count == 0:
@@ -269,14 +291,15 @@ def batchify(recs: list[dict], batch_size: int, shuffle: bool, rng) -> list[list
     return [idx[k:k + batch_size] for k in range(0, len(idx), batch_size)]
 
 
-def mix_batches(n_smart: int, n_comp: int, batch_size: int,
-                rng) -> list[list[tuple]]:
+def mix_batches(n_smart: int, n_comp_refs: int, comp_pool: int,
+                batch_size: int, rng) -> list[list[tuple]]:
     """Epoch batch refs at the requested mix: ("smart", i) / ("comp", j).
 
-    Composed indices sample WITH replacement (pool ~72 << epoch chunk);
-    smart indices are 0..n_smart-1 into the epoch's fresh pool."""
+    ``n_smart`` refs index 0..n_smart-1 into the epoch's fresh smart pool;
+    ``n_comp_refs`` composed refs sample WITH replacement from the
+    ``comp_pool``-sized composed pool (pool ~75 << epoch chunk)."""
     refs = ([("smart", i) for i in range(n_smart)]
-            + [("comp", rng.randrange(n_comp)) for _ in range(n_comp)])
+            + [("comp", rng.randrange(comp_pool)) for _ in range(n_comp_refs)])
     rng.shuffle(refs)
     return [refs[k:k + batch_size] for k in range(0, len(refs), batch_size)]
 
@@ -340,7 +363,7 @@ def run_v2(args, torch, device) -> int:
         smart, _ = SP.build(n1_smart, seed=args.seed * 1000 + ep)
         tce, tpen = run_epoch_v2(
             model, opt, smart, comp,
-            mix_batches(n1_smart, len(comp), args.batch, rng),
+            mix_batches(n1_smart, n1_comp, len(comp), args.batch, rng),
             True, torch, args.penalty, rng, device)
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((1, ep, tce, tpen, float("nan"), vmel, STAGE1_LR))
@@ -371,7 +394,7 @@ def run_v2(args, torch, device) -> int:
         smart, _ = SP.build(n2_smart, seed=args.seed * 2000 + ep2)
         tce, tpen = run_epoch_v2(
             model, opt2, smart, comp,
-            mix_batches(n2_smart, len(comp), args.batch, rng),
+            mix_batches(n2_smart, n2_comp, len(comp), args.batch, rng),
             True, torch, args.penalty, rng, device)
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((2, ep2, tce, tpen, float("nan"), vmel, lr))
@@ -551,34 +574,20 @@ def val_melody_ce(model, recs: list[dict], torch, device) -> float:
             logp = F.log_softmax(model(inp)[0], dim=-1)
             tgt = torch.tensor(ids[1:], dtype=torch.long, device=device)
             ce_tok = -logp[torch.arange(logp.shape[0], device=device), tgt]
-            for t in range(logp.shape[0]):
-                j = t // 6  # predicted token's note index (ids index t+1)
-                if ids[1 + j * 6 + 2] == 1:  # Melody track
-                    tot += float(ce_tok[t])
-                    n += 1
+            mask = torch.tensor(
+                [ids[1 + (t // 6) * 6 + 2] == 1
+                 for t in range(logp.shape[0])],
+                dtype=torch.bool, device=device)
+            if bool(mask.any()):
+                tot += float(ce_tok[mask].sum())
+                n += int(mask.sum())
     return tot / n if n else float("inf")
 
 
 def batch_v2_loss(logits, tgt, keep, slot_eps):
     """Mean smoothed masked CE over every kept, non-pad target in the batch
     (single code path for backward AND the curve — no per-row rebuild)."""
-    import torch.nn.functional as F
-
-    logp = F.log_softmax(logits, dim=-1)
-    B, Tm, _ = logits.shape
-    per = []
-    for b in range(B):
-        for t in range(Tm):
-            y = int(tgt[b, t])
-            if y == -100 or not keep[b][t]:
-                continue
-            eps = slot_eps[b][t]
-            nll = -logp[b, t, y]
-            per.append((1.0 - eps) * nll - eps * logp[b, t].mean()
-                       if eps else nll)
-    import torch as _torch
-
-    return _torch.stack(per).mean() if per else (logits * 0).sum()
+    return masked_ce_loss(logits, tgt, keep, slot_eps)
 
 
 def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
