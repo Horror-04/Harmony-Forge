@@ -143,4 +143,18 @@ void shift_pattern_from_canonical(core::Pattern& pat, int shift) noexcept {
   }
 }
 
+void shift_chords_to_canonical(core::ChordProgression& prog, int shift) noexcept {
+  try {
+    for (auto& c : prog) c.root = clamp127(c.root + shift);
+  } catch (...) {
+  }
+}
+
+void shift_chords_from_canonical(core::ChordProgression& prog, int shift) noexcept {
+  try {
+    for (auto& c : prog) c.root = clamp127(c.root - shift);
+  } catch (...) {
+  }
+}
+
 }  // namespace hf::infer

@@ -1,10 +1,17 @@
 // Copyright (C) 2026 Horror-04
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Keynorm tests (Phase 9 Task 5b, item C). TDD: written before keynorm.h.
+// Keynorm tests (Phase 9 Task 5b, item C + Task 6 chord-parity precondition).
 // Contract: canonical transpose mirrors training/keynorm.py EXACTLY
 // (major -> C/pc 0, everything else -> A/pc 9, mode preserved; drums
 // TrackType::Drums NEVER transposed; Melody 60..84 / Bass 24..60
-// octave_pull mirroring candidates.cpp; chord roots shift identically).
+// octave_pull mirroring candidates.cpp).
+// Chord parity (Task 6 Step 2 precondition, ledger C2 ruling): chord roots
+// shift identically via shift_chords_to/from_canonical (mirror of
+// keynorm.shift_chords: roots += shift clamped 0..127, types unchanged),
+// and the Strict sampler mask over canonical ids + shifted (tonic, chords)
+// equals the mask over absolute ids + absolute meta — pinned below.
+// (An earlier header revision claimed chord behavior before the API
+// existed; this header now describes the implemented + tested behavior.)
 // Cross-language parity vectors below were produced by
 // training/keynorm.py (see task report) and are pinned byte-identical.
 #include <catch2/catch_test_macros.hpp>
@@ -18,6 +25,7 @@
 #include "core/serialization/tokenizer.h"
 #include "inference_runner.h"
 #include "keynorm.h"
+#include "sampler.h"
 
 namespace {
 
@@ -143,6 +151,119 @@ TEST_CASE("keynorm C-vs-G invariance on identical normalized ids", "[keynorm]") 
   CHECK(sc == 0);
   CHECK(sg == 5);
   CHECK(nc == ng);
+}
+
+TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]") {
+  // Produced by training/keynorm.py shift_chords(
+  // [{"root": 55, "type": "maj"}, {"root": 62, "type": "min"}], 5).
+  hf::core::ChordProgression prog;
+  hf::core::ChordSymbol a;
+  a.root = 55;
+  a.type = "maj";
+  hf::core::ChordSymbol b;
+  b.root = 62;
+  b.type = "min";
+  prog.push_back(a);
+  prog.push_back(b);
+  hf::infer::shift_chords_to_canonical(prog, 5);
+  CHECK(prog.size() == 2);
+  CHECK(prog[0].root == 60);
+  CHECK(prog[0].type == "maj");
+  CHECK(prog[1].root == 67);
+  CHECK(prog[1].type == "min");
+  // Inverse restores roots exactly; types never change.
+  hf::infer::shift_chords_from_canonical(prog, 5);
+  CHECK(prog[0].root == 55);
+  CHECK(prog[1].root == 62);
+  CHECK(prog[0].type == "maj");
+  CHECK(prog[1].type == "min");
+}
+
+TEST_CASE("keynorm chord shift clamps and preserves shape", "[keynorm]") {
+  hf::core::ChordProgression prog;
+  hf::core::ChordSymbol hi;
+  hi.root = 126;
+  hi.type = "maj";
+  hi.inversion = 1;
+  hi.tension = {7};
+  prog.push_back(hi);
+  hf::infer::shift_chords_to_canonical(prog, 5);
+  CHECK(prog[0].root == 127);  // clamp, mirrors python _clamp
+  CHECK(prog[0].inversion == 1);
+  CHECK(prog[0].tension == std::vector<int>{7});
+  hf::infer::shift_chords_from_canonical(prog, 5);
+  // Clamp is lossy at the rail (documented python behavior too):
+  // 126 + 5 clamps to 127, and 127 - 5 lands on 122.
+  CHECK(prog[0].root == 122);
+  // Empty progression is a safe no-op (never throws).
+  hf::core::ChordProgression empty;
+  hf::infer::shift_chords_to_canonical(empty, 5);
+  CHECK(empty.empty());
+}
+
+TEST_CASE("keynorm strict mask is identical in canonical space", "[keynorm]") {
+  // G-major melody quarter (62, D5) + bass (43, G2), bar 0, sub 0.
+  // Absolute meta: tonic 55, chords [{55 maj}]. Canonical (+5): tonic 60,
+  // chords [{60 maj}], ids transposed by keynorm_to_canonical.
+  const std::vector<int> abs_ids = {2, 0, 0, 1, 62, 4, 5, 0, 0, 2, 43, 4, 6};
+  std::vector<int> canon(abs_ids.size(), -1);
+  int shift = 0;
+  REQUIRE(hf::infer::keynorm_to_canonical(abs_ids.data(), abs_ids.size(), 55, "major",
+                                          canon.data(), canon.size(), shift));
+  REQUIRE(shift == 5);
+  hf::core::ChordProgression abs_prog;
+  hf::core::ChordSymbol c;
+  c.root = 55;
+  c.type = "maj";
+  abs_prog.push_back(c);
+  hf::core::ChordProgression canon_prog = abs_prog;
+  hf::infer::shift_chords_to_canonical(canon_prog, shift);
+  REQUIRE(canon_prog[0].root == 60);
+  // Compare strict_allowed_ids at the next pitch-slot position for both
+  // views: same safe set, or the parity precondition FAILS.
+  hf::infer::SamplerMeta abs_meta;
+  abs_meta.tonic = 55;
+  abs_meta.scale = "major";
+  abs_meta.chords = abs_prog;
+  hf::infer::SamplerMeta canon_meta;
+  canon_meta.tonic = 55 + shift;
+  canon_meta.scale = "major";
+  canon_meta.chords = canon_prog;
+  // Prefix extended by one more melody quarter-note header (bar 0, sub 4,
+  // track 1) so position n predicts its pitch on a strong beat.
+  std::vector<int> abs_pre = abs_ids;
+  abs_pre[0] += 1;
+  abs_pre.insert(abs_pre.end(), {0, 4, 1});
+  std::vector<int> canon_pre = canon;
+  canon_pre[0] += 1;
+  canon_pre.insert(canon_pre.end(), {0, 4, 1});
+  std::array<int, 256> abs_out{};
+  std::array<int, 256> canon_out{};
+  const int n_abs = hf::infer::strict_allowed_ids(
+      abs_pre.data(), abs_pre.size(), abs_meta, abs_out.data(), abs_out.size());
+  const int n_canon = hf::infer::strict_allowed_ids(
+      canon_pre.data(), canon_pre.size(), canon_meta, canon_out.data(), canon_out.size());
+  REQUIRE(n_abs >= 0);
+  // Rail-aware parity (both sides clamp pitches to 0..127, so the top rail
+  // drops and the bottom rail gains — identically in python/C++):
+  // every canonical id either sits on the gained bottom edge [0, shift) or
+  // unshifts into the absolute set; every absolute id shifted inside the
+  // range lands in the canonical set.
+  const auto in_set = [](const int* ids, int n, int v) {
+    for (int i = 0; i < n; ++i)
+      if (ids[i] == v) return true;
+    return false;
+  };
+  for (int i = 0; i < n_canon; ++i) {
+    const int w = canon_out[size_t(i)];
+    if (w < shift) continue;  // bottom-edge gain, no absolute preimage
+    CHECK(in_set(abs_out.data(), n_abs, w - shift));
+  }
+  for (int j = 0; j < n_abs; ++j) {
+    const int v = abs_out[size_t(j)];
+    if (v + shift > 127) continue;  // top-rail drop, no canonical image
+    CHECK(in_set(canon_out.data(), n_canon, v + shift));
+  }
 }
 
 TEST_CASE("keynorm rejects bad buffers without throwing", "[keynorm]") {

@@ -60,4 +60,14 @@ int shift_pattern_to_canonical(core::Pattern& pat, int tonic,
                                const std::string& scale) noexcept;
 void shift_pattern_from_canonical(core::Pattern& pat, int shift) noexcept;
 
+// Chord-shift parity (Phase 9 Task 6 precondition, ledger C2 ruling):
+// exact C++ mirror of training/keynorm.py `shift_chords` — every chord
+// root moves by `shift` (clamped 0..127); type/inversion/tension NEVER
+// change. Canonical-space consumers (Strict sampler mask via SamplerMeta)
+// MUST see shifted (tonic + shift, shifted chords) together with canonical
+// ids; absolute-space consumers keep the unshifted pair. In-place on the
+// caller's progression (no allocation, no locks); never throws.
+void shift_chords_to_canonical(core::ChordProgression& prog, int shift) noexcept;
+void shift_chords_from_canonical(core::ChordProgression& prog, int shift) noexcept;
+
 }  // namespace hf::infer
