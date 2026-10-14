@@ -31,14 +31,31 @@ CTX = 1024
 CONFIG = {"vocab": VOCAB, "d_model": D_MODEL, "n_layer": N_LAYER,
           "n_head": N_HEAD, "d_ff": D_FF, "ctx": CTX}
 
+# Phase 9 Task 6 (v2 recipe): arch ladder, all within the brief bounds
+# (decoder-only, vocab 256, ctx <= 1024, <= 4M; 0.8-1.5M preferred).
+# small ~= 0.7M (frozen v1 shape, CONFIG identical), medium ~= 1.5M,
+# large ~= 3.5M (only if fold evidence demands it).
+ARCHES = {
+    "small": {"vocab": VOCAB, "d_model": 128, "n_layer": 4, "n_head": 4,
+              "d_ff": 256, "ctx": CTX},
+    "medium": {"vocab": VOCAB, "d_model": 192, "n_layer": 4, "n_head": 6,
+               "d_ff": 384, "ctx": CTX},
+    "large": {"vocab": VOCAB, "d_model": 256, "n_layer": 6, "n_head": 8,
+              "d_ff": 512, "ctx": CTX},
+}
 
-def build_model():
+
+def build_model(arch: str = "small", dropout: float = 0.0):
     import math
 
     import torch
     import torch.nn as nn
 
-    HEAD_DIM = D_MODEL // N_HEAD
+    cfg = ARCHES[arch]
+    d_model, n_head, d_ff = cfg["d_model"], cfg["n_head"], cfg["d_ff"]
+    ctx, vocab = cfg["ctx"], cfg["vocab"]
+    HEAD_DIM = d_model // n_head
+    assert d_model % n_head == 0
 
     class CausalMHA(nn.Module):
         """Hand-rolled causal multi-head attention (weight-layout compatible
@@ -48,29 +65,31 @@ def build_model():
 
         def __init__(self):
             super().__init__()
-            self.qkv = nn.Linear(D_MODEL, 3 * D_MODEL)
-            self.out = nn.Linear(D_MODEL, D_MODEL)
+            self.qkv = nn.Linear(d_model, 3 * d_model)
+            self.out = nn.Linear(d_model, d_model)
+            self.drop = nn.Dropout(dropout)
 
         def forward(self, x):
             b, t, _ = x.shape
-            q, k, v = self.qkv(x).view(b, t, 3, N_HEAD, HEAD_DIM).unbind(2)
+            q, k, v = self.qkv(x).view(b, t, 3, n_head, HEAD_DIM).unbind(2)
             q = q.transpose(1, 2)
             k = k.transpose(1, 2)
             v = v.transpose(1, 2)
             att = (q @ k.transpose(-2, -1)) / math.sqrt(HEAD_DIM)
             mask = torch.triu(torch.ones(t, t, dtype=torch.bool, device=x.device), 1)
             att = att.masked_fill(mask, float("-inf"))
-            y = (torch.softmax(att, dim=-1) @ v).transpose(1, 2).reshape(b, t, D_MODEL)
-            return self.out(y)
+            y = (torch.softmax(att, dim=-1) @ v).transpose(1, 2).reshape(b, t, d_model)
+            return self.drop(self.out(y))
 
     class Block(nn.Module):
         def __init__(self):
             super().__init__()
-            self.ln1 = nn.LayerNorm(D_MODEL)
+            self.ln1 = nn.LayerNorm(d_model)
             self.attn = CausalMHA()
-            self.ln2 = nn.LayerNorm(D_MODEL)
-            self.ff = nn.Sequential(nn.Linear(D_MODEL, D_FF), nn.GELU(),
-                                    nn.Linear(D_FF, D_MODEL))
+            self.ln2 = nn.LayerNorm(d_model)
+            self.ff = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(),
+                                    nn.Dropout(dropout),
+                                    nn.Linear(d_ff, d_model))
 
         def forward(self, x):
             x = x + self.attn(self.ln1(x))
@@ -79,12 +98,13 @@ def build_model():
     class TinyLM(nn.Module):
         def __init__(self):
             super().__init__()
-            self.tok = nn.Embedding(VOCAB, D_MODEL)
-            self.pos = nn.Embedding(CTX, D_MODEL)
-            self.slot = nn.Embedding(7, D_MODEL)  # 0: count head, 1..6: note slots
-            self.blocks = nn.ModuleList([Block() for _ in range(N_LAYER)])
-            self.ln = nn.LayerNorm(D_MODEL)
-            self.head = nn.Linear(D_MODEL, VOCAB, bias=False)
+            self.tok = nn.Embedding(vocab, d_model)
+            self.pos = nn.Embedding(ctx, d_model)
+            self.slot = nn.Embedding(7, d_model)  # 0: count head, 1..6: note slots
+            self.blocks = nn.ModuleList([Block()
+                                         for _ in range(cfg["n_layer"])])
+            self.ln = nn.LayerNorm(d_model)
+            self.head = nn.Linear(d_model, vocab, bias=False)
 
         def forward(self, ids):
             b, t = ids.shape
@@ -100,7 +120,7 @@ def build_model():
 
     model = TinyLM()
     n = sum(p.numel() for p in model.parameters())
-    assert n <= 2_000_000, "R3 param budget exceeded"
+    assert n <= 4_000_000, "Phase-9 v2 param budget exceeded"
     return model
 
 
