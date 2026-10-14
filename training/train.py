@@ -367,12 +367,11 @@ def run_v2(args, torch, device) -> int:
             True, torch, args.penalty, rng, device)
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((1, ep, tce, tpen, float("nan"), vmel, STAGE1_LR))
-        if vmel < best[0]:
-            best = (vmel, {k: v.cpu().clone()
-                           for k, v in model.state_dict().items()}, ep)
+        best, improved = _record_best_v2(model, best, vmel, ep, t0,
+                                         args, torch, 1)
         print(f"stage1 ep{ep}: train_ce={tce:.4f} train_pen={tpen:.4f} "
               f"val_melody_ce={vmel:.4f}"
-              + (" <- best" if vmel == best[0] else ""), flush=True)
+              + (" <- best" if improved else ""), flush=True)
     if best[1] is not None:
         model.load_state_dict({k: v.to(device)
                                for k, v in best[1].items()})
@@ -398,11 +397,9 @@ def run_v2(args, torch, device) -> int:
             True, torch, args.penalty, rng, device)
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((2, ep2, tce, tpen, float("nan"), vmel, lr))
-        improved = vmel < best[0]
+        best, improved = _record_best_v2(model, best, vmel, ep2, t0,
+                                         args, torch, 2)
         if improved:
-            best = (vmel, {k: v.cpu().clone()
-                           for k, v in model.state_dict().items()},
-                    ep2)
             stale = 0
         elif ep2 >= STAGE2_MIN_EP:
             stale += 1
@@ -441,6 +438,50 @@ def model_config(arch: str) -> dict:
     from tinilm import ARCHES
 
     return dict(ARCHES[arch])
+
+
+def save_v2_ckpt(state: dict, arch: str, penalty: float, keynorm: bool,
+                 seed: int, stage1_epochs: int, stage2_max: int,
+                 path: str, torch) -> None:
+    """Persist one v2 best-so-far checkpoint (same payload as the final
+    save; called on EVERY improvement so a killed run keeps best-so-far)."""
+    torch.save({"config": dict(model_config(arch)),
+                "state": state,
+                "arch": arch,
+                "recipe": {"penalty": penalty,
+                           "keynorm": keynorm,
+                           "seed": seed,
+                           "stage1_epochs": stage1_epochs,
+                           "stage2_max": stage2_max}},
+               path)
+
+
+def write_v2_progress(path: str, payload: dict) -> None:
+    """Persist the best-so-far progress sidecar (JSON). A run cut short by
+    the time box (or a kill) still reports its best val_melody_ce."""
+    with open(path, "w") as fh:
+        json.dump(payload, fh, indent=1)
+
+
+def _record_best_v2(model, best: tuple, vmel: float, ep: int, t0: float,
+                    args, torch, stage: int) -> tuple:
+    """Fold one improvement into best + persist ckpt/sidecar immediately."""
+    import time as _time
+
+    if vmel < best[0]:
+        best = (vmel, {k: v.cpu().clone()
+                       for k, v in model.state_dict().items()}, ep)
+        save_v2_ckpt(best[1], args.arch, args.penalty, args.keynorm,
+                     args.seed, args.stage1_epochs, args.stage2_max,
+                     args.ckpt_out, torch)
+        write_v2_progress(args.ckpt_out + ".progress.json",
+                          {"best_val_melody_ce": vmel, "stage": stage,
+                           "epoch": ep, "wall_s": round(_time.time() - t0, 1),
+                           "arch": args.arch, "penalty": args.penalty,
+                           "seed": args.seed, "keynorm": args.keynorm,
+                           "ckpt": os.path.basename(args.ckpt_out)})
+        return best, True
+    return best, False
 
 
 def smoke_v2(args, torch, device) -> int:

@@ -1,0 +1,116 @@
+{
+ "schedule": {
+  "s1_ep": 8,
+  "s2_ep": 6,
+  "penalty": 1.0,
+  "keynorm": true,
+  "seed": 7
+ },
+ "device": "cuda",
+ "device_note": "run on cuda (device recorded per run); identical schedule/seeds across cells; seeds compared within-device",
+ "groups": 30,
+ "cells": [
+  {
+   "arch": "small",
+   "fold": 0,
+   "n_tr": 56,
+   "n_va": 19,
+   "val_melody_ce": 1.3821414387673647,
+   "wall_s": 42.3
+  },
+  {
+   "arch": "small",
+   "fold": 1,
+   "n_tr": 55,
+   "n_va": 20,
+   "val_melody_ce": 1.3005079250430587,
+   "wall_s": 43.5
+  },
+  {
+   "arch": "small",
+   "fold": 2,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.3424572457207573,
+   "wall_s": 45.5
+  },
+  {
+   "arch": "small",
+   "fold": 3,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.3714543004189768,
+   "wall_s": 45.6
+  },
+  {
+   "arch": "medium",
+   "fold": 0,
+   "n_tr": 56,
+   "n_va": 19,
+   "val_melody_ce": 1.290738842457499,
+   "wall_s": 48.7
+  },
+  {
+   "arch": "medium",
+   "fold": 1,
+   "n_tr": 55,
+   "n_va": 20,
+   "val_melody_ce": 1.2376876173920892,
+   "wall_s": 51.1
+  },
+  {
+   "arch": "medium",
+   "fold": 2,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.2644962607489691,
+   "wall_s": 53.2
+  },
+  {
+   "arch": "medium",
+   "fold": 3,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.273257883361306,
+   "wall_s": 58.9
+  },
+  {
+   "arch": "large",
+   "fold": 0,
+   "n_tr": 56,
+   "n_va": 19,
+   "val_melody_ce": 1.227958032566804,
+   "wall_s": 1130.1
+  },
+  {
+   "arch": "large",
+   "fold": 1,
+   "n_tr": 55,
+   "n_va": 20,
+   "val_melody_ce": 1.1408431850262541,
+   "wall_s": 343.8
+  },
+  {
+   "arch": "large",
+   "fold": 2,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.2190049892001682,
+   "wall_s": 391.6
+  },
+  {
+   "arch": "large",
+   "fold": 3,
+   "n_tr": 57,
+   "n_va": 18,
+   "val_melody_ce": 1.2246398025658538,
+   "wall_s": 346.7
+  }
+ ],
+ "means": {
+  "small": 1.3491402274875393,
+  "medium": 1.266545150989966,
+  "large": 1.20311150233977
+ },
+ "pick": "large"
+}
