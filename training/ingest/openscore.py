@@ -73,13 +73,13 @@ CANDIDATES: list[dict] = [
      "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/02_Wohin",
      "file": "lc4982535.mscx"},
     {"kind": "lieder", "piece": "Schubert D.795/03 Halt!",
-     "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/03_Halt!",
+     "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/3_Halt!",
      "file": "lc4985937.mscx"},
     {"kind": "lieder", "piece": "Schubert D.795/04 Danksagung",
      "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/04_Danksagung_an_den_Bach",
      "file": "lc4985925.mscx"},
     {"kind": "lieder", "piece": "Schubert D.795/05 Am Feierabend",
-     "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/05_Am_Feierabend",
+     "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/5_Am_Feierabend",
      "file": "lc4985924.mscx"},
     {"kind": "lieder", "piece": "Schubert D.795/06 Der Neugierige",
      "dir": "Schubert,_Franz/Die_sch\u00f6ne_M\u00fcllerin,_D.795/06_Der_Neugierige",
@@ -105,9 +105,9 @@ CANDIDATES: list[dict] = [
     {"kind": "quartet", "piece": "Mozart K.157",
      "dir": "Mozart,_Wolfgang_Amadeus/String_Quartet_No.4_in_C_major,_K.157",
      "file": "sq9199617.mscx"},
-    {"kind": "quartet", "piece": "Mozart K.158",
-     "dir": "Mozart,_Wolfgang_Amadeus/String_Quartet_No.5_in_F_major,_K.158",
-     "file": "sq22923826.mscx"},
+    {"kind": "quartet", "piece": "Haydn Op.20 No.4",
+     "dir": "Haydn,_Joseph/String_Quartet_in_D_major,_Hob.III34,_Op.20_No.4",
+     "file": "sq8509238.mscx"},
     {"kind": "quartet", "piece": "Mozart K.387",
      "dir": "Mozart,_Wolfgang_Amadeus/String_Quartet_No.14_in_G_major,_K.387_(Op._10,_No._1)",
      "file": "sq7103818.mscx"},
@@ -327,7 +327,7 @@ def parse_mscx(blob: bytes) -> dict:
                     mticks = (int(len_attr) if len_attr and len_attr.isdigit()
                               else division * 4 * sign // sigd)
                     sig_runs[m] = (sign, sigd)
-                elif el.tag == "KeySig" and keysig_acc is None:
+                elif el.tag == "KeySig" and m == 0 and keysig_acc is None:
                     acc = (el.findtext("accidental") or "").strip()
                     try:
                         keysig_acc = int(acc)
@@ -468,6 +468,40 @@ def reduce_satb(piece_id: str, satb: dict, source: str, url: str,
     """SATB->codec reduction via the shared jsb371 mapping (no fork)."""
     return _J.reduce_satb(piece_id, satb, source, url, license_spdx, sha,
                           id_prefix="os-")
+
+
+def melody_entry_bar(soprano: list[dict]) -> int:
+    """0-based bar of the first soprano-line onset (voice-entry anchor)."""
+    if not soprano:
+        return 0
+    return min(e["start_sub"] for e in soprano) // 16
+
+
+def excerpt_satb(satb: dict, start_bar: int, n_bars: int = 8) -> dict:
+    """Clip + rebase an SATB mini-score to [start_bar, start_bar+n_bars).
+
+    Voice-entry snap (same spirit as the shared fermata snap): windows
+    anchor at the melody line's first bar so piano-intro-only (or
+    cello-solo-opening) bars never fill a window. Edge-overlapping
+    events clamp; the shared 4-bar/stride-2/<=8-bar reduction runs on
+    the excerpt unchanged.
+    """
+    lo = start_bar * 16
+    hi = min((start_bar + n_bars) * 16, satb["bars"] * 16)
+    out = dict(satb)
+    for v in ("soprano", "alto", "tenor", "bass"):
+        clip = []
+        for e in satb[v]:
+            s, d = e["start_sub"], e["dur_sub"]
+            if s >= hi or s + d <= lo:
+                continue
+            ns = max(s, lo) - lo
+            nd = max(1, min(s + d, hi) - max(s, lo))
+            clip.append({"pitch": e["pitch"], "start_sub": ns,
+                         "dur_sub": nd})
+        out[v] = sorted(clip, key=lambda d: d["start_sub"])
+    out["bars"] = max(0, (hi - lo) // 16)
+    return out
 
 
 def manifest_sha(shas: list[str]) -> str:

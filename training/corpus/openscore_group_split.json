@@ -1,0 +1,387 @@
+{
+ "shared_melodies": [
+  {
+   "interval_hash": [
+    1,
+    2,
+    2,
+    -2,
+    -2,
+    -1
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-J-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-J-k1"
+    },
+    {
+     "set": "val",
+     "id": "composed-P-k0"
+    },
+    {
+     "set": "val",
+     "id": "composed-P-k1"
+    }
+   ],
+   "n_sets": 2
+  },
+  {
+   "interval_hash": [
+    0,
+    0,
+    -3,
+    1,
+    -1,
+    -2,
+    -2,
+    2,
+    2,
+    1,
+    0,
+    -1,
+    -2,
+    -2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-A-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-A-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    0,
+    -1,
+    -2,
+    -2,
+    2,
+    2,
+    1,
+    -1,
+    -2,
+    -2,
+    2,
+    -2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-B-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-B-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    2,
+    2,
+    1,
+    2,
+    -2,
+    -1,
+    -2,
+    -2,
+    2,
+    -2,
+    -3,
+    1,
+    2,
+    -7
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-C-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-C-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    -1,
+    -2,
+    -2,
+    2,
+    -2,
+    -2,
+    2,
+    2,
+    2,
+    1,
+    -1,
+    -2,
+    -2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-D-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-D-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    0,
+    -5,
+    5,
+    3,
+    -1,
+    -2,
+    -1,
+    1,
+    -5,
+    -4,
+    -1,
+    -2,
+    0
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-E-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-E-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    2,
+    2,
+    1,
+    2,
+    -2,
+    -1,
+    -2,
+    2,
+    1,
+    2,
+    -3,
+    -2,
+    -2,
+    0
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-F-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-F-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    3,
+    4,
+    5,
+    -2,
+    -3,
+    -4,
+    -1,
+    1,
+    2,
+    2,
+    3,
+    2,
+    -2,
+    -3
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-G-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-G-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    4,
+    3,
+    2,
+    -2,
+    -2,
+    -1,
+    -2,
+    2,
+    1,
+    2,
+    -7,
+    2,
+    2,
+    -4
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-H-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-H-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    2,
+    2,
+    3,
+    -3,
+    -2,
+    -2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-I-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-I-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    2,
+    -2,
+    -3,
+    -2,
+    2,
+    -4
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-K-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-K-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    -2,
+    -2,
+    -1,
+    -2,
+    -2,
+    2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-L-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-L-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    3,
+    2,
+    -2,
+    -3,
+    -2,
+    2
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-M-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-M-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    3,
+    -1,
+    -2,
+    -2,
+    2,
+    0
+   ],
+   "owners": [
+    {
+     "set": "train",
+     "id": "composed-N-k0"
+    },
+    {
+     "set": "train",
+     "id": "composed-N-k1"
+    }
+   ],
+   "n_sets": 1
+  },
+  {
+   "interval_hash": [
+    -2,
+    -1,
+    1,
+    2,
+    2,
+    -2
+   ],
+   "owners": [
+    {
+     "set": "val",
+     "id": "composed-O-k0"
+    },
+    {
+     "set": "val",
+     "id": "composed-O-k1"
+    }
+   ],
+   "n_sets": 1
+  }
+ ]
+}

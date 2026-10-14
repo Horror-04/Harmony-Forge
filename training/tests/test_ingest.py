@@ -142,6 +142,7 @@ def main():
     check_openscore_quartet_mapping()
     check_openscore_texture_skip()
     check_openscore_candidates_fenced()
+    check_openscore_excerpt_anchors_voice_entry()
     print("test_ingest: ALL GREEN")
 
 
@@ -511,6 +512,28 @@ def check_openscore_candidates_fenced():
     assert "lieder" in kinds and "quartet" in kinds
     assert len({c["url"] for c in openscore.CANDIDATES}) == len(openscore.CANDIDATES)
     print("PASS openscore fenced batch 20-40 (lieder + quartet)")
+
+
+def check_openscore_excerpt_anchors_voice_entry():
+    def line(bars, skip=()):
+        return [{"pitch": 60 + (b % 4), "start_sub": b * 16, "dur_sub": 4}
+                for b in range(bars) if b not in skip]
+    satb = {"soprano": line(12, skip=(0, 1, 2, 3, 4, 5, 6, 7)),
+            "alto": line(12), "tenor": line(12), "bass": line(12),
+            "bars": 12, "tonic": 60, "scale": "major"}
+    assert openscore.melody_entry_bar(satb["soprano"]) == 8
+    assert openscore.melody_entry_bar([]) == 0
+    ex = openscore.excerpt_satb(satb, 8)
+    assert ex["bars"] == 4, ex["bars"]
+    assert min(e["start_sub"] for e in ex["soprano"]) < 16
+    assert max(e["start_sub"] for e in ex["bass"]) < 64
+    recs = jsb371.reduce_satb("ex-par", ex, openscore.SOURCE, "u",
+                              "CC0-1.0", "ab" * 32, id_prefix="os-")
+    import tokenizer as tok
+    assert recs and all(tok.decode_tokens(r["ids"]) is not None for r in recs)
+    assert all(len(r["pattern"]["tracks"][0]["notes"]) > 0 for r in recs), \
+        "anchored windows must all carry melody"
+    print("PASS openscore voice-entry excerpt anchors windows")
 
 
 if __name__ == "__main__":

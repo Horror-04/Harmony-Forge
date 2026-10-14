@@ -1,0 +1,913 @@
+{
+ "status": "DONE",
+ "source": "openscore-cc0",
+ "url": "https://github.com/OpenScore/Lieder + https://github.com/OpenScore/StringQuartets",
+ "license_evidence": [
+  {
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/LICENSE.txt",
+   "ok": true,
+   "spdx": "CC0-1.0",
+   "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+   "head": "Creative Commons Legal Code |  | CC0 1.0 Universal |  |     CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE | ",
+   "reason": "ok: CC0-1.0 license file for https://raw.githubusercontent.com/OpenScore/Lieder/main/LICENSE.txt"
+  },
+  {
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/LICENSE.txt",
+   "ok": true,
+   "spdx": "CC0-1.0",
+   "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+   "head": "Creative Commons Legal Code |  | CC0 1.0 Universal |  |     CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE | ",
+   "reason": "ok: CC0-1.0 license file for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/LICENSE.txt"
+  }
+ ],
+ "gate": {
+  "rule": "project CC0 LICENSE.txt + per-file copyright=CC0/PD dedication + conflict scan",
+  "candidates": 26,
+  "accepted": 26,
+  "refused": 0,
+  "fetch_failed": 0
+ },
+ "files": [
+  {
+   "piece": "Schubert D.795/01 Das Wandern",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/01_Das_Wandern/lc5004731.mscx",
+   "bytes": 101713,
+   "sha": "90a4ccb4458737c6cc70d161a326dcf327c7477f61220bd8aee01a2030f22c34",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/01_Das_Wandern/lc5004731.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 20,
+    "keysig_acc": -2,
+    "tonic": 58,
+    "scale": "major",
+    "parts": [
+     "Oboe",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    70.6,
+    54.3,
+    37.8
+   ],
+   "excerpt_start_bar": 3,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/02 Wohin",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/02_Wohin/lc4982535.mscx",
+   "bytes": 568514,
+   "sha": "cf14d9461bb5095caf33e99eab9d3cb5ecc5469518946123f573eb6ea2ce98a2",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/02_Wohin/lc4982535.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 81,
+    "keysig_acc": 1,
+    "tonic": 55,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    69.4,
+    61.1,
+    45.1
+   ],
+   "excerpt_start_bar": 1,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/03 Halt!",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/3_Halt%21/lc4985937.mscx",
+   "bytes": 313533,
+   "sha": "894883d8d34029b8046d576851919b071b5da844edcdf804768029f53742e7f5",
+   "header_quote": "Creative Commons copyright waiver (CC0 1.0 Universal)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/3_Halt%21/lc4985937.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 60,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.2,
+    58.1,
+    40.6
+   ],
+   "excerpt_start_bar": 10,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/04 Danksagung",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/04_Danksagung_an_den_Bach/lc4985925.mscx",
+   "bytes": 199698,
+   "sha": "45128b699270311503307548f99f9ab0a810d6953391a128ae2db823e7b3620b",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/04_Danksagung_an_den_Bach/lc4985925.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 42,
+    "keysig_acc": 1,
+    "tonic": 55,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.1,
+    57.6,
+    39.1
+   ],
+   "excerpt_start_bar": 4,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/05 Am Feierabend",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/5_Am_Feierabend/lc4985924.mscx",
+   "bytes": 438244,
+   "sha": "6da134577629c360a71e379534de3d97404960aa793b8efeb567f9a93a3a10c8",
+   "header_quote": "Creative Commons copyright waiver (CC0 1.0 Universal)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/5_Am_Feierabend/lc4985924.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 89,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Hautbois",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.2,
+    59.7,
+    42.7
+   ],
+   "excerpt_start_bar": 6,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/06 Der Neugierige",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/06_Der_Neugierige/lc4985930.mscx",
+   "bytes": 282737,
+   "sha": "3f3bdf60b596d9d46c1a6366c84f014ad2d58ea8e6c8e268b66225ed73ea772f",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/06_Der_Neugierige/lc4985930.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 55,
+    "keysig_acc": 5,
+    "tonic": 59,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Grand Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.9,
+    66.7,
+    54.0
+   ],
+   "excerpt_start_bar": 3,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/07 Ungeduld",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/07_Ungeduld/lc4985951.mscx",
+   "bytes": 233727,
+   "sha": "59167d2ee2fc2b29024abb71109ded79b7cfd09722d6f1d1892c025ca82a357d",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/07_Ungeduld/lc4985951.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 28,
+    "keysig_acc": 3,
+    "tonic": 57,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.7,
+    67.9,
+    54.7
+   ],
+   "excerpt_start_bar": 7,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/08 Morgengruss",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/08_Morgengru%C3%9F/lc5025982.mscx",
+   "bytes": 138488,
+   "sha": "eade935af556f05d7d220ed14863e39f9ff4855c8f95a347adc1055fe3553d91",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/08_Morgengru%C3%9F/lc5025982.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 25,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.3,
+    66.4,
+    53.9
+   ],
+   "excerpt_start_bar": 4,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/09 Des Muellers Blumen",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/09_Des_M%C3%BCllers_Blumen/lc4985932.mscx",
+   "bytes": 105420,
+   "sha": "3bbd38481a9d22d19189d16cb826d1aa63e9bcdb21fde7608aea4f40ed79decf",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/09_Des_M%C3%BCllers_Blumen/lc4985932.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 21,
+    "keysig_acc": 3,
+    "tonic": 57,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    72.9,
+    57.0,
+    42.5
+   ],
+   "excerpt_start_bar": 5,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/10 Traenenregen",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/10_Tr%C3%A4nenregen/lc5025985.mscx",
+   "bytes": 268969,
+   "sha": "20d61208a940e761b635c4d4ea3936e363e6b53ec61ab74bfb586ddbae17a9ce",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/10_Tr%C3%A4nenregen/lc5025985.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 38,
+    "keysig_acc": 3,
+    "tonic": 57,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    69.9,
+    70.1,
+    57.1
+   ],
+   "excerpt_start_bar": 4,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/11 Mein!",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/11_Mein%21/lc4985938.mscx",
+   "bytes": 531182,
+   "sha": "335c90de19dacfe7ef2be3ea461942544afe6ac3c25c909b66fa21231dd9dcd3",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/11_Mein%21/lc4985938.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 103,
+    "keysig_acc": 2,
+    "tonic": 50,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    70.0,
+    59.7,
+    40.4
+   ],
+   "excerpt_start_bar": 8,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.795/12 Pause",
+   "kind": "lieder",
+   "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/12_Pause/lc4985946.mscx",
+   "bytes": 335986,
+   "sha": "49f99b5614990d0b30f66a5875ebb371e4d796084da912df6264d7880c9fb9ad",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Die_sch%C3%B6ne_M%C3%BCllerin%2C_D.795/12_Pause/lc4985946.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 81,
+    "keysig_acc": -2,
+    "tonic": 58,
+    "scale": "major",
+    "parts": [
+     "Voice",
+     "Piano"
+    ],
+    "nstaves": 3
+   },
+   "staff_means": [
+    71.0,
+    61.5,
+    48.9
+   ],
+   "excerpt_start_bar": 8,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Mozart K.157",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.4_in_C_major%2C_K.157/sq9199617.mscx",
+   "bytes": 4629280,
+   "sha": "42cadb91ee0b1845c03a70f43c3219b9ed9d378c78fa323e440037a7d459ac39",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.4_in_C_major%2C_K.157/sq9199617.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 378,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    72.8,
+    64.8,
+    60.4,
+    50.8
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.20 No.4",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_D_major%2C_Hob.III34%2C_Op.20_No.4/sq8509238.mscx",
+   "bytes": 9081440,
+   "sha": "d89dd128b990cd726b8078f7e124a19c1496549a423187ba4e89e0cb4d66ccbf",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_D_major%2C_Hob.III34%2C_Op.20_No.4/sq8509238.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 607,
+    "keysig_acc": 2,
+    "tonic": 50,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    73.6,
+    68.4,
+    62.1,
+    53.7
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Mozart K.387",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.14_in_G_major%2C_K.387_%28Op._10%2C_No._1%29/sq7103818.mscx",
+   "bytes": 9990008,
+   "sha": "083019a51b7350cb963ebd9832c8c888c97999f6fab5dbf2e0a2d84499cc08a1",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.14_in_G_major%2C_K.387_%28Op._10%2C_No._1%29/sq7103818.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 724,
+    "keysig_acc": 1,
+    "tonic": 55,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    74.7,
+    67.8,
+    62.2,
+    51.7
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.64 No.1",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III65%2C_Op.64_No.1/sq7127785.mscx",
+   "bytes": 7696959,
+   "sha": "939c27d9d80f45eb243ef189bd3cd1f2de969f84a66c2f070dcb25511ce3a8b7",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III65%2C_Op.64_No.1/sq7127785.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 508,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    73.0,
+    66.6,
+    60.5,
+    49.7
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.64 No.4",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_G_major%2C_Hob.III66%2C_Op.64%2C_No.4/sq7249986.mscx",
+   "bytes": 7387023,
+   "sha": "f682ec2e8295fc13d8a0e117fd2087fe5220463f196d5c0d3b15d305d38352e1",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_G_major%2C_Hob.III66%2C_Op.64%2C_No.4/sq7249986.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 440,
+    "keysig_acc": 1,
+    "tonic": 55,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    73.3,
+    66.0,
+    61.7,
+    50.9
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.64 No.2",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B_minor%2C_Hob.III68%2C_Op.64_No.2/sq7114183.mscx",
+   "bytes": 6741712,
+   "sha": "917b7286dd8a882906a2d69608a2e1f545f0a747bd4c867bfdc73b108a4d8452",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B_minor%2C_Hob.III68%2C_Op.64_No.2/sq7114183.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 471,
+    "keysig_acc": 2,
+    "tonic": 50,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    74.7,
+    66.2,
+    61.2,
+    49.9
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.64 No.3",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B-flat_major%2C_Hob.III67%2C_Op.64_No.3/sq7123582.mscx",
+   "bytes": 8976741,
+   "sha": "5842c9b98af9cf8ef5ed43fe2d9b8e736ea5dddf9f35cb5c7c2cbf719b7011c3",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B-flat_major%2C_Hob.III67%2C_Op.64_No.3/sq7123582.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 615,
+    "keysig_acc": -2,
+    "tonic": 58,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    73.0,
+    65.4,
+    60.0,
+    49.2
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.20 No.1",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_E-flat_major%2C_Hob.III31%2C_Op.20_No.1/sq8075304.mscx",
+   "bytes": 5527517,
+   "sha": "a2aed236e0839c6149e4b409aa0ecd530ba96f16646621ed3b56a163f12fbb5b",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_E-flat_major%2C_Hob.III31%2C_Op.20_No.1/sq8075304.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 436,
+    "keysig_acc": -3,
+    "tonic": 51,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    71.9,
+    66.4,
+    61.3,
+    51.0
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Haydn Op.20 No.2",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III32%2C_Op.20_No.2/sq8088531.mscx",
+   "bytes": 7815755,
+   "sha": "74ac473c38662c509cfb2325acdb4b7d6db3ee60ddff759da5b6a4aa6dfa199c",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III32%2C_Op.20_No.2/sq8088531.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 419,
+    "keysig_acc": 0,
+    "tonic": 48,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    73.6,
+    68.5,
+    62.6,
+    54.4
+   ],
+   "excerpt_start_bar": 6,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Beethoven Op.18 No.1",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.1%2C_Op.18_No.1/sq8071278.mscx",
+   "bytes": 15084772,
+   "sha": "d5df67309f60b512065fd6681881a02565aaf8d8b1499bc97826bd324ed08890",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.1%2C_Op.18_No.1/sq8071278.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 949,
+    "keysig_acc": -1,
+    "tonic": 53,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    75.3,
+    66.8,
+    59.2,
+    49.6
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Beethoven Op.18 No.2",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.2%2C_Op.18_No.2/sq8853405.mscx",
+   "bytes": 10806048,
+   "sha": "30a3e184bc1a785515b5a51b2ed5b0245de3538c64fa3cfd7fda9352cd601502",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.2%2C_Op.18_No.2/sq8853405.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 846,
+    "keysig_acc": 1,
+    "tonic": 55,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    75.7,
+    66.7,
+    59.5,
+    50.6
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Beethoven Op.18 No.3",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.3%2C_Op.18_No.3/sq8907120.mscx",
+   "bytes": 12622053,
+   "sha": "fc4dbb39a529a162491f545e619337d72155a9f93828fd6088093710308255ce",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.3%2C_Op.18_No.3/sq8907120.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 966,
+    "keysig_acc": 2,
+    "tonic": 50,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    76.8,
+    68.5,
+    60.2,
+    49.6
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Beethoven Op.18 No.4",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.4%2C_Op.18_No.4/sq8913219.mscx",
+   "bytes": 10729401,
+   "sha": "ae1bbbd3a08bb3ec518202f7ce23e10ef2cfd833be85bb80535b33379a3f0d51",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/String_Quartet_No.4%2C_Op.18_No.4/sq8913219.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 809,
+    "keysig_acc": -3,
+    "tonic": 51,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    74.7,
+    66.3,
+    59.6,
+    49.6
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  },
+  {
+   "piece": "Schubert D.810 Death and the Maiden",
+   "kind": "quartet",
+   "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Schubert%2C_Franz/String_Quartet_in_D_minor%2C_D.810%2C_No.14_%28%E2%80%9CDeath_and_the_Maiden%E2%80%9D%29/sq7397765.mscx",
+   "bytes": 22806115,
+   "sha": "50804da4d7d2426a9015022d72da605f9711c10f61923740c63660a574735cd6",
+   "header_quote": "OpenScore (CC0)",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "CC0-1.0",
+   "reason": "ok: CC0-1.0 per-file dedication for https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Schubert%2C_Franz/String_Quartet_in_D_minor%2C_D.810%2C_No.14_%28%E2%80%9CDeath_and_the_Maiden%E2%80%9D%29/sq7397765.mscx",
+   "verdict": "accept",
+   "parse": {
+    "bars": 1445,
+    "keysig_acc": -1,
+    "tonic": 53,
+    "scale": "major",
+    "parts": [
+     "Violin 1",
+     "Violin 2",
+     "Viola",
+     "Violoncello"
+    ],
+    "nstaves": 4
+   },
+   "staff_means": [
+    75.7,
+    68.8,
+    60.9,
+    50.9
+   ],
+   "excerpt_start_bar": 0,
+   "map": "ok: 4 usable voices"
+  }
+ ],
+ "skips": [],
+ "counts": {
+  "loaded_pieces": 26,
+  "records": 77,
+  "decodable_rate": 1.0,
+  "window_misses": 0,
+  "dedupe_drops": {
+   "train": 0,
+   "val": 0,
+   "heads": 0,
+   "intake-seen": 1
+  }
+ },
+ "dropped": [
+  {
+   "id": "os-lc5004731-w04",
+   "against": "intake-seen",
+   "match_id": "os-lc5004731-w00"
+  }
+ ],
+ "listening": {
+  "n": 20,
+  "table": "openscore_listening.csv",
+  "verdicts": [
+   "usable",
+   "fixable-pattern",
+   "reject"
+  ]
+ },
+ "group_split": "openscore_group_split.json",
+ "ledger": "sources.csv",
+ "intake_close_out": "OpenScore box was the LAST intake box (cap 3/3): intake CLOSES with this yield."
+}
