@@ -45,13 +45,16 @@ MODEL_PATH = os.path.join(HERE, "model.onnx")
 QUANT_PATH = os.path.join(HERE, "model.quant.onnx")
 
 
-def load_lm():
+def load_lm(ckpt_path: str = CKPT_PATH):
     import torch
 
     import tinilm
-    ckpt = torch.load(CKPT_PATH, map_location="cpu", weights_only=True)
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     assert ckpt.get("config", {}).get("vocab") == tinilm.VOCAB, "vocab drift"
-    model = tinilm.build_model()
+    # Phase 9 Task 6: v2 checkpoints carry their arch name (small/medium/
+    # large); dropout layers are parameterless so state keys are identical
+    # across dropout values. Legacy ckpts (no "arch") take the frozen path.
+    model = tinilm.build_model(arch=ckpt.get("arch", "small"))
     state = ckpt["state"]
     # best.pt was trained with nn.MultiheadAttention blocks; tinilm now uses
     # the mathematically identical hand-rolled CausalMHA (same qkv layout:
@@ -142,9 +145,18 @@ def verify(path: str, torch_parity_prefix: np.ndarray | None) -> None:
 
 
 def main() -> int:
+    import argparse
     import torch
 
-    model = load_lm()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ckpt", default=CKPT_PATH)
+    ap.add_argument("--model-out", default=MODEL_PATH)
+    ap.add_argument("--quant-out", default=QUANT_PATH)
+    args = ap.parse_args()
+
+    global MODEL_PATH, QUANT_PATH
+    MODEL_PATH, QUANT_PATH = args.model_out, args.quant_out
+    model = load_lm(args.ckpt)
     # Reference argmax from torch on a real corpus prefix (ORT parity check).
     with open(os.path.join(HERE, "corpus", "train.jsonl")) as f:
         rec = json.loads(f.readline())
