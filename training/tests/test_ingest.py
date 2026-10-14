@@ -19,6 +19,7 @@ import jsb371
 import dedupe
 import mutopia
 import listening
+import openscore
 
 
 def check_ledger_refuses_sa_nc_unknown():
@@ -134,6 +135,13 @@ def main():
     check_mutopia_homophonic_filter()
     check_mutopia_parity_with_jsb()
     check_listening_verdict_enum()
+    check_openscore_license_file_gate()
+    check_openscore_perfile_gate()
+    check_openscore_mscx_parse_minimal()
+    check_openscore_lieder_mapping()
+    check_openscore_quartet_mapping()
+    check_openscore_texture_skip()
+    check_openscore_candidates_fenced()
     print("test_ingest: ALL GREEN")
 
 
@@ -328,6 +336,181 @@ def check_listening_verdict_enum():
     else:
         raise AssertionError("bad verdict must raise")
     print("PASS listening verdict enum usable/fixable-pattern/reject")
+
+
+# --- Phase 9 Task 5 round 3 (OpenScore CC0 box, LAST box): TDD tests. ---
+
+def check_openscore_license_file_gate():
+    assert openscore.LICENSE_SPDX == "CC0-1.0"
+    assert len(openscore.LICENSE_URLS) == 2, "Lieder + StringQuartets files"
+    assert all(u.startswith("https://raw.githubusercontent.com/OpenScore/")
+               for u in openscore.LICENSE_URLS)
+    cc0 = ("Creative Commons Legal Code\n\nCC0 1.0 Universal\n\n"
+           "the person associating CC0 with a Work voluntarily elects "
+           "to apply CC0 ... Waiver ...")
+    ok, spdx, reason = openscore.gate_license_file(cc0, openscore.LICENSE_URLS[0])
+    assert ok is True and spdx == "CC0-1.0" and reason
+    for bad in ("", "MIT License\nPermission is hereby granted",
+                "Creative Commons Attribution-ShareAlike 4.0",
+                "Creative Commons Attribution-NonCommercial 4.0"):
+        ok, _, reason = openscore.gate_license_file(bad, "u")
+        assert ok is False and reason, f"must refuse {bad!r:.40}"
+    h = openscore.license_sha(cc0)
+    assert len(h) == 64 and h != "0" * 64
+    print("PASS openscore CC0 license-file evidence gate")
+
+
+def _mk_mscx(copyright=None, extra_meta=""):
+    cp = "" if copyright is None else \
+        f'<metaTag name="copyright">{copyright}</metaTag>'
+    return (f'<?xml version="1.0" encoding="UTF-8"?>\n<museScore version="3.02">'
+            f'<Score>{cp}{extra_meta}'
+            f'<Division>480</Division><Staff id="1"></Staff>'
+            f'</Score></museScore>')
+
+
+def check_openscore_perfile_gate():
+    ok, spdx, reason = openscore.gate_file(
+        _mk_mscx("OpenScore (CC0)"), "https://example.invalid/x.mscx")
+    assert ok is True and spdx == "CC0-1.0" and reason
+    q = openscore.copyright_quote(_mk_mscx("OpenScore (CC0)"))
+    assert q == "OpenScore (CC0)", q
+    for bad in ("Schott \u00a9 2020", "Doe (c) 2020",
+                "CC BY-NC 4.0", "CC BY-SA 4.0",
+                "All rights reserved", "Used by permission of X",
+                "Copyrighted 2020 by X", "NonCommercial use only",
+                "ShareAlike 4.0"):
+        ok, _, reason = openscore.gate_file(_mk_mscx(bad), "u")
+        assert ok is False and reason, f"conflict must refuse {bad!r}"
+    # Missing dedication: no evidence -> refuse (license-first).
+    ok, _, reason = openscore.gate_file(_mk_mscx(None), "u")
+    assert ok is False and reason
+    # Ambiguous claimant with no CC0/PD signal -> refuse.
+    ok, _, reason = openscore.gate_file(_mk_mscx("John Doe"), "u")
+    assert ok is False and reason
+    # Arranger attribution without rights claim passes.
+    ok, _, _ = openscore.gate_file(
+        _mk_mscx("OpenScore (CC0)",
+                 '<metaTag name="arranger">Transcribed by X from IMSLP</metaTag>'),
+        "u")
+    assert ok is True
+    print("PASS openscore per-file CC0 gate + conflict scan")
+
+
+_V3_MINI = ('<?xml version="1.0" encoding="UTF-8"?>\n<museScore version="3.02">'
+            '<Score><metaTag name="copyright">OpenScore (CC0)</metaTag>'
+            '<Division>480</Division><Staff id="1">'
+            '<Measure><voice>'
+            '<TimeSig><sigN>4</sigN><sigD>4</sigD></TimeSig>'
+            '<Chord><durationType>quarter</durationType>'
+            '<Note><pitch>60</pitch><tpc>14</tpc></Note></Chord>'
+            '<Chord><durationType>eighth</durationType><dots>1</dots>'
+            '<Note><pitch>62</pitch></Note><Note><pitch>66</pitch></Note></Chord>'
+            '<Rest><durationType>16th</durationType></Rest>'
+            '</voice></Measure><Measure><voice>'
+            '<Tuplet><normalNotes>2</normalNotes><actualNotes>3</actualNotes></Tuplet>'
+            '<Chord><durationType>eighth</durationType>'
+            '<Note><pitch>64</pitch></Note></Chord>'
+            '<Chord><durationType>eighth</durationType>'
+            '<Note><pitch>65</pitch></Note></Chord>'
+            '<endTuplet/>'
+            '<Chord><durationType>quarter</durationType><appoggiatura/>'
+            '<Note><pitch>67</pitch></Note></Chord>'
+            '</voice></Measure></Staff></Score></museScore>')
+
+_V2_MINI = ('<?xml version="1.0" encoding="UTF-8"?>\n<museScore version="2.06">'
+            '<Score><metaTag name="copyright">OpenScore (CC0)</metaTag>'
+            '<Division>480</Division><Staff id="1"><Measure>'
+            '<TimeSig><sigN>3</sigN><sigD>4</sigD></TimeSig>'
+            '<Chord><durationType>quarter</durationType>'
+            '<Note><pitch>60</pitch></Note></Chord>'
+            '<Chord><durationType>half</durationType>'
+            '<Note><pitch>62</pitch></Note></Chord>'
+            '</Measure></Staff></Score></museScore>')
+
+
+def check_openscore_mscx_parse_minimal():
+    p = openscore.parse_mscx(_V3_MINI.encode())
+    assert p["bars"] == 2 and p["measure_ticks"] == [1920, 1920]
+    evs = p["staves"][0]
+    # bar 0: quarter @0, dotted-8th dyad @480 (dur 360), rest advances.
+    assert (evs[0][1], evs[0][2], evs[0][3]) == (0, 0, 480), evs[0]
+    assert evs[0][4] == (60,)
+    assert (evs[1][1], evs[1][2], evs[1][3]) == (0, 480, 360), evs[1]
+    assert evs[1][4] == (62, 66)
+    # bar 1: triplet 8ths scaled 2/3 -> 160 ticks each; grace skipped.
+    assert (evs[2][1], evs[2][2], evs[2][3]) == (1, 0, 160), evs[2]
+    assert evs[2][4] == (64,)
+    assert (evs[3][1], evs[3][2], evs[3][3]) == (1, 160, 160), evs[3]
+    assert all(67 not in e[4] for e in evs), "grace note must be skipped"
+    p2 = openscore.parse_mscx(_V2_MINI.encode())
+    assert p2["measure_ticks"] == [1440], p2["measure_ticks"]
+    assert p2["staves"][0][1][3] == 960, "half note fills rest of 3/4 bar"
+    print("PASS openscore stdlib .mscx parse (v2+v3, dots, tuplet, grace)")
+
+
+def _ev(pitch, start_sub, dur_sub=4):
+    return {"pitch": pitch, "start_sub": start_sub, "dur_sub": dur_sub}
+
+
+def check_openscore_lieder_mapping():
+    vocal = [_ev(72, 0), _ev(74, 4), _ev(76, 8), _ev(74, 12)]
+    rh = [{**_ev(67, 0), "pitches": (67, 72)},
+          {**_ev(65, 4), "pitches": (65,)},
+          {**_ev(64, 8), "pitches": (64, 69)},
+          {**_ev(65, 12), "pitches": (65,)}]
+    lh = [{**_ev(48, 0), "pitches": (36, 48)},
+          {**_ev(43, 4), "pitches": (31, 43)},
+          {**_ev(41, 8), "pitches": (29, 41)},
+          {**_ev(43, 12), "pitches": (31, 43)}]
+    satb, reason = openscore.map_lieder_to_satb(
+        {"vocal": vocal, "rh": rh, "lh": lh, "bars": 4})
+    assert satb is not None, reason
+    assert [e["pitch"] for e in satb["soprano"]] == [72, 74, 76, 74]
+    assert [e["pitch"] for e in satb["alto"]] == [72, 65, 69, 65], "RH tops"
+    assert [e["pitch"] for e in satb["tenor"]] == [67, 65, 64, 65], "RH bottoms"
+    assert [e["pitch"] for e in satb["bass"]] == [36, 31, 29, 31], "LH bottoms"
+    recs = jsb371.reduce_satb("lied-par", satb, openscore.SOURCE,
+                              "u", "CC0-1.0", "ab" * 32, id_prefix="os-")
+    import tokenizer as tok
+    assert recs and tok.decode_tokens(recs[0]["ids"]) is not None
+    mel = recs[0]["pattern"]["tracks"][0]["notes"]
+    assert [n["pitch"] for n in mel] == [72, 74, 76, 74], "vocal->Melody"
+    print("PASS lieder vocal/RH/LH mapping parity (vocal->Melody)")
+
+
+def check_openscore_quartet_mapping():
+    v1 = [{**_ev(0, 0), "pitches": (76, 72)}]
+    v2 = [{**_ev(0, 0), "pitches": (67,)}]
+    va = [{**_ev(0, 0), "pitches": (60,)}]
+    vc = [{**_ev(0, 0), "pitches": (36, 48)}]
+    satb, reason = openscore.map_quartet_to_satb(
+        {"vln1": v1, "vln2": v2, "vla": va, "vc": vc, "bars": 4})
+    assert satb is not None, reason
+    assert satb["soprano"][0]["pitch"] == 76, "Vln1 double-stop top"
+    assert satb["alto"][0]["pitch"] == 67
+    assert satb["tenor"][0]["pitch"] == 60
+    assert satb["bass"][0]["pitch"] == 36, "Vc chord bottom"
+    print("PASS quartet Vln1/Vc mapping parity (top/bottom picks)")
+
+
+def check_openscore_texture_skip():
+    satb, reason = openscore.map_lieder_to_satb(
+        {"vocal": [], "rh": [], "lh": [], "bars": 0})
+    assert satb is None and reason, "empty texture must skip, never force"
+    satb, reason = openscore.map_quartet_to_satb(
+        {"vln1": [_ev(72, 0)], "vln2": [], "vla": [], "vc": [],
+         "bars": 4})
+    assert satb is None and reason, "missing inner voices must skip"
+    print("PASS openscore texture skip for <4 usable voices")
+
+
+def check_openscore_candidates_fenced():
+    assert 20 <= len(openscore.CANDIDATES) <= 40, len(openscore.CANDIDATES)
+    kinds = [c["kind"] for c in openscore.CANDIDATES]
+    assert "lieder" in kinds and "quartet" in kinds
+    assert len({c["url"] for c in openscore.CANDIDATES}) == len(openscore.CANDIDATES)
+    print("PASS openscore fenced batch 20-40 (lieder + quartet)")
 
 
 if __name__ == "__main__":
