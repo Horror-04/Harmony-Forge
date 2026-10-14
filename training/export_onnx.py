@@ -144,17 +144,21 @@ def verify(path: str, torch_parity_prefix: np.ndarray | None) -> None:
         print("torch-vs-ORT argmax parity OK (real corpus prefix)")
 
 
-def main() -> int:
+def _parse_args(argv: list[str] | None = None):
     import argparse
-    import torch
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", default=CKPT_PATH)
     ap.add_argument("--model-out", default=MODEL_PATH)
     ap.add_argument("--quant-out", default=QUANT_PATH)
-    args = ap.parse_args()
+    return ap.parse_args(argv)
 
+
+def main() -> int:
     global MODEL_PATH, QUANT_PATH
+    import torch
+
+    args = _parse_args()
     MODEL_PATH, QUANT_PATH = args.model_out, args.quant_out
     model = load_lm(args.ckpt)
     # Reference argmax from torch on a real corpus prefix (ORT parity check).
