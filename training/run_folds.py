@@ -49,11 +49,19 @@ def _group_of(rec_id: str) -> str:
 
 
 def main() -> int:
+    import argparse
     import torch
 
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
+    args = ap.parse_args()
+
     torch.manual_seed(SEED)
-    device = TR.resolve_device(torch, "cuda")
-    print(f"device={torch.cuda.get_device_name(0)} torch={torch.__version__}")
+    device = TR.resolve_device(torch, args.device)
+    if args.device == "cuda":
+        print(f"device={torch.cuda.get_device_name(0)} torch={torch.__version__}")
+    else:
+        print(f"device=cpu torch={torch.__version__}")
     comp = [r for r in TR.load_corpus("train")
             if r.get("source") in TR.COMPOSED_SOURCES]
     comp = [TR.K.normalized_view(r) for r in comp]
@@ -124,6 +132,10 @@ def main() -> int:
     pick = min(means, key=means.get)
     report = {"schedule": {"s1_ep": S1_EP, "s2_ep": S2_EP, "penalty": PENALTY,
                            "keynorm": True, "seed": SEED},
+              "device": args.device,
+              "device_note": ("cuda starved by user's game (Cities2 ~90% SM), "
+                              "scout moved to cpu; identical schedule/seeds; "
+                              "device recorded per run"),
               "groups": len(gids), "cells": cells, "means": means,
               "pick": pick}
     with open(OUT, "w") as fh:
