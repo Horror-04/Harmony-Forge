@@ -250,6 +250,59 @@ def check_intervention_rate_bounds() -> None:
     print(f"PASS intervention_rate={r:.3f} in [0,1]")
 
 
+def check_slot_parity_with_penalty() -> None:
+    """Fix round (Finding 2): teacher_forced_metrics must select exactly the
+    same pitch-slot positions as train.compliance_penalty via the shared
+    predicate train.is_pitch_slot (no duplicated slot math). Crafted
+    3-Melody-note record: both functions must count 3 positions."""
+    import torch
+
+    import train as TR
+
+    notes = (tok.encode_note(0, 0, "Melody", 60, 4, 92)
+             + tok.encode_note(0, 4, "Melody", 64, 4, 92)
+             + tok.encode_note(0, 8, "Melody", 67, 4, 92))
+    ids = [3] + notes
+    assert len(ids) == 19
+    rec = {"id": "crafted-parity", "tonic": 60, "scale": "major",
+           "chords": [{"root": 48, "type": "maj"}], "ids": ids}
+    # The shared predicate locks the original inline rule.
+    assert [t for t in range(4, 18) if TR.is_pitch_slot(t)] == [4, 10, 16]
+    assert [t for t in range(4, 18)
+            if (t - 1) % 6 == 3] == [4, 10, 16]
+    ckpt = os.path.join(TRAINING, "checkpoints", "best.pt")
+    assert os.path.exists(ckpt), "train checkpoints/best.pt first"
+    out = E.teacher_forced_metrics(ckpt, [rec], torch, "cpu")
+    assert out["intervention_positions"] == 3, out["intervention_positions"]
+    torch.manual_seed(0)
+    logits = torch.randn(1, 18, 256)
+    inp = torch.tensor([ids[:-1]], dtype=torch.long)
+    pen = TR.compliance_penalty(logits, inp, [len(ids)], [rec], torch)
+    assert 0.0 <= float(pen) <= 1.0, float(pen)
+    print("PASS slot parity (3 pitch slots in both functions)")
+
+
+def check_teacher_forced_degrades_without_ckpt() -> None:
+    """Fix round (Finding 1): a missing ckpt must not kill the torch-free
+    measurement — ONNX gates/report are still produced, ce_* are None with
+    ce_error recorded, per-record intervention rates are None."""
+    model = os.path.join(TRAINING, "model.onnx")
+    assert os.path.exists(model), "export model.onnx first"
+    missing = os.path.join(TRAINING, "checkpoints", "does-not-exist.pt")
+    assert not os.path.exists(missing)
+    report = E.evaluate(model, ckpt_path=missing)
+    for k, v in report["gates"].items():
+        assert v, f"gate {k} FAILED without ckpt"
+    assert report["mean_compliance"] > 0.90
+    assert report["n_scored"] == 32
+    assert report["ce_overall"] is None
+    assert report["ce_by_phase"] == {}
+    assert report["ce_error"], "ce_error must record the skipped reason"
+    assert report["intervention_rate"] is None
+    assert all(r["intervention_rate"] is None for r in report["records"])
+    print(f"PASS torch-degraded report (gates green, {report['ce_error']})")
+
+
 def main() -> int:
     check_mirror()
     check_gates()
@@ -259,6 +312,8 @@ def main() -> int:
     check_bootstrap_ci()
     check_per_phase_ce_keys()
     check_intervention_rate_bounds()
+    check_slot_parity_with_penalty()
+    check_teacher_forced_degrades_without_ckpt()
     print("ALL eval tests PASS")
     return 0
 

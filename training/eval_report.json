@@ -107,6 +107,7 @@
   "d_ff": 1024,
   "ctx": 1024
  },
+ "ce_error": null,
  "intervention_rate": 0.024752475247524754,
  "intervention_changed": 15,
  "intervention_positions": 606,

@@ -45,7 +45,12 @@ their exact meaning; new keys are only added):
   by predicted-note track (melody/bass/chords/drums/other); ``ce_device``
   records the torch device. ``intervention_rate`` — fraction of
   Melody/Bass pitch-slot positions where the Strict mask (mask logic
-  imported from train, not duplicated) flips the greedy top-1.
+  imported from train, not duplicated) flips the greedy top-1. The
+  pitch-slot rule itself is shared too (``train.is_pitch_slot``, used by
+  both ``train.compliance_penalty`` and the teacher pass). Torch/ckpt are
+  OPTIONAL: a missing ckpt (or no torch, or ``--ckpt`` omitted via None)
+  degrades to ``ce_*``/``intervention`` None + ``ce_error`` recorded —
+  the torch-free ONNX gates/report are always produced.
 
   CKPT VS ONNX (read before quoting torch numbers): the torch metrics
   describe the --ckpt weights (``ce_ckpt`` + ``ce_config`` recorded), NOT
@@ -454,10 +459,17 @@ def teacher_forced_metrics(ckpt_path: str, recs: list[dict], torch,
                 bucket = TRACK_BUCKETS.get(track, "other")
                 ce_sum[bucket] = ce_sum.get(bucket, 0.0) + float(ce_tok[t])
                 ce_n[bucket] = ce_n.get(bucket, 0) + 1
-                if (t - 1) % tok.TOKENS_PER_NOTE != 3:
-                    continue  # pitch slots only (same rule as compliance_penalty)
+                if not TR.is_pitch_slot(t):
+                    continue  # pitch slots only (shared rule with
+                    # train.compliance_penalty — no duplicated slot math)
                 if track not in (1, 2):
                     continue  # Melody/Bass only
+                # Context from teacher-forced ids. For pitch slots
+                # (t = 4 + 6k) the note index j = (t + 1 - 1) // 6 = k, so
+                # the track token 1 + j * 6 + 2 above IS ids[t - 1], and
+                # bar/sub here equal compliance_penalty's inp[t - 3]/[t - 2]
+                # on unpadded rows — same positions, asserted by the slot
+                # parity test (test_eval.check_slot_parity_with_penalty).
                 bar, sub = ids[t - 3], ids[t - 2]
                 safe = TR._scale_ok(rec["tonic"], rec["scale"],
                                     torch).to(device)
@@ -575,13 +587,46 @@ def evaluate(model_path: str, ckpt_path: str = DEFAULT_CKPT,
         novel_means[n] = sum(scored_n) / len(scored_n) if scored_n else 0.0
         novel_scored[n] = len(scored_n)
     # Phase-9: teacher-forced torch pass (per-phase CE + intervention rate).
-    import torch
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    tf = teacher_forced_metrics(ckpt_path, val, torch, device)
-    ir_by_id = {r["id"]: r["intervention_rate"] for r in tf["per_rec"]}
-    for r in per_rec:
-        r["intervention_rate"] = ir_by_id[r["id"]]
+    # Fix round (Finding 1): torch/ckpt are OPTIONAL — a missing ckpt (or no
+    # torch) degrades to ce_*/intervention None + ce_error instead of killing
+    # the torch-free ONNX measurement. ckpt_path=None skips explicitly.
+    tf = None
+    ce_error = None
+    ce_device = None
+    try:
+        if ckpt_path is None:
+            raise ValueError("ckpt_path=None: torch metrics skipped")
+        import torch
+        dev = device
+        if dev == "auto":
+            dev = "cuda" if torch.cuda.is_available() else "cpu"
+        tf = teacher_forced_metrics(ckpt_path, val, torch, dev)
+        ce_device = tf["device"]
+    except Exception as exc:  # noqa: BLE001 — degraded report, not a crash
+        ce_error = f"{type(exc).__name__}: {exc}"
+    if tf is not None:
+        ir_by_id = {r["id"]: r["intervention_rate"] for r in tf["per_rec"]}
+        for r in per_rec:
+            r["intervention_rate"] = ir_by_id[r["id"]]
+        ce_by_phase = tf["ce_by_phase"]
+        ce_overall = tf["ce_overall"]
+        ce_tokens = tf["ce_tokens"]
+        ce_ckpt = tf["ckpt"]
+        ce_config = tf["ckpt_config"]
+        intervention_rate = tf["intervention_rate"]
+        intervention_changed = tf["intervention_changed"]
+        intervention_positions = tf["intervention_positions"]
+    else:
+        for r in per_rec:
+            r["intervention_rate"] = None
+        ce_by_phase = {}
+        ce_overall = None
+        ce_tokens = 0
+        ce_ckpt = (os.path.basename(ckpt_path) if ckpt_path else None)
+        ce_config = None
+        intervention_rate = None
+        intervention_changed = 0
+        intervention_positions = 0
     gates = {
         "compliance_ge_0.90": mean_comp >= COMPLIANCE_GATE,
         "novelty_no_exact_copy": not any(r["exact_corpus_match"] for r in per_rec),
@@ -607,15 +652,16 @@ def evaluate(model_path: str, ckpt_path: str = DEFAULT_CKPT,
             "n_new_notes_ratio_scored": len(ratios),
             "prefix_only_compliance": mean_newonly,
             "n_prefix_only_scored": len(newonly),
-            "ce_by_phase": tf["ce_by_phase"],
-            "ce_overall": tf["ce_overall"],
-            "ce_tokens": tf["ce_tokens"],
-            "ce_device": tf["device"],
-            "ce_ckpt": tf["ckpt"],
-            "ce_config": tf["ckpt_config"],
-            "intervention_rate": tf["intervention_rate"],
-            "intervention_changed": tf["intervention_changed"],
-            "intervention_positions": tf["intervention_positions"],
+            "ce_by_phase": ce_by_phase,
+            "ce_overall": ce_overall,
+            "ce_tokens": ce_tokens,
+            "ce_device": ce_device,
+            "ce_ckpt": ce_ckpt,
+            "ce_config": ce_config,
+            "ce_error": ce_error,
+            "intervention_rate": intervention_rate,
+            "intervention_changed": intervention_changed,
+            "intervention_positions": intervention_positions,
             "n_intervention_scored": len(
                 [r for r in per_rec if r["intervention_rate"] is not None]),
             "mean_new_notes": sum(r["new_notes"] for r in per_rec) / len(per_rec),
@@ -659,12 +705,20 @@ def main() -> int:
           f"verbatim_raw={report['mean_verbatim_run_raw']:.1f} "
           f"verbatim_filt={report['mean_verbatim_run_filtered']:.1f}")
     lo, hi = report["mean_compliance_ci95"]
+    if report["ce_overall"] is None:
+        ce_str = f"skipped ({report['ce_error']})"
+    else:
+        ce_str = (f"{report['ce_overall']:.3f} ({report['ce_device']})")
+    if report["intervention_rate"] is None:
+        ir_str = "skipped"
+    else:
+        ir_str = (f"{report['intervention_rate']:.4f} "
+                  f"({report['intervention_positions']} pos)")
     print(f"  ci95=[{lo:.3f},{hi:.3f}] "
           f"suffix={report['mean_suffix_compliance']:.3f} "
           f"({report['n_suffix_scored']}) "
-          f"ce_overall={report['ce_overall']:.3f} ({report['ce_device']}) "
-          f"intervention={report['intervention_rate']} "
-          f"({report['intervention_positions']} pos)")
+          f"ce_overall={ce_str} "
+          f"intervention={ir_str}")
     for k, v in report["gates"].items():
         print(f"  gate {k}: {'PASS' if v else 'FAIL'}")
     print("wrote training/eval_report.json")

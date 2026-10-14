@@ -108,6 +108,14 @@ def _norub_ok(root: int, ctype: str, torch):
     return m
 
 
+def is_pitch_slot(t: int) -> bool:
+    """True iff logits position ``t`` predicts a pitch token (slot 4 of the
+    flat codec's 6-phase layout). Single choke point for the slot rule,
+    shared by compliance_penalty and evaluate.teacher_forced_metrics (Phase
+    9 Task 1 fix round: no duplicated slot math)."""
+    return (t - 1) % 6 == 3
+
+
 def compliance_penalty(logits, inp, lens: list[int], metas: list[dict], torch):
     """Mean P(metric-fail) over Melody/Bass pitch-slot predictions.
 
@@ -128,7 +136,7 @@ def compliance_penalty(logits, inp, lens: list[int], metas: list[dict], torch):
         ok_scale = _scale_ok(meta["tonic"], meta["scale"], torch)
         chords = meta["chords"]
         for t in range(4, min(T_, ln - 1)):
-            if (t - 1) % 6 != 3:  # pitch slots only
+            if not is_pitch_slot(t):  # pitch slots only
                 continue
             track = int(inp[b, t - 1])
             if track not in (1, 2):
