@@ -1,12 +1,10 @@
 {
- "status": "NEEDS_CONTEXT",
- "source": "mutopia-pd-hymns",
- "url": "https://github.com/MutopiaProject/MutopiaProject (ftp/... + https://www.mutopiaproject.org)",
+ "status": "DONE",
  "gate": {
-  "rule": "per-file mutopiacopyright PD/CC0 only; BY-SA/NC/missing refuse",
-  "candidates": 35,
-  "accepted": 0,
-  "refused": 35,
+  "rule": "per-file PD dedication + conflict scan",
+  "candidates": 32,
+  "accepted": 32,
+  "refused": 0,
   "fetch_failed": 0
  },
  "files": [
@@ -22,10 +20,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1256"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lobe_den_Herren/lobe_den_Herren.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/von_himmel_hoch/von_himmel_hoch.ly",
@@ -39,10 +39,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/02/19-1302"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/von_himmel_hoch/von_himmel_hoch.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/es_ist_ein_ros/es_ist_ein_ros.ly",
@@ -56,10 +58,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1240"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/es_ist_ein_ros/es_ist_ein_ros.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/mit_freuden_zart/mit_freuden_zart.ly",
@@ -73,10 +77,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1262"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/mit_freuden_zart/mit_freuden_zart.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/new_britain/new_britain.ly",
@@ -90,10 +96,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/02/19-1283"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/new_britain/new_britain.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/ellacombe/ellacombe.ly",
@@ -107,10 +115,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1238"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/ellacombe/ellacombe.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/dundee/dundee.ly",
@@ -124,10 +134,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1236"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/dundee/dundee.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Old100-orig/Old100-orig.ly",
@@ -141,10 +153,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2009/04/11-194"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Old100-orig/Old100-orig.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Leoni/Leoni.ly",
@@ -158,10 +172,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2016/11/01-525"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Leoni/Leoni.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/WinchesterNew/WinchesterNew.ly",
@@ -175,10 +191,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2016/11/01-197"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/WinchesterNew/WinchesterNew.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/GoodKingWenceslas/GoodKingWenceslas.ly",
@@ -192,10 +210,12 @@
     "instrument": "Voice",
     "footer": "Mutopia-2007/01/10-905"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/GoodKingWenceslas/GoodKingWenceslas.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/es_ist_ein_ros_entsprungen/es_ist_ein_ros_entsprungen.ly",
@@ -209,10 +229,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2007/12/08-1175"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/es_ist_ein_ros_entsprungen/es_ist_ein_ros_entsprungen.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Lobt_Gott/Lobt_Gott.ly",
@@ -226,10 +248,12 @@
     "instrument": "Organ",
     "footer": "Mutopia-2005/08/07-579"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Lobt_Gott/Lobt_Gott.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Easter/Easter.ly",
@@ -243,10 +267,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2015/01/17-442"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Easter/Easter.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Ich_ruf/Ich_ruf.ly",
@@ -260,10 +286,12 @@
     "instrument": "Organ",
     "footer": "Mutopia-2005/08/07-578"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Ich_ruf/Ich_ruf.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/Nuz_my_dzis_krzescijani/Nuz_my_dzis_krzescijani.ly",
@@ -277,10 +305,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2006/12/01-856"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Nuz_my_dzis_krzescijani/Nuz_my_dzis_krzescijani.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/bonne_heure-song/bonne_heure-song.ly",
@@ -294,10 +324,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2009/08/05-198"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/bonne_heure-song/bonne_heure-song.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/lanative/lanative.ly",
@@ -311,10 +343,12 @@
     "instrument": "Piano",
     "footer": "Mutopia-2006/02/25-679"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lanative/lanative.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/lesgraces/lesgraces.ly",
@@ -328,10 +362,12 @@
     "instrument": "Piano",
     "footer": "Mutopia-2006/02/25-680"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lesgraces/lesgraces.ly",
+   "verdict": "accept"
   },
   {
    "path": "Anonymous/spirit-of-god-bellow-falls/spirit-of-god-bellow-falls.ly",
@@ -345,10 +381,12 @@
     "instrument": "Voice (SB)",
     "footer": "Mutopia-2005/08/18-593"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/spirit-of-god-bellow-falls/spirit-of-god-bellow-falls.ly",
+   "verdict": "accept"
   },
   {
    "path": "BourgeoisL/Old100/Old100.ly",
@@ -362,10 +400,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2015/01/17-90"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BourgeoisL/Old100/Old100.ly",
+   "verdict": "accept"
   },
   {
    "path": "CrugerJ/Jesus_meine_zuversicht/Jesus_meine_zuversicht.ly",
@@ -379,10 +419,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1219"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/CrugerJ/Jesus_meine_zuversicht/Jesus_meine_zuversicht.ly",
+   "verdict": "accept"
   },
   {
    "path": "CroftW/st_anne/st_anne.ly",
@@ -396,10 +438,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/02/19-1290"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/CroftW/st_anne/st_anne.ly",
+   "verdict": "accept"
   },
   {
    "path": "BradburyWB/bradbury/bradbury.ly",
@@ -413,10 +457,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1227"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/bradbury/bradbury.ly",
+   "verdict": "accept"
   },
   {
    "path": "BradburyWB/he_leadeth_me/he_leadeth_me.ly",
@@ -430,10 +476,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/01/13-1249"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/he_leadeth_me/he_leadeth_me.ly",
+   "verdict": "accept"
   },
   {
    "path": "BradburyWB/woodworth/woodworth.ly",
@@ -447,10 +495,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2008/02/19-1305"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/woodworth/woodworth.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/Nun_komm.28/Nun_komm.28.ly",
@@ -464,10 +514,12 @@
     "instrument": "Voice (SATB)",
     "footer": "Mutopia-2007/05/15-982"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/Nun_komm.28/Nun_komm.28.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/O_Haupt_voll_Blut/O_Haupt_voll_Blut.ly",
@@ -481,27 +533,12 @@
     "instrument": "Voice (SATB) and Piano",
     "footer": "Mutopia-2013/03/22-107"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
-  },
-  {
-   "path": "BachJS/BWV259/bwv-259/bwv-259.ly",
-   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV259/bwv-259/bwv-259.ly",
-   "bytes": 3901,
-   "sha": "4604574b8cc197b9f0018dabe6185eff935221a5ca814deef73d9d87617f184e",
-   "evidence": {
-    "mutopiacopyright": null,
-    "license": "Creative Commons Attribution-ShareAlike 4.0",
-    "copyright": "(markup block, not a plain dedication)",
-    "instrument": "Harpsichord, Piano",
-    "footer": "Mutopia-2016/07/12-2126"
-   },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/O_Haupt_voll_Blut/O_Haupt_voll_Blut.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/BWV269/bwv_269/bwv_269.ly",
@@ -515,10 +552,12 @@
     "instrument": "Harpsichord, Piano",
     "footer": "Mutopia-2013/03/22-378"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "copyright = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: copyright PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV269/bwv_269/bwv_269.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/BWV347/bwv347/bwv347.ly",
@@ -532,44 +571,12 @@
     "instrument": "Harpsichord, Piano",
     "footer": "Mutopia-2016/04/25-379"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
-  },
-  {
-   "path": "BachJS/BWV264/bwv-264/bwv-264.ly",
-   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV264/bwv-264/bwv-264.ly",
-   "bytes": 3498,
-   "sha": "87476929d94b0d22896d089e24d361ecebee0c496c1697fe8f814cce2ac921cd",
-   "evidence": {
-    "mutopiacopyright": null,
-    "license": "Creative Commons Attribution-ShareAlike 4.0",
-    "copyright": "(markup block, not a plain dedication)",
-    "instrument": null,
-    "footer": "Mutopia-2016/05/18-1529"
-   },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
-  },
-  {
-   "path": "BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly",
-   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly",
-   "bytes": 4723,
-   "sha": "e3f4d0488bfab6ec4b4545c4aca5f3d6586485ddca8fad14af82ee4a30dc91ea",
-   "evidence": {
-    "mutopiacopyright": null,
-    "license": "Creative Commons Attribution-ShareAlike 4.0",
-    "copyright": "(markup block, not a plain dedication)",
-    "instrument": "Choir (SATB)",
-    "footer": "Mutopia-2017/11/24-2006"
-   },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV347/bwv347/bwv347.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/BWV454/bwv_454/bwv_454.ly",
@@ -583,10 +590,12 @@
     "instrument": "Piano",
     "footer": "Mutopia-2016/04/09-2106"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV454/bwv_454/bwv_454.ly",
+   "verdict": "accept"
   },
   {
    "path": "BachJS/BWV462/bwv_462/bwv_462.ly",
@@ -600,18 +609,142 @@
     "instrument": "Piano",
     "footer": "Mutopia-2016/02/17-2009"
    },
-   "gate_ok": false,
-   "spdx": "",
-   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
-   "verdict": "refuse"
+   "header_quote": "license = \"Public Domain\"",
+   "conflicts": [],
+   "gate_ok": true,
+   "spdx": "PD",
+   "reason": "ok: license PD for https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV462/bwv_462/bwv_462.ly",
+   "verdict": "accept"
   }
  ],
- "schema_finding": "No fetched file carries a mutopiacopyright field: 2008-era files dedicate via copyright = \"Public Domain\" (plain string); 2015-era files via license = \"Public Domain\" or license = \"Creative Commons Attribution-ShareAlike 4.0\". Per the brief ONLY mutopiacopyright governs, so every candidate refuses (missing) or would refuse (BY-SA). Representative quotes in files[].evidence.",
- "blocker": "0 licensed records under the strict gate. Ruling requested: does copyright = \"Public Domain\" (2008 template) / license = \"Public Domain\" (2015 template) count as per-file PD evidence? If yes, re-run this runner with the allowlisted field set (MIDI route verified viable 2026-10-14: one MThd probe fetch, 1874 bytes). Else round 3 = OpenScore-CC0.",
+ "skips": [
+  {
+   "id": "lobe_den_Herren",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "von_himmel_hoch",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "es_ist_ein_ros",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "mit_freuden_zart",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "new_britain",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "ellacombe",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "dundee",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Old100-orig",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Leoni",
+   "reason": "skip: voice 'soprano' polyphonic (overlapping)"
+  },
+  {
+   "id": "WinchesterNew",
+   "reason": "skip: voice 'soprano' polyphonic (overlapping)"
+  },
+  {
+   "id": "GoodKingWenceslas",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Easter",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Ich_ruf",
+   "reason": "skip: voice 'soprano' polyphonic (overlapping)"
+  },
+  {
+   "id": "Nuz_my_dzis_krzescijani",
+   "reason": "skip: voice 'tenor' polyphonic (overlapping)"
+  },
+  {
+   "id": "lanative",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "lesgraces",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "spirit-of-god-bellow-falls",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Old100",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Jesus_meine_zuversicht",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "st_anne",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "bradbury",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "he_leadeth_me",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "woodworth",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "Nun_komm.28",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "O_Haupt_voll_Blut",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "bwv_269",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "bwv347",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "bwv_454",
+   "reason": "parse: <3 parts"
+  },
+  {
+   "id": "bwv_462",
+   "reason": "parse: <3 parts"
+  }
+ ],
+ "excluded_bysa": [
+  "BachJS/BWV259/bwv-259/bwv-259.ly",
+  "BachJS/BWV264/bwv-264/bwv-264.ly",
+  "BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly"
+ ],
  "counts": {
-  "loaded_pieces": 0,
-  "records": 0,
-  "decodable_rate": null,
+  "loaded_pieces": 32,
+  "records": 9,
+  "decodable_rate": 1.0,
+  "window_misses": 0,
   "dedupe_drops": {
    "train": 0,
    "val": 0,
@@ -619,16 +752,5 @@
    "intake-seen": 0
   }
  },
- "listening": {
-  "n": 0,
-  "table": "mutopia_listening.csv",
-  "verdicts": [
-   "usable",
-   "fixable-pattern",
-   "reject"
-  ],
-  "note": "skeleton only (0 rows); human listening async"
- },
- "group_split": "mutopia_group_split.json",
- "ledger": "sources.csv"
+ "dropped": []
 }
