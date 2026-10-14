@@ -1,0 +1,788 @@
+{
+ "v1_greedy": {
+  "generator": "v1_greedy (eval_report.json reference, no re-run)",
+  "n_decodable": 32,
+  "mean_compliance": 0.9070846688034188,
+  "mean_suffix": 0.3333333333333333,
+  "n_suffix_scored": 3,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 3,
+   "mean_compliance": 0.5601851851851852,
+   "mean_suffix": 0.3333333333333333,
+   "n_suffix_scored": 3
+  },
+  "procedural_only": {
+   "n": 29,
+   "n_decodable": 29,
+   "mean_compliance": 0.9429708222811671,
+   "mean_suffix": 0.0,
+   "n_suffix_scored": 0
+  },
+  "per-record": [
+   {
+    "id": "composed-O-k0",
+    "decodable": false,
+    "compliance": 0.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "composed-O-k1",
+    "decodable": true,
+    "compliance": 0.5,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k0",
+    "decodable": true,
+    "compliance": 0.625,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "composed-P-k1",
+    "decodable": true,
+    "compliance": 0.5555555555555556,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0000",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0010",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0020",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0030",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0040",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0050",
+    "decodable": true,
+    "compliance": 0.8461538461538461,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0060",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0070",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0080",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0090",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0100",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0110",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0120",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0130",
+    "decodable": true,
+    "compliance": 0.8333333333333334,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0140",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0150",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0160",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0170",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0180",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0190",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0200",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0210",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0220",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0230",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0240",
+    "decodable": true,
+    "compliance": 0.8333333333333334,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0250",
+    "decodable": true,
+    "compliance": 0.7777777777777778,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0260",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0270",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0280",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   }
+  ]
+ },
+ "kn": {
+  "n": 43,
+  "n_decodable": 43,
+  "mean_compliance": 0.7747507163878039,
+  "mean_suffix": 0.5552325581395349,
+  "n_suffix_scored": 43,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 4,
+   "mean_compliance": 0.515625,
+   "mean_suffix": 0.03125,
+   "n_suffix_scored": 4
+  },
+  "procedural_only": {
+   "n": 39,
+   "n_decodable": 39,
+   "mean_compliance": 0.8013277129403993,
+   "mean_suffix": 0.6089743589743589,
+   "n_suffix_scored": 39
+  },
+  "per-record": [
+   {
+    "id": "os-lc4982535-w00",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4982535-w02",
+    "decodable": true,
+    "compliance": 0.7241379310344828,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc4982535-w04",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w00",
+    "decodable": true,
+    "compliance": 0.9354838709677419,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w02",
+    "decodable": true,
+    "compliance": 0.8857142857142857,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w04",
+    "decodable": true,
+    "compliance": 0.8181818181818182,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985932-w00",
+    "decodable": true,
+    "compliance": 0.7307692307692307,
+    "suffix_compliance": 0.125
+   },
+   {
+    "id": "os-lc4985932-w02",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985932-w04",
+    "decodable": true,
+    "compliance": 0.7586206896551724,
+    "suffix_compliance": 0.125
+   },
+   {
+    "id": "os-lc4985938-w00",
+    "decodable": true,
+    "compliance": 0.6129032258064516,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc4985938-w02",
+    "decodable": true,
+    "compliance": 0.5483870967741935,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc4985938-w04",
+    "decodable": true,
+    "compliance": 0.9032258064516129,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985951-w00",
+    "decodable": true,
+    "compliance": 0.6129032258064516,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc4985951-w02",
+    "decodable": true,
+    "compliance": 0.6,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc4985951-w04",
+    "decodable": true,
+    "compliance": 0.8636363636363636,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc5025985-w00",
+    "decodable": true,
+    "compliance": 0.7,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-lc5025985-w02",
+    "decodable": true,
+    "compliance": 0.9090909090909091,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc5025985-w04",
+    "decodable": true,
+    "compliance": 0.5333333333333333,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-sq7114183-w00",
+    "decodable": true,
+    "compliance": 0.45161290322580644,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-sq7114183-w02",
+    "decodable": true,
+    "compliance": 0.5483870967741935,
+    "suffix_compliance": 0.125
+   },
+   {
+    "id": "os-sq7114183-w04",
+    "decodable": true,
+    "compliance": 0.6666666666666666,
+    "suffix_compliance": 0.125
+   },
+   {
+    "id": "os-sq7127785-w00",
+    "decodable": true,
+    "compliance": 0.92,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7127785-w02",
+    "decodable": true,
+    "compliance": 0.6842105263157895,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7127785-w04",
+    "decodable": true,
+    "compliance": 0.7777777777777778,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7397765-w00",
+    "decodable": true,
+    "compliance": 0.92,
+    "suffix_compliance": 0.75
+   },
+   {
+    "id": "os-sq7397765-w02",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7397765-w04",
+    "decodable": true,
+    "compliance": 0.9411764705882353,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8075304-w00",
+    "decodable": true,
+    "compliance": 0.8717948717948718,
+    "suffix_compliance": 0.875
+   },
+   {
+    "id": "os-sq8075304-w02",
+    "decodable": true,
+    "compliance": 0.8857142857142857,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8075304-w04",
+    "decodable": true,
+    "compliance": 0.8333333333333334,
+    "suffix_compliance": 0.875
+   },
+   {
+    "id": "os-sq8509238-w00",
+    "decodable": true,
+    "compliance": 0.5714285714285714,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-sq8509238-w02",
+    "decodable": true,
+    "compliance": 0.8666666666666667,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-sq8509238-w04",
+    "decodable": true,
+    "compliance": 0.9375,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "os-sq8907120-w00",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8907120-w02",
+    "decodable": true,
+    "compliance": 0.88,
+    "suffix_compliance": 0.875
+   },
+   {
+    "id": "os-sq8907120-w04",
+    "decodable": true,
+    "compliance": 0.9583333333333334,
+    "suffix_compliance": 0.875
+   },
+   {
+    "id": "mut-Lobt_Gott-w00",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "mut-Lobt_Gott-w02",
+    "decodable": true,
+    "compliance": 0.8181818181818182,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "mut-Lobt_Gott-w04",
+    "decodable": true,
+    "compliance": 0.782608695652174,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-Q-k2",
+    "decodable": true,
+    "compliance": 0.5,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "composed-R-k2",
+    "decodable": true,
+    "compliance": 0.5,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "composed-S-k2",
+    "decodable": true,
+    "compliance": 0.5,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "composed-T-k2",
+    "decodable": true,
+    "compliance": 0.5625,
+    "suffix_compliance": 0.125
+   }
+  ],
+  "generator": "kn_continue(order=4)"
+ },
+ "theory": {
+  "n": 43,
+  "n_decodable": 43,
+  "mean_compliance": 0.9128981357821176,
+  "mean_suffix": 1.0,
+  "n_suffix_scored": 43,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 4,
+   "mean_compliance": 1.0,
+   "mean_suffix": 1.0,
+   "n_suffix_scored": 4
+  },
+  "procedural_only": {
+   "n": 39,
+   "n_decodable": 39,
+   "mean_compliance": 0.9039646112469502,
+   "mean_suffix": 1.0,
+   "n_suffix_scored": 39
+  },
+  "per-record": [
+   {
+    "id": "os-lc4982535-w00",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4982535-w02",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4982535-w04",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w00",
+    "decodable": true,
+    "compliance": 0.9354838709677419,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w02",
+    "decodable": true,
+    "compliance": 0.8857142857142857,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985925-w04",
+    "decodable": true,
+    "compliance": 0.8181818181818182,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985932-w00",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985932-w02",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985932-w04",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985938-w00",
+    "decodable": true,
+    "compliance": 0.8709677419354839,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985938-w02",
+    "decodable": true,
+    "compliance": 0.8064516129032258,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985938-w04",
+    "decodable": true,
+    "compliance": 0.9032258064516129,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985951-w00",
+    "decodable": true,
+    "compliance": 0.8709677419354839,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985951-w02",
+    "decodable": true,
+    "compliance": 0.8666666666666667,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc4985951-w04",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc5025985-w00",
+    "decodable": true,
+    "compliance": 0.9666666666666667,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc5025985-w02",
+    "decodable": true,
+    "compliance": 0.9333333333333333,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-lc5025985-w04",
+    "decodable": true,
+    "compliance": 0.8,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7114183-w00",
+    "decodable": true,
+    "compliance": 0.7096774193548387,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7114183-w02",
+    "decodable": true,
+    "compliance": 0.7741935483870968,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7114183-w04",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7127785-w00",
+    "decodable": true,
+    "compliance": 0.92,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7127785-w02",
+    "decodable": true,
+    "compliance": 0.7777777777777778,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7127785-w04",
+    "decodable": true,
+    "compliance": 0.7777777777777778,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7397765-w00",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7397765-w02",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq7397765-w04",
+    "decodable": true,
+    "compliance": 0.96,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8075304-w00",
+    "decodable": true,
+    "compliance": 0.8974358974358975,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8075304-w02",
+    "decodable": true,
+    "compliance": 0.8857142857142857,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8075304-w04",
+    "decodable": true,
+    "compliance": 0.8666666666666667,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8509238-w00",
+    "decodable": true,
+    "compliance": 0.9523809523809523,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8509238-w02",
+    "decodable": true,
+    "compliance": 0.9545454545454546,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8509238-w04",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8907120-w00",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8907120-w02",
+    "decodable": true,
+    "compliance": 0.92,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "os-sq8907120-w04",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "mut-Lobt_Gott-w00",
+    "decodable": true,
+    "compliance": 0.9,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "mut-Lobt_Gott-w02",
+    "decodable": true,
+    "compliance": 0.8181818181818182,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "mut-Lobt_Gott-w04",
+    "decodable": true,
+    "compliance": 0.782608695652174,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-Q-k2",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-R-k2",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-S-k2",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-T-k2",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   }
+  ],
+  "generator": "theory_continue"
+ },
+ "split": "test_locked"
+}
