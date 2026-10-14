@@ -1,0 +1,634 @@
+{
+ "status": "NEEDS_CONTEXT",
+ "source": "mutopia-pd-hymns",
+ "url": "https://github.com/MutopiaProject/MutopiaProject (ftp/... + https://www.mutopiaproject.org)",
+ "gate": {
+  "rule": "per-file mutopiacopyright PD/CC0 only; BY-SA/NC/missing refuse",
+  "candidates": 35,
+  "accepted": 0,
+  "refused": 35,
+  "fetch_failed": 0
+ },
+ "files": [
+  {
+   "path": "Anonymous/lobe_den_Herren/lobe_den_Herren.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lobe_den_Herren/lobe_den_Herren.ly",
+   "bytes": 4558,
+   "sha": "025474c3fa585ee72b2bb65122ee39315b78cff14fd0c96fba26f80bbaf455bd",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1256"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/von_himmel_hoch/von_himmel_hoch.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/von_himmel_hoch/von_himmel_hoch.ly",
+   "bytes": 4179,
+   "sha": "b2909d1710479dd258fbb348f117df4ca3f142af2bb013aa6c635b7ec10a5517",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/02/19-1302"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/es_ist_ein_ros/es_ist_ein_ros.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/es_ist_ein_ros/es_ist_ein_ros.ly",
+   "bytes": 4394,
+   "sha": "267d5323005433ba784ea1de02b5c8492a43fc872a983e85032af2a82faf595f",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1240"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/mit_freuden_zart/mit_freuden_zart.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/mit_freuden_zart/mit_freuden_zart.ly",
+   "bytes": 4820,
+   "sha": "fede7c5f31e05cf88a6281c6ef849e7f425ca26f3ea8b2bf7bc4e92d13aea8c3",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1262"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/new_britain/new_britain.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/new_britain/new_britain.ly",
+   "bytes": 4042,
+   "sha": "98d91c76395a37fd0379896f6fee83f61386de08dd544ef188bc98251c513f4c",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/02/19-1283"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/ellacombe/ellacombe.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/ellacombe/ellacombe.ly",
+   "bytes": 4916,
+   "sha": "58b3a8436cbf3655b4d17734a04a4a80d285871a0d3f61a87c4ddc79d4ee228b",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1238"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/dundee/dundee.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/dundee/dundee.ly",
+   "bytes": 3844,
+   "sha": "d1fe189df0626009eeee5351760dafd008ce05420ff9457cc58513f520e225fc",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1236"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Old100-orig/Old100-orig.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Old100-orig/Old100-orig.ly",
+   "bytes": 3040,
+   "sha": "439d4597a70d553188e90daf78b9cce53c2399fc583ca2da8a01af3e259f029c",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2009/04/11-194"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Leoni/Leoni.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Leoni/Leoni.ly",
+   "bytes": 4568,
+   "sha": "65ddcdddde7301c0b6a96960fdaf7c8b332ca7bdaca782f9cdbfdbe33d37aa6e",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2016/11/01-525"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/WinchesterNew/WinchesterNew.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/WinchesterNew/WinchesterNew.ly",
+   "bytes": 3600,
+   "sha": "a65d1c0c049d4b5e60e92e0a2baff6da2e59ef1a06eefd54894c7b29765fffbe",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2016/11/01-197"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/GoodKingWenceslas/GoodKingWenceslas.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/GoodKingWenceslas/GoodKingWenceslas.ly",
+   "bytes": 4239,
+   "sha": "d5967412ef47cc91add5eb361c25392273aaa7557028bfd76b1becb3af0e35e7",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice",
+    "footer": "Mutopia-2007/01/10-905"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/es_ist_ein_ros_entsprungen/es_ist_ein_ros_entsprungen.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/es_ist_ein_ros_entsprungen/es_ist_ein_ros_entsprungen.ly",
+   "bytes": 6538,
+   "sha": "d1ce653a6a49f3f1bc57fc979aea5fd4568aeafa48a2a2c7520ad6bbc95aad8d",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2007/12/08-1175"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Lobt_Gott/Lobt_Gott.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Lobt_Gott/Lobt_Gott.ly",
+   "bytes": 6780,
+   "sha": "bde3527812812a7f5fa5d1f182073eb60f5c93e6ca62b7ab32135445b3c31ff0",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Organ",
+    "footer": "Mutopia-2005/08/07-579"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Easter/Easter.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Easter/Easter.ly",
+   "bytes": 4126,
+   "sha": "7feb95f7b6feb12cadf84685d1efca32a428384c96e4789da743f00348d10bc8",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2015/01/17-442"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Ich_ruf/Ich_ruf.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Ich_ruf/Ich_ruf.ly",
+   "bytes": 6245,
+   "sha": "a357b49854d1dc69ef6b895657a31e0435a3cb17c95babaea461ed768582206e",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Organ",
+    "footer": "Mutopia-2005/08/07-578"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/Nuz_my_dzis_krzescijani/Nuz_my_dzis_krzescijani.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/Nuz_my_dzis_krzescijani/Nuz_my_dzis_krzescijani.ly",
+   "bytes": 6638,
+   "sha": "80eb06cbbd51cf3f442d0cda4e84d614947f1136cd5f0bcfacb59b41352561c5",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2006/12/01-856"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/bonne_heure-song/bonne_heure-song.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/bonne_heure-song/bonne_heure-song.ly",
+   "bytes": 7437,
+   "sha": "3ba57f4b7cd778cf8ac101af297dc82a8347ad5fffd4604a39f203ea669fa91e",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2009/08/05-198"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/lanative/lanative.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lanative/lanative.ly",
+   "bytes": 3997,
+   "sha": "b451ae1c77e689b7e49ef207ad050c41ffd5c91c4fde1f9154068223128738f8",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Piano",
+    "footer": "Mutopia-2006/02/25-679"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/lesgraces/lesgraces.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/lesgraces/lesgraces.ly",
+   "bytes": 4126,
+   "sha": "610d9c7fa486100cdee419807bb910cd9d1fc9cff744634a044acd6e35c5d0bc",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Piano",
+    "footer": "Mutopia-2006/02/25-680"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "Anonymous/spirit-of-god-bellow-falls/spirit-of-god-bellow-falls.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/Anonymous/spirit-of-god-bellow-falls/spirit-of-god-bellow-falls.ly",
+   "bytes": 4155,
+   "sha": "6f0133de1519355205c48481cacb89f6228e44b749f2dc7f5611e14c92e2d94f",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SB)",
+    "footer": "Mutopia-2005/08/18-593"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BourgeoisL/Old100/Old100.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BourgeoisL/Old100/Old100.ly",
+   "bytes": 3074,
+   "sha": "adfc2d6056435da422bf24d1d59b330d6ee32372157965fa81f6d378bd6173c5",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2015/01/17-90"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "CrugerJ/Jesus_meine_zuversicht/Jesus_meine_zuversicht.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/CrugerJ/Jesus_meine_zuversicht/Jesus_meine_zuversicht.ly",
+   "bytes": 4193,
+   "sha": "74fb4e8bd2d541cf3a084ebe170ed74891808fab4a120890cc8dceb9d450f287",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1219"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "CroftW/st_anne/st_anne.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/CroftW/st_anne/st_anne.ly",
+   "bytes": 3659,
+   "sha": "27a83b88c50f7c9a3420d03be331c691e8e982f29cb666fd04fbbe10fd8032d8",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/02/19-1290"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BradburyWB/bradbury/bradbury.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/bradbury/bradbury.ly",
+   "bytes": 4756,
+   "sha": "c38e6f51402ef6ce526982fd41dd69339c293662e39656d3e9033c567e8e41b0",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1227"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BradburyWB/he_leadeth_me/he_leadeth_me.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/he_leadeth_me/he_leadeth_me.ly",
+   "bytes": 4848,
+   "sha": "adfffa2ff1f0ae2445a6e503f3fc6789e7b99cab47892682d3a6ce2942e96bb6",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/01/13-1249"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BradburyWB/woodworth/woodworth.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BradburyWB/woodworth/woodworth.ly",
+   "bytes": 4063,
+   "sha": "cc6bdb1cf76827788999dd1258e164cdde02debe2b12c0e820b6d5784bafe5f7",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2008/02/19-1305"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/Nun_komm.28/Nun_komm.28.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/Nun_komm.28/Nun_komm.28.ly",
+   "bytes": 2956,
+   "sha": "c1455f80d72152c9fd0c1983d3f6b6cd65587252b879533a002e99c84d1737d9",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB)",
+    "footer": "Mutopia-2007/05/15-982"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/O_Haupt_voll_Blut/O_Haupt_voll_Blut.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/O_Haupt_voll_Blut/O_Haupt_voll_Blut.ly",
+   "bytes": 4800,
+   "sha": "ff681aa79e0e09bdfcfbc01980bbfb778b5567ec3612d9c155548ba018856b58",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Voice (SATB) and Piano",
+    "footer": "Mutopia-2013/03/22-107"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV259/bwv-259/bwv-259.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV259/bwv-259/bwv-259.ly",
+   "bytes": 3901,
+   "sha": "4604574b8cc197b9f0018dabe6185eff935221a5ca814deef73d9d87617f184e",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Creative Commons Attribution-ShareAlike 4.0",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Harpsichord, Piano",
+    "footer": "Mutopia-2016/07/12-2126"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV269/bwv_269/bwv_269.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV269/bwv_269/bwv_269.ly",
+   "bytes": 5109,
+   "sha": "0ea1f87843ff2da5b4bc31e0ba711a015256268ef722996dc0f08e05ab215028",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": null,
+    "copyright": "Public Domain",
+    "instrument": "Harpsichord, Piano",
+    "footer": "Mutopia-2013/03/22-378"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV347/bwv347/bwv347.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV347/bwv347/bwv347.ly",
+   "bytes": 5037,
+   "sha": "6d6f6fd1b18c1ca3425345168b2e244fe5403c6d14ed7e65ce3b0ee256c336a5",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Harpsichord, Piano",
+    "footer": "Mutopia-2016/04/25-379"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV264/bwv-264/bwv-264.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV264/bwv-264/bwv-264.ly",
+   "bytes": 3498,
+   "sha": "87476929d94b0d22896d089e24d361ecebee0c496c1697fe8f814cce2ac921cd",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Creative Commons Attribution-ShareAlike 4.0",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": null,
+    "footer": "Mutopia-2016/05/18-1529"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly",
+   "bytes": 4723,
+   "sha": "e3f4d0488bfab6ec4b4545c4aca5f3d6586485ddca8fad14af82ee4a30dc91ea",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Creative Commons Attribution-ShareAlike 4.0",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Choir (SATB)",
+    "footer": "Mutopia-2017/11/24-2006"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV454/bwv_454/bwv_454.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV454/bwv_454/bwv_454.ly",
+   "bytes": 5948,
+   "sha": "ea39ffd48894df53a64559de9c3a6aa9cf1fa7ae472e05e3428813c240406ee5",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Piano",
+    "footer": "Mutopia-2016/04/09-2106"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  },
+  {
+   "path": "BachJS/BWV462/bwv_462/bwv_462.ly",
+   "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV462/bwv_462/bwv_462.ly",
+   "bytes": 6245,
+   "sha": "fecf8113d5eb256e1773c16b265ac0544f55946b2bf87d108ccb02963258e87f",
+   "evidence": {
+    "mutopiacopyright": null,
+    "license": "Public Domain",
+    "copyright": "(markup block, not a plain dedication)",
+    "instrument": "Piano",
+    "footer": "Mutopia-2016/02/17-2009"
+   },
+   "gate_ok": false,
+   "spdx": "",
+   "reason": "refuse: missing mutopiacopyright header field (PD-composition != PD-encoding; BY-SA/NC/unknown refused)",
+   "verdict": "refuse"
+  }
+ ],
+ "schema_finding": "No fetched file carries a mutopiacopyright field: 2008-era files dedicate via copyright = \"Public Domain\" (plain string); 2015-era files via license = \"Public Domain\" or license = \"Creative Commons Attribution-ShareAlike 4.0\". Per the brief ONLY mutopiacopyright governs, so every candidate refuses (missing) or would refuse (BY-SA). Representative quotes in files[].evidence.",
+ "blocker": "0 licensed records under the strict gate. Ruling requested: does copyright = \"Public Domain\" (2008 template) / license = \"Public Domain\" (2015 template) count as per-file PD evidence? If yes, re-run this runner with the allowlisted field set (MIDI route verified viable 2026-10-14: one MThd probe fetch, 1874 bytes). Else round 3 = OpenScore-CC0.",
+ "counts": {
+  "loaded_pieces": 0,
+  "records": 0,
+  "decodable_rate": null,
+  "dedupe_drops": {
+   "train": 0,
+   "val": 0,
+   "heads": 0,
+   "intake-seen": 0
+  }
+ },
+ "listening": {
+  "n": 0,
+  "table": "mutopia_listening.csv",
+  "verdicts": [
+   "usable",
+   "fixable-pattern",
+   "reject"
+  ],
+  "note": "skeleton only (0 rows); human listening async"
+ },
+ "group_split": "mutopia_group_split.json",
+ "ledger": "sources.csv"
+}
