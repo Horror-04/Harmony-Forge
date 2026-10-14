@@ -209,8 +209,9 @@ ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
 | seed | S1 best (ep) | S2 | wall | ckpt |
 |---|---|---|---|---|
 | 7 | 0.6388 (ep29) | early-stop ep24, never beats S1 | 765.6s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
-| 99 | 0.6193 (ep29, S1) | running (S2) | — | — |
-| 11/23/42 | queued sequential | — | — | — |
+| 99 | 0.6193 (ep29, S1) | early-stop ep24, never beats S1 | 170.0s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
+| 11 | running S1 (~4s/ep, GPU free) | — | — | — |
+| 23/42 | queued sequential | — | — | — |
 
 - s7 reproduces pre-restart val bit-exact (0.6388) → determinism holds
   across the restart; 6eb9899 fix verified (state dict present).
@@ -220,6 +221,26 @@ ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
   adopted as queue-front; order is seed-irrelevant. Pace ~4s/ep (GPU
   now free) → all 5 seeds ETA ~00:40 UTC.
 - Curve csvs rewrite at run end (untracked, left uncommitted).
+
+## I. Gate-eval incident (honesty, 2026-10-15 ~00:00 UTC)
+
+- Background `evaluate.py --ckpt v2_pen0.0_s7.pt --split test_locked
+  --seeds 7,11,23,42,99` scored **v1 generation** (model.onnx 34/43,
+  comp 0.857 — the --model default) and SKIPPED ce/intervention with a
+  state_dict RuntimeError (built ff.2 model vs ckpt ff.3 keys =
+  legacy `_build_lm_from_config` path taken, arch-tag path NOT taken).
+- BUT direct `_load_torch_lm` on the same file minutes later loads
+  STRICT-OK (arch 'large' in ARCHES, 0 key diff). Cause of the
+  transient mismatch unresolved — recorded, not hand-waved. Single-seed
+  probe (`--seeds 7`, eval_probe_s7.json) running to determine whether
+  the failure reproduces.
+- The misleading `eval_test_locked_v2s7.json` (v1 numbers under a v2
+  name) was DELETED, never committed. No gate numbers banked from it.
+- Protocol correction: DoD gates are GENERATION metrics → they need
+  v2 ONNX exports (`export_onnx.py` under .venv); torch --ckpt path
+  only feeds ce/intervention context. Gate plan §F revised: export
+  each finalist → `evaluate.py --model <v2.onnx> --split test_locked
+  --seeds 7,11,23,42,99` (+ --ckpt for ce labels).
 
 ## Self-review + concerns
 
