@@ -151,6 +151,18 @@ NO third worker (would OOM).
 s7+s11 launched 23:20 UTC (2 parallel, logs run_s7/s11.log); s23/s42/
 s99 queued in waves. s7 reproducing pre-restart trajectory exactly
 (ep0 3.0299/1.7704 — GPU-deterministic so far).
+**s7 re-run DONE 00:05 UTC: best 0.6388 (bit-identical to pre-restart —
+full GPU determinism), wall 766s, ckpt carries state (78 tensors).
+s11 launched solo immediately after.
+**s11 re-run DONE: best 0.6332 (identical to pre-restart), wall 172s
+(5x faster than s7's 766s — same epoch count, machine clock/contention
+variance; trajectory deterministic-identical so math unaffected), ckpt
+78 tensors OK. s23 launched.
+**s23 re-run DONE: best 0.6691 (identical), wall 263s, ckpt 78 tensors
+OK. s42 launched (the twice-killed seed — third attempt).
+**s42 DONE: best 0.6319 (matches the killed first attempt's sidecar
+0.6319 exactly — value confirmed, not lost), wall 416s, ckpt 78
+tensors OK. s99 launched (last finalist).********
 
 **CUT (deadline throughput, 23:40 UTC):** 2-way parallel ran ~4 min/ep
 (~10x solo: SM+BW split + near-full VRAM 7690 MiB) → projected
@@ -191,6 +203,23 @@ Verified while waiting: `evaluate.py --ckpt --split test_locked --seeds`
 ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
 --model-out --quant-out` runs under training/.venv (onnx 1.23.2 + ORT
 1.31.0; .venv-cuda lacks onnx — export on CPU, recorded).
+
+## H. Finalists re-run (large/pen0.0/keynorm/cuda, full --v2 schedule)
+
+| seed | S1 best (ep) | S2 | wall | ckpt |
+|---|---|---|---|---|
+| 7 | 0.6388 (ep29) | early-stop ep24, never beats S1 | 765.6s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
+| 99 | 0.6193 (ep29, S1) | running (S2) | — | — |
+| 11/23/42 | queued sequential | — | — | — |
+
+- s7 reproduces pre-restart val bit-exact (0.6388) → determinism holds
+  across the restart; 6eb9899 fix verified (state dict present).
+- s99 appeared 23:47 UTC (PID 13824, wrapper 6952 zero-CPU — same
+  wrapper pattern as 7276/21844, verified by CPU+parent chain BEFORE
+  any kill; no duplicate). Launcher unknown (not this session);
+  adopted as queue-front; order is seed-irrelevant. Pace ~4s/ep (GPU
+  now free) → all 5 seeds ETA ~00:40 UTC.
+- Curve csvs rewrite at run end (untracked, left uncommitted).
 
 ## Self-review + concerns
 
