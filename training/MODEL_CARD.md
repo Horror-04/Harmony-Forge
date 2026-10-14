@@ -211,3 +211,36 @@
 - Consequence: self-distillation remains the standing approach (Task 2 ran on it and
   was shelved on the gate with WIP preserved in history, not shipped); no external
   teacher enters the loop. Full evidence table: `.superpowers/sdd/2026-10-13-phase-8/task-3-report.md`.
+
+## v2 candidate (Phase 9 Task 6 — SHELVED on the gate, weights NOT shipped)
+
+- Recipe (frozen a priori): large arch 3,558,144 params (group-4-fold
+  scout pick: means small 1.3491 / medium 1.2665 / large 1.2031, large
+  wins 4/4 folds); dropout 0.15 attn/MLP; 10% context-only pitch-dropout;
+  WD 0.1; label smoothing 0.05 pitch/dur/vel slots only; Goldfish
+  FNV-1a width-8 k=4; penalty 0.0 (a priori sweep {0, 0.1, 1.0} on val
+  composed melody-CE: 0.6388 / 0.6582 / 0.8663); Stage 1 30ep lr 5e-4
+  50/50 smart-proc/composed + Stage 2 cosine 1e-4→1e-5 90/10 (best-so-far
+  kept; stage 2 never beat stage 1 on any run — disclosed pattern).
+  Keynorm views ON (chord-shift parity precondition met). Train 334
+  (composed pool 75); locked test 43 records by-piece+melody, committed
+  before any training, never touched for selection.
+- Locked-test DoD (5 finalist seeds, greedy ONNX, 43/43 decodable on all):
+  mean_new_notes 4.3–5.7 (need ≥ 6.0 — FAIL all); suffix_compliance
+  0.766–0.823 (need ≥ 0.90 — FAIL all); verbatim filt run max 3, 0
+  violations (PASS); novel_interval_4gram 0.633–0.654 (need ≥ 0.60 —
+  PASS). v1 reference for contrast: 34/43, 4.5, 0.742, max 3, 0.684.
+- Baselines on composed-val (val composed[n=4]): v2 best (seed 23)
+  comp 0.594 / suffix 0.750 vs KN 0.707/0.969 vs theory-only 0.800/1.000
+  — LOSES to both. Ship rule (all-green + baselines-beaten) not met.
+- VERDICT: NEEDS_CONTEXT — nothing shipped; `training/model.onnx` +
+  quant + `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+  Candidate weights (`checkpoints/v2_pen0.0_s{7,11,23,42,99}.pt` + local
+  `v2_s*.onnx`, git-ignored) kept locally for resume, not committed.
+- Gaps recorded: per-condition A/B renders unwired (`render_batch.py`
+  drives only the built-in Strict/C-major C++ generator; no
+  model→MIDI driver exists; `render_midi` binary unbuilt); interval
+  memo version not built; val composed split is 4 records (noisy
+  selection signal — procedure followed literally, no hedging).
+  Full numbers: `.superpowers/sdd/2026-10-14-phase-9/task-6-report.md`,
+  evidence `training/eval_v2_s*.json` + `training/eval_v2val_s*.json`.

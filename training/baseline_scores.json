@@ -223,29 +223,29 @@
  "kn": {
   "n": 33,
   "n_decodable": 33,
-  "mean_compliance": 0.7892379951203481,
-  "mean_suffix": 0.6666666666666666,
+  "mean_compliance": 0.8420309537956596,
+  "mean_suffix": 0.7462121212121212,
   "n_suffix_scored": 33,
   "composed_only": {
    "n": 4,
    "n_decodable": 4,
-   "mean_compliance": 0.5714285714285714,
-   "mean_suffix": 1.0,
+   "mean_compliance": 0.7071428571428572,
+   "mean_suffix": 0.96875,
    "n_suffix_scored": 4
   },
   "procedural_only": {
    "n": 29,
    "n_decodable": 29,
-   "mean_compliance": 0.8192806742502483,
-   "mean_suffix": 0.6206896551724138,
+   "mean_compliance": 0.860636208506391,
+   "mean_suffix": 0.7155172413793104,
    "n_suffix_scored": 29
   },
   "per-record": [
    {
     "id": "composed-O-k0",
     "decodable": true,
-    "compliance": 0.42857142857142855,
-    "suffix_compliance": 1.0
+    "compliance": 0.6666666666666666,
+    "suffix_compliance": 0.875
    },
    {
     "id": "composed-O-k1",
@@ -256,20 +256,20 @@
    {
     "id": "composed-P-k0",
     "decodable": true,
-    "compliance": 0.7142857142857143,
+    "compliance": 0.8666666666666667,
     "suffix_compliance": 1.0
    },
    {
     "id": "composed-P-k1",
     "decodable": true,
-    "compliance": 0.7142857142857143,
+    "compliance": 0.8666666666666667,
     "suffix_compliance": 1.0
    },
    {
     "id": "procedural-0000",
     "decodable": true,
-    "compliance": 0.6538461538461539,
-    "suffix_compliance": 0.0
+    "compliance": 0.7307692307692307,
+    "suffix_compliance": 0.25
    },
    {
     "id": "procedural-0010",
@@ -280,38 +280,38 @@
    {
     "id": "procedural-0020",
     "decodable": true,
-    "compliance": 0.6538461538461539,
-    "suffix_compliance": 0.0
+    "compliance": 0.7307692307692307,
+    "suffix_compliance": 0.25
    },
    {
     "id": "procedural-0030",
-    "decodable": true,
-    "compliance": 0.6190476190476191,
-    "suffix_compliance": 0.0
-   },
-   {
-    "id": "procedural-0040",
     "decodable": true,
     "compliance": 1.0,
     "suffix_compliance": 1.0
    },
    {
+    "id": "procedural-0040",
+    "decodable": true,
+    "compliance": 0.5294117647058824,
+    "suffix_compliance": 0.0
+   },
+   {
     "id": "procedural-0050",
     "decodable": true,
-    "compliance": 0.5238095238095238,
-    "suffix_compliance": 0.0
+    "compliance": 0.8571428571428571,
+    "suffix_compliance": 0.875
    },
    {
     "id": "procedural-0060",
     "decodable": true,
-    "compliance": 0.6923076923076923,
-    "suffix_compliance": 0.0
+    "compliance": 0.7692307692307693,
+    "suffix_compliance": 0.25
    },
    {
     "id": "procedural-0070",
     "decodable": true,
-    "compliance": 0.9230769230769231,
-    "suffix_compliance": 1.0
+    "compliance": 0.6538461538461539,
+    "suffix_compliance": 0.125
    },
    {
     "id": "procedural-0080",
@@ -322,14 +322,14 @@
    {
     "id": "procedural-0090",
     "decodable": true,
-    "compliance": 0.5294117647058824,
-    "suffix_compliance": 0.0
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
    },
    {
     "id": "procedural-0100",
     "decodable": true,
-    "compliance": 0.6153846153846154,
-    "suffix_compliance": 0.0
+    "compliance": 0.6923076923076923,
+    "suffix_compliance": 0.25
    },
    {
     "id": "procedural-0110",
@@ -346,8 +346,8 @@
    {
     "id": "procedural-0130",
     "decodable": true,
-    "compliance": 0.8846153846153846,
-    "suffix_compliance": 1.0
+    "compliance": 0.8461538461538461,
+    "suffix_compliance": 0.875
    },
    {
     "id": "procedural-0140",
@@ -358,20 +358,20 @@
    {
     "id": "procedural-0150",
     "decodable": true,
-    "compliance": 1.0,
-    "suffix_compliance": 1.0
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 0.875
    },
    {
     "id": "procedural-0160",
     "decodable": true,
-    "compliance": 0.9411764705882353,
-    "suffix_compliance": 1.0
+    "compliance": 0.47058823529411764,
+    "suffix_compliance": 0.0
    },
    {
     "id": "procedural-0170",
     "decodable": true,
-    "compliance": 0.9615384615384616,
-    "suffix_compliance": 1.0
+    "compliance": 0.6923076923076923,
+    "suffix_compliance": 0.125
    },
    {
     "id": "procedural-0180",
@@ -388,20 +388,20 @@
    {
     "id": "procedural-0200",
     "decodable": true,
-    "compliance": 0.6538461538461539,
-    "suffix_compliance": 0.0
-   },
-   {
-    "id": "procedural-0210",
-    "decodable": true,
     "compliance": 0.9615384615384616,
     "suffix_compliance": 1.0
    },
    {
+    "id": "procedural-0210",
+    "decodable": true,
+    "compliance": 0.6923076923076923,
+    "suffix_compliance": 0.125
+   },
+   {
     "id": "procedural-0220",
     "decodable": true,
-    "compliance": 0.6190476190476191,
-    "suffix_compliance": 0.0
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
    },
    {
     "id": "procedural-0230",
@@ -412,14 +412,14 @@
    {
     "id": "procedural-0240",
     "decodable": true,
-    "compliance": 0.8846153846153846,
-    "suffix_compliance": 1.0
+    "compliance": 0.8461538461538461,
+    "suffix_compliance": 0.875
    },
    {
     "id": "procedural-0250",
     "decodable": true,
-    "compliance": 0.4117647058823529,
-    "suffix_compliance": 0.0
+    "compliance": 0.8235294117647058,
+    "suffix_compliance": 0.875
    },
    {
     "id": "procedural-0260",
@@ -436,8 +436,8 @@
    {
     "id": "procedural-0280",
     "decodable": true,
-    "compliance": 0.5294117647058824,
-    "suffix_compliance": 0.0
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
    }
   ],
   "generator": "kn_continue(order=4)"
@@ -663,5 +663,6 @@
    }
   ],
   "generator": "theory_continue"
- }
+ },
+ "split": "val"
 }

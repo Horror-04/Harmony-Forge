@@ -102,12 +102,92 @@ v2 must beat these on composed-val AND clear DoD on test_locked:
 decodable 1.00, new_notes ≥ 6.0/8, suffix ≥ 0.90, verbatim run < 4 (100%),
 novel_4gram ≥ 0.60.
 
-v2 numbers: TBC. A/B renders: TBC.
+## D. Decision (Step 4, all on test_locked unless noted)
+
+v1 FROZEN reference on test_locked (`eval_test_locked_v1ref.json`,
+model.onnx, .venv CPU, seeds {7,11,23,42,99}):
+
+| DoD item | threshold | v1 on test_locked |
+|---|---|---|
+| decodable | 1.00 | 34/43 = 0.79 FAIL |
+| mean_new_notes | ≥ 6.0/8 | 4.5 FAIL |
+| suffix_compliance | ≥ 0.90 | 0.742 (32 scored) FAIL |
+| verbatim run < 4 | 100% | max 3, 0 violations PASS |
+| novel_interval_4gram | ≥ 0.60 | 0.684 (34 scored) PASS |
+
+Also: compliance 0.857 (FAIL 0.90 gate), new_notes_ratio 0.391.
+(ce 3.878 describes shelved `best.pt` on test material — informational,
+ckpt-labelled, not v1-ONNX.)
+
+Fresh baselines on composed-val (merged train): KN comp 0.707 /
+suffix 0.969; theory-only comp 0.800 / suffix 1.000 (decodable 33/33).
+v2 must beat these on composed-val AND clear DoD on test_locked:
+decodable 1.00, new_notes ≥ 6.0/8, suffix ≥ 0.90, verbatim run < 4 (100%),
+novel_4gram ≥ 0.60.
+
+v2 locked-test DoD (5 finalists, greedy ONNX, .venv CPU, same 5-seed
+bootstrap protocol as v1 ref; evidence `training/eval_v2_s*.json`):
+
+| DoD item | thr | s99 | s7 | s11 | s23 | s42 |
+|---|---|---|---|---|---|---|
+| decodable | 1.00 | 43/43 PASS | PASS | PASS | PASS | PASS |
+| mean_new_notes | ≥ 6.0 | 5.2 FAIL | 5.1 FAIL | 5.7 FAIL | 4.3 FAIL | 5.3 FAIL |
+| suffix_compl | ≥ 0.90 | 0.766 FAIL | 0.823 FAIL | 0.800 FAIL | 0.785 FAIL | 0.776 FAIL |
+| verbatim < 4 | 100% | max3/0v PASS | PASS | PASS | PASS | PASS |
+| novel_4gram | ≥ 0.60 | 0.639 PASS | 0.636 PASS | 0.639 PASS | 0.654 PASS | 0.633 PASS |
+
+Supporting: compliance 0.863–0.873 (gate compliance_ge_0.90 FAIL all);
+ce_overall 1.24–1.48 cpu (torch metrics live — eval large-arch fix);
+intervention 0.44–0.46. v2 beats v1 everywhere (decodable 34→43,
+new_notes 4.5→~5.2, suffix 0.742→~0.79) but clears neither raised bar.
+
+v2 on composed-val (val composed[n=4], `eval_v2val_s*.json`, subset rule
+= id startswith "composed", same as score_baselines):
+
+| seed | dec | comp | suffix | vs KN 0.707/0.969 | vs theory 0.800/1.000 |
+|---|---|---|---|---|---|
+| s99 | 4/4 | 0.562 | 0.500 | LOSES | LOSES |
+| s7 | 4/4 | 0.531 | 0.250 | LOSES | LOSES |
+| s11 | 4/4 | 0.562 | 0.500 | LOSES | LOSES |
+| s23 | 4/4 | 0.594 | 0.750 | LOSES | LOSES |
+| s42 | 4/4 | 0.562 | 0.500 | LOSES | LOSES |
+
+VERDICT: 3/5 DoD + baselines-beaten NO → NEEDS_CONTEXT (shelve).
+Ship rule unsatisfied; deadline never softens gates.
+
+A/B renders: GAP, staged not executed. `tools/render_batch.py` drives
+ONLY the built-in Strict/C-major C++ generator (`render_midi`, unbuilt
+— cmake is controller-side); NO driver maps model conditions
+(v1-greedy/v1+decode/v2+decode/theory-only) → .mid (`decode_ab.py` is
+numbers-only, `midi_writer.py` has no driver). Runnable post-build for
+the built-in generator, e.g.:
+`python tools/render_batch.py --seeds 7,11,23,42,99 --bars 8 --out tools/batch/builtin/ --renderer build-full/tools/Release/render_midi.exe`
+Per-condition model renders need a new driver (out of scope for a RED
+decision + shutdown window — recorded, not built).
 
 ## E. Ship / NEEDS_CONTEXT (Step 5)
 
-TBC (weights ship ONLY on all-green + baselines-beaten + controller
-confirm; else NEEDS_CONTEXT with full numbers, nothing shipped).
+NEEDS_CONTEXT — decided 2026-10-15 ~00:00 UTC on completed evidence
+(5/5 finalists × locked-test + composed-val, no cuts to the evidence).
+NOTHING SHIPPED: `training/model.onnx`, `model.quant.onnx`,
+`checkpoints/best.pt`, `memo_index.bin` all still v1-frozen (verified:
+`git status` shows no modification to any of them). Candidate weights
+(`checkpoints/v2_pen0.0_s*.pt` + `v2_s*.onnx`/`v2_s*.quant.onnx`,
+git-ignored) kept locally as the resume map, never `git add -f`'d.
+Drop-in staging for the controller: exports verified (shapes/dtype/
+range/determinism + torch-vs-ORT parity OK all 5); MODEL_CARD v2
+section committed; memo unchanged since the merge (interval version =
+recorded gap); A/B per-condition renders = recorded gap (see §D).
+
+Shelf recommendation: v2-large/pen0.0 improves v1 on every locked-test
+metric but the DoD bars (6.0 notes, 0.90 suffix) and the composed-val
+baselines (esp. theory-only 0.800/1.000) stand. Next angles (NOT
+attempted — would be gate-tuning post-hoc): penalty>0 trades CE for
+compliance (pen1.0 val-CE 0.866 vs 0.639 — measured, not selected);
+stage-2 fine-tune systematically degrades the 4-rec val signal;
+suffix compliance is the binding constraint (best seed 0.823 vs 0.90).
+
+## Self-review + concerns
 
 ## F. Continuation (2026-10-14 ~20:30–23:20 UTC, resumed session)
 
