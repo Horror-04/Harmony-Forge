@@ -247,10 +247,51 @@ def check_temperature_effect() -> None:
     print("PASS temperature shapes sampling (T=0.01 pins argmax; bad Cfg)")
 
 
+def check_empty_prefix_count_head() -> None:
+    """Empty prefix: the FSM mask allows the count-head range 0..170 and
+    the run still finalizes to a decodable pattern."""
+    meta = {"tonic": 60, "scale": "major",
+            "chords": [{"root": 48, "type": "maj"}]}
+    cfg = D.Cfg(T=1.0, top_p=0.95, memo_block_run=2,
+                strict_mask=True, fsm_mask=True, lambda_theory=0.0)
+    out = D.sample_continue(_uniform_stub(99), [], meta, cfg,
+                            random.Random(7))
+    assert len(out) == D.GEN_TOKENS
+    assert 0 <= out[0] <= tok.MAX_NOTES, f"count head {out[0]}"
+    assert tok.decode_tokens(E.finalize(out)) is not None
+    print("PASS empty prefix (count-head range, decodable)")
+
+
+def check_theory_poe_flips_argmax() -> None:
+    """Theory PoE path: a near-tie the prior disagrees with flips the
+    tiny-T argmax (strict/fsm off to isolate the soft prior)."""
+    meta = {"tonic": 60, "scale": "major",
+            "chords": [{"root": 48, "type": "maj"}]}
+    seq = [1, 0, 0, 1]  # pitch slot, Melody, strong beat
+
+    def stub(prefix_ids: list[int]) -> list[float]:
+        out = [-100.0] * VOCAB
+        out[61] = 3.0  # unsafe under C major (out of scale)
+        out[60] = 2.9  # safe
+        return out
+
+    base = {"T": 0.01, "top_p": 1.0, "memo_block_run": 2,
+            "strict_mask": False, "fsm_mask": False}
+    off = D.sample_continue(stub, seq, meta, D.Cfg(**base, lambda_theory=0.0),
+                            random.Random(7))
+    assert off[len(seq)] == 61, f"lambda=0 must keep raw argmax, got {off}"
+    on = D.sample_continue(stub, seq, meta, D.Cfg(**base, lambda_theory=1.0),
+                           random.Random(7))
+    assert on[len(seq)] == 60, f"lambda=1 must flip to the safe pitch, got {on}"
+    print("PASS theory PoE flips near-tie argmax (soft prior path live)")
+
+
 def main() -> int:
     check_contract()
     check_slot_ranges_not_forked()
     check_temperature_effect()
+    check_empty_prefix_count_head()
+    check_theory_poe_flips_argmax()
     check_fsm_fuzz_decodable()
     check_memo_block_turns_from_recitation()
     check_strict_only_violations()

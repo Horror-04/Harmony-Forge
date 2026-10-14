@@ -266,8 +266,11 @@ def sample_continue(logits_fn, prefix_ids: list[int], meta: dict,
         # FSM phase mask (only structurally legal next ids).
         fsm_ids: list[int] | None = None
         if cfg.fsm_mask:
-            slot = (len(seq) - 1) % tok.TOKENS_PER_NOTE
-            fsm_ids = list(slot_valid_range(slot))
+            if len(seq) == 0:
+                fsm_ids = list(range(tok.MAX_NOTES + 1))  # count head 0..170
+            else:
+                slot = (len(seq) - 1) % tok.TOKENS_PER_NOTE
+                fsm_ids = list(slot_valid_range(slot))
         # Online Strict mask (same context math as compliance_penalty).
         strict_ids: set[int] | None = None
         if cfg.strict_mask:
