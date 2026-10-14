@@ -1,0 +1,667 @@
+{
+ "v1_greedy": {
+  "generator": "v1_greedy (eval_report.json reference, no re-run)",
+  "n_decodable": 32,
+  "mean_compliance": 0.9070846688034188,
+  "mean_suffix": 0.3333333333333333,
+  "n_suffix_scored": 3,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 3,
+   "mean_compliance": 0.5601851851851852,
+   "mean_suffix": 0.3333333333333333,
+   "n_suffix_scored": 3
+  },
+  "procedural_only": {
+   "n": 29,
+   "n_decodable": 29,
+   "mean_compliance": 0.9429708222811671,
+   "mean_suffix": 0.0,
+   "n_suffix_scored": 0
+  },
+  "per-record": [
+   {
+    "id": "composed-O-k0",
+    "decodable": false,
+    "compliance": 0.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "composed-O-k1",
+    "decodable": true,
+    "compliance": 0.5,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k0",
+    "decodable": true,
+    "compliance": 0.625,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "composed-P-k1",
+    "decodable": true,
+    "compliance": 0.5555555555555556,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0000",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0010",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0020",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0030",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0040",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0050",
+    "decodable": true,
+    "compliance": 0.8461538461538461,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0060",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0070",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0080",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0090",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0100",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0110",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0120",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0130",
+    "decodable": true,
+    "compliance": 0.8333333333333334,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0140",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0150",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0160",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0170",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0180",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0190",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0200",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0210",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0220",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0230",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0240",
+    "decodable": true,
+    "compliance": 0.8333333333333334,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0250",
+    "decodable": true,
+    "compliance": 0.7777777777777778,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0260",
+    "decodable": true,
+    "compliance": 0.8888888888888888,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0270",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   },
+   {
+    "id": "procedural-0280",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": null
+   }
+  ]
+ },
+ "kn": {
+  "n": 33,
+  "n_decodable": 33,
+  "mean_compliance": 0.7892379951203481,
+  "mean_suffix": 0.6666666666666666,
+  "n_suffix_scored": 33,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 4,
+   "mean_compliance": 0.5714285714285714,
+   "mean_suffix": 1.0,
+   "n_suffix_scored": 4
+  },
+  "procedural_only": {
+   "n": 29,
+   "n_decodable": 29,
+   "mean_compliance": 0.8192806742502483,
+   "mean_suffix": 0.6206896551724138,
+   "n_suffix_scored": 29
+  },
+  "per-record": [
+   {
+    "id": "composed-O-k0",
+    "decodable": true,
+    "compliance": 0.42857142857142855,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-O-k1",
+    "decodable": true,
+    "compliance": 0.42857142857142855,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k0",
+    "decodable": true,
+    "compliance": 0.7142857142857143,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k1",
+    "decodable": true,
+    "compliance": 0.7142857142857143,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0000",
+    "decodable": true,
+    "compliance": 0.6538461538461539,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0010",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0020",
+    "decodable": true,
+    "compliance": 0.6538461538461539,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0030",
+    "decodable": true,
+    "compliance": 0.6190476190476191,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0040",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0050",
+    "decodable": true,
+    "compliance": 0.5238095238095238,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0060",
+    "decodable": true,
+    "compliance": 0.6923076923076923,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0070",
+    "decodable": true,
+    "compliance": 0.9230769230769231,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0080",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0090",
+    "decodable": true,
+    "compliance": 0.5294117647058824,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0100",
+    "decodable": true,
+    "compliance": 0.6153846153846154,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0110",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0120",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0130",
+    "decodable": true,
+    "compliance": 0.8846153846153846,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0140",
+    "decodable": true,
+    "compliance": 0.9166666666666666,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0150",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0160",
+    "decodable": true,
+    "compliance": 0.9411764705882353,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0170",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0180",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0190",
+    "decodable": true,
+    "compliance": 0.9444444444444444,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0200",
+    "decodable": true,
+    "compliance": 0.6538461538461539,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0210",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0220",
+    "decodable": true,
+    "compliance": 0.6190476190476191,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0230",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0240",
+    "decodable": true,
+    "compliance": 0.8846153846153846,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0250",
+    "decodable": true,
+    "compliance": 0.4117647058823529,
+    "suffix_compliance": 0.0
+   },
+   {
+    "id": "procedural-0260",
+    "decodable": true,
+    "compliance": 0.9230769230769231,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0270",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0280",
+    "decodable": true,
+    "compliance": 0.5294117647058824,
+    "suffix_compliance": 0.0
+   }
+  ],
+  "generator": "kn_continue(order=4)"
+ },
+ "theory": {
+  "n": 33,
+  "n_decodable": 33,
+  "mean_compliance": 0.9431358674005732,
+  "mean_suffix": 1.0,
+  "n_suffix_scored": 33,
+  "composed_only": {
+   "n": 4,
+   "n_decodable": 4,
+   "mean_compliance": 0.8,
+   "mean_suffix": 1.0,
+   "n_suffix_scored": 4
+  },
+  "procedural_only": {
+   "n": 29,
+   "n_decodable": 29,
+   "mean_compliance": 0.9628787456627212,
+   "mean_suffix": 1.0,
+   "n_suffix_scored": 29
+  },
+  "per-record": [
+   {
+    "id": "composed-O-k0",
+    "decodable": true,
+    "compliance": 0.7333333333333333,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-O-k1",
+    "decodable": true,
+    "compliance": 0.7333333333333333,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k0",
+    "decodable": true,
+    "compliance": 0.8666666666666667,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "composed-P-k1",
+    "decodable": true,
+    "compliance": 0.8666666666666667,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0000",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0010",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0020",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0030",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0040",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0050",
+    "decodable": true,
+    "compliance": 0.9047619047619048,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0060",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0070",
+    "decodable": true,
+    "compliance": 0.9230769230769231,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0080",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0090",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0100",
+    "decodable": true,
+    "compliance": 0.9230769230769231,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0110",
+    "decodable": true,
+    "compliance": 0.95,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0120",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0130",
+    "decodable": true,
+    "compliance": 0.8846153846153846,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0140",
+    "decodable": true,
+    "compliance": 0.9375,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0150",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0160",
+    "decodable": true,
+    "compliance": 0.9411764705882353,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0170",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0180",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0190",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0200",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0210",
+    "decodable": true,
+    "compliance": 0.9615384615384616,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0220",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0230",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0240",
+    "decodable": true,
+    "compliance": 0.8846153846153846,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0250",
+    "decodable": true,
+    "compliance": 0.8823529411764706,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0260",
+    "decodable": true,
+    "compliance": 0.9230769230769231,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0270",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   },
+   {
+    "id": "procedural-0280",
+    "decodable": true,
+    "compliance": 1.0,
+    "suffix_compliance": 1.0
+   }
+  ],
+  "generator": "theory_continue"
+ }
+}
