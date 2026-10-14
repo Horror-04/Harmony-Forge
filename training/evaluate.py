@@ -506,16 +506,17 @@ def teacher_forced_metrics(ckpt_path: str, recs: list[dict], torch,
 
 def evaluate(model_path: str, ckpt_path: str = DEFAULT_CKPT,
              device: str = "auto",
-             seeds: tuple = (BOOTSTRAP_SEED, 11, 23)) -> dict:
-    val = load_jsonl("val.jsonl")
+             seeds: tuple = (BOOTSTRAP_SEED, 11, 23),
+             split: str = "val") -> dict:
+    recs = load_jsonl(f"{split}.jsonl")
     train = load_jsonl("train.jsonl")
     mel6, id8 = load_memo()
-    corpus_vecs = set(tuple(r["ids"]) for r in train + val)
+    corpus_vecs = set(tuple(r["ids"]) for r in train + recs)
     # Phase-9 interval-novelty indexes (built once per order over train).
     ngram_indexes = {n: interval_ngram_index(train, n) for n in NOVEL_N_RANGE}
 
     per_rec = []
-    for rec in val:
+    for rec in recs:
         ids = rec["ids"]
         cut = 1 + ((len(ids) - 1) // 2 // tok.TOKENS_PER_NOTE) * tok.TOKENS_PER_NOTE
         prefix = ids[:max(1 + tok.TOKENS_PER_NOTE, cut)]
@@ -600,7 +601,7 @@ def evaluate(model_path: str, ckpt_path: str = DEFAULT_CKPT,
         dev = device
         if dev == "auto":
             dev = "cuda" if torch.cuda.is_available() else "cpu"
-        tf = teacher_forced_metrics(ckpt_path, val, torch, dev)
+        tf = teacher_forced_metrics(ckpt_path, recs, torch, dev)
         ce_device = tf["device"]
     except Exception as exc:  # noqa: BLE001 — degraded report, not a crash
         ce_error = f"{type(exc).__name__}: {exc}"
@@ -635,7 +636,8 @@ def evaluate(model_path: str, ckpt_path: str = DEFAULT_CKPT,
         "determinism_all_identical": all(r["deterministic"] for r in per_rec),
     }
     return {"model": os.path.basename(model_path),
-            "n_val": len(val), "n_scored": len(decodable),
+            "split": split,
+            "n_val": len(recs), "n_scored": len(decodable),
             "mean_compliance": mean_comp,
             "mean_compliance_ci95": ci95,
             "bootstrap": {"resamples": BOOTSTRAP_RESAMPLES,
@@ -687,11 +689,21 @@ def main() -> int:
     ap.add_argument("--seeds", default=",".join(
         map(str, (BOOTSTRAP_SEED, 11, 23))),
         help="comma-separated bootstrap seeds for the multi-seed report")
+    ap.add_argument("--split", default="val",
+                    choices=("val", "test_locked"),
+                    help="scored record set (train stays the index source; "
+                    "test_locked records are NEVER training material)")
+    ap.add_argument("--report-out", default=None,
+                    help="report path (default eval_report.json for val, "
+                    "eval_test_locked.json for test_locked)")
     args = ap.parse_args()
     seeds = tuple(int(s) for s in args.seeds.split(",") if s.strip())
     report = evaluate(args.model, ckpt_path=args.ckpt,
-                      device=args.device, seeds=seeds)
-    with open(os.path.join(HERE, "eval_report.json"), "w") as f:
+                      device=args.device, seeds=seeds, split=args.split)
+    out = args.report_out or os.path.join(
+        HERE, "eval_report.json" if args.split == "val"
+        else "eval_test_locked.json")
+    with open(out, "w") as f:
         json.dump(report, f, indent=1)
     print(f"model={report['model']} scored={report['n_scored']}/{report['n_val']} "
           f"mean_compliance={report['mean_compliance']:.3f} "
@@ -721,7 +733,7 @@ def main() -> int:
           f"intervention={ir_str}")
     for k, v in report["gates"].items():
         print(f"  gate {k}: {'PASS' if v else 'FAIL'}")
-    print("wrote training/eval_report.json")
+    print(f"wrote {out}")
     return 0 if report["all_pass"] else 1
 
 

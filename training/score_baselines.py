@@ -86,29 +86,46 @@ def _v1_reference(report: dict) -> dict:
 
 
 def main() -> int:
-    val = E.load_jsonl("val.jsonl")
-    assert len(val) == 33, f"frozen val must hold 33 records, got {len(val)}"
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--split", default="val", choices=("val", "test_locked"),
+                    help="scored record set (KN trains on train.jsonl; "
+                    "test_locked records are NEVER training material)")
+    ap.add_argument("--out", default=None,
+                    help="scores path (default baseline_scores.json for val, "
+                    "baseline_scores_test_locked.json for test_locked)")
+    args = ap.parse_args()
+    recs = E.load_jsonl(f"{args.split}.jsonl")
+    if args.split == "val":
+        assert len(recs) == 33, f"frozen val must hold 33 records, got {len(recs)}"
     with open(os.path.join(HERE, "eval_report.json")) as f:
         report = json.load(f)
 
     kn = _score_baseline(
-        "kn_continue(order=4)", val, lambda rec, p: B.kn_continue(p, order=4))
+        "kn_continue(order=4)", recs, lambda rec, p: B.kn_continue(p, order=4))
     th = _score_baseline(
-        "theory_continue", val,
+        "theory_continue", recs,
         lambda rec, p: B.theory_continue(
             p, {"tonic": rec["tonic"], "scale": rec["scale"],
                 "chords": rec["chords"]}))
-    scores = {"v1_greedy": _v1_reference(report), "kn": kn, "theory": th}
-    with open(os.path.join(HERE, "baseline_scores.json"), "w") as f:
+    scores = {"v1_greedy": _v1_reference(report), "kn": kn, "theory": th,
+              "split": args.split}
+    out = args.out or os.path.join(
+        HERE, "baseline_scores.json" if args.split == "val"
+        else "baseline_scores_test_locked.json")
+    with open(out, "w") as f:
         json.dump(scores, f, indent=1)
     for k, v in scores.items():
+        if not isinstance(v, dict) or "composed_only" not in v:
+            continue
         c = v["composed_only"]
         print(f"{k}: mean_compliance={v['mean_compliance']:.3f} "
               f"mean_suffix={v['mean_suffix']:.3f} "
               f"composed[n={c['n']}] comp={c['mean_compliance']:.3f} "
               f"suffix={c['mean_suffix']:.3f} (scored={c['n_suffix_scored']}) "
               f"decodable={v.get('n_decodable', '?')}")
-    print("wrote training/baseline_scores.json")
+    print(f"wrote {out}")
     return 0
 
 
