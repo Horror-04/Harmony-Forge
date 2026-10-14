@@ -144,6 +144,9 @@ endif()
 hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
+hf_add_test(test_sampler test_sampler.cpp)
+target_compile_definitions(test_sampler PRIVATE
+  HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
 
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).
 # Deliberately NOT registered with catch_discover_tests: the binary never
