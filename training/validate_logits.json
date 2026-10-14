@@ -1,0 +1,426 @@
+{
+ "true_logits_cell": {
+  "config": {
+   "T": 1.0,
+   "top_p": 0.95,
+   "lambda_theory": 0.0,
+   "memo_block_run": 2,
+   "strict_mask": true,
+   "fsm_mask": true
+  },
+  "seed": 7,
+  "logits": "TRUE (model.logits.onnx sidecar)",
+  "n": 33,
+  "n_scored": 33,
+  "decodable_rate": 1.0,
+  "mean_compliance": 0.9233787965803777,
+  "mean_suffix": 1.0,
+  "n_suffix_scored": 33,
+  "novel_ngram_mean": {
+   "4": 0.7856005106005106,
+   "5": 0.9276834276834277,
+   "6": 0.9393939393939394,
+   "7": 1.0,
+   "8": 1.0,
+   "9": 1.0,
+   "10": 1.0,
+   "11": 1.0,
+   "12": 1.0,
+   "13": 1.0,
+   "14": 1.0,
+   "15": 1.0,
+   "16": 1.0
+  },
+  "novel_ngram_scored": {
+   "4": 33,
+   "5": 33,
+   "6": 33,
+   "7": 30,
+   "8": 23,
+   "9": 21,
+   "10": 21,
+   "11": 21,
+   "12": 18,
+   "13": 16,
+   "14": 16,
+   "15": 16,
+   "16": 16
+  },
+  "intervention_rate": 0.20610687022900764,
+  "intervention_flips": 27,
+  "intervention_positions": 131,
+  "mean_new_notes": 8.0
+ },
+ "pseudo_ab_cell_T1.0_p0.95_l0": {
+  "T": 1.0,
+  "top_p": 0.95,
+  "lambda_theory": 0.0,
+  "seeds": {
+   "7": {
+    "n": 33,
+    "decodable_rate": 1.0,
+    "mean_compliance": 0.9165533183579783,
+    "mean_suffix": 0.9762626262626263,
+    "n_suffix_scored": 33,
+    "novel_ngram_mean": {
+     "4": 0.800896325896326,
+     "5": 0.9578741965105602,
+     "6": 0.9696969696969697,
+     "7": 1.0,
+     "8": 1.0,
+     "9": 1.0,
+     "10": 1.0,
+     "11": 1.0,
+     "12": 1.0,
+     "13": 1.0,
+     "14": 1.0,
+     "15": 1.0,
+     "16": 1.0
+    },
+    "novel_ngram_scored": {
+     "4": 33,
+     "5": 33,
+     "6": 33,
+     "7": 31,
+     "8": 25,
+     "9": 22,
+     "10": 21,
+     "11": 21,
+     "12": 20,
+     "13": 16,
+     "14": 16,
+     "15": 16,
+     "16": 10
+    },
+    "intervention_rate": 0.16260162601626016,
+    "intervention_flips": 20,
+    "intervention_positions": 123,
+    "mean_new_notes": 8.0
+   },
+   "11": {
+    "n": 33,
+    "decodable_rate": 1.0,
+    "mean_compliance": 0.920312325648294,
+    "mean_suffix": 0.9863636363636363,
+    "n_suffix_scored": 33,
+    "novel_ngram_mean": {
+     "4": 0.7887899137899138,
+     "5": 0.9313918404827496,
+     "6": 0.9545454545454546,
+     "7": 1.0,
+     "8": 1.0,
+     "9": 1.0,
+     "10": 1.0,
+     "11": 1.0,
+     "12": 1.0,
+     "13": 1.0,
+     "14": 1.0,
+     "15": 1.0,
+     "16": 1.0
+    },
+    "novel_ngram_scored": {
+     "4": 33,
+     "5": 33,
+     "6": 33,
+     "7": 32,
+     "8": 22,
+     "9": 21,
+     "10": 21,
+     "11": 21,
+     "12": 17,
+     "13": 16,
+     "14": 16,
+     "15": 16,
+     "16": 9
+    },
+    "intervention_rate": 0.17886178861788618,
+    "intervention_flips": 22,
+    "intervention_positions": 123,
+    "mean_new_notes": 8.0
+   },
+   "23": {
+    "n": 33,
+    "decodable_rate": 1.0,
+    "mean_compliance": 0.9240292864798794,
+    "mean_suffix": 1.0,
+    "n_suffix_scored": 33,
+    "novel_ngram_mean": {
+     "4": 0.7700382950382951,
+     "5": 0.9240456513183786,
+     "6": 0.9393939393939394,
+     "7": 1.0,
+     "8": 1.0,
+     "9": 1.0,
+     "10": 1.0,
+     "11": 1.0,
+     "12": 1.0,
+     "13": 1.0,
+     "14": 1.0,
+     "15": 1.0,
+     "16": 1.0
+    },
+    "novel_ngram_scored": {
+     "4": 33,
+     "5": 33,
+     "6": 33,
+     "7": 30,
+     "8": 24,
+     "9": 22,
+     "10": 21,
+     "11": 21,
+     "12": 16,
+     "13": 16,
+     "14": 16,
+     "15": 16,
+     "16": 7
+    },
+    "intervention_rate": 0.1557377049180328,
+    "intervention_flips": 19,
+    "intervention_positions": 122,
+    "mean_new_notes": 8.0
+   }
+  }
+ },
+ "reference_v1_greedy": {
+  "generator": "v1_greedy (eval_report.json reference, no re-run)",
+  "n_decodable": 32,
+  "mean_compliance": 0.9070846688034188,
+  "mean_suffix": 0.3333333333333333,
+  "n_suffix_scored": 3,
+  "novel_ngram_mean": {
+   "4": 0.7434895833333334,
+   "5": 0.9188311688311688,
+   "6": 0.9375,
+   "7": 1.0,
+   "8": 1.0,
+   "9": 1.0,
+   "10": 1.0,
+   "11": 1.0,
+   "12": 1.0,
+   "13": 1.0,
+   "14": 1.0,
+   "15": 1.0,
+   "16": 0.0
+  },
+  "novel_ngram_scored": {
+   "4": 32,
+   "5": 32,
+   "6": 32,
+   "7": 29,
+   "8": 21,
+   "9": 21,
+   "10": 21,
+   "11": 21,
+   "12": 16,
+   "13": 16,
+   "14": 16,
+   "15": 16,
+   "16": 0
+  },
+  "new_notes_ratio": 0.0,
+  "mean_verbatim_run_filtered": 0.24242424242424243
+ },
+ "completed": true,
+ "wall_s": 3.5345423221588135,
+ "rows": [
+  {
+   "id": "composed-O-k0",
+   "decodable": true,
+   "compliance": 0.6666666666666666,
+   "suffix": 1.0
+  },
+  {
+   "id": "composed-O-k1",
+   "decodable": true,
+   "compliance": 0.5555555555555556,
+   "suffix": 1.0
+  },
+  {
+   "id": "composed-P-k0",
+   "decodable": true,
+   "compliance": 0.7777777777777778,
+   "suffix": 1.0
+  },
+  {
+   "id": "composed-P-k1",
+   "decodable": true,
+   "compliance": 0.7777777777777778,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0000",
+   "decodable": true,
+   "compliance": 0.9583333333333334,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0010",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0020",
+   "decodable": true,
+   "compliance": 0.9583333333333334,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0030",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0040",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0050",
+   "decodable": true,
+   "compliance": 0.8888888888888888,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0060",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0070",
+   "decodable": true,
+   "compliance": 0.9166666666666666,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0080",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0090",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0100",
+   "decodable": true,
+   "compliance": 0.9130434782608695,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0110",
+   "decodable": true,
+   "compliance": 0.9230769230769231,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0120",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0130",
+   "decodable": true,
+   "compliance": 0.875,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0140",
+   "decodable": true,
+   "compliance": 0.92,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0150",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0160",
+   "decodable": true,
+   "compliance": 0.9166666666666666,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0170",
+   "decodable": true,
+   "compliance": 0.9583333333333334,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0180",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0190",
+   "decodable": true,
+   "compliance": 0.9444444444444444,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0200",
+   "decodable": true,
+   "compliance": 0.96,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0210",
+   "decodable": true,
+   "compliance": 0.9565217391304348,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0220",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0230",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0240",
+   "decodable": true,
+   "compliance": 0.8695652173913043,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0250",
+   "decodable": true,
+   "compliance": 0.8181818181818182,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0260",
+   "decodable": true,
+   "compliance": 0.9166666666666666,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0270",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  },
+  {
+   "id": "procedural-0280",
+   "decodable": true,
+   "compliance": 1.0,
+   "suffix": 1.0
+  }
+ ],
+ "verdict": "RECOMMEND-SHIPPED-FLAGGED-OFF"
+}

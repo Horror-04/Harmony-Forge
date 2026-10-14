@@ -306,6 +306,32 @@ TEST_CASE("sampler memo block run=2 turns away from recitation", "[sampler]") {
   REQUIRE(bn == gn);
   CHECK(blocked[prefix.size()] == greedy[prefix.size()]);
   CHECK(blocked[prefix.size() + 1] != greedy[prefix.size() + 1]);
+
+  // Short-prefix edge (prefix len 1, negative floor): a single memorized
+  // window can never extend to a run of 2 here, so the run goes the full
+  // budget unblocked (python oracle: len 49, first8 all 60).
+  struct Sixty : public ISamplerLogits {
+    bool get_logits(const int*, size_t, float* o) noexcept override {
+      for (int i = 0; i < 256; ++i) o[i] = 0.0f;
+      o[60] = 10.0f;
+      return true;
+    }
+  } sixty;
+  std::array<int32_t, 8> w1{};
+  w1[0] = 1;
+  for (int i = 1; i < 8; ++i) w1[static_cast<size_t>(i)] = 60;
+  const hf::infer::MemoIndex idx1 =
+      hf::infer::make_memo_index(std::vector<std::array<int32_t, 8>>{w1});
+  const std::vector<int> short_pre = {1};
+  std::array<int, 2048> so{};
+  size_t sn = 0;
+  SamplerStats ss;
+  SamplerScratch ssc;
+  REQUIRE(hf::infer::sample_continue(sixty, short_pre.data(), short_pre.size(),
+                                     cmajor_meta(&idx1), cfg, 7, so.data(),
+                                     so.size(), sn, ss, ssc));
+  CHECK(sn == short_pre.size() + static_cast<size_t>(hf::infer::kSamplerGenTokens));
+  for (size_t j = short_pre.size(); j < sn; ++j) CHECK(so[j] == 60);
 }
 
 TEST_CASE("sampler strict mask changes top-1 only on violations", "[sampler]") {
@@ -315,6 +341,7 @@ TEST_CASE("sampler strict mask changes top-1 only on violations", "[sampler]") {
   std::array<int, 256> ids{};
   const int n = hf::infer::strict_allowed_ids(seq, 4, meta, ids.data(), ids.size());
   REQUIRE(n > 0);
+  CHECK(n == 54);  // python oracle (sampler_parity.py): C-major strong-beat set
   const std::vector<int> allowed(ids.begin(), ids.begin() + n);
   CHECK(std::find(allowed.begin(), allowed.end(), 60) != allowed.end());
   CHECK(std::find(allowed.begin(), allowed.end(), 61) == allowed.end());
@@ -358,6 +385,8 @@ TEST_CASE("sampler strict mask changes top-1 only on violations", "[sampler]") {
       hf::infer::strict_allowed_ids(seq_w, 4, phr, p2.data(), p2.size());
   REQUIRE(r0 > 0);
   REQUIRE(r1 > 0);
+  CHECK(r0 == 32);  // python oracle: phrygian strong-beat rub set
+  CHECK(r1 == 75);  // python oracle: phrygian weak-beat (scale-only) set
   CHECK(std::find(p1.begin(), p1.begin() + r0, 61) == p1.begin() + r0);
   CHECK(std::find(p2.begin(), p2.begin() + r1, 61) != p2.begin() + r1);
 
@@ -366,6 +395,17 @@ TEST_CASE("sampler strict mask changes top-1 only on violations", "[sampler]") {
   CHECK(hf::infer::strict_allowed_ids(nonpitch, 2, meta, ids.data(), ids.size()) == -1);
   const int nonmb[4] = {1, 0, 0, 0};
   CHECK(hf::infer::strict_allowed_ids(nonmb, 4, meta, ids.data(), ids.size()) == -1);
+  // Unknown scale: empty safe set (0, mask skipped — python returns set()).
+  SamplerMeta unk = meta;
+  unk.scale = "nope";
+  CHECK(hf::infer::strict_allowed_ids(seq, 4, unk, ids.data(), ids.size()) == 0);
+  // Out-of-range bar (no chord entry): scale-only set, no rub conjunct.
+  const int bar15[10] = {0, 0, 0, 0, 0, 0, 0, 15, 15, 2};
+  const int rb =
+      hf::infer::strict_allowed_ids(bar15, 10, meta, ids.data(), ids.size());
+  CHECK(rb == 75);  // python oracle: C-major scale pitches in 0..127
+  CHECK(std::find(ids.begin(), ids.begin() + rb, 60) != ids.begin() + rb);
+  CHECK(std::find(ids.begin(), ids.begin() + rb, 61) == ids.begin() + rb);
 }
 
 TEST_CASE("sampler theory PoE flips a near-tie the prior disagrees with", "[sampler]") {
