@@ -40,6 +40,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dataset_heads as H
 import evaluate as E
+import keynorm as K
 import theory as T
 import tokenizer as tok
 
@@ -400,11 +401,61 @@ def build_distilled_split(distilled_path: str | None = None,
     return report
 
 
+# ----------------------- key-normalized views (Phase 9 Task 5b) ----
+# Corpus files stay absolute; normalization is a load-time view only.
+# Train-loop batch-time wiring is Task 6, NOT here.
+
+def normalized_view(rec: dict) -> dict:
+    """Canonical-key view of one corpus record (see keynorm.normalized_view)."""
+    return K.normalized_view(rec)
+
+
+def normalized_corpus(recs: list[dict]) -> list[dict]:
+    """Canonical-key views of a record list (pure; inputs untouched)."""
+    return [K.normalized_view(r) for r in recs]
+
+
+def build_keynorm_report(path: str | None = None) -> dict:
+    """Pitch-histogram concentration before/after — numbers only.
+
+    Reads train/val JSONL (absolute, read-only), normalizes in memory via
+    keynorm, writes ``training/keynorm_report.json``. No MIDI, no weights.
+    """
+    path = path or os.path.join(HERE, "keynorm_report.json")
+    recs = []
+    for split in ("train", "val"):
+        with open(os.path.join(CORPUS_DIR, f"{split}.jsonl")) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    rec = json.loads(line)
+                    rec["_split"] = split
+                    recs.append(rec)
+    rep = K.histogram_report(recs)
+    rep["records"] = len(recs)
+    rep["records_train"] = sum(1 for r in recs if r["_split"] == "train")
+    rep["records_val"] = sum(1 for r in recs if r["_split"] == "val")
+    rep["scales"] = sorted({r["scale"] for r in recs})
+    with open(path, "w") as f:
+        json.dump(rep, f, indent=1)
+    print(f"keynorm: notes={rep['notes']} pulls={rep['octave_pulls']} "
+          f"top12 {rep['before_top12_share']:.4f} -> {rep['after_top12_share']:.4f} "
+          f"entropy {rep['before_entropy_bits']:.4f} -> {rep['after_entropy_bits']:.4f}")
+    print(f"wrote {path}")
+    return rep
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--procedural", type=int, default=288)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--keynorm-report", action="store_true",
+                    help="only write training/keynorm_report.json (no corpus rebuild)")
     args = ap.parse_args()
+
+    if args.keynorm_report:
+        build_keynorm_report()
+        return 0
 
     built = build(args.procedural, args.seed)
     os.makedirs(CORPUS_DIR, exist_ok=True)

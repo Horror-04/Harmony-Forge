@@ -137,18 +137,35 @@ def check_invariance_c_vs_g() -> None:
         assert ids_n_g == ids_n_c, f"{r['id']}: C-vs-G normalized ids differ"
         tested += 1
     assert tested >= 5, f"need >= 5 C-tonic records, got {tested}"
+    print(f"PASS C-vs-G invariance absolute-exact on {tested} synthetic pairs")
     # Corpus k0/k1 pairs (up a fourth, also wrap-free): identical too.
-    pairs = 0
+    # Corpus k0/k1 pairs (up a fourth): minimal-signed shifts wrap at +-6
+    # for some home tonics, so absolute ids can differ by exactly one octave
+    # (no bounded shift on the pitch circle is wrap-free — topology, not a
+    # bug). Pitch classes + drums + structure are invariant for every pair;
+    # absolute ids are identical exactly for wrap-free pairs.
+    pairs = exact_pairs = 0
     by_id = {r["id"]: r for r in recs}
     for rid, r in by_id.items():
         if rid.endswith("-k0"):
             mate = by_id.get(rid[:-3] + "-k1")
             if mate is not None and mate["scale"] == r["scale"]:
-                a, _ = K.to_canonical(r["ids"], r["tonic"], r["scale"])
-                b, _ = K.to_canonical(mate["ids"], mate["tonic"], mate["scale"])
-                assert a == b, f"{rid}: k0/k1 normalized ids differ"
+                a, sa = K.to_canonical(r["ids"], r["tonic"], r["scale"])
+                b, sb = K.to_canonical(mate["ids"], mate["tonic"], mate["scale"])
+                assert (sb - (sa - 5)) % 12 == 0, f"{rid}: shifts inconsistent"
+                na, an = _notes(a)
+                nb, bn = _notes(b)
+                assert na == nb
+                for x, y in zip(an, bn):
+                    assert x[:3] == y[:3] and x[4:] == y[4:], f"{rid}: structure moved"
+                    assert (x[3] - y[3]) % 12 == 0, f"{rid}: pitch class moved"
                 pairs += 1
-    print(f"PASS C-vs-G invariance exact ({tested} synthetic + {pairs} corpus pairs)")
+                if sb == sa - 5 and a == b:
+                    exact_pairs += 1
+                elif sb == sa - 5:
+                    raise AssertionError(f"{rid}: wrap-free pair differs absolutely")
+    print(f"PASS corpus pairs pc-invariant ({pairs}); absolute-exact on "
+          f"{exact_pairs} wrap-free")
 
 
 def check_wrap_pc_invariant() -> None:
