@@ -385,13 +385,39 @@ def _build_lm_from_config(cfg: dict):
     return TinyLM()
 
 
+def _remap_mha_keys(state: dict) -> dict:
+    """Pure rename of MHA-era attention keys onto CausalMHA (no-op when
+    absent, e.g. v2 ckpts trained natively on CausalMHA)."""
+    remapped = {}
+    for k, v in state.items():
+        k = k.replace(".attn.in_proj_weight", ".attn.qkv.weight")
+        k = k.replace(".attn.in_proj_bias", ".attn.qkv.bias")
+        k = k.replace(".attn.out_proj.weight", ".attn.out.weight")
+        k = k.replace(".attn.out_proj.bias", ".attn.out.bias")
+        remapped[k] = v
+    return remapped
+
+
 def _load_torch_lm(ckpt_path: str, torch, device: str):
     """Load a training checkpoint (dims from its own config; MHA-era key
     names remapped onto CausalMHA only when present). Eval mode, on device.
-    Returns (model, arch_dict)."""
+    Returns (model, arch_dict).
+
+    Phase 9 Task 6: arch-tagged v2 ckpts build via tinilm directly (the
+    legacy config-sniffing path builds a wrong-arch model for large:
+    ff.2 vs ff.3 keys). Legacy untagged ckpts take the frozen path."""
     import tinilm
 
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+    arch_tag = ckpt.get("arch")
+    if arch_tag in tinilm.ARCHES:
+        model = tinilm.build_model(arch=arch_tag)
+        model.load_state_dict(_remap_mha_keys(ckpt["state"]), strict=True)
+        model.eval()
+        cfg = dict(ckpt.get("config") or {})
+        arch = {k: cfg.get(k, getattr(tinilm, k.upper(), None)) for k in
+                ("vocab", "d_model", "n_layer", "n_head", "d_ff", "ctx")}
+        return model.to(device), arch
     cfg = dict(ckpt.get("config") or {})
     default = {"vocab": tinilm.VOCAB, "d_model": tinilm.D_MODEL,
                "n_layer": tinilm.N_LAYER, "n_head": tinilm.N_HEAD,
@@ -402,17 +428,7 @@ def _load_torch_lm(ckpt_path: str, torch, device: str):
         model = tinilm.build_model()
     else:
         model = _build_lm_from_config(cfg)
-    state = ckpt["state"]
-    if any(".attn.in_proj_weight" in k or ".attn.out_proj.weight" in k
-           for k in state):
-        remapped = {}
-        for k, v in state.items():
-            k = k.replace(".attn.in_proj_weight", ".attn.qkv.weight")
-            k = k.replace(".attn.in_proj_bias", ".attn.qkv.bias")
-            k = k.replace(".attn.out_proj.weight", ".attn.out.weight")
-            k = k.replace(".attn.out_proj.bias", ".attn.out.bias")
-            remapped[k] = v
-        state = remapped
+    state = _remap_mha_keys(ckpt["state"])
     model.load_state_dict(state, strict=True)
     model.eval()
     arch = {k: cfg[k] for k in

@@ -303,6 +303,35 @@ def check_teacher_forced_degrades_without_ckpt() -> None:
     print(f"PASS torch-degraded report (gates green, {report['ce_error']})")
 
 
+def check_load_v2_arch_ckpt() -> None:
+    """Phase 9 Task 6 Step 4: _load_torch_lm must load v2 arch-tagged ckpts
+    (large, CausalMHA-era keys) strict with exact param count — the legacy
+    config-sniffing path built a wrong-arch model (ff.2 vs ff.3 keys) and
+    every v2 teacher-forced metric skipped."""
+    import torch
+
+    import tinilm
+
+    tmp = os.path.join(HERE, "test_eval_v2_tmp.pt")
+    try:
+        ref = tinilm.build_model(arch="large")
+        torch.save({"config": dict(tinilm.ARCHES["large"]),
+                    "state": ref.state_dict(), "arch": "large",
+                    "recipe": {"penalty": 0.0, "keynorm": True, "seed": 7,
+                               "stage1_epochs": 1, "stage2_max": 1}}, tmp)
+        model, arch = E._load_torch_lm(tmp, torch, "cpu")
+        n = sum(v.numel() for v in model.state_dict().values())
+        assert n == tinilm.param_count(ref) == 3558144, n
+        assert arch["d_model"] == tinilm.ARCHES["large"]["d_model"], arch
+        for (ka, va), (kb, vb) in zip(
+                ref.state_dict().items(), model.state_dict().items()):
+            assert ka == kb and torch.equal(va, vb), ka
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+    print("PASS v2 arch-tagged ckpt loads strict (large, 3558144 params)")
+
+
 def main() -> int:
     check_mirror()
     check_gates()
@@ -314,6 +343,7 @@ def main() -> int:
     check_intervention_rate_bounds()
     check_slot_parity_with_penalty()
     check_teacher_forced_degrades_without_ckpt()
+    check_load_v2_arch_ckpt()
     print("ALL eval tests PASS")
     return 0
 
