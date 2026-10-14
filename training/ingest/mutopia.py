@@ -2,19 +2,21 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Mutopia PD-only intake (Phase 9 Task 5 round 2, box 2 of 3).
 
-LICENSE-FIRST (hard gate, per FILE): the ONLY acceptable evidence is the
-``mutopiacopyright`` header field of the fetched ``.ly`` source matching
-Public Domain or CC0 (case-insensitive ``public domain``,
-``creative commons zero``, ``cc0``). ``CC BY-SA`` / ``CC BY-NC*`` /
-missing / ambiguous -> REFUSE that file. PD-composition != PD-encoding
-applies per file: the gate runs BEFORE any note parse.
+LICENSE-FIRST (ruling update): per-file ``mutopiacopyright`` / ``license`` /
+``copyright`` (quoted) equal to "Public Domain" (case-insensitive, trimmed)
+counts as PD evidence — the strictness targets the VALUE (explicit per-file
+PD dedication), not the LilyPond field NAME. ``mutopiacopyright`` CC0 values
+count as CC0. Anything else present (BY-SA/NC/...) -> REFUSE that file, as do
+missing dedications and any additional conflicting rights line (arranger /
+typesetter ©, "used by permission", ...) even beside a PD line.
+PD-composition != PD-encoding applies per file: the gate runs BEFORE any
+note parse.
 
 Corpus finding (2026-10-14, inside the box): current Mutopia template
 files carry ``copyright = "..."`` (2008-era) or ``license = "..."``
 (2015-era) fields instead; no fetched file carries ``mutopiacopyright``.
-Those are recorded as secondary evidence but do NOT govern: under the
-strict brief rule a file without ``mutopiacopyright`` is refused
-("missing"). See the intake report for the controller ruling request.
+Per the controller ruling these count as PD evidence when their value is
+"Public Domain" (see :func:`gate_header`).
 
 Reduction reuses the jsb371 mapping by import (no fork): SATB mini-score
 -> :func:`jsb371.reduce_satb` (S->Melody, Bass->Bass, slices->Chords,
@@ -73,14 +75,15 @@ _OTHER_HYMNS = ["BourgeoisL/Old100/Old100.ly",
                 "BradburyWB/woodworth/woodworth.ly"]
 _CHORALES = ["BachJS/Nun_komm.28/Nun_komm.28.ly",
              "BachJS/O_Haupt_voll_Blut/O_Haupt_voll_Blut.ly",
-             "BachJS/BWV259/bwv-259/bwv-259.ly",
              "BachJS/BWV269/bwv_269/bwv_269.ly",
              "BachJS/BWV347/bwv347/bwv347.ly",
-             "BachJS/BWV264/bwv-264/bwv-264.ly",
-             "BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly",
              "BachJS/BWV454/bwv_454/bwv_454.ly",
              "BachJS/BWV462/bwv_462/bwv_462.ly"]
-CANDIDATES: list[str] = _ANON + _OTHER_HYMNS + _CHORALES  # 35 .ly paths
+CANDIDATES: list[str] = _ANON + _OTHER_HYMNS + _CHORALES  # 32 .ly paths
+# Condition (3): these 3 BY-SA files stay out, no exceptions (never fetched).
+EXCLUDED_BYSA = ["BachJS/BWV259/bwv-259/bwv-259.ly",
+                 "BachJS/BWV264/bwv-264/bwv-264.ly",
+                 "BachJS/BWV277/Bach_ChristLag/Bach_ChristLag.ly"]
 
 # Textures out of scope for the homophonic 4-voice box.
 INSTRUMENT_DENY = ("orchestra", "symphony", "concerto", "sonata",
@@ -88,28 +91,102 @@ INSTRUMENT_DENY = ("orchestra", "symphony", "concerto", "sonata",
 MAX_NOTES_PER_BAR = 12  # per voice; denser => virtuoso-solo/orchestral skip
 
 
-def gate_header(ly_text: str, url: str) -> tuple[bool, str, str]:
-    """Strict per-file PD/CC0 gate on the ``mutopiacopyright`` field.
+def _quoted_field(ly_text: str, field: str) -> str | None:
+    """Raw quoted value of a header field, or None when absent/unquoted."""
+    m = re.search(r'(?m)^\s*%s\s*=\s*"([^"]*)"' % re.escape(field), ly_text)
+    return m.group(1) if m else None
 
-    Returns (ok, spdx, reason). spdx is "PD" / "CC0-1.0" on accept, ""
-    on refuse. ``license``/``copyright`` fields never govern (see
-    :func:`extract_header_evidence` for the recorded secondary evidence).
+
+def _header_block(ly_text: str) -> str:
+    m = re.search(r"\\header\s*\{(.*?)\n\}", ly_text, re.S)
+    return m.group(1) if m else ly_text
+
+
+# Extra rights claims that void an intake even beside a PD dedication.
+_CONFLICT_RES = (re.compile("\u00a9"), re.compile(r"\(c\)", re.I),
+                 re.compile(r"all rights reserved", re.I),
+                 re.compile(r"used by permission", re.I),
+                 re.compile(r"copyrighted", re.I))
+
+
+def scan_conflicts(ly_text: str) -> list[str]:
+    """Lines in the header block carrying an extra rights claim.
+
+    The PD dedication line itself and Mutopia distributor boilerplate
+    (footer/tagline/copyright-markup mentioning MutopiaProject) never count.
+    Returns the offending stripped lines (max 3).
     """
-    m = re.search(r'(?m)^\s*mutopiacopyright\s*=\s*"([^"]*)"', ly_text)
-    if m is None:
+    hits = []
+    for ln in _header_block(ly_text).split("\n"):
+        low = ln.lower()
+        if "public domain" in low or "mutopia" in low:
+            continue
+        if any(r.search(ln) for r in _CONFLICT_RES):
+            hits.append(ln.strip()[:160])
+            if len(hits) >= 3:
+                break
+    return hits
+
+
+def header_quote(ly_text: str) -> str | None:
+    """Verbatim PD dedication line for ledger evidence (condition 1)."""
+    for field in ("mutopiacopyright", "license", "copyright"):
+        m = re.search(r'(?m)^\s*(%s\s*=\s*"[^"]*")' % re.escape(field),
+                      ly_text)
+        if m and m.group(1) and "public domain" in m.group(1).lower():
+            return m.group(1).strip()[:200]
+    return None
+
+
+def gate_header(ly_text: str, url: str) -> tuple[bool, str, str]:
+    """Per-file PD gate under the controller ruling.
+
+    VALUE rule (not field-name rule): per-file ``mutopiacopyright`` /
+    ``license`` / ``copyright`` (quoted) equal to "Public Domain"
+    (case-insensitive, trimmed) counts as PD evidence (spdx "PD").
+    ``mutopiacopyright`` CC0 values count as "CC0-1.0". Returns
+    (ok, spdx, reason); spdx is "" on refuse. Refuse when: no usable
+    dedication (missing); any present quoted value is neither PD nor
+    CC0-via-mutopiacopyright (conflicting/ambiguous signals, incl. BY-SA);
+    or :func:`scan_conflicts` finds an extra rights line (condition 2).
+    """
+    vals = {f: _quoted_field(ly_text, f)
+            for f in ("mutopiacopyright", "license", "copyright")}
+    if vals["mutopiacopyright"] is None:
         m = re.search(r"(?m)^\s*mutopiacopyright\s*=\s*([^\s%]+)", ly_text)
-    if m is None:
+        if m:
+            vals["mutopiacopyright"] = m.group(1)
+    verdicts: dict[str, str] = {}
+    for f, v in vals.items():
+        if v is None:
+            continue
+        norm = v.strip().lower()
+        if norm == "public domain":
+            verdicts[f] = "PD"
+        elif (f == "mutopiacopyright"
+              and ("creative commons zero" in norm
+                   or re.search(r"\bcc0\b", norm))):
+            verdicts[f] = "CC0-1.0"
+        else:
+            verdicts[f] = "BAD"
+    if not verdicts:
         return (False, "",
-                "refuse: missing mutopiacopyright header field "
+                "refuse: no license dedication header field "
                 "(PD-composition != PD-encoding; BY-SA/NC/unknown refused)")
-    val = m.group(1).strip()
-    low = val.lower()
-    if "public domain" in low:
-        return True, "PD", f"ok: mutopiacopyright PD for {url}"
-    if "creative commons zero" in low or re.search(r"\bcc0\b", low):
-        return True, "CC0-1.0", f"ok: mutopiacopyright CC0 for {url}"
-    return (False, "",
-            f"refuse: mutopiacopyright {val[:120]!r} not PD/CC0 for {url}")
+    bad = {f: vals[f] for f, v in verdicts.items() if v == "BAD"}
+    if bad:
+        detail = "; ".join(f"{f}={vals[f][:80]!r}" for f in sorted(bad))
+        return (False, "",
+                f"refuse: conflicting/non-PD license signal ({detail})")
+    hits = scan_conflicts(ly_text)
+    if hits:
+        return (False, "",
+                f"refuse: conflicting rights line beside PD dedication "
+                f"({hits[0]!r})")
+    field = next(f for f in ("mutopiacopyright", "license", "copyright")
+                 if f in verdicts)
+    spdx = verdicts[field]
+    return True, spdx, f"ok: {field} {spdx} for {url}"
 
 
 def extract_header_evidence(ly_text: str) -> dict:

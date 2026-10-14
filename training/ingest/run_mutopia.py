@@ -1,11 +1,13 @@
 # Copyright (C) 2026 Horror-04
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Mutopia PD-only intake runner (Phase 9 Task 5 round 2, Step 2-3). Stdlib only.
+"""Mutopia PD-only intake runner (Phase 9 Task 5 round 2, follow-up). Stdlib only.
 
-LICENSE-FIRST: each candidate ``.ly`` is fetched and gated on its
-``mutopiacopyright`` header BEFORE any note parse. Refused files are
-never parsed, never recorded. Small ToS-respecting batch (35 candidates,
-rate-limited, not a mirror).
+LICENSE-FIRST (controller ruling): each candidate ``.ly`` is fetched and
+gated on its per-file PD dedication (``mutopiacopyright`` / ``license`` /
+``copyright`` = "Public Domain", case-insensitive + trimmed; CC0 via
+``mutopiacopyright``) plus a conflicting-rights scan, BEFORE any note
+parse. Refused files are never parsed, never recorded. Fenced batch:
+the 32 ruled files (3 BY-SA excluded, never fetched).
 
 Run: training/.venv/Scripts/python training/ingest/run_mutopia.py
 """
@@ -101,6 +103,8 @@ def main() -> int:
         except Exception:
             text = ""
         row["evidence"] = M.extract_header_evidence(text)
+        row["header_quote"] = M.header_quote(text)
+        row["conflicts"] = M.scan_conflicts(text)
         ok, spdx, reason = M.gate_header(text, url)
         row["gate_ok"] = ok
         row["spdx"] = spdx
@@ -124,29 +128,23 @@ def main() -> int:
         report = {
             "status": "NEEDS_CONTEXT",
             "source": M.SOURCE, "url": M.SOURCE_URL,
-            "gate": {"rule": "per-file mutopiacopyright PD/CC0 only; "
-                             "BY-SA/NC/missing refuse",
+            "gate": {"rule": "per-file PD dedication (mutopiacopyright / "
+                             "license / copyright = Public Domain, ci+trimmed; "
+                             "CC0 via mutopiacopyright) + conflict scan; "
+                             "BY-SA/NC/missing/conflict refuse",
                      "candidates": len(files),
                      "accepted": 0, "refused": n_refuse,
                      "fetch_failed": n_fail},
             "files": files,
+            "excluded_bysa": M.EXCLUDED_BYSA,
             "schema_finding": (
-                "No fetched file carries a mutopiacopyright field: "
-                "2008-era files dedicate via copyright = \"Public Domain\" "
-                "(plain string); 2015-era files via "
-                "license = \"Public Domain\" or "
-                "license = \"Creative Commons Attribution-ShareAlike 4.0\". "
-                "Per the brief ONLY mutopiacopyright governs, so every "
-                "candidate refuses (missing) or would refuse (BY-SA). "
-                "Representative quotes in files[].evidence."),
-            "blocker": ("0 licensed records under the strict gate. "
-                        "Ruling requested: does copyright = \"Public Domain\" "
-                        "(2008 template) / license = \"Public Domain\" "
-                        "(2015 template) count as per-file PD evidence? "
-                        "If yes, re-run this runner with the allowlisted "
-                        "field set (MIDI route verified viable 2026-10-14: "
-                        "one MThd probe fetch, 1874 bytes). "
-                        "Else round 3 = OpenScore-CC0."),
+                "Controller ruling applied: per-file copyright/license = "
+                "Public Domain (ci, trimmed) counts as PD evidence; "
+                "conflicting rights lines refuse regardless. "
+                "Representative quotes in files[].header_quote."),
+            "blocker": ("0 licensed records under the widened gate. "
+                        "Next: OpenScore-CC0 box, unless textures (not "
+                        "license) are the cause — see skips."),
             "counts": {"loaded_pieces": 0, "records": 0,
                        "decodable_rate": None,
                        "dedupe_drops": {k: 0 for k in D.REF_ORDER}},
@@ -202,18 +200,23 @@ def main() -> int:
     with open(INTAKE_JSONL, "w") as f:
         for r in kept:
             f.write(json.dumps(r) + "\n")
-    by_spdx: dict[str, list[str]] = {}
+    # Ledger condition (1): one row per license-accepted FILE with the
+    # verbatim header quote in the notice column (compact one-liner).
+    kept_by_sha: dict[str, int] = {}
     for r in kept:
-        by_spdx.setdefault(r["meta"]["license"], []).append(r["meta"]["sha"])
-    for spdx, shas in sorted(by_spdx.items()):
-        msha = M.manifest_sha(shas)
-        ok, reason = L.validate(M.SOURCE, M.SOURCE_URL, spdx, msha,
-                               spdx.startswith("CC-BY"))
+        kept_by_sha[r["meta"]["sha"]] = kept_by_sha.get(r["meta"]["sha"], 0) + 1
+    by_sha = {r["sha"]: r for r in files if r.get("verdict") == "accept"}
+    for sha in sorted(by_sha):
+        row = by_sha[sha]
+        footer = (row["evidence"] or {}).get("footer") or "?"
+        quote = row.get("header_quote") or "?"
+        notice = (f"{quote} | footer={footer} | "
+                  f"{row['path'].rsplit('/', 1)[-1]}")[:220]
+        ok, reason = L.validate(M.SOURCE, row["url"], row["spdx"], sha,
+                               row["spdx"].startswith("CC-BY"))
         assert ok, reason
-        L.append_row(L.SOURCES_CSV, M.SOURCE, M.SOURCE_URL, spdx, msha,
-                     sum(1 for r in kept if r["meta"]["license"] == spdx),
-                     "Mutopia per-file PD/CC0 header evidence; see report"
-                     if spdx.startswith("CC-BY") else "")
+        L.append_row(L.SOURCES_CSV, M.SOURCE, row["url"], row["spdx"], sha,
+                     kept_by_sha.get(sha, 0), notice)
     LS.write_skeleton(LISTENING_CSV,
                       [{"id": r["id"], "source_file": r["id"],
                         "bars": r["bars"], "verdict": LS.PENDING,
@@ -221,10 +224,12 @@ def main() -> int:
     with open(GROUPSPLIT_JSON, "w") as f:
         json.dump({"shared_melodies": D.group_split_report(kept, train, val)},
                   f, indent=1)
-    report = {"status": "DONE",
-              "gate": {"candidates": len(files), "accepted": len(accepted),
+    report = {"status": "DONE" if kept else "NEEDS_CONTEXT",
+              "gate": {"rule": "per-file PD dedication + conflict scan",
+                       "candidates": len(files), "accepted": len(accepted),
                        "refused": n_refuse, "fetch_failed": n_fail},
               "files": files, "skips": skips,
+              "excluded_bysa": M.EXCLUDED_BYSA,
               "counts": {"loaded_pieces": len(accepted), "records": len(kept),
                          "decodable_rate": decodable / max(1, len(records)),
                          "window_misses": misses,

@@ -129,6 +129,8 @@ def main():
     check_dedupe_reports_per_set()
     check_runner_refuses_before_parse()
     check_mutopia_gate_pd_cc0_only()
+    check_mutopia_ruling_widened_gate()
+    check_mutopia_conflict_scan()
     check_mutopia_homophonic_filter()
     check_mutopia_parity_with_jsb()
     check_listening_verdict_enum()
@@ -219,11 +221,59 @@ def check_mutopia_gate_pd_cc0_only():
     assert ok is True and spdx == "CC0-1.0", "mutopiacopyright CC0 must pass"
     ok, spdx, _ = mutopia.gate_header(_CC0Z_HDR, "https://example.invalid/x.ly")
     assert ok is True and spdx == "CC0-1.0", "Creative Commons Zero must pass"
-    for hdr in (_BYSA_HDR, _NC_HDR, _MISSING_HDR, _WRONGFIELD_HDR):
+    for hdr in (_BYSA_HDR, _NC_HDR, _MISSING_HDR):
         ok, _, reason = mutopia.gate_header(hdr, "https://example.invalid/x.ly")
         assert ok is False and reason, \
-            f"BY-SA/NC/missing/wrong-field must be refused, got ok for {hdr!r:.60}"
+            f"BY-SA/NC/missing must be refused, got ok for {hdr!r:.60}"
+    # Ruling supersedes the strict field-name rule: a bare
+    # license = "Public Domain" line now ACCEPTS (see widened-gate test).
     print("PASS mutopia strict gate: PD/CC0 via mutopiacopyright only")
+
+
+def check_mutopia_ruling_widened_gate():
+    # Ruling: per-file copyright/license = "Public Domain" (ci, trimmed) PD.
+    ok, spdx, reason = mutopia.gate_header(
+        '\\header {\n copyright = "Public Domain"\n}', "u")
+    assert ok is True and spdx == "PD" and "copyright" in reason
+    ok, spdx, _ = mutopia.gate_header(
+        '\\header {\n license = "  PUBLIC domain  "\n}', "u")
+    assert ok is True and spdx == "PD"
+    # Conflicting license signals -> refuse even with a PD line present.
+    ok, _, reason = mutopia.gate_header(
+        '\\header {\n copyright = "Public Domain"\n'
+        ' license = "Creative Commons Attribution-ShareAlike 4.0"\n}', "u")
+    assert ok is False and reason
+    # The 3 BY-SA stay out, no exceptions.
+    ok, _, _ = mutopia.gate_header(_BYSA_HDR, "u")
+    assert ok is False
+    # Batch fenced at these 32 files.
+    assert len(mutopia.CANDIDATES) == 32, len(mutopia.CANDIDATES)
+    assert len(mutopia.EXCLUDED_BYSA) == 3
+    assert not set(mutopia.EXCLUDED_BYSA) & set(mutopia.CANDIDATES)
+    # Verbatim quote helper for ledger evidence (condition 1).
+    q = mutopia.header_quote('\\header {\n copyright = "Public Domain"\n}')
+    assert q == 'copyright = "Public Domain"', q
+    print("PASS mutopia ruling gate: PD value (any field) + fenced batch")
+
+
+def check_mutopia_conflict_scan():
+    pd = '\\header {\n copyright = "Public Domain"\n}'
+    assert mutopia.scan_conflicts(pd) == []
+    boiler = (pd + '\n tagline = \\markup { Sheet music from '
+              '\\with-url #"http://www.MutopiaProject.org" Mutopia }\n')
+    assert mutopia.scan_conflicts(boiler) == [], "boilerplate must not trip"
+    bad = ('\\header {\n copyright = "Public Domain"\n'
+           ' arranger = "J. Doe \u00a9 2020"\n}')
+    hits = mutopia.scan_conflicts(bad)
+    assert hits, "arranger (c) line must trip the conflict scan"
+    ok, _, reason = mutopia.gate_header(bad, "u")
+    assert ok is False and "conflict" in reason.lower(), \
+        "PD line + conflicting rights line must refuse"
+    perm = ('\\header {\n license = "Public Domain"\n'
+            ' source = "used by permission of X"\n}')
+    ok, _, _ = mutopia.gate_header(perm, "u")
+    assert ok is False, "'used by permission' must refuse"
+    print("PASS mutopia conflict scan refuses extra rights lines")
 
 
 def check_mutopia_homophonic_filter():
