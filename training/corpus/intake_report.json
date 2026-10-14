@@ -1,0 +1,40 @@
+{
+ "status": "NEEDS_CONTEXT",
+ "source": "jsb-chorales-music21",
+ "url": "https://github.com/cuthbertLab/music21 (corpus: bach/bwv*.mxl)",
+ "claimed_license": "UNKNOWN (encoding (c) 2004 Margaret Greentree, used by permission)",
+ "gate": {
+  "ok": false,
+  "reason": "refuse: license 'UNKNOWN (encoding (c) 2004 Margaret Greentree, used by permission)' not in allowlist ['CC-BY-3.0', 'CC-BY-4.0', 'CC0-1.0', 'PD']"
+ },
+ "evidence": {
+  "corpus_files": 408,
+  "credit_greentree_permission": 308,
+  "credit_greentree_permission_dash": 3,
+  "credit_none": 48,
+  "credit_title_only": 49,
+  "pd_cc0_ccby_grant_found": false,
+  "software_license": "BSD (code only, not encodings)",
+  "source_site": "jsbchorales.net DEAD (domain squatted, checked 2026-10-14)",
+  "composition_pd_note": "Bach d. 1750 is PD, but PD-composition != PD-encoding"
+ },
+ "blocker": "JSB-371 encoding license unproven: files carry '(c) 2004 Margaret Greentree, used by permission' (non-transferable, not PD/CC0/CC-BY); source site dead. Next candidates needing their own <=30-min boxes: Mutopia (mutopiacopyright header), OpenScore CC0, CPDL edition tags.",
+ "counts": {
+  "loaded_chorales": 0,
+  "records": 0,
+  "decodable_rate": null,
+  "dedupe_drops": {
+   "train": 0,
+   "val": 0,
+   "heads": 0,
+   "intake-seen": 0
+  }
+ },
+ "listening": {
+  "n": 0,
+  "table": "jsb371_listening.csv",
+  "note": "skeleton only (0 rows); human listening async"
+ },
+ "group_split": "jsb371_group_split.json",
+ "ledger": "sources.csv"
+}
