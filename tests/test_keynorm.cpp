@@ -82,7 +82,7 @@ TEST_CASE("keynorm python parity vectors are byte-identical", "[keynorm]") {
   CHECK(shift == 5);
   CHECK(out == want);
   // Drums (track 5) untouched: pitch 38 survived.
-  CHECK(out[9] == 38);
+  CHECK(out[10] == 38);
   // Inverse restores the input exactly.
   std::vector<int> back(ids.size(), -1);
   REQUIRE(hf::infer::keynorm_from_canonical(out.data(), out.size(), shift,
@@ -204,7 +204,8 @@ TEST_CASE("keynorm flag-on echo keeps G-major candidates pc-equivalent",
     const auto ea = hf::ser::encode_pattern(a[i]);
     const auto eb = hf::ser::encode_pattern(b[i]);
     REQUIRE(ea.size() == eb.size());
-    REQUIRE(!ea.empty() && ea[0] == eb[0]);
+    REQUIRE(!ea.empty());
+    REQUIRE(ea[0] == eb[0]);
     for (size_t k = 0; k < static_cast<size_t>(ea[0]); ++k) {
       const int tt = ea[1 + k * 6 + 2];
       CHECK(eb[1 + k * 6 + 2] == tt);

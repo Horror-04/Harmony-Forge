@@ -16,6 +16,7 @@
 #include "core/music/scale.h"
 #include "core/serialization/tokenizer.h"
 #include "inference_runner.h"
+#include "keynorm.h"
 #include "memo_filter.h"
 #include "onnx_runner.h"
 
@@ -394,6 +395,16 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
   for (int i = 0; i < 4; ++i) {
     std::mt19937 rng(stream_seed(p, i));
     core::Pattern base = compose_base(p, prog, iv, rng);
+    // Phase 9 Task 5b: key-normalized inference (flag-gated, default OFF).
+    // When enabled, the runner feed is transposed to the canonical key
+    // before the runner stage and the decoded material is shifted back
+    // after, so a model trained on canonical views sees canonical input.
+    // Drums are untouched both ways; Melody/Bass octave_pull mirrors the
+    // composer registers. Flag OFF == verbatim pre-task statements below.
+    core::Pattern feed = base;
+    int kn_shift = 0;
+    if (p.keynorm_use_canonical)
+      kn_shift = shift_pattern_to_canonical(feed, p.tonic, p.scale);
     // Empty model path (the default) runs the verbatim pre-Task-4 statements
     // so default output cannot drift; model/override paths share the same
     // core with their runner choice made explicit.
@@ -404,9 +415,10 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
         (runner_override != nullptr || !p.model_path.empty());
     core::Pattern material =
         runner_path
-            ? material_from_runner_with(base, static_cast<unsigned>(p.seed + i), p.model_path,
+            ? material_from_runner_with(feed, static_cast<unsigned>(p.seed + i), p.model_path,
                                         runner_override)
-            : material_from_runner(base, static_cast<unsigned>(p.seed + i));
+            : material_from_runner(feed, static_cast<unsigned>(p.seed + i));
+    if (p.keynorm_use_canonical) shift_pattern_from_canonical(material, kn_shift);
     // Decoded runner output regroups tracks by type; generation below only
     // needs the Melody track to exist, base already guarantees the rest.
     apply_candidate_transform(material, p, i, iv, rng);

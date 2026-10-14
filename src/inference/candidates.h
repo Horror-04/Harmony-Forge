@@ -25,6 +25,14 @@ struct GenParams {
   /// this path (real weights). Deliberately EXCLUDED from the candidate
   /// stream seeds, so empty-path output is bit-identical to before.
   std::string model_path;
+  /// Key-normalized inference (Phase 9 Task 5b): when true, the background
+  /// generate path transposes the runner feed to the canonical key (major
+  /// -> C, else -> A, drums untouched) before the runner stage and shifts
+  /// the decoded material back after. Default false == pre-task behavior
+  /// (the hook is inert; output bit-identical). Deliberately EXCLUDED from
+  /// the candidate stream seeds (same rationale as model_path): the flag
+  /// changes pitches, not the RNG streams. Background threads only.
+  bool keynorm_use_canonical = false;
 };
 
 // Diatonic triad-per-bar progression for `params` (degrees I-V-vi-IV cycled,
