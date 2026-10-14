@@ -1,0 +1,634 @@
+{
+ "task": "phase-9-task-1 eval-v2 rescore (measurement only, no gates change)",
+ "val": "frozen training/corpus/val.jsonl (33 records); default seed 7",
+ "ort_models": {
+  "attempt2": {
+   "commit": "253b61b",
+   "note": "history gates-green 0.905"
+  },
+  "attempt3": {
+   "commit": "e4d5e37",
+   "note": "pad-fix, history 0.893 FAIL"
+  },
+  "v1": {
+   "commit": "dd7c59b",
+   "note": "shipped weights (worktree model.onnx hash-identical)"
+  },
+  "r3w4-shelved": {
+   "commit": "3c3d7fd",
+   "note": "shelved round-3 W=4, trained on expanded 407/37 split; scored here on frozen 33-val"
+  },
+  "student-shelved": {
+   "commit": "29f9c9b",
+   "note": "shelved phase-8 v2 student, trained on expanded 407/37 split; scored on frozen 33-val"
+  }
+ },
+ "ort": {
+  "attempt2": {
+   "commit": "253b61b",
+   "model": "attempt2.onnx",
+   "n_val": 33,
+   "n_scored": 33,
+   "mean_compliance": 0.905475753203026,
+   "mean_compliance_ci95": [
+    0.8517108312562858,
+    0.9472823472823473
+   ],
+   "multi_seed": {
+    "7": {
+     "mean_compliance": 0.905475753203026,
+     "ci95": [
+      0.8517108312562858,
+      0.9472823472823473
+     ]
+    },
+    "11": {
+     "mean_compliance": 0.905475753203026,
+     "ci95": [
+      0.8565525383707201,
+      0.9475556430101885
+     ]
+    },
+    "23": {
+     "mean_compliance": 0.905475753203026,
+     "ci95": [
+      0.8556189601644147,
+      0.9458032708032708
+     ]
+    }
+   },
+   "seeds": [
+    7,
+    11,
+    23
+   ],
+   "mean_newonly_compliance": 0.9550691244239632,
+   "n_newonly_scored": 31,
+   "mean_suffix_compliance": 0.9550691244239632,
+   "n_suffix_scored": 31,
+   "novel_ngram_rate": {
+    "4": 0.754100529100529,
+    "5": 0.9496097337006427,
+    "6": 0.9878787878787879,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.0
+   },
+   "novel_ngram_scored": {
+    "4": 33,
+    "5": 33,
+    "6": 33,
+    "7": 33,
+    "8": 29,
+    "9": 26,
+    "10": 25,
+    "11": 21,
+    "12": 20,
+    "13": 16,
+    "14": 16,
+    "15": 16,
+    "16": 0
+   },
+   "new_notes_ratio": 0.020161290322580645,
+   "mean_new_notes": 2.484848484848485,
+   "mean_verbatim_run_raw": 5.2727272727272725,
+   "mean_verbatim_run_filtered": 2.4545454545454546,
+   "gates": {
+    "compliance_ge_0.90": true,
+    "novelty_no_exact_copy": true,
+    "memorization_filter_pass": true,
+    "determinism_all_identical": true
+   },
+   "all_pass": true
+  },
+  "attempt3": {
+   "commit": "e4d5e37",
+   "model": "attempt3.onnx",
+   "n_val": 33,
+   "n_scored": 33,
+   "mean_compliance": 0.8930652680652681,
+   "mean_compliance_ci95": [
+    0.8307757057757057,
+    0.9410774410774411
+   ],
+   "multi_seed": {
+    "7": {
+     "mean_compliance": 0.8930652680652681,
+     "ci95": [
+      0.8307757057757057,
+      0.9410774410774411
+     ]
+    },
+    "11": {
+     "mean_compliance": 0.8930652680652681,
+     "ci95": [
+      0.8341750841750842,
+      0.9423076923076923
+     ]
+    },
+    "23": {
+     "mean_compliance": 0.8930652680652681,
+     "ci95": [
+      0.834142709142709,
+      0.9402033152033151
+     ]
+    }
+   },
+   "seeds": [
+    7,
+    11,
+    23
+   ],
+   "mean_newonly_compliance": 0.25,
+   "n_newonly_scored": 4,
+   "mean_suffix_compliance": 0.25,
+   "n_suffix_scored": 4,
+   "novel_ngram_rate": {
+    "4": 0.7310606060606061,
+    "5": 0.9212908303817394,
+    "6": 0.9393939393939394,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.0
+   },
+   "novel_ngram_scored": {
+    "4": 33,
+    "5": 33,
+    "6": 33,
+    "7": 29,
+    "8": 21,
+    "9": 21,
+    "10": 21,
+    "11": 21,
+    "12": 16,
+    "13": 16,
+    "14": 16,
+    "15": 16,
+    "16": 0
+   },
+   "new_notes_ratio": 0.0,
+   "mean_new_notes": 0.12121212121212122,
+   "mean_verbatim_run_raw": 44.57575757575758,
+   "mean_verbatim_run_filtered": 0.18181818181818182,
+   "gates": {
+    "compliance_ge_0.90": false,
+    "novelty_no_exact_copy": true,
+    "memorization_filter_pass": true,
+    "determinism_all_identical": true
+   },
+   "all_pass": false
+  },
+  "v1": {
+   "commit": "dd7c59b",
+   "model": "v1.onnx",
+   "n_val": 33,
+   "n_scored": 32,
+   "mean_compliance": 0.9070846688034188,
+   "mean_compliance_ci95": [
+    0.8627804487179487,
+    0.9487847222222222
+   ],
+   "multi_seed": {
+    "7": {
+     "mean_compliance": 0.9070846688034188,
+     "ci95": [
+      0.8627804487179487,
+      0.9487847222222222
+     ]
+    },
+    "11": {
+     "mean_compliance": 0.9070846688034188,
+     "ci95": [
+      0.8575721153846154,
+      0.9470152243589743
+     ]
+    },
+    "23": {
+     "mean_compliance": 0.9070846688034188,
+     "ci95": [
+      0.8615451388888888,
+      0.9474492521367521
+     ]
+    }
+   },
+   "seeds": [
+    7,
+    11,
+    23
+   ],
+   "mean_newonly_compliance": 0.3333333333333333,
+   "n_newonly_scored": 3,
+   "mean_suffix_compliance": 0.3333333333333333,
+   "n_suffix_scored": 3,
+   "novel_ngram_rate": {
+    "4": 0.7434895833333334,
+    "5": 0.9188311688311688,
+    "6": 0.9375,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.0
+   },
+   "novel_ngram_scored": {
+    "4": 32,
+    "5": 32,
+    "6": 32,
+    "7": 29,
+    "8": 21,
+    "9": 21,
+    "10": 21,
+    "11": 21,
+    "12": 16,
+    "13": 16,
+    "14": 16,
+    "15": 16,
+    "16": 0
+   },
+   "new_notes_ratio": 0.0,
+   "mean_new_notes": 0.30303030303030304,
+   "mean_verbatim_run_raw": 32.121212121212125,
+   "mean_verbatim_run_filtered": 0.24242424242424243,
+   "gates": {
+    "compliance_ge_0.90": true,
+    "novelty_no_exact_copy": true,
+    "memorization_filter_pass": true,
+    "determinism_all_identical": true
+   },
+   "all_pass": true
+  },
+  "r3w4-shelved": {
+   "commit": "3c3d7fd",
+   "model": "r3w4.onnx",
+   "n_val": 33,
+   "n_scored": 27,
+   "mean_compliance": 0.8783030106129521,
+   "mean_compliance_ci95": [
+    0.8160602122590427,
+    0.9327485380116959
+   ],
+   "multi_seed": {
+    "7": {
+     "mean_compliance": 0.8783030106129521,
+     "ci95": [
+      0.8160602122590427,
+      0.9327485380116959
+     ]
+    },
+    "11": {
+     "mean_compliance": 0.8783030106129521,
+     "ci95": [
+      0.8157623998267274,
+      0.9328297595841455
+     ]
+    },
+    "23": {
+     "mean_compliance": 0.8783030106129521,
+     "ci95": [
+      0.8157623998267274,
+      0.9351851851851852
+     ]
+    }
+   },
+   "seeds": [
+    7,
+    11,
+    23
+   ],
+   "mean_newonly_compliance": 0.6,
+   "n_newonly_scored": 10,
+   "mean_suffix_compliance": 0.6,
+   "n_suffix_scored": 10,
+   "novel_ngram_rate": {
+    "4": 0.7083333333333334,
+    "5": 0.9124579124579125,
+    "6": 0.9259259259259259,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.0
+   },
+   "novel_ngram_scored": {
+    "4": 27,
+    "5": 27,
+    "6": 27,
+    "7": 23,
+    "8": 18,
+    "9": 18,
+    "10": 18,
+    "11": 18,
+    "12": 15,
+    "13": 15,
+    "14": 15,
+    "15": 15,
+    "16": 0
+   },
+   "new_notes_ratio": 0.42075892857142855,
+   "mean_new_notes": 2.1515151515151514,
+   "mean_verbatim_run_raw": 13.727272727272727,
+   "mean_verbatim_run_filtered": 0.9090909090909091,
+   "gates": {
+    "compliance_ge_0.90": false,
+    "novelty_no_exact_copy": true,
+    "memorization_filter_pass": true,
+    "determinism_all_identical": true
+   },
+   "all_pass": false
+  },
+  "student-shelved": {
+   "commit": "29f9c9b",
+   "model": "student.onnx",
+   "n_val": 33,
+   "n_scored": 33,
+   "mean_compliance": 0.8963120213120214,
+   "mean_compliance_ci95": [
+    0.8426527176527177,
+    0.9423076923076923
+   ],
+   "multi_seed": {
+    "7": {
+     "mean_compliance": 0.8963120213120214,
+     "ci95": [
+      0.8426527176527177,
+      0.9423076923076923
+     ]
+    },
+    "11": {
+     "mean_compliance": 0.8963120213120214,
+     "ci95": [
+      0.8427082177082177,
+      0.9427609427609428
+     ]
+    },
+    "23": {
+     "mean_compliance": 0.8963120213120214,
+     "ci95": [
+      0.8398268398268398,
+      0.9405964405964405
+     ]
+    }
+   },
+   "seeds": [
+    7,
+    11,
+    23
+   ],
+   "mean_newonly_compliance": 0.6666666666666666,
+   "n_newonly_scored": 3,
+   "mean_suffix_compliance": 0.6666666666666666,
+   "n_suffix_scored": 3,
+   "novel_ngram_rate": {
+    "4": 0.7310606060606061,
+    "5": 0.9212908303817394,
+    "6": 0.9393939393939394,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 0.0
+   },
+   "novel_ngram_scored": {
+    "4": 33,
+    "5": 33,
+    "6": 33,
+    "7": 29,
+    "8": 21,
+    "9": 21,
+    "10": 21,
+    "11": 21,
+    "12": 16,
+    "13": 16,
+    "14": 16,
+    "15": 16,
+    "16": 0
+   },
+   "new_notes_ratio": 0.0,
+   "mean_new_notes": 0.09090909090909091,
+   "mean_verbatim_run_raw": 31.90909090909091,
+   "mean_verbatim_run_filtered": 0.15151515151515152,
+   "gates": {
+    "compliance_ge_0.90": false,
+    "novelty_no_exact_copy": true,
+    "memorization_filter_pass": true,
+    "determinism_all_identical": true
+   },
+   "all_pass": false
+  }
+ },
+ "torch": {
+  "note": "teacher-forced on frozen 33-val, cpu. Each entry describes ITS OWN ckpt (ce_ckpt/ce_config); no entry describes v1: v1 torch weights are unrecoverable (checkpoints/ never committed; v1 survives only as argmax-ONNX, no logits).",
+  "pairing": {
+   "student-shelved ONNX <-> best.pt torch argmax parity": true,
+   "r3w4-shelved ONNX <-> best_r3w4.pt torch argmax parity": true,
+   "attempt2/attempt3/v1 torch ckpts": "absent (never committed)"
+  },
+  "ckpts": {
+   "best.pt": {
+    "ce_by_phase": {
+     "bass": {
+      "mean_ce": 0.17131859402088165,
+      "n_tokens": 1188
+     },
+     "chords": {
+      "mean_ce": 0.012010791335004715,
+      "n_tokens": 1854
+     },
+     "drums": {
+      "mean_ce": 0.0027601569866281795,
+      "n_tokens": 660
+     },
+     "melody": {
+      "mean_ce": 0.5195052379354981,
+      "n_tokens": 2448
+     }
+    },
+    "ce_overall": 0.24379919071693984,
+    "ce_tokens": 6150,
+    "intervention_rate": 0.024752475247524754,
+    "intervention_changed": 15,
+    "intervention_positions": 606,
+    "device": "cpu",
+    "ckpt": "best.pt",
+    "ckpt_config": {
+     "vocab": 256,
+     "d_model": 256,
+     "n_layer": 4,
+     "n_head": 8,
+     "d_ff": 1024,
+     "ctx": 1024
+    }
+   },
+   "best_r3w1.pt": {
+    "ce_by_phase": {
+     "bass": {
+      "mean_ce": 0.5838793752183283,
+      "n_tokens": 1188
+     },
+     "chords": {
+      "mean_ce": 0.2811757823013724,
+      "n_tokens": 1854
+     },
+     "drums": {
+      "mean_ce": 0.34307673330031596,
+      "n_tokens": 660
+     },
+     "melody": {
+      "mean_ce": 0.6042959985544358,
+      "n_tokens": 2448
+     }
+    },
+    "ce_overall": 0.4749098937537538,
+    "ce_tokens": 6150,
+    "intervention_rate": 0.041254125412541254,
+    "intervention_changed": 25,
+    "intervention_positions": 606,
+    "device": "cpu",
+    "ckpt": "best_r3w1.pt",
+    "ckpt_config": {
+     "vocab": 256,
+     "d_model": 192,
+     "n_layer": 6,
+     "n_head": 6,
+     "d_ff": 768,
+     "ctx": 1024
+    }
+   },
+   "best_r3w2.pt": {
+    "ce_by_phase": {
+     "bass": {
+      "mean_ce": 0.5775582535924106,
+      "n_tokens": 1188
+     },
+     "chords": {
+      "mean_ce": 0.22971495763844402,
+      "n_tokens": 1854
+     },
+     "drums": {
+      "mean_ce": 0.29244357633045487,
+      "n_tokens": 660
+     },
+     "melody": {
+      "mean_ce": 0.68704341648033,
+      "n_tokens": 2448
+     }
+    },
+    "ce_overall": 0.485678988723806,
+    "ce_tokens": 6150,
+    "intervention_rate": 0.057755775577557754,
+    "intervention_changed": 35,
+    "intervention_positions": 606,
+    "device": "cpu",
+    "ckpt": "best_r3w2.pt",
+    "ckpt_config": {
+     "vocab": 256,
+     "d_model": 192,
+     "n_layer": 6,
+     "n_head": 6,
+     "d_ff": 768,
+     "ctx": 1024
+    }
+   },
+   "best_r3w4.pt": {
+    "ce_by_phase": {
+     "bass": {
+      "mean_ce": 0.6140343327884442,
+      "n_tokens": 1188
+     },
+     "chords": {
+      "mean_ce": 0.3177013321725087,
+      "n_tokens": 1854
+     },
+     "drums": {
+      "mean_ce": 0.367272385102269,
+      "n_tokens": 660
+     },
+     "melody": {
+      "mean_ce": 0.7052696163407602,
+      "n_tokens": 2448
+     }
+    },
+    "ce_overall": 0.5345350979138507,
+    "ce_tokens": 6150,
+    "intervention_rate": 0.036303630363036306,
+    "intervention_changed": 22,
+    "intervention_positions": 606,
+    "device": "cpu",
+    "ckpt": "best_r3w4.pt",
+    "ckpt_config": {
+     "vocab": 256,
+     "d_model": 192,
+     "n_layer": 6,
+     "n_head": 6,
+     "d_ff": 768,
+     "ctx": 1024
+    }
+   }
+  }
+ },
+ "group_split": {
+  "n_val": 33,
+  "n_val_sharing_melody_with_train": 2,
+  "composed_sharing": [
+   "composed-P-k0",
+   "composed-P-k1"
+  ],
+  "procedural_sharing": [],
+  "overlap": [
+   {
+    "val": "composed-P-k0",
+    "train_owners": [
+     "composed-J-k0",
+     "composed-J-k1"
+    ],
+    "n_owners": 2
+   },
+   {
+    "val": "composed-P-k1",
+    "train_owners": [
+     "composed-J-k0",
+     "composed-J-k1"
+    ],
+    "n_owners": 2
+   }
+  ]
+ },
+ "reading_numbers_only": [
+  "headline mean_compliance ordering attempt2 0.905 / attempt3 0.893 / v1 0.907 persists on the frozen val (same order as history).",
+  "suffix ranking differs from headline ranking: attempt2 suffix 0.955 (31 scored) > student 0.667 (3) > r3w4 0.600 (10) > v1 0.333 (3) > attempt3 0.250 (4) \u2014 suffix differences persist and are larger than headline differences.",
+  "interval-novelty n=4 sits 0.708-0.754 for all five models (differences vanish); n>=7 saturates at 1.0 for all models (differences vanish); n=16 has 0 scored continuations everywhere.",
+  "bootstrap ci95 overlap across all models (every interval covers 0.86-0.93); multi-seed means identical to 4 decimals by construction (deterministic greedy).",
+  "torch per-phase CE ordering melody > bass > chords > drums persists across all four ckpts; student ckpt lowest overall (0.244).",
+  "intervention_rate 0.025-0.058 across ckpts (15-35 of 606 positions).",
+  "group-split: 2/33 val share a melody signature with train (composed-P-k0/k1 <-> train composed-J-k0/k1); 0/29 procedural val share (informational; re-split is Task 6)."
+ ]
+}

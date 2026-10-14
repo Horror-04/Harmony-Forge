@@ -141,10 +141,124 @@ def check_novelty_metrics() -> None:
           f"({len(pocs)} scored)")
 
 
+def check_interval_hash_transposition() -> None:
+    """Phase 9 Task 1 (measurement only, NOT gates): a transposed copy of a
+    train record scores copy-flag 0 on the token metric (no exact id-vector
+    match) but is caught by the transposition-invariant interval metric
+    (identical interval hash, zero interval-novelty)."""
+    train = E.load_jsonl("train.jsonl")
+    corpus_vecs = set(tuple(r["ids"]) for r in
+                      train + E.load_jsonl("val.jsonl"))
+    rec = next(r for r in train if r["id"] == "composed-A-k0")
+    pat = tok.decode_tokens(rec["ids"])
+    assert pat is not None
+    tpat = {"ticks_per_beat": pat["ticks_per_beat"],
+            "beats_per_bar": pat["beats_per_bar"],
+            "tracks": []}
+    for t in pat["tracks"]:
+        notes = [dict(n, pitch=n["pitch"] + 2) for n in t["notes"]]
+        assert all(0 <= n["pitch"] <= 127 for n in notes)
+        tpat["tracks"].append({"type": t["type"], "channel": t["channel"],
+                               "notes": notes})
+    t_ids = tok.encode_pattern(tpat)
+    assert tok.decode_tokens(t_ids) is not None
+    # Token metric misses it (copy-flag 0: no exact corpus id-vector).
+    assert tuple(t_ids) not in corpus_vecs
+    # Interval metric catches it.
+    assert E.interval_hash(t_ids) == E.interval_hash(rec["ids"])
+    index = E.interval_ngram_index(train, 4)
+    assert E.novel_ngram_rate(t_ids, index, 4) == 0.0
+    print("PASS interval_hash transposition (token-miss, interval-catch)")
+
+
+def check_suffix_compliance_excludes_prefix() -> None:
+    """Phase 9 Task 1: suffix_compliance scores the generated suffix alone
+    (same absolute-bar decode as newonly_compliance). Crafted record with a
+    compliant prefix and a non-compliant suffix -> suffix < whole."""
+    rec = {"tonic": 60, "scale": "major",
+           "chords": [{"root": 48, "type": "maj"}]}
+    pref = (tok.encode_note(0, 0, "Melody", 60, 4, 92)
+            + tok.encode_note(0, 4, "Melody", 64, 4, 92))
+    suff = (tok.encode_note(0, 8, "Melody", 66, 4, 92)
+            + tok.encode_note(0, 12, "Melody", 61, 4, 92))
+    full_ids = [4] + pref + suff
+    assert tok.decode_tokens(E.finalize(full_ids)) is not None
+    whole = E.score_continuation(rec, full_ids)["compliance"]
+    suffix = E.suffix_compliance(rec, full_ids, 1 + len(pref))
+    assert suffix is not None
+    assert suffix == 0.0, f"suffix={suffix}"
+    assert whole == 0.5, f"whole={whole}"
+    assert suffix < whole, f"suffix={suffix} whole={whole}"
+    print(f"PASS suffix_compliance excludes prefix (suffix={suffix} < "
+          f"whole={whole})")
+
+
+def check_bootstrap_ci() -> None:
+    """Phase 9 Task 1: bootstrap-CI (1000 resamples, seed 7) is deterministic
+    and brackets the mean compliance."""
+    model = os.path.join(TRAINING, "model.onnx")
+    assert os.path.exists(model), "export model.onnx first"
+    report = E.evaluate(model)
+    vals = [r["compliance"] for r in report["records"] if r["decodable"]]
+    lo, hi = E.bootstrap_ci(vals)
+    lo2, hi2 = E.bootstrap_ci(vals)
+    assert (lo, hi) == (lo2, hi2), "bootstrap CI must be seed-deterministic"
+    mean = sum(vals) / len(vals)
+    assert lo <= mean <= hi, f"CI [{lo},{hi}] must bracket mean {mean}"
+    assert "mean_compliance_ci95" in report
+    rlo, rhi = report["mean_compliance_ci95"]
+    assert abs(rlo - lo) < 1e-12 and abs(rhi - hi) < 1e-12
+    print(f"PASS bootstrap_ci 95% [{lo:.3f},{hi:.3f}] brackets mean "
+          f"{mean:.3f}")
+
+
+def check_per_phase_ce_keys() -> None:
+    """Phase 9 Task 1: teacher-forced per-phase CE (torch, device recorded)
+    reports melody/bass/chords/drums buckets with finite non-negative means."""
+    import torch
+
+    ckpt = os.path.join(TRAINING, "checkpoints", "best.pt")
+    assert os.path.exists(ckpt), "train checkpoints/best.pt first"
+    recs = E.load_jsonl("val.jsonl")[:3]
+    out = E.teacher_forced_metrics(ckpt, recs, torch, "cpu")
+    assert out["device"] == "cpu", out["device"]
+    buckets = out["ce_by_phase"]
+    assert buckets, "no CE buckets scored"
+    allowed = {"melody", "bass", "chords", "drums", "other"}
+    assert set(buckets) <= allowed, set(buckets)
+    assert {"melody", "bass"} <= set(buckets), set(buckets)
+    for b, d in buckets.items():
+        assert d["n_tokens"] > 0, b
+        v = d["mean_ce"]
+        assert v == v and v >= 0.0, f"{b} ce={v!r}"
+    print(f"PASS per-phase CE keys {sorted(buckets)} "
+          f"(overall={out['ce_overall']:.3f})")
+
+
+def check_intervention_rate_bounds() -> None:
+    """Phase 9 Task 1: intervention_rate (Strict-mask top-1 flips, mask logic
+    reused from train via import) lies in [0, 1]."""
+    import torch
+
+    ckpt = os.path.join(TRAINING, "checkpoints", "best.pt")
+    assert os.path.exists(ckpt), "train checkpoints/best.pt first"
+    recs = E.load_jsonl("val.jsonl")[:3]
+    out = E.teacher_forced_metrics(ckpt, recs, torch, "cpu")
+    r = out["intervention_rate"]
+    assert r is not None
+    assert 0.0 <= r <= 1.0, f"intervention_rate={r!r}"
+    print(f"PASS intervention_rate={r:.3f} in [0,1]")
+
+
 def main() -> int:
     check_mirror()
     check_gates()
     check_novelty_metrics()
+    check_interval_hash_transposition()
+    check_suffix_compliance_excludes_prefix()
+    check_bootstrap_ci()
+    check_per_phase_ce_keys()
+    check_intervention_rate_bounds()
     print("ALL eval tests PASS")
     return 0
 
