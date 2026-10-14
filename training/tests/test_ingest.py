@@ -17,12 +17,14 @@ sys.path.insert(0, os.path.join(TRAINING, "ingest"))
 import ledger
 import jsb371
 import dedupe
+import mutopia
+import listening
 
 
 def check_ledger_refuses_sa_nc_unknown():
     for spdx in ("CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0", "UNKNOWN", "", "MIT"):
         ok, reason = ledger.validate("x-src", "https://example.invalid/x",
-                                     spdx, "0" * 64, True)
+                                     spdx, "ab" * 32, True)
         assert ok is False, f"{spdx} must be refused"
         assert reason, f"{spdx} refusal needs a reason"
     print("PASS ledger refuses SA/NC/unknown")
@@ -62,7 +64,7 @@ def check_reduction_decodes():
     for i, tr in enumerate((0, 2, -2)):
         recs = jsb371.reduce_satb(f"mini-{i}", _mini_satb(tr),
                                   jsb371.SOURCE, jsb371.SOURCE_URL,
-                                  jsb371.LICENSE_SPDX, "00" * 32)
+                                  "PD", "ab" * 32)
         assert recs, "reduction must emit >= 1 record"
         for r in recs:
             for k in ("id", "ids", "tonic", "scale", "chords", "meta"):
@@ -77,7 +79,7 @@ def check_reduction_decodes():
 
 def check_dedupe_catches_planted_duplicate():
     recs = jsb371.reduce_satb("mini-0", _mini_satb(0), jsb371.SOURCE,
-                              jsb371.SOURCE_URL, jsb371.LICENSE_SPDX, "00" * 32)
+                              jsb371.SOURCE_URL, "PD", "ab" * 32)
     assert recs
     victim = dict(recs[0])
     # Planted near-duplicate: same intervals, transposed +2 (absolute differ).
@@ -97,9 +99,9 @@ def check_dedupe_catches_planted_duplicate():
 
 def check_dedupe_reports_per_set():
     a = jsb371.reduce_satb("mini-0", _mini_satb(0), jsb371.SOURCE,
-                           jsb371.SOURCE_URL, jsb371.LICENSE_SPDX, "00" * 32)[0]
+                           jsb371.SOURCE_URL, "PD", "ab" * 32)[0]
     b = jsb371.reduce_satb("mini-1", _mini_satb(5), jsb371.SOURCE,
-                           jsb371.SOURCE_URL, jsb371.LICENSE_SPDX, "00" * 32)[0]
+                           jsb371.SOURCE_URL, "PD", "ab" * 32)[0]
     kept, dropped = dedupe.dedupe_intake([b], [a], [], [])
     assert isinstance(kept, list) and isinstance(dropped, list)
     print("PASS dedupe per-set report shape")
@@ -108,7 +110,7 @@ def check_dedupe_reports_per_set():
 def check_runner_refuses_before_parse():
     import run_jsb371 as R
     ok, reason = ledger.validate("jsb-chorales-music21",
-                                 "u", R.CLAIMED_LICENSE, "0" * 64, True)
+                                 "u", R.CLAIMED_LICENSE, "ab" * 32, True)
     assert ok is False, "Greentree 'used by permission' must not pass the gate"
     assert R.EVIDENCE["pd_cc0_ccby_grant_found"] is False
     assert R.EVIDENCE["corpus_files"] == 408
@@ -118,11 +120,164 @@ def check_runner_refuses_before_parse():
 def main():
     check_ledger_refuses_sa_nc_unknown()
     check_ledger_accepts_allowlist()
+    check_ledger_refuses_zero_sha()
+    check_composition_note_replaces_license_spdx()
+    check_fermata_snap_ends_on_fermata_bar()
+    check_manifest_sha_is_real()
     check_reduction_decodes()
     check_dedupe_catches_planted_duplicate()
     check_dedupe_reports_per_set()
     check_runner_refuses_before_parse()
+    check_mutopia_gate_pd_cc0_only()
+    check_mutopia_homophonic_filter()
+    check_mutopia_parity_with_jsb()
+    check_listening_verdict_enum()
     print("test_ingest: ALL GREEN")
+
+
+# --- Phase 9 Task 5 round 2 (Mutopia box): pre-accept minors 1/2/5 first. ---
+
+def check_ledger_refuses_zero_sha():
+    ok, reason = ledger.validate("s", "https://example.invalid/s",
+                                 "PD", "0" * 64, False)
+    assert ok is False and reason, "all-zeros sha must be refused (never zeros)"
+    print("PASS ledger refuses all-zeros sha")
+
+
+def check_composition_note_replaces_license_spdx():
+    assert not hasattr(jsb371, "LICENSE_SPDX"), \
+        "aspirational LICENSE_SPDX must be renamed (runner CLAIMED_LICENSE governs)"
+    note = getattr(jsb371, "COMPOSITION_NOTE", "")
+    assert "NOT" in note and "CLAIMED_LICENSE" in note, \
+        "COMPOSITION_NOTE must disclaim intake-claim status"
+    print("PASS COMPOSITION_NOTE replaces LICENSE_SPDX")
+
+
+def _eight_bar_satb():
+    base = _mini_satb(0)
+    out = {}
+    for v in ("soprano", "alto", "tenor", "bass"):
+        evs = list(base[v])
+        for e in base[v]:
+            evs.append({"pitch": e["pitch"], "start_sub": e["start_sub"] + 64,
+                        "dur_sub": e["dur_sub"]})
+        out[v] = evs
+    out.update({"bars": 8, "tonic": 60, "scale": "major"})
+    return out
+
+
+def check_fermata_snap_ends_on_fermata_bar():
+    import copy
+    s4 = copy.deepcopy(_eight_bar_satb())
+    s4["fermata_bars"] = [4]
+    recs = jsb371.reduce_satb("ferm-8", s4, jsb371.SOURCE,
+                              jsb371.SOURCE_URL, "PD", "ab" * 32)
+    assert [r["id"] for r in recs] == ["jsb-ferm-8-w00"], \
+        f"window must end exactly on fermata bar 4, got {[r['id'] for r in recs]}"
+    s6 = copy.deepcopy(_eight_bar_satb())
+    s6["fermata_bars"] = [6]
+    recs6 = jsb371.reduce_satb("ferm-8", s6, jsb371.SOURCE,
+                               jsb371.SOURCE_URL, "PD", "ab" * 32)
+    assert [r["id"] for r in recs6] == ["jsb-ferm-8-w02"], \
+        f"window must end exactly on fermata bar 6, got {[r['id'] for r in recs6]}"
+    s9 = copy.deepcopy(_eight_bar_satb())
+    s9["fermata_bars"] = [99]
+    recs9 = jsb371.reduce_satb("ferm-8", s9, jsb371.SOURCE,
+                               jsb371.SOURCE_URL, "PD", "ab" * 32)
+    assert [r["id"] for r in recs9] == ["jsb-ferm-8-w%02d" % s
+                                       for s in (0, 2, 4)], \
+        "out-of-range fermata must fall back to default stride windows"
+    print("PASS fermata snap ends exactly on fermata bar (off-by-one fixed)")
+
+
+def check_manifest_sha_is_real():
+    h1 = jsb371.manifest_sha(["ab" * 32, "cd" * 32])
+    h2 = jsb371.manifest_sha(["ab" * 32, "cd" * 32])
+    h3 = jsb371.manifest_sha(["ab" * 32])
+    assert len(h1) == 64 and h1 != "0" * 64 and h1 == h2 and h1 != h3, \
+        "manifest_sha must be a stable real content hash"
+    ok, _ = ledger.validate("s", "https://example.invalid/s", "PD", h1, False)
+    assert ok is True, "real manifest sha must pass the ledger gate"
+    print("PASS manifest_sha is a real content hash")
+
+
+_PD_HDR = '\\header {\n mutopiatitle = "X"\n mutopiacopyright = "Public Domain"\n}'
+_CC0_HDR = '\\header {\n mutopiacopyright = "CC0"\n}'
+_CC0Z_HDR = '\\header {\n mutopiacopyright = "Creative Commons Zero"\n}'
+_BYSA_HDR = ('\\header {\n mutopiacopyright = '
+             '"Creative Commons Attribution-ShareAlike 4.0"\n}')
+_NC_HDR = ('\\header {\n mutopiacopyright = '
+           '"Creative Commons Attribution-NonCommercial 4.0"\n}')
+_MISSING_HDR = '\\header {\n mutopiatitle = "X"\n}'
+_WRONGFIELD_HDR = '\\header {\n license = "Public Domain"\n}'
+
+
+def check_mutopia_gate_pd_cc0_only():
+    ok, spdx, _ = mutopia.gate_header(_PD_HDR, "https://example.invalid/x.ly")
+    assert ok is True and spdx == "PD", "mutopiacopyright Public Domain must pass"
+    ok, spdx, _ = mutopia.gate_header(_CC0_HDR, "https://example.invalid/x.ly")
+    assert ok is True and spdx == "CC0-1.0", "mutopiacopyright CC0 must pass"
+    ok, spdx, _ = mutopia.gate_header(_CC0Z_HDR, "https://example.invalid/x.ly")
+    assert ok is True and spdx == "CC0-1.0", "Creative Commons Zero must pass"
+    for hdr in (_BYSA_HDR, _NC_HDR, _MISSING_HDR, _WRONGFIELD_HDR):
+        ok, _, reason = mutopia.gate_header(hdr, "https://example.invalid/x.ly")
+        assert ok is False and reason, \
+            f"BY-SA/NC/missing/wrong-field must be refused, got ok for {hdr!r:.60}"
+    print("PASS mutopia strict gate: PD/CC0 via mutopiacopyright only")
+
+
+def check_mutopia_homophonic_filter():
+    keep, _ = mutopia.check_homophonic(_mini_satb(0))
+    assert keep is True, "4-voice monophonic SATB must pass the filter"
+    two = {"soprano": _mini_satb(0)["soprano"],
+           "bass": _mini_satb(0)["bass"]}
+    keep, why = mutopia.check_homophonic(two)
+    assert keep is False and why, "2-voice texture must be skipped"
+    chordal = _mini_satb(0)
+    chordal["soprano"] = ([{"pitch": 72, "start_sub": 0, "dur_sub": 4},
+                           {"pitch": 76, "start_sub": 0, "dur_sub": 4}]
+                          + chordal["soprano"][1:])
+    keep, why = mutopia.check_homophonic(chordal)
+    assert keep is False and why, "chordal (polyphonic) voice must be skipped"
+    keep, why = mutopia.check_instrument("Symphony Orchestra")
+    assert keep is False and why, "orchestral tag must be skipped"
+    keep, _ = mutopia.check_instrument("Voice (SATB)")
+    assert keep is True, "SATB tag must pass"
+    print("PASS mutopia homophonic 4-voice filter skips non-conforming")
+
+
+def check_mutopia_parity_with_jsb():
+    satb = _mini_satb(0)
+    a = jsb371.reduce_satb("par", satb, mutopia.SOURCE, mutopia.SOURCE_URL,
+                           "PD", "ab" * 32, id_prefix="mut-")
+    b = mutopia.reduce_satb("par", satb, mutopia.SOURCE, mutopia.SOURCE_URL,
+                            "PD", "ab" * 32)
+    assert a == b, "mutopia reduction must equal the shared jsb371 mapping"
+    import tokenizer as tok
+    assert tok.decode_tokens(b[0]["ids"]) is not None
+    print("PASS mutopia/jsb371 reduction parity via shared helper")
+
+
+def check_listening_verdict_enum():
+    assert set(listening.VERDICTS) == {"usable", "fixable-pattern", "reject"}, \
+        "verdict enum must be usable/fixable-pattern/reject"
+    assert listening.validate_verdict("usable")
+    assert listening.validate_verdict("")  # pending human review
+    assert not listening.validate_verdict("maybe")
+    import tempfile
+    p = tempfile.mktemp(suffix=".csv")
+    listening.write_skeleton(p, [{"id": "a", "source_file": "f",
+                                  "bars": 4, "verdict": "usable",
+                                  "notes": ""}])
+    try:
+        listening.write_skeleton(p, [{"id": "a", "source_file": "f",
+                                      "bars": 4, "verdict": "maybe",
+                                      "notes": ""}])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("bad verdict must raise")
+    print("PASS listening verdict enum usable/fixable-pattern/reject")
 
 
 if __name__ == "__main__":

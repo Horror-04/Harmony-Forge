@@ -37,7 +37,10 @@ import tokenizer as tok  # noqa: E402
 
 SOURCE = "jsb-chorales-music21"
 SOURCE_URL = "https://github.com/cuthbertLab/music21 (corpus: bach/bwv*.mxl)"
-LICENSE_SPDX = "PD"
+# Composition note, NOT an intake claim: Bach (d. 1750) is PD, but
+# PD-composition != PD-encoding. The runner's CLAIMED_LICENSE governs.
+COMPOSITION_NOTE = ("PD (Bach d.1750 composition note; NOT an intake claim "
+                    "-- runner CLAIMED_LICENSE governs)")
 
 WINDOW_BARS = 4
 WINDOW_STRIDE = 2
@@ -87,7 +90,8 @@ def _bar_chord(sounding: list[int], bass_pitches: list[int]) -> tuple[int, str]:
 
 
 def reduce_satb(piece_id: str, satb: dict, source: str, url: str,
-                license_spdx: str, sha: str) -> list[dict]:
+                license_spdx: str, sha: str,
+                id_prefix: str = "jsb-") -> list[dict]:
     """Reduce one SATB mini-score to windowed intake records (absolute pitch)."""
     bars = satb["bars"]
     if bars > MAX_BARS:
@@ -95,12 +99,14 @@ def reduce_satb(piece_id: str, satb: dict, source: str, url: str,
     starts = list(range(0, max(1, bars - WINDOW_BARS + 1), WINDOW_STRIDE))
     if not starts:
         starts = [0]
-    # Phrase-end snap: prefer windows ending on a fermata bar where known.
+    # Phrase-end snap: prefer windows ENDING on a fermata bar where known.
+    # fermata_bars are 1-based bar numbers; window start st (0-based) covers
+    # bars st+1..st+WINDOW_BARS, so ending exactly on f needs st = f - WINDOW.
     fermata_bars = satb.get("fermata_bars", [])
     if fermata_bars and bars > WINDOW_BARS:
-        snapped = sorted({min(f - WINDOW_BARS + 1, bars - WINDOW_BARS)
+        snapped = sorted({f - WINDOW_BARS
                           for f in fermata_bars
-                          if f - WINDOW_BARS + 1 >= 0})
+                          if WINDOW_BARS <= f <= bars})
         if snapped:
             starts = snapped
     recs = []
@@ -145,7 +151,7 @@ def reduce_satb(piece_id: str, satb: dict, source: str, url: str,
         if tok.decode_tokens(ids) is None:
             raise ValueError(f"undecodable window {piece_id}@{st}")
         recs.append({
-            "id": f"jsb-{piece_id}-w{st:02d}", "source": source,
+            "id": f"{id_prefix}{piece_id}-w{st:02d}", "source": source,
             "tonic": satb["tonic"], "scale": satb["scale"], "bars": n_bars,
             "chords": chords, "pattern": pattern, "ids": ids,
             "meta": {"source": source, "url": url,
@@ -154,14 +160,78 @@ def reduce_satb(piece_id: str, satb: dict, source: str, url: str,
     return recs
 
 
+def score_to_satb(score, stem: str) -> dict | None:
+    """Convert one music21 score to an SATB mini-score (shared helper).
+
+    Shared with the Mutopia intake (same mapping). Returns None when the
+    score has fewer than 3 parts. music21 is imported lazily so the rest
+    of this module runs without the tool dependency.
+    """
+    from music21 import chord as m21chord
+    from music21 import note, stream
+
+    parts = list(score.parts) if hasattr(score, "parts") else [score]
+    if len(parts) < 3:
+        return None
+    # Order voices top->bottom by mean pitch: S, A, T, B.
+    def mean_pitch(p):
+        ps = [n.pitch.midi for n in p.flatten().notes
+              if hasattr(n, "pitch")]
+        return sum(ps) / len(ps) if ps else 0.0
+    parts = sorted(parts, key=mean_pitch, reverse=True)[:4]
+    while len(parts) < 4:
+        parts.append(parts[-1])
+    voices: dict[str, list] = {}
+    total_q = 0.0
+    for name, part in zip(("soprano", "alto", "tenor", "bass"), parts):
+        evs = []
+        flat = part.flatten()
+        for el in flat.notes:
+            q = float(el.getOffsetInHierarchy(flat))
+            ql = float(el.quarterLength or 1.0)
+            total_q = max(total_q, q + ql)
+            if isinstance(el, m21chord.Chord):
+                midis = sorted(p.midi for p in el.pitches)
+                pick = {"soprano": midis[-1], "bass": midis[0],
+                        "alto": midis[len(midis) // 2],
+                        "tenor": midis[max(0, len(midis) // 2 - 1)]}[name]
+            elif isinstance(el, note.Rest):
+                continue
+            else:
+                pick = el.pitch.midi
+            evs.append({"pitch": int(pick), "start_sub": int(round(q * 4)),
+                        "dur_sub": max(1, int(round(ql * 4)))})
+        voices[name] = sorted(evs, key=lambda e: e["start_sub"])
+    n_bars = max(1, int(round(total_q / 4.0)))
+    # Fermata phrase-ends (bar numbers, 1-based) where detectable.
+    fermata_bars: list[int] = []
+    try:
+        for el in score.flatten().getElementsByClass("Fermata"):
+            ctx = el.getContextByClass(stream.Measure)
+            if ctx is not None and getattr(ctx, "number", 0):
+                fermata_bars.append(int(ctx.number))
+    except Exception:
+        pass
+    try:
+        key = score.analyze("key")
+        tonic = int(key.tonic.midi)
+        scale = "natural_minor" if key.mode == "minor" else "major"
+    except Exception:
+        tonic = voices["soprano"][0]["pitch"] % 12 + 60 if voices["soprano"] else 60
+        scale = "major"
+    return {"soprano": voices["soprano"], "alto": voices["alto"],
+            "tenor": voices["tenor"], "bass": voices["bass"],
+            "bars": n_bars, "tonic": tonic, "scale": scale,
+            "fermata_bars": sorted(set(fermata_bars))}
+
+
 def load_jsb371(limit: int | None = None) -> list[tuple[str, dict]]:
     """Load the Riemenschneider-371 chorales from the music21 corpus package.
 
     Returns [(piece_id, satb-mini-score)]. music21 is imported lazily so the
     rest of this module (and the tests) run without the tool dependency.
     """
-    from music21 import chord as m21chord
-    from music21 import corpus, note, stream
+    from music21 import corpus
 
     paths = [b for b in corpus.search("bach", "composer")]
     ids: list[str] = []
@@ -180,59 +250,13 @@ def load_jsb371(limit: int | None = None) -> list[tuple[str, dict]]:
             score = corpus.parse(f"bach/{stem}")
         except Exception:
             continue
-        parts = list(score.parts) if hasattr(score, "parts") else [score]
-        if len(parts) < 3:
+        try:
+            satb = score_to_satb(score, stem)
+        except Exception:
             continue
-        # Order voices top->bottom by mean pitch: S, A, T, B.
-        def mean_pitch(p):
-            ps = [n.pitch.midi for n in p.flatten().notes
-                  if hasattr(n, "pitch")]
-            return sum(ps) / len(ps) if ps else 0.0
-        parts = sorted(parts, key=mean_pitch, reverse=True)[:4]
-        while len(parts) < 4:
-            parts.append(parts[-1])
-        voices: dict[str, list] = {}
-        total_q = 0.0
-        for name, part in zip(("soprano", "alto", "tenor", "bass"), parts):
-            evs = []
-            flat = part.flatten()
-            for el in flat.notes:
-                q = float(el.getOffsetInHierarchy(flat))
-                ql = float(el.quarterLength or 1.0)
-                total_q = max(total_q, q + ql)
-                if isinstance(el, m21chord.Chord):
-                    midis = sorted(p.midi for p in el.pitches)
-                    pick = {"soprano": midis[-1], "bass": midis[0],
-                            "alto": midis[len(midis) // 2],
-                            "tenor": midis[max(0, len(midis) // 2 - 1)]}[name]
-                elif isinstance(el, note.Rest):
-                    continue
-                else:
-                    pick = el.pitch.midi
-                evs.append({"pitch": int(pick), "start_sub": int(round(q * 4)),
-                            "dur_sub": max(1, int(round(ql * 4)))})
-            voices[name] = sorted(evs, key=lambda e: e["start_sub"])
-        n_bars = max(1, int(round(total_q / 4.0)))
-        # Fermata phrase-ends (bar numbers, 1-based) where detectable.
-        fermata_bars: list[int] = []
-        try:
-            for el in score.flatten().getElementsByClass("Fermata"):
-                ctx = el.getContextByClass(stream.Measure)
-                if ctx is not None and getattr(ctx, "number", 0):
-                    fermata_bars.append(int(ctx.number))
-        except Exception:
-            pass
-        try:
-            key = score.analyze("key")
-            tonic = int(key.tonic.midi)
-            scale = "natural_minor" if key.mode == "minor" else "major"
-        except Exception:
-            tonic = voices["soprano"][0]["pitch"] % 12 + 60 if voices["soprano"] else 60
-            scale = "major"
-        out.append((stem, {"soprano": voices["soprano"], "alto": voices["alto"],
-                           "tenor": voices["tenor"], "bass": voices["bass"],
-                           "bars": n_bars, "tonic": tonic, "scale": scale,
-                           "fermata_bars": sorted(set(fermata_bars))}))
+        if satb is None:
+            continue
+        out.append((stem, satb))
     return out
 
 
@@ -241,4 +265,11 @@ def intake_sha(piece_id: str, satb: dict) -> str:
     blob = json.dumps({"id": piece_id, "voices": {k: satb[k] for k in
                        ("soprano", "alto", "tenor", "bass")}},
                       sort_keys=True).encode()
+    return hashlib.sha256(blob).hexdigest()
+
+
+def manifest_sha(shas: list[str]) -> str:
+    """Real ledger source-hash: sha256 over the sorted per-file content
+    hashes (fetched file bytes or derived voice bytes). Never zeros."""
+    blob = "\n".join(sorted(shas)).encode()
     return hashlib.sha256(blob).hexdigest()

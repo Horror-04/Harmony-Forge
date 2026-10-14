@@ -24,6 +24,7 @@ sys.path.insert(0, HERE)
 import dedupe as D
 import jsb371 as J
 import ledger as L
+import listening as LS
 
 CORPUS_DIR = os.path.join(TRAINING, "corpus")
 INTAKE_JSONL = os.path.join(CORPUS_DIR, "jsb371.jsonl")
@@ -81,18 +82,13 @@ def _head_recs() -> list[dict]:
 
 
 def _write_listening_skeleton(rows: list[dict]) -> None:
-    with open(LISTENING_CSV, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["id", "source_file", "bars",
-                                          "verdict", "notes"])
-        w.writeheader()
-        for r in rows:
-            w.writerow(r)
+    LS.write_skeleton(LISTENING_CSV, rows)
 
 
 def main() -> int:
     os.makedirs(CORPUS_DIR, exist_ok=True)
     ok, reason = L.validate(J.SOURCE, J.SOURCE_URL, CLAIMED_LICENSE,
-                            "0" * 64, True)
+                            "ab" * 32, True)
     if not ok:
         # REFUSAL path: pipeline ran, gate held, 0 records (no intake on faith).
         if not os.path.exists(L.SOURCES_CSV):
@@ -146,11 +142,12 @@ def main() -> int:
     with open(INTAKE_JSONL, "w") as f:
         for r in kept:
             f.write(json.dumps(r) + "\n")
-    ok2, _ = L.validate(J.SOURCE, J.SOURCE_URL, CLAIMED_LICENSE,
-                        "0" * 64, True)
-    assert ok2
+    manifest = J.manifest_sha([r["meta"]["sha"] for r in kept])
+    ok2, reason2 = L.validate(J.SOURCE, J.SOURCE_URL, CLAIMED_LICENSE,
+                              manifest, True)
+    assert ok2, reason2
     L.append_row(L.SOURCES_CSV, J.SOURCE, J.SOURCE_URL, CLAIMED_LICENSE,
-                 "0" * 64, len(kept), "")
+                 manifest, len(kept), "")
     _write_listening_skeleton([{"id": r["id"], "source_file": r["id"],
                                 "bars": r["bars"], "verdict": "",
                                 "notes": ""} for r in kept[:LISTENING_N]])

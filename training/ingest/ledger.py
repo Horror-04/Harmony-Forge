@@ -33,6 +33,8 @@ def validate(source: str, url: str, license_spdx: str,
     h = (sha or "").strip().lower()
     if len(h) != 64 or any(c not in "0123456789abcdef" for c in h):
         return False, "refuse: sha must be 64 lowercase hex chars"
+    if set(h) == {"0"}:
+        return False, "refuse: sha must not be all zeros (use real content hash)"
     return True, f"ok: {spdx} license accepted for {source}"
 
 
