@@ -1,0 +1,77 @@
+{
+ "rule": "openscore 3-window pieces sorted, even indices, first 12; mutopia sorted index 0; fresh own-heads Q..T (new melodies, one key each, k2 tag)",
+ "n_test": 43,
+ "n_test_licensed": 39,
+ "n_test_heads": 4,
+ "test_os_pieces": [
+  "os-lc4982535",
+  "os-lc4985925",
+  "os-lc4985932",
+  "os-lc4985938",
+  "os-lc4985951",
+  "os-lc5025985",
+  "os-sq7114183",
+  "os-sq7127785",
+  "os-sq7397765",
+  "os-sq8075304",
+  "os-sq8509238",
+  "os-sq8907120"
+ ],
+ "test_mut_pieces": [
+  "mut-Lobt_Gott"
+ ],
+ "train_licensed_pieces": [
+  "os-lc4985924",
+  "os-lc4985930",
+  "os-lc4985937",
+  "os-lc4985946",
+  "os-lc5004731",
+  "os-lc5025982",
+  "os-sq7103818",
+  "os-sq7123582",
+  "os-sq7249986",
+  "os-sq8071278",
+  "os-sq8088531",
+  "os-sq8853405",
+  "os-sq8913219",
+  "os-sq9199617",
+  "mut-bonne_heure-song",
+  "mut-es_ist_ein_ros_entsprungen"
+ ],
+ "test_head_ids": [
+  "composed-Q-k2",
+  "composed-R-k2",
+  "composed-S-k2",
+  "composed-T-k2"
+ ],
+ "test_head_keys": [
+  [
+   49,
+   "major"
+  ],
+  [
+   54,
+   "mixolydian"
+  ],
+  [
+   61,
+   "major"
+  ],
+  [
+   66,
+   "natural_minor"
+  ]
+ ],
+ "piece_disjoint": true,
+ "melody_collisions_vs_train_val": [],
+ "group_split_cross_rows": 0,
+ "group_split_total_rows": 15,
+ "roundtrip_ok": 43,
+ "fresh_keys_unused_elsewhere": true,
+ "sources": [
+  "composed",
+  "mutopia-pd-hymns",
+  "openscore-cc0"
+ ],
+ "note": "Locked BEFORE any Task-6 training run. Old val.jsonl untouched (regression-only). Spending this test on model selection voids the gate."
+}
