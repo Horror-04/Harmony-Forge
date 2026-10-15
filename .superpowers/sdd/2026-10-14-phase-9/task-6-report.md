@@ -290,7 +290,7 @@ ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
 |---|---|---|---|---|
 | 7 | 0.6388 (ep29) | early-stop ep24, never beats S1 | 765.6s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
 | 99 | 0.6193 (ep29, S1) | early-stop ep24, never beats S1 | 170.0s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
-| 11 | 0.6332 (ep15, S1) | early-stop ep24, never beats S1 | 159.5s | re-exported fp32+quant, torch-vs-ORT parity OK |
+| 11 | 0.6332 (ep15, S1) | early-stop ep24, never beats S1 | 159.5s | MY rerun reproduced operator's full s11 curve BYTE-IDENTICAL (55 eps) → independent determinism proof; evals identical; redundant but harmless (launched after their run finished, never concurrent) |
 | 23 | 0.6691 | done (log `v2 done`, wall 263s) | 263.4s | operator-run, adopted |
 | 42 | 0.6319 | done (log `v2 done`, wall 416s) | 416.4s | operator-run, adopted |
 
@@ -418,10 +418,10 @@ around greedy via PSEUDO_PEAK=5.0 (decode_ab.py a priori value).
   deleted, protocol corrected to export-first; (4) full-stdout
   redirect logs deleted with cleanup — s11 log reconstructed from
   completion record, render output preserved in manifest.
-- Open: transient ce-skip in one eval run (non-reproducing; probe +
-  all operator runs load STRICT-OK); mystery launcher identity
-  (operator session runs training+evals in parallel — adopted,
-  deconflicted by cmdline checks, shared evidence).
+- Open: transient ce-skip in one eval run (RESOLVED by operator fix
+  ece9998: arch-tagged ckpts load via tinilm + regression test GREEN;
+  all banked JSONs carry ce values; DoD gates are ORT-generation
+  metrics, unaffected either way).
 - Concerns for controller: (a) suffix is the binding miss on BOTH
   splits (test 0.77-0.82 vs 0.90; val 0.70-0.88 vs 0.969/1.000) while
   compliance beats val baselines — recipe improves modeling but not
