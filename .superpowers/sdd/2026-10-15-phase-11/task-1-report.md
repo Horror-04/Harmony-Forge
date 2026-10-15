@@ -110,34 +110,116 @@ here BEFORE running.
   sweep) — disclosed, not cherry-picked; fresh discrimination across
   new recipes under the rule above.
 
-## E. Results (appended AFTER runs; TBC)
+## E. Results (appended AFTER runs; rule §D.1 applied literally)
 
 ### E.1 Default-config sanity (method recorded here)
 
-TBC.
+Two-leg sanity, both recorded. (1) Code inspection (Step-2 commit):
+factor 1.0 -> `None` weights path = frozen T6 loss untouched
+(bit-identical by construction); mult 1.0 = IEEE-exact `x1.0`;
+default schedule = two-stage. (2) Empirical: CTRL ep0
+3.0299/1.7704 reproduces the T6 seed-7 trajectory bit-exact
+(halt-note §H observation, preserved); A-cuda ep0
+3.3431/1.7096 … S1ep4 0.8848 reproduces the killed attempt-1
+trajectory values exactly (determinism across resume).
+Default-config = T6 behavior: SANITY HOLDS.
 
 ### E.2 Cheap-run table + walls
 
-TBC (rule above applies literally; no hindsight).
+Scoring: frozen `train.val_melody_ce` on the §D.2 slice (4 ids,
+keynorm views), CPU, per-run best ckpt. Cross-validated by TWO
+independent scorer implementations agreeing to 6 dp on every ckpt
+(path-argv script + name-based script with slice-set-equality and
+train-disjointness asserts). `test_locked.jsonl` NEVER opened
+(neither scorer reads it; Step-1 discipline holds).
+All four runs: large arch, seed 7, exit 0, `device=cuda`
+(A's first resume attempt omitted `--device cuda` and ran CPU:
+0.711860 — DISCARDED as non-comparable, rerun on cuda overwrote
+ckpt/log; binding value is the cuda one below).
+GPU: sequential except A-cuda + B overlapped (2 workers = max
+allowed); per-run walls logged (shell ≈ log-mtime delta, in-run
+from the run's own `wall=` line).
 
-| cfg | suffix_proxy (lower wins) | in-run best val_melody_ce | wall | ckpt state |
+| cfg | suffix_proxy (lower wins) | in-run best val_melody_ce | wall shell / in-run | ckpt state |
 |---|---|---|---|---|
-| CTRL | TBC | TBC | TBC | TBC |
-| A | TBC | TBC | TBC | TBC |
-| B | TBC | TBC | TBC | TBC |
-| C | TBC | TBC | TBC | TBC |
+| CTRL | 0.728657 | 0.7372 @S2ep2 | 995 s / 992.7 s | finished, exit 0 |
+| A | 0.711311 | 0.7148 @S2ep4 | ~1000 s / 980.6 s | finished, exit 0 (cuda redo) |
+| B | 0.750964 | 0.7523 @ep9/15 | 148 s / 147.5 s | finished, exit 0 |
+| C | 0.775249 | 0.7856 @S2ep0 | ~1411 s / 1409.6 s | finished, exit 0 |
 
-### E.3 Frozen recipe (winner flags verbatim)
+Notes: B's speed (10 s/ep vs ~70-100 s/ep two-stage) is a data-mix
+effect, not a bug — single-stage runs the 10%-smart Stage-2 mix
+every epoch while stage-1 builds 50% smart synth per epoch
+(CPU-bound `SP.build`); train_ce/val curves descend normally.
+C's lever was active (train_pen 0.6–1.4 throughout) yet scored
+worst — melody-penalty pressure hurt teacher-forced CE.
+No cuts were needed (all four finished); nothing scored partial.
 
-TBC.
+### E.3 Pick + frozen recipe
+
+Rule §D.1 quoted and followed literally: "Winner = argmin
+`suffix_proxy` over {CTRL, A, B, C}." argmin = A (0.711311;
+margin over CTRL 0.017346 >> 1e-6 tie band — no tie clause
+triggered). **WINNER: A (suffix-upweight ×3.0).**
+Full-run budget (Task 2) goes to A ONLY.
+
+Frozen recipe (winner flags verbatim, Task-2 mechanics excluded):
+
+```
+training/.venv-cuda/Scripts/python training/train.py --v2 --arch large --keynorm --penalty 0.0 --seed 7 --stage1-epochs 8 --stage2-max 6 --suffix-upweight 3.0 --device cuda
+```
+
+(`--ckpt-out`/`--curve-out` per finalist; `--device cuda` kept:
+it matches CTRL conditions — the CPU-vs-cuda confound was
+eliminated by redo, not averaged away.)
 
 ## F. Test evidence (RED -> GREEN)
 
-TBC.
+- Step-1 RED: `test_train_recipe.py` written pre-implementation, failed
+  as expected (commit 757791c).
+- Step-2 GREEN: levers implemented, `test_train_recipe: PASS
+  (suffix-weights/schedule/penalty-scope)` (commit cde1707).
+- Post-runs re-verified GREEN (this session, after all four cheap
+  runs — implementation untouched since cde1707):
+  `test_train_recipe: PASS`; neighbor `test_ckpt: PASS
+  (save-roundtrip/progress-sidecar/final-carries-state)` —
+  `save_v2_ckpt` payload still exact-T6, recipe dict pinned.
 
 ## G. Self-review + concerns
 
-TBC.
+- Rule literalism: pick is pure argmin; the winning margin (0.017)
+  is 4 orders above the tie band — no judgment call existed to make.
+- Single-seed discrimination is by design (§C); seed variance is
+  Task 2's problem (finalists), not this task's. Do not over-read
+  A > CTRL as a general claim.
+- The slice spans bars 0–1 only (disclosed pre-run §D.2): the proxy
+  rewards whole-melody CE, and A's suffix pressure generalized to
+  it. Whether bars≥2 per se improved is NOT measured here.
+- C hurt, B middling, A helped — coherent story (targeted suffix
+  pressure > schedule reshuffle > penalty pressure), but still one
+  seed; Task 2 decides.
+- 2-worker overlap ran VRAM at 7.8/8.2 GB without incident, but
+  that headroom is thin — Task 2 finalists should stay sequential
+  unless walls force it.
+- No hindsight switches: §D.1/§D.2 unchanged since 757791c;
+  CPU-run A discarded openly, not silently pooled.
+
+## I. Resume session (2026-10-16 ~02:0x UTC — runs + pick, this commit)
+
+- Resumed at halt-note §H state: CTRL done, A partial, B/C unlaunched.
+- Test-first: `test_train_recipe` GREEN before any launch.
+- A relaunched seed-7 (deterministic overwrite of partial ckpt);
+  first resume run omitted `--device cuda` (CPU, 385.6 s, proxy
+  0.711860) — caught via log `device=` line, DISCARDED, rerun on
+  cuda to match CTRL conditions (980.6 s, proxy 0.711311).
+- B (single-stage, 147.5 s) overlapped A-cuda (2 workers, max
+  allowed); C launched after B (1409.6 s). All exit 0, no kills,
+  no cuts, no full runs.
+- Scoring + pick per §D.1 literally → A frozen (§E.3).
+- Concern for the record: the Temp scorer file was amended by a
+  concurrent worker mid-session; treated as untrusted until it
+  reproduced both prior values exactly (it did, 6 dp) — numbers
+  above are dual-implementation agreed.
 
 ## H. HALT NOTE (2026-10-16 ~01:5x UTC — external HALT, no pick made)
 
