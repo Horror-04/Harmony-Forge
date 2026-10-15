@@ -27,7 +27,7 @@ hf::core::Pattern patternForState(const juce::ValueTree& tree) {
   hf::infer::GenParams gp = PatternDocument::makeParamsWithModel(
       hf::plugin::seed(tree), hf::plugin::bars(tree), hf::plugin::rootKey(tree),
       hf::plugin::scaleName(tree).toLowerCase().toStdString(),
-      hf::plugin::modelPath(tree).toStdString());
+      hf::plugin::modelPath(tree).toStdString(), hf::plugin::useSampling(tree));
   const auto cands = hf::infer::generate_candidates(gp);
   return cands[0];
 }
@@ -276,6 +276,16 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   addAndMakeVisible(modelButton);
   modelClearButton.onClick = [this] { clearModel(); };
   addAndMakeVisible(modelClearButton);
+  // Phase 10 Task 2: sampling toggle (Create-view, model row). Undoable,
+  // persistent, reflected on undo/redo via valueTreePropertyChanged below.
+  samplingButton.setClickingTogglesState(true);
+  samplingButton.setToggleState(hf::plugin::useSampling(proc.state()),
+                                juce::dontSendNotification);
+  samplingButton.onClick = [this] {
+    proc.undo().beginNewTransaction("Sampling");
+    hf::plugin::setUseSampling(proc.state(), samplingButton.getToggleState(), &proc.undo());
+  };
+  addAndMakeVisible(samplingButton);
   modelHintLabel.setText("", juce::dontSendNotification);
   addAndMakeVisible(modelHintLabel);
   statusLabel.setText("", juce::dontSendNotification);
@@ -485,6 +495,12 @@ void HarmonyForgeEditor::resized() {
   modelButton.setBounds(modelRow.removeFromLeft(100));
   modelRow.removeFromLeft(6);
   modelClearButton.setBounds(modelRow.removeFromLeft(80));
+  modelRow.removeFromLeft(6);
+  // Phase 10 Task 2: sampling toggle sits with the model it needs (sidecar
+  // resolves next to the picked weights). Fixed 104 px: the status label
+  // keeps the rest (~290 px at default width, ~250 px at the 960 minimum —
+  // enough for the short busy/ellipsis texts).
+  samplingButton.setBounds(modelRow.removeFromLeft(104));
   dividers_.push_back(groupDivider(modelRow.removeFromLeft(12)));
   statusLabel.setBounds(modelRow);
   r.removeFromTop(4);
@@ -584,6 +600,9 @@ void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
                      hf::plugin::scaleName(tree).toLowerCase().toStdString());
   // Phase 3 Task 4 item A: undo/redo of the picker reflects in the label.
   if (id.toString() == juce::String(hf::plugin::StateID::kModelPath)) refreshModelRow();
+  // Phase 10 Task 2: undo/redo of the sampling flag reflects in the toggle
+  // (no feedback: dontSendNotification never re-enters onClick).
+  samplingButton.setToggleState(hf::plugin::useSampling(tree), juce::dontSendNotification);
 }
 
 void HarmonyForgeEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -708,7 +727,8 @@ void HarmonyForgeEditor::doRegenerate() {
   const auto gp = PatternDocument::makeParamsWithModel(
       seed, bars, hf::plugin::rootKey(proc.state()),
       hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString());
+      hf::plugin::modelPath(proc.state()).toStdString(),
+      hf::plugin::useSampling(proc.state()));
   doc.regenerate(gp);
 }
 
@@ -729,7 +749,8 @@ void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>&
   const auto gp = PatternDocument::makeParamsWithModel(
       hf::plugin::seed(proc.state()), 4, hf::plugin::rootKey(proc.state()),
       hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString());
+      hf::plugin::modelPath(proc.state()).toStdString(),
+      hf::plugin::useSampling(proc.state()));
   hf::arr::ArrangeParams ap;
   ap.base = gp;
   const auto t0 = juce::Time::getMillisecondCounter();
@@ -901,7 +922,8 @@ void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
       hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()),
       hf::plugin::rootKey(proc.state()),
       hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString());
+      hf::plugin::modelPath(proc.state()).toStdString(),
+      hf::plugin::useSampling(proc.state()));
   pendingPreviewId_ = previewGen_->generate_async(gp);
   pendingOp_ = op;
   // Phase 6 Task 5 (A): dot-free base - the Timer appends the ellipsis.

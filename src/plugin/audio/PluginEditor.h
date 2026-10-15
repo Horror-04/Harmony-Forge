@@ -257,6 +257,15 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   juce::Label modelLabel;
   juce::TextButton modelButton{"Model..."};
   juce::TextButton modelClearButton{"Clear"};
+  // Phase 10 Task 2: sampling toggle (message thread, undoable). A
+  // click-to-toggle TextButton following the Edit/Explain tab precedent
+  // (HFLookAndFeel toggled-on accent cue — no new design language, no
+  // tickbox skin). Lives in the model row on purpose: sampling needs the
+  // logits sidecar next to the picked model, and the CandidateBar geometry
+  // is Phase-6-owned (not redesigned). Bound to the same ValueTree
+  // property as GenParams.use_sampling; the next Regenerate/preview/export
+  // picks it up (toggling never regenerates by itself).
+  juce::TextButton samplingButton{"Sampling"};
   juce::Label modelHintLabel;  // rejection hint; empty otherwise
   // Phase 3 Task 4 item B: async preview/export progress readout.
   juce::Label statusLabel;
