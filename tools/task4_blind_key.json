@@ -1,0 +1,1484 @@
+{
+ "protocol": "phase10-task4-blind-ab",
+ "conditions": [
+  "greedy",
+  "sampler1.0",
+  "sampler0.85",
+  "theory"
+ ],
+ "sampling_seed": 7,
+ "shuffle_seed": 20261015,
+ "frozen_cfg": "memo_block_run=2/strict+fsm/lambda=0/top_p=1.0; T per condition",
+ "clips": {
+  "clip-000.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7397765-w04",
+   "split": "test_locked"
+  },
+  "clip-001.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4982535-w04",
+   "split": "test_locked"
+  },
+  "clip-002.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8907120-w00",
+   "split": "test_locked"
+  },
+  "clip-003.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7397765-w02",
+   "split": "test_locked"
+  },
+  "clip-004.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7127785-w02",
+   "split": "test_locked"
+  },
+  "clip-005.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0060",
+   "split": "val"
+  },
+  "clip-006.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc5025985-w04",
+   "split": "test_locked"
+  },
+  "clip-007.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0000",
+   "split": "val"
+  },
+  "clip-008.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0210",
+   "split": "val"
+  },
+  "clip-009.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7114183-w00",
+   "split": "test_locked"
+  },
+  "clip-010.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0270",
+   "split": "val"
+  },
+  "clip-011.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7127785-w04",
+   "split": "test_locked"
+  },
+  "clip-012.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0240",
+   "split": "val"
+  },
+  "clip-013.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0080",
+   "split": "val"
+  },
+  "clip-014.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc5025985-w00",
+   "split": "test_locked"
+  },
+  "clip-015.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-S-k2",
+   "split": "test_locked"
+  },
+  "clip-016.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8907120-w04",
+   "split": "test_locked"
+  },
+  "clip-017.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7397765-w02",
+   "split": "test_locked"
+  },
+  "clip-018.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7127785-w02",
+   "split": "test_locked"
+  },
+  "clip-019.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4982535-w02",
+   "split": "test_locked"
+  },
+  "clip-020.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8509238-w02",
+   "split": "test_locked"
+  },
+  "clip-021.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985938-w04",
+   "split": "test_locked"
+  },
+  "clip-022.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7114183-w04",
+   "split": "test_locked"
+  },
+  "clip-023.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8907120-w00",
+   "split": "test_locked"
+  },
+  "clip-024.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985938-w02",
+   "split": "test_locked"
+  },
+  "clip-025.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8075304-w04",
+   "split": "test_locked"
+  },
+  "clip-026.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985932-w02",
+   "split": "test_locked"
+  },
+  "clip-027.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0260",
+   "split": "val"
+  },
+  "clip-028.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985932-w02",
+   "split": "test_locked"
+  },
+  "clip-029.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0090",
+   "split": "val"
+  },
+  "clip-030.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4982535-w00",
+   "split": "test_locked"
+  },
+  "clip-031.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0090",
+   "split": "val"
+  },
+  "clip-032.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985938-w00",
+   "split": "test_locked"
+  },
+  "clip-033.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0090",
+   "split": "val"
+  },
+  "clip-034.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985925-w02",
+   "split": "test_locked"
+  },
+  "clip-036.mid": {
+   "condition": "greedy",
+   "rec_id": "mut-Lobt_Gott-w02",
+   "split": "test_locked"
+  },
+  "clip-037.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4982535-w02",
+   "split": "test_locked"
+  },
+  "clip-038.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0100",
+   "split": "val"
+  },
+  "clip-039.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0120",
+   "split": "val"
+  },
+  "clip-040.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8075304-w02",
+   "split": "test_locked"
+  },
+  "clip-041.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0100",
+   "split": "val"
+  },
+  "clip-042.mid": {
+   "condition": "theory",
+   "rec_id": "composed-P-k0",
+   "split": "val"
+  },
+  "clip-043.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985932-w00",
+   "split": "test_locked"
+  },
+  "clip-044.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0200",
+   "split": "val"
+  },
+  "clip-045.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0130",
+   "split": "val"
+  },
+  "clip-046.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0280",
+   "split": "val"
+  },
+  "clip-047.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4982535-w04",
+   "split": "test_locked"
+  },
+  "clip-048.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0180",
+   "split": "val"
+  },
+  "clip-049.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985938-w02",
+   "split": "test_locked"
+  },
+  "clip-050.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0240",
+   "split": "val"
+  },
+  "clip-051.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7127785-w04",
+   "split": "test_locked"
+  },
+  "clip-052.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0100",
+   "split": "val"
+  },
+  "clip-053.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0060",
+   "split": "val"
+  },
+  "clip-054.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc5025985-w00",
+   "split": "test_locked"
+  },
+  "clip-055.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0050",
+   "split": "val"
+  },
+  "clip-056.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0270",
+   "split": "val"
+  },
+  "clip-057.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985925-w04",
+   "split": "test_locked"
+  },
+  "clip-058.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0120",
+   "split": "val"
+  },
+  "clip-059.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7397765-w00",
+   "split": "test_locked"
+  },
+  "clip-060.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc5025985-w02",
+   "split": "test_locked"
+  },
+  "clip-061.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4982535-w00",
+   "split": "test_locked"
+  },
+  "clip-062.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985951-w02",
+   "split": "test_locked"
+  },
+  "clip-063.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc5025985-w00",
+   "split": "test_locked"
+  },
+  "clip-064.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0130",
+   "split": "val"
+  },
+  "clip-065.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-R-k2",
+   "split": "test_locked"
+  },
+  "clip-066.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8509238-w00",
+   "split": "test_locked"
+  },
+  "clip-067.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0160",
+   "split": "val"
+  },
+  "clip-068.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0020",
+   "split": "val"
+  },
+  "clip-069.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0020",
+   "split": "val"
+  },
+  "clip-070.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985932-w00",
+   "split": "test_locked"
+  },
+  "clip-071.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8075304-w00",
+   "split": "test_locked"
+  },
+  "clip-072.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0040",
+   "split": "val"
+  },
+  "clip-073.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985932-w04",
+   "split": "test_locked"
+  },
+  "clip-074.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "mut-Lobt_Gott-w04",
+   "split": "test_locked"
+  },
+  "clip-075.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0160",
+   "split": "val"
+  },
+  "clip-076.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-R-k2",
+   "split": "test_locked"
+  },
+  "clip-077.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7397765-w00",
+   "split": "test_locked"
+  },
+  "clip-078.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc5025985-w02",
+   "split": "test_locked"
+  },
+  "clip-079.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0170",
+   "split": "val"
+  },
+  "clip-080.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0220",
+   "split": "val"
+  },
+  "clip-081.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8509238-w04",
+   "split": "test_locked"
+  },
+  "clip-082.mid": {
+   "condition": "theory",
+   "rec_id": "mut-Lobt_Gott-w00",
+   "split": "test_locked"
+  },
+  "clip-083.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0270",
+   "split": "val"
+  },
+  "clip-084.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-O-k0",
+   "split": "val"
+  },
+  "clip-085.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7397765-w00",
+   "split": "test_locked"
+  },
+  "clip-086.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985932-w00",
+   "split": "test_locked"
+  },
+  "clip-087.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0140",
+   "split": "val"
+  },
+  "clip-088.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0010",
+   "split": "val"
+  },
+  "clip-089.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7127785-w00",
+   "split": "test_locked"
+  },
+  "clip-090.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0140",
+   "split": "val"
+  },
+  "clip-091.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985925-w04",
+   "split": "test_locked"
+  },
+  "clip-092.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8907120-w04",
+   "split": "test_locked"
+  },
+  "clip-093.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0000",
+   "split": "val"
+  },
+  "clip-095.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0000",
+   "split": "val"
+  },
+  "clip-096.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985938-w00",
+   "split": "test_locked"
+  },
+  "clip-097.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7397765-w04",
+   "split": "test_locked"
+  },
+  "clip-098.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0230",
+   "split": "val"
+  },
+  "clip-099.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0130",
+   "split": "val"
+  },
+  "clip-100.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0170",
+   "split": "val"
+  },
+  "clip-101.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0140",
+   "split": "val"
+  },
+  "clip-102.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7127785-w02",
+   "split": "test_locked"
+  },
+  "clip-103.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0230",
+   "split": "val"
+  },
+  "clip-104.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0110",
+   "split": "val"
+  },
+  "clip-105.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7114183-w00",
+   "split": "test_locked"
+  },
+  "clip-106.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4982535-w00",
+   "split": "test_locked"
+  },
+  "clip-107.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7397765-w02",
+   "split": "test_locked"
+  },
+  "clip-108.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0260",
+   "split": "val"
+  },
+  "clip-109.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-S-k2",
+   "split": "test_locked"
+  },
+  "clip-110.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8075304-w04",
+   "split": "test_locked"
+  },
+  "clip-111.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0250",
+   "split": "val"
+  },
+  "clip-112.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0080",
+   "split": "val"
+  },
+  "clip-113.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8907120-w02",
+   "split": "test_locked"
+  },
+  "clip-114.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985932-w04",
+   "split": "test_locked"
+  },
+  "clip-115.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8509238-w02",
+   "split": "test_locked"
+  },
+  "clip-116.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0040",
+   "split": "val"
+  },
+  "clip-117.mid": {
+   "condition": "theory",
+   "rec_id": "composed-O-k1",
+   "split": "val"
+  },
+  "clip-118.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0080",
+   "split": "val"
+  },
+  "clip-119.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7114183-w04",
+   "split": "test_locked"
+  },
+  "clip-120.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985951-w04",
+   "split": "test_locked"
+  },
+  "clip-121.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0170",
+   "split": "val"
+  },
+  "clip-122.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8509238-w00",
+   "split": "test_locked"
+  },
+  "clip-123.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7127785-w02",
+   "split": "test_locked"
+  },
+  "clip-124.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0120",
+   "split": "val"
+  },
+  "clip-125.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0240",
+   "split": "val"
+  },
+  "clip-126.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8907120-w02",
+   "split": "test_locked"
+  },
+  "clip-127.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7114183-w00",
+   "split": "test_locked"
+  },
+  "clip-128.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985938-w04",
+   "split": "test_locked"
+  },
+  "clip-129.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985932-w04",
+   "split": "test_locked"
+  },
+  "clip-130.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-O-k1",
+   "split": "val"
+  },
+  "clip-131.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7114183-w02",
+   "split": "test_locked"
+  },
+  "clip-132.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985925-w02",
+   "split": "test_locked"
+  },
+  "clip-133.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0050",
+   "split": "val"
+  },
+  "clip-134.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0190",
+   "split": "val"
+  },
+  "clip-135.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0250",
+   "split": "val"
+  },
+  "clip-136.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0070",
+   "split": "val"
+  },
+  "clip-138.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-P-k1",
+   "split": "val"
+  },
+  "clip-139.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0020",
+   "split": "val"
+  },
+  "clip-140.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0180",
+   "split": "val"
+  },
+  "clip-141.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8075304-w02",
+   "split": "test_locked"
+  },
+  "clip-142.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0230",
+   "split": "val"
+  },
+  "clip-143.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985925-w00",
+   "split": "test_locked"
+  },
+  "clip-144.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985951-w02",
+   "split": "test_locked"
+  },
+  "clip-145.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8509238-w04",
+   "split": "test_locked"
+  },
+  "clip-146.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4982535-w00",
+   "split": "test_locked"
+  },
+  "clip-147.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985938-w02",
+   "split": "test_locked"
+  },
+  "clip-148.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0060",
+   "split": "val"
+  },
+  "clip-149.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-P-k1",
+   "split": "val"
+  },
+  "clip-150.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8907120-w00",
+   "split": "test_locked"
+  },
+  "clip-151.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0060",
+   "split": "val"
+  },
+  "clip-152.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985925-w04",
+   "split": "test_locked"
+  },
+  "clip-153.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0050",
+   "split": "val"
+  },
+  "clip-154.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8907120-w00",
+   "split": "test_locked"
+  },
+  "clip-155.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0110",
+   "split": "val"
+  },
+  "clip-156.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985938-w02",
+   "split": "test_locked"
+  },
+  "clip-157.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8907120-w04",
+   "split": "test_locked"
+  },
+  "clip-158.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8509238-w02",
+   "split": "test_locked"
+  },
+  "clip-159.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7114183-w04",
+   "split": "test_locked"
+  },
+  "clip-160.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985951-w04",
+   "split": "test_locked"
+  },
+  "clip-161.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0260",
+   "split": "val"
+  },
+  "clip-162.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985925-w00",
+   "split": "test_locked"
+  },
+  "clip-163.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0160",
+   "split": "val"
+  },
+  "clip-164.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-R-k2",
+   "split": "test_locked"
+  },
+  "clip-165.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8075304-w00",
+   "split": "test_locked"
+  },
+  "clip-166.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0150",
+   "split": "val"
+  },
+  "clip-167.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0120",
+   "split": "val"
+  },
+  "clip-168.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985951-w00",
+   "split": "test_locked"
+  },
+  "clip-169.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0030",
+   "split": "val"
+  },
+  "clip-170.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985925-w02",
+   "split": "test_locked"
+  },
+  "clip-171.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985938-w00",
+   "split": "test_locked"
+  },
+  "clip-173.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985932-w02",
+   "split": "test_locked"
+  },
+  "clip-174.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0050",
+   "split": "val"
+  },
+  "clip-175.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-S-k2",
+   "split": "test_locked"
+  },
+  "clip-176.mid": {
+   "condition": "theory",
+   "rec_id": "composed-R-k2",
+   "split": "test_locked"
+  },
+  "clip-177.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0160",
+   "split": "val"
+  },
+  "clip-178.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0190",
+   "split": "val"
+  },
+  "clip-179.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0150",
+   "split": "val"
+  },
+  "clip-180.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0070",
+   "split": "val"
+  },
+  "clip-181.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0280",
+   "split": "val"
+  },
+  "clip-182.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985925-w00",
+   "split": "test_locked"
+  },
+  "clip-183.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0070",
+   "split": "val"
+  },
+  "clip-184.mid": {
+   "condition": "theory",
+   "rec_id": "composed-S-k2",
+   "split": "test_locked"
+  },
+  "clip-186.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7114183-w02",
+   "split": "test_locked"
+  },
+  "clip-187.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0010",
+   "split": "val"
+  },
+  "clip-188.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8075304-w02",
+   "split": "test_locked"
+  },
+  "clip-189.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "mut-Lobt_Gott-w00",
+   "split": "test_locked"
+  },
+  "clip-190.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985932-w04",
+   "split": "test_locked"
+  },
+  "clip-191.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0180",
+   "split": "val"
+  },
+  "clip-192.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8509238-w04",
+   "split": "test_locked"
+  },
+  "clip-193.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0210",
+   "split": "val"
+  },
+  "clip-194.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7114183-w00",
+   "split": "test_locked"
+  },
+  "clip-195.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0080",
+   "split": "val"
+  },
+  "clip-196.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0030",
+   "split": "val"
+  },
+  "clip-197.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4982535-w04",
+   "split": "test_locked"
+  },
+  "clip-198.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq7127785-w04",
+   "split": "test_locked"
+  },
+  "clip-199.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-T-k2",
+   "split": "test_locked"
+  },
+  "clip-200.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "mut-Lobt_Gott-w04",
+   "split": "test_locked"
+  },
+  "clip-201.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985925-w04",
+   "split": "test_locked"
+  },
+  "clip-202.mid": {
+   "condition": "theory",
+   "rec_id": "composed-T-k2",
+   "split": "test_locked"
+  },
+  "clip-203.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc5025985-w02",
+   "split": "test_locked"
+  },
+  "clip-204.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985951-w00",
+   "split": "test_locked"
+  },
+  "clip-205.mid": {
+   "condition": "theory",
+   "rec_id": "composed-O-k0",
+   "split": "val"
+  },
+  "clip-206.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc5025985-w02",
+   "split": "test_locked"
+  },
+  "clip-207.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985938-w00",
+   "split": "test_locked"
+  },
+  "clip-208.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0220",
+   "split": "val"
+  },
+  "clip-209.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0070",
+   "split": "val"
+  },
+  "clip-210.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985925-w00",
+   "split": "test_locked"
+  },
+  "clip-211.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985951-w04",
+   "split": "test_locked"
+  },
+  "clip-212.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8075304-w04",
+   "split": "test_locked"
+  },
+  "clip-213.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985951-w04",
+   "split": "test_locked"
+  },
+  "clip-214.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8509238-w04",
+   "split": "test_locked"
+  },
+  "clip-215.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq8509238-w00",
+   "split": "test_locked"
+  },
+  "clip-216.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7114183-w02",
+   "split": "test_locked"
+  },
+  "clip-217.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0130",
+   "split": "val"
+  },
+  "clip-218.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0210",
+   "split": "val"
+  },
+  "clip-219.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7114183-w04",
+   "split": "test_locked"
+  },
+  "clip-220.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0280",
+   "split": "val"
+  },
+  "clip-221.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0240",
+   "split": "val"
+  },
+  "clip-222.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4985938-w04",
+   "split": "test_locked"
+  },
+  "clip-223.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985932-w02",
+   "split": "test_locked"
+  },
+  "clip-224.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "mut-Lobt_Gott-w02",
+   "split": "test_locked"
+  },
+  "clip-225.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0110",
+   "split": "val"
+  },
+  "clip-226.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8075304-w04",
+   "split": "test_locked"
+  },
+  "clip-227.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0150",
+   "split": "val"
+  },
+  "clip-228.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985925-w02",
+   "split": "test_locked"
+  },
+  "clip-229.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985951-w02",
+   "split": "test_locked"
+  },
+  "clip-230.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-P-k0",
+   "split": "val"
+  },
+  "clip-231.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0090",
+   "split": "val"
+  },
+  "clip-232.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0140",
+   "split": "val"
+  },
+  "clip-233.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-O-k0",
+   "split": "val"
+  },
+  "clip-234.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc4985951-w02",
+   "split": "test_locked"
+  },
+  "clip-236.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0250",
+   "split": "val"
+  },
+  "clip-237.mid": {
+   "condition": "theory",
+   "rec_id": "mut-Lobt_Gott-w04",
+   "split": "test_locked"
+  },
+  "clip-238.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc4985932-w00",
+   "split": "test_locked"
+  },
+  "clip-239.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0220",
+   "split": "val"
+  },
+  "clip-240.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0110",
+   "split": "val"
+  },
+  "clip-241.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq7127785-w00",
+   "split": "test_locked"
+  },
+  "clip-242.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "mut-Lobt_Gott-w00",
+   "split": "test_locked"
+  },
+  "clip-243.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0280",
+   "split": "val"
+  },
+  "clip-244.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0200",
+   "split": "val"
+  },
+  "clip-245.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-T-k2",
+   "split": "test_locked"
+  },
+  "clip-246.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-P-k0",
+   "split": "val"
+  },
+  "clip-247.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0150",
+   "split": "val"
+  },
+  "clip-248.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0020",
+   "split": "val"
+  },
+  "clip-249.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq8907120-w02",
+   "split": "test_locked"
+  },
+  "clip-250.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7114183-w02",
+   "split": "test_locked"
+  },
+  "clip-251.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985951-w00",
+   "split": "test_locked"
+  },
+  "clip-253.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7397765-w04",
+   "split": "test_locked"
+  },
+  "clip-254.mid": {
+   "condition": "theory",
+   "rec_id": "mut-Lobt_Gott-w02",
+   "split": "test_locked"
+  },
+  "clip-255.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc5025985-w00",
+   "split": "test_locked"
+  },
+  "clip-256.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0270",
+   "split": "val"
+  },
+  "clip-257.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4982535-w02",
+   "split": "test_locked"
+  },
+  "clip-258.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0190",
+   "split": "val"
+  },
+  "clip-259.mid": {
+   "condition": "theory",
+   "rec_id": "os-sq7397765-w04",
+   "split": "test_locked"
+  },
+  "clip-260.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-P-k0",
+   "split": "val"
+  },
+  "clip-261.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8075304-w00",
+   "split": "test_locked"
+  },
+  "clip-262.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0220",
+   "split": "val"
+  },
+  "clip-263.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8907120-w04",
+   "split": "test_locked"
+  },
+  "clip-264.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0000",
+   "split": "val"
+  },
+  "clip-265.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0200",
+   "split": "val"
+  },
+  "clip-266.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0040",
+   "split": "val"
+  },
+  "clip-267.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0100",
+   "split": "val"
+  },
+  "clip-268.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-Q-k2",
+   "split": "test_locked"
+  },
+  "clip-269.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-Q-k2",
+   "split": "test_locked"
+  },
+  "clip-271.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "composed-O-k1",
+   "split": "val"
+  },
+  "clip-272.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0170",
+   "split": "val"
+  },
+  "clip-273.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7127785-w00",
+   "split": "test_locked"
+  },
+  "clip-274.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-T-k2",
+   "split": "test_locked"
+  },
+  "clip-276.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0010",
+   "split": "val"
+  },
+  "clip-277.mid": {
+   "condition": "greedy",
+   "rec_id": "composed-P-k1",
+   "split": "val"
+  },
+  "clip-278.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0180",
+   "split": "val"
+  },
+  "clip-279.mid": {
+   "condition": "greedy",
+   "rec_id": "os-lc5025985-w04",
+   "split": "test_locked"
+  },
+  "clip-280.mid": {
+   "condition": "greedy",
+   "rec_id": "mut-Lobt_Gott-w04",
+   "split": "test_locked"
+  },
+  "clip-281.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0260",
+   "split": "val"
+  },
+  "clip-282.mid": {
+   "condition": "theory",
+   "rec_id": "os-lc4985938-w04",
+   "split": "test_locked"
+  },
+  "clip-283.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "procedural-0040",
+   "split": "val"
+  },
+  "clip-284.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc4982535-w02",
+   "split": "test_locked"
+  },
+  "clip-285.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0030",
+   "split": "val"
+  },
+  "clip-286.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0190",
+   "split": "val"
+  },
+  "clip-287.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "mut-Lobt_Gott-w02",
+   "split": "test_locked"
+  },
+  "clip-288.mid": {
+   "condition": "theory",
+   "rec_id": "composed-Q-k2",
+   "split": "test_locked"
+  },
+  "clip-289.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0030",
+   "split": "val"
+  },
+  "clip-290.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8509238-w00",
+   "split": "test_locked"
+  },
+  "clip-291.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0250",
+   "split": "val"
+  },
+  "clip-292.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-lc5025985-w04",
+   "split": "test_locked"
+  },
+  "clip-293.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-lc5025985-w04",
+   "split": "test_locked"
+  },
+  "clip-295.mid": {
+   "condition": "greedy",
+   "rec_id": "os-sq8907120-w02",
+   "split": "test_locked"
+  },
+  "clip-296.mid": {
+   "condition": "theory",
+   "rec_id": "procedural-0200",
+   "split": "val"
+  },
+  "clip-297.mid": {
+   "condition": "theory",
+   "rec_id": "composed-P-k1",
+   "split": "val"
+  },
+  "clip-298.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0010",
+   "split": "val"
+  },
+  "clip-299.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "composed-O-k1",
+   "split": "val"
+  },
+  "clip-300.mid": {
+   "condition": "sampler0.85",
+   "rec_id": "os-sq8075304-w02",
+   "split": "test_locked"
+  },
+  "clip-301.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "os-sq7127785-w04",
+   "split": "test_locked"
+  },
+  "clip-302.mid": {
+   "condition": "sampler1.0",
+   "rec_id": "procedural-0210",
+   "split": "val"
+  },
+  "clip-303.mid": {
+   "condition": "greedy",
+   "rec_id": "procedural-0230",
+   "split": "val"
+  }
+ }
+}

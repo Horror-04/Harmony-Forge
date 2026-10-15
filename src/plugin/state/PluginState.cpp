@@ -61,8 +61,9 @@ bool sanitiseState(juce::ValueTree tree) {
     tree.setProperty(StateID::kModelPath, juce::String(clean), nullptr);
     changed = true;
   }
-  // UseSampling: missing resets to false; a present-but-foreign form (XML
-  // round-trips store "1"/"0" as int) is coerced to canonical bool.
+  // UseSampling: missing resets to the default (true since the Phase 10
+  // Task 4 ON verdict); a present-but-foreign form (XML round-trips store
+  // "1"/"0" as int) is coerced to canonical bool.
   // Unknown properties stay untouched (policy above).
   const bool sampling =
       static_cast<bool>(tree.getProperty(StateID::kUseSampling, StateDefaults::useSampling));

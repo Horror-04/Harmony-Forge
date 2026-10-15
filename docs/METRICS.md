@@ -7,6 +7,11 @@ and the MVP goal: the user keeps ≥ 1 of 4 variants in > 50% of sessions.
 
 ## Keep Rate protocol
 
+> Note (Phase 10 Task 4): `tools/render_batch.py` is now the 4-condition
+> blind A/B batcher (this section's `--seeds/--bars` CLI is retired;
+> `build-full/tools/Release/render_midi.exe` remains directly runnable).
+> Keep Rate logging below is unchanged.
+
 1. Render a batch: `python tools/render_batch.py --seeds 7,8 --bars 4 --out tools/batch/`
    (add `--multi` into a separate dir for multitrack versions).
 2. Listen to each file; score it with `tools/score_sheet.md` (one row per file).
@@ -43,3 +48,27 @@ date,seed,params,kept,score,notes
   used (current renderer is fixed to Strict, tonic 60 = C3, major).
   `kept`: 1 (keep) or 0 (drop). `score`: mean of the three 1–5 ratings.
   `notes`: free text, may include `ttul=HH:MM:SS`.
+
+## Phase-10 sampler A/B decision protocol (Task 4)
+
+Render: `python tools/render_batch.py --out tools/batch/task4/audio
+--key tools/task4_blind_key.json --metrics tools/task4_metrics.json`
+(4 real-output conditions over frozen val 33 + test_locked 43 prefixes,
+halved-prefix convention; sampling seed 7; frozen cfg
+memo_block_run=2/strict+fsm/λ=0/top_p=1.0, T per condition:
+greedy / sampler-T1.0 / sampler-T0.85 / theory-only).
+
+- Audio (`*.mid`) is local-only, never committed. The key file IS committed
+  (text, needed to unblind later) but lives OUTSIDE the audio dir; score
+  blind in `tools/score_sheet.md` (Phase-10 section) BEFORE opening it.
+- Numbers: per-condition suffix_compliance, novel_ngram n=4..16
+  (interval-invariant), decodable rate, intervention_rate (guard fired:
+  greedy = §10 early stop; sampler = strict flip ≥ 1; theory = 0 by
+  construction), mean_new_notes, latency p50/p95 per continuation
+  (SPEC §11 budget ≤ 2 s per 4–8 bars — verdict input, not gate).
+- Verdict rule (fixed a priori, no tuning): default-ON
+  (`StateDefaults::useSampling = true`) ONLY if sampler-T1.0 beats greedy
+  on suffix AND novelty with NO decodable regression AND latency in
+  budget; else stay opt-in (OFF default) with the numbers recorded.
+  Human listening is async and does not gate the default.
+- Verdict + numbers: `training/MODEL_CARD.md` (Phase-10 section).

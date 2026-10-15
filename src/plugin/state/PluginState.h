@@ -15,7 +15,8 @@
 //   Sprint 5: generated length), ModelPath (String, default empty = no model,
 //   deterministic fallback; Phase 2 Task 4: undoable model file wired into
 //   GenParams.model_path for Regenerate).
-//   UseSampling (bool, default false; Phase 10 Task 2: undoable sampling
+//   UseSampling (bool, default true since the Phase 10 Task 4 ON verdict;
+//   undoable sampling
 //   flag wired into GenParams.use_sampling for Regenerate).
 //
 // Policy: every mutation from the UI goes through these helpers with a
@@ -46,7 +47,7 @@ struct StateDefaults {
   static constexpr int seed = 0;
   static constexpr int bars = 4;
   static constexpr const char* modelPath = "";
-  static constexpr bool useSampling = false;
+  static constexpr bool useSampling = true;  // Phase 10 Task 4 ON verdict
 };
 
 // Builds a fresh default tree (undo == nullptr: no history entries).

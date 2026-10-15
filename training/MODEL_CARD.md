@@ -244,3 +244,32 @@
   selection signal â€” procedure followed literally, no hedging).
   Full numbers: `.superpowers/sdd/2026-10-14-phase-9/task-6-report.md`,
   evidence `training/eval_v2_s*.json` + `training/eval_v2val_s*.json`.
+## Sampler production enablement (Phase 10 Task 4 — VERDICT: default-ON)
+
+Blind A/B over frozen val (33) + test_locked (43) prefixes, halved-prefix
+convention, sampling seed 7, frozen cfg (memo_block_run=2, strict+fsm on,
+?_theory=0, top_p=1.0; T per condition). 304 attempts, 294 shipped
+(10 greedy attempts undecodable — greedy argmax has no FSM mask; the
+misses are the decodable-rate column, not a batch failure). Audio:
+`tools/batch/task4/audio/` (local-only); key `tools/task4_blind_key.json`;
+full table `tools/task4_metrics.json`; blind score sheet
+`tools/score_sheet.md` (human listening async, does not gate the default).
+
+| condition | n | decodable | suffix (95% CI) | novelty n4..16 (95% CI) | interv | new_notes | p50/p95 |
+|---|---|---|---|---|---|---|---|
+| greedy | 76 | 0.868 | 0.707 [0.562,0.834] (n=35) | 0.920 [0.867,0.963] (n=66) | 0.789 | 1.82 | 0.01/0.06 s |
+| sampler T=1.0 | 76 | 1.000 | 0.989 [0.977,0.998] (n=76) | 0.937 [0.902,0.963] (n=76) | 0.579 | 8.00 | 0.06/0.09 s |
+| sampler T=0.85 | 76 | 1.000 | 0.988 [0.973,1.000] (n=76) | 0.937 [0.903,0.964] (n=76) | 0.553 | 8.00 | 0.06/0.09 s |
+| theory-only | 76 | 1.000 | 1.000 [1.000,1.000] | 0.960 [0.954,0.966] | 0.000 | 8.00 | 0.00/0.00 s |
+
+Rule application (fixed a priori in the Task-4 brief, no tuning):
+sampler-T1.0 suffix 0.989 > greedy 0.707 (CIs disjoint) AND novelty
+0.937 > 0.920 AND decodable 1.000 ? 0.868 (strict improvement, no
+regression) AND latency p95 0.09 s ? 2 s budget > default-ON.
+`StateDefaults::useSampling` flipped false > true (the single in-scope
+bool flip); greedy path untouched (flag-off bytes still pinned by the
+`[wiring]` OFF-history test). Honesty note: the novelty margin is thin
+(+0.017, CIs overlap) — the verdict rides the decisive suffix win, the
+decodability repair, and the 8.0-vs-1.82 generation yield, not the
+novelty margin. Theory-only remains the ceiling on all three quality
+columns (by construction); sampler does not claim to beat it.
