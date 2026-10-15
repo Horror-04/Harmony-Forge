@@ -244,6 +244,50 @@
   selection signal — procedure followed literally, no hedging).
   Full numbers: `.superpowers/sdd/2026-10-14-phase-9/task-6-report.md`,
   evidence `training/eval_v2_s*.json` + `training/eval_v2val_s*.json`.
+
+## v2 retry (Phase 11 — SHELVED on the gate, weights NOT shipped, HELD)
+
+- Recipe (Task-1 frozen winner A, verbatim — varied ONLY `--seed`):
+  `--v2 --arch large --keynorm --penalty 0.0 --stage1-epochs 8
+  --stage2-max 6 --suffix-upweight 3.0 --device cuda`, seeds
+  {7,11,23,42,99} (s7 adopted from Task 1, identical frozen flags).
+  Large arch 3,558,144 params; train 334 (composed pool 75); locked test
+  43 records, never touched for selection.
+- Locked-test DoD (5 finalist seeds, greedy ONNX, 43/43 decodable on all):
+  mean_new_notes 4.98–5.81 (need >= 6.0 — FAIL all); suffix_compliance
+  0.636–0.774 (need >= 0.90 — FAIL all, best s11 0.774, margin 0.126);
+  verbatim filt run max 3, 0 violations (PASS); novel interval-4gram
+  0.642–0.669 (need >= 0.60 — PASS). Per-seed comp/suffix: s7 0.846/0.636,
+  s11 0.865/0.774, s23 0.838/0.675, s42 0.857/0.723, s99 0.836/0.644.
+- Baselines (composed-val reference): KN 0.707/0.969, theory-only
+  0.800/1.000 (comp/suffix). Best retry seed (s11) comp 0.865 clears KN
+  comp, but suffix 0.774 trails KN by ~0.20 and theory by ~0.23 — the
+  suffix bar is unmet on every seed, so the ship rule (all-green +
+  baselines-beaten) fails regardless.
+- INVERSION LESSON (proxy vs generation): recipe A won the frozen
+  teacher-forced proxy (suffix_proxy 0.7113 < CTRL 0.7287) yet LOST on
+  greedy generation at the SAME seed 7 (suffix 0.6355 vs T6 pen0.0 s7
+  0.8234, down 0.19). Train-time suffix pressure improved teacher-forced
+  CE while hurting or not helping generation suffix on 4/5 seeds — the
+  bars-0–1 whole-melody proxy does not transfer to bars>=2 generation.
+- VERDICT: NEEDS_CONTEXT — nothing shipped; `training/model.onnx` +
+  quant + `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+  No third retry in-phase (retry cap). Green-only steps (swap,
+  keynorm-ON, sampler re-validation, drop-in) SKIPPED per the
+  NEEDS_CONTEXT rule — no green path exists.
+- NEXT LEVER (single primary): generation-time suffix pressure on
+  bars>=2 at decode time (theory-mask / PoE-lambda blend with the theory
+  engine in the generation path) — testable WITHOUT retraining on the
+  frozen v2b checkpoints (greedy+mask vs greedy, locked-test suffix
+  delta). Rationale: train-time loss pressure inverted under
+  teacher-forcing; pressure applied where the metric is measured cannot
+  invert that way. Deferred: data-mixture change (untried; targets
+  corpus coverage, no direct evidence in this failure); schedule change
+  (single-stage already tried as lever B — proxy-middling 0.7510, no
+  generation evidence).
+- Full numbers: `.superpowers/sdd/2026-10-15-phase-11/task-2-report.md`
+  (finalists) + `task-3-report.md` (verdict), evidence
+  `training/eval_v2b_s*.json`.
 ## Sampler production enablement (Phase 10 Task 4 � VERDICT: default-ON)
 
 Blind A/B over frozen val (33) + test_locked (43) prefixes, halved-prefix
