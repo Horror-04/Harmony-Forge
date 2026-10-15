@@ -41,6 +41,7 @@ Run: training/.venv/Scripts/python tools/tests/test_render_model.py
 """
 
 import os
+import json
 import random
 import sys
 import time
@@ -186,6 +187,185 @@ class RenderModelTest(unittest.TestCase):
             if allowed is not None and allowed and before[-1] in (1, 2):
                 self.assertIn(full[k], allowed,
                               msg=f"hostile step {k} escaped Strict mask")
+
+
+# Task-4 carried audit (review ruling on Task 3): P9b strict-unsafe peak,
+# P4b per-step memo trace, P10 driver-vs-worker CI. See method docstrings.
+CI_SEEDS = list(range(7, 19))
+WORKER_IDS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "worker_ids_task4.json")
+_NGRAM_INDEX_4: set | None = None
+
+
+def _ngram_index_4() -> set:
+    """Train melody-interval 4-gram index (Task-1 fns, built once)."""
+    global _NGRAM_INDEX_4
+    if _NGRAM_INDEX_4 is None:
+        train = E.load_jsonl("train.jsonl")
+        _NGRAM_INDEX_4 = E.interval_ngram_index(train, 4)
+    return _NGRAM_INDEX_4
+
+
+def _hostile_peak(seq: list[int], meta: dict) -> list[float]:
+    """Peak a STRICT-unsafe pitch at strict-gated steps, FSM-illegal else.
+
+    At a gated pitch slot the smallest unsafe pitch id (always exists: the
+    tonic pitch is always safe, so the unsafe set is never the whole
+    0..127) gets logit 50.0; everywhere else the FSM-illegal id 200 gets
+    50.0 (as in P9). With masks on, no peak may survive; with masks off,
+    the gated peaks must land (sensitivity control).
+    """
+    out = [0.0] * D.VOCAB
+    allowed = D.strict_allowed_ids(seq, meta)
+    if allowed:
+        slot = (len(seq) - 1) % tok.TOKENS_PER_NOTE if seq else -1
+        if slot == 3:
+            unsafe = next((v for v in range(128) if v not in allowed), None)
+            if unsafe is not None:
+                out[unsafe] = 50.0
+                return out
+    out[200 % D.VOCAB] = 50.0
+    return out
+
+
+class RenderAuditTest(unittest.TestCase):
+    def test_hostile_strict_unsafe_peak(self):
+        """P9b: strict-UNSAFE peaks at gated steps still yield safe ids."""
+        for cid in FIXTURES:
+            _, prefix, meta = _load(cid)
+            cfg = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2,
+                        strict_mask=True, fsm_mask=True, lambda_theory=0.0)
+            stats: dict = {}
+            full = D.sample_continue(lambda s: _hostile_peak(s, meta),
+                                     prefix, meta, cfg,
+                                     random.Random(SEED), stats)
+            # The peaks actually targeted gated steps and lost (else the
+            # test is vacuous — this is what Task 3's P9 could not show).
+            self.assertGreater(stats.get("strict_positions", 0), 0,
+                               msg=f"{cid}: hostile run hit no gated step")
+            self.assertGreater(stats.get("strict_flips", 0), 0,
+                               msg=f"{cid}: masks flipped nothing")
+            for k in range(len(prefix), len(full)):
+                before = full[:k]
+                slot = (len(before) - 1) % tok.TOKENS_PER_NOTE
+                self.assertIn(full[k], D.slot_valid_range(slot),
+                              msg=f"{cid} step {k} escaped FSM mask")
+                allowed = D.strict_allowed_ids(before, meta)
+                if (allowed is not None and allowed
+                        and before[-1] in (1, 2)):
+                    self.assertIn(full[k], allowed,
+                                  msg=f"{cid} step {k} emitted unsafe peak")
+            self.assertIsNotNone(tok.decode_tokens(E.finalize(full)),
+                                 msg=f"{cid}: hostile run undecodable")
+            print(f"hostile {cid}: gated={stats['strict_positions']} "
+                  f"flips={stats['strict_flips']}", flush=True)
+
+    def test_hostile_peak_lands_without_masks(self):
+        """Sensitivity: strict off (FSM kept for structure), the gated
+        peaks ARE emitted."""
+        for cid in FIXTURES:
+            _, prefix, meta = _load(cid)
+            bare = dict(meta)
+            bare["memo_id8"] = set()  # memo off: peak must never be blocked
+            cfg = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2,
+                        strict_mask=False, fsm_mask=True,
+                        lambda_theory=0.0)
+            full = D.sample_continue(lambda s: _hostile_peak(s, bare),
+                                     prefix, bare, cfg,
+                                     random.Random(SEED))
+            landed = 0
+            for k in range(len(prefix), len(full)):
+                before = full[:k]
+                allowed = D.strict_allowed_ids(before, bare)
+                if (allowed and (len(before) - 1) % tok.TOKENS_PER_NOTE == 3
+                        and before[-1] in (1, 2)):
+                    unsafe = next(v for v in range(128) if v not in allowed)
+                    if full[k] == unsafe:
+                        landed += 1
+            self.assertGreater(landed, 0,
+                               msg=f"{cid}: hostile peak never landed "
+                                   f"masks-off (test insensitive)")
+            print(f"masks-off {cid}: hostile peaks landed={landed}",
+                  flush=True)
+
+    def test_per_step_memo_trace(self):
+        """P4b: no generated step completes a memorized 8-gram run >= 2."""
+        train = E.load_jsonl("train.jsonl")
+        _, memo_id8 = E.load_memo()
+        # Sensitivity control: a train interior slice DOES complete a run.
+        t0 = train[0]["ids"]
+        self.assertTrue(D.would_complete_run(t0[:21], memo_id8, 0, 2),
+                        msg="would_complete_run never fires (insensitive)")
+        for cid in FIXTURES:
+            _, prefix, meta = _load(cid)
+            ids = R.sample_ids(prefix, meta, R.WIRED_CFG, SEED,
+                               R.DEFAULT_MODEL_PATH)
+            floor = len(prefix) - 7
+            for k in range(len(prefix), len(ids)):
+                self.assertFalse(
+                    D.would_complete_run(ids[:k + 1], meta["memo_id8"],
+                                         floor, 2),
+                    msg=f"{cid} step {k} completes a memo run >= 2")
+            run = E.longest_verbatim_run(ids, meta["memo_id8"], floor)
+            print(f"memo-trace {cid}: steps={len(ids) - len(prefix)} "
+                  f"longest_run={run}", flush=True)
+            self.assertLess(run, 2, msg=f"{cid}: run {run} >= 2")
+
+    def test_driver_worker_ci(self):
+        """P10: driver/worker 95% CIs overlap (suffix + novelty, per fix).
+
+        Same logits, masks, memo and budget both sides; only the RNG
+        differs by design (PCG32 vs random.Random), so agreement is a
+        distributional claim: the two independent bootstrap CIs must
+        overlap. A point-mean-in-CI rule would punish the worker side's
+        own sampling error and flake on identical distributions.
+        """
+        with open(WORKER_IDS_PATH) as f:
+            worker = json.load(f)
+        self.assertEqual(worker["seeds"], CI_SEEDS)
+        index4 = _ngram_index_4()
+        for cid in FIXTURES:
+            rec, prefix, meta = _load(cid)
+            wseeds = worker["runs"][cid]["ids"]
+            self.assertEqual(worker["runs"][cid]["prefix_len"], len(prefix),
+                             msg=f"{cid}: worker prefix drift")
+            drv_sfx, drv_nov, wrk_sfx, wrk_nov = [], [], [], []
+            for seed in CI_SEEDS:
+                dids = R.sample_ids(prefix, meta, R.WIRED_CFG, seed,
+                                    R.DEFAULT_MODEL_PATH)
+                s = E.suffix_compliance(rec, dids, len(prefix))
+                n = E.novel_ngram_rate(E.finalize(dids), index4, 4)
+                if s is not None:
+                    drv_sfx.append(s)
+                if n is not None:
+                    drv_nov.append(n)
+                wids = wseeds[str(seed)]
+                self.assertGreater(len(wids), len(prefix), msg=f"{cid}")
+                s = E.suffix_compliance(rec, wids, len(prefix))
+                n = E.novel_ngram_rate(E.finalize(wids), index4, 4)
+                if s is not None:
+                    wrk_sfx.append(s)
+                if n is not None:
+                    wrk_nov.append(n)
+            for name, drv, wrk in (("suffix", drv_sfx, wrk_sfx),
+                                   ("novelty-n4", drv_nov, wrk_nov)):
+                self.assertGreaterEqual(
+                    len(drv), 6,
+                    msg=f"{cid} {name}: only {len(drv)} driver scores")
+                self.assertGreaterEqual(
+                    len(wrk), 6,
+                    msg=f"{cid} {name}: only {len(wrk)} worker scores")
+                dlo, dhi = E.bootstrap_ci(drv)
+                wlo, whi = E.bootstrap_ci(wrk)
+                print(f"ci {cid} {name}: "
+                      f"driver={sum(drv) / len(drv):.3f} [{dlo:.3f},{dhi:.3f}] "
+                      f"worker={sum(wrk) / len(wrk):.3f} [{wlo:.3f},{whi:.3f}] "
+                      f"(n={len(drv)}/{len(wrk)})", flush=True)
+                self.assertTrue(
+                    wlo <= dhi and dlo <= whi,
+                    msg=f"{cid} {name}: CIs disjoint "
+                        f"driver [{dlo:.3f},{dhi:.3f}] "
+                        f"worker [{wlo:.3f},{whi:.3f}]")
 
 
 if __name__ == "__main__":
