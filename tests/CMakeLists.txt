@@ -145,13 +145,30 @@ hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
 hf_add_test(test_sampler test_sampler.cpp)
+target_compile_definitions(test_sampler PRIVATE
+  HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin"
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx"
+  HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx")
 hf_add_test(test_ort_logits test_ort_logits.cpp)
 target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
-target_compile_definitions(test_sampler PRIVATE
-  HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
+
+# Phase 10 Task 2: PluginState useSampling (persisted flag) coverage. Links
+# the real PluginState.cpp (JUCE), so it only builds where the plugin is
+# configured. Headless-safe: ValueTree + UndoManager only, no components.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_plugin_state test_plugin_state.cpp
+    ../src/plugin/state/PluginState.cpp)
+  target_link_libraries(test_plugin_state PRIVATE
+    harmony_forge_core harmony_forge_inference juce::juce_data_structures
+    Catch2::Catch2WithMain)
+  target_include_directories(test_plugin_state PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_plugin_state PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_plugin_state)
+  catch_discover_tests(test_plugin_state)
+endif()
 
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).
 # Deliberately NOT registered with catch_discover_tests: the binary never

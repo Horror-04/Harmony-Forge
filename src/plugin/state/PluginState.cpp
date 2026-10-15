@@ -16,6 +16,7 @@ juce::ValueTree createDefaultState() {
   t.setProperty(StateID::kSeed, StateDefaults::seed, nullptr);
   t.setProperty(StateID::kBars, StateDefaults::bars, nullptr);
   t.setProperty(StateID::kModelPath, StateDefaults::modelPath, nullptr);
+  t.setProperty(StateID::kUseSampling, StateDefaults::useSampling, nullptr);
   return t;
 }
 
@@ -58,6 +59,16 @@ bool sanitiseState(juce::ValueTree tree) {
       hf::infer::sanitised_model_path(raw.toStdString());
   if (!tree.hasProperty(StateID::kModelPath) || clean != raw.toStdString()) {
     tree.setProperty(StateID::kModelPath, juce::String(clean), nullptr);
+    changed = true;
+  }
+  // UseSampling: missing resets to false; a present-but-foreign form (XML
+  // round-trips store "1"/"0" as int) is coerced to canonical bool.
+  // Unknown properties stay untouched (policy above).
+  const bool sampling =
+      static_cast<bool>(tree.getProperty(StateID::kUseSampling, StateDefaults::useSampling));
+  if (!tree.hasProperty(StateID::kUseSampling) ||
+      !tree.getProperty(StateID::kUseSampling).isBool()) {
+    tree.setProperty(StateID::kUseSampling, sampling, nullptr);
     changed = true;
   }
   return changed;
@@ -139,6 +150,15 @@ void setBars(juce::ValueTree tree, int v, juce::UndoManager* undo) {
 void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kModelPath,
                    juce::String(hf::infer::sanitised_model_path(v.toStdString())), undo);
+}
+
+bool useSampling(const juce::ValueTree& tree) {
+  return static_cast<bool>(
+      tree.getProperty(StateID::kUseSampling, StateDefaults::useSampling));
+}
+
+void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo) {
+  tree.setProperty(StateID::kUseSampling, v, undo);
 }
 
 }  // namespace hf::plugin

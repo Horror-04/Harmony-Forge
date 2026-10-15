@@ -88,7 +88,8 @@ PatternDocument::PatternDocument(juce::UndoManager* undo)
 
 hf::infer::GenParams PatternDocument::makeParamsWithModel(int seed, int bars, int tonic,
                                                  const std::string& scale,
-                                                 const std::string& model_path) {
+                                                 const std::string& model_path,
+                                                 bool use_sampling) {
   hf::infer::GenParams gp;
   gp.mode = hf::infer::GenMode::Strict;
   gp.seed = seed;
@@ -96,6 +97,7 @@ hf::infer::GenParams PatternDocument::makeParamsWithModel(int seed, int bars, in
   gp.tonic = std::clamp(tonic, 0, 127);
   gp.scale = scale.empty() ? "major" : scale;
   gp.model_path = model_path;
+  gp.use_sampling = use_sampling;
   return gp;
 }
 

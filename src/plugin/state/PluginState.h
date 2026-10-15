@@ -15,6 +15,8 @@
 //   Sprint 5: generated length), ModelPath (String, default empty = no model,
 //   deterministic fallback; Phase 2 Task 4: undoable model file wired into
 //   GenParams.model_path for Regenerate).
+//   UseSampling (bool, default false; Phase 10 Task 2: undoable sampling
+//   flag wired into GenParams.use_sampling for Regenerate).
 //
 // Policy: every mutation from the UI goes through these helpers with a
 // non-null UndoManager so undo/redo works in the editor. Initial defaults
@@ -32,6 +34,7 @@ static constexpr const char* kSelectedChordIndex = "SelectedChordIndex";
 static constexpr const char* kSeed = "Seed";
 static constexpr const char* kBars = "Bars";
 static constexpr const char* kModelPath = "ModelPath";
+static constexpr const char* kUseSampling = "UseSampling";
 }  // namespace StateID
 
 struct StateDefaults {
@@ -43,6 +46,7 @@ struct StateDefaults {
   static constexpr int seed = 0;
   static constexpr int bars = 4;
   static constexpr const char* modelPath = "";
+  static constexpr bool useSampling = false;
 };
 
 // Builds a fresh default tree (undo == nullptr: no history entries).
@@ -79,5 +83,10 @@ void setBars(juce::ValueTree tree, int v, juce::UndoManager* undo);
 // Undoable setter following the setBpm pattern: the value is sanitised
 // (must exist + `.onnx` extension, else empty) before it is stored.
 void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager* undo);
+// Phase 10 Task 2: persisted sampling flag (default false == greedy). Reads
+// coerce bool/int/string forms (XML round-trips store "1"/"0"); writes are
+// always canonical bool. Undoable like every other setter.
+bool useSampling(const juce::ValueTree& tree);
+void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo);
 
 }  // namespace hf::plugin

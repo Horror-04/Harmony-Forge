@@ -33,6 +33,17 @@ struct GenParams {
   /// the candidate stream seeds (same rationale as model_path): the flag
   /// changes pitches, not the RNG streams. Background threads only.
   bool keynorm_use_canonical = false;
+  /// Token-level sampling (Phase 10 Task 2): when true, the background
+  /// generate path continues the encoded feed through `sample_continue`
+  /// with the production `OrtLogitsProvider` instead of the greedy runner
+  /// stage. Default false == pre-task behavior (the hook is inert; output
+  /// bit-identical — flag OFF is a blocker-grade property). Provider
+  /// unavailable (missing/corrupt sidecar) falls back to the greedy bytes
+  /// silently-safe (one-time background diagnostic only). Deliberately
+  /// EXCLUDED from the candidate stream seeds (same rationale as
+  /// model_path): the flag selects the continuation engine, not the RNG
+  /// streams. Background threads only — never processBlock.
+  bool use_sampling = false;
 };
 
 // Diatonic triad-per-bar progression for `params` (degrees I-V-vi-IV cycled,

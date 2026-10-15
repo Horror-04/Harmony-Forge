@@ -15,14 +15,22 @@
 #include <vector>
 
 #include "async_generate.h"
+#include "candidates.h"
 #include "core/model/note.h"
 #include "core/serialization/tokenizer.h"
 #include "inference_runner.h"
 #include "memo_filter.h"
+#include "ort_logits.h"
 #include "sampler.h"
 
 #ifndef HARMONY_FORGE_MEMO_INDEX
 #define HARMONY_FORGE_MEMO_INDEX "training/memo_index.bin"
+#endif
+#ifndef HARMONY_FORGE_MOCK_MODEL
+#define HARMONY_FORGE_MOCK_MODEL "training/model.onnx"
+#endif
+#ifndef HARMONY_FORGE_LOGITS_MODEL
+#define HARMONY_FORGE_LOGITS_MODEL "training/model.logits.onnx"
 #endif
 
 namespace {
@@ -615,4 +623,136 @@ TEST_CASE("sampler runs only via the background worker, never the caller thread"
                                      scratch));
   CHECK(runner->sampler_out ==
         std::vector<int>(sync_out.begin(), sync_out.begin() + sync_n));
+}
+
+// Phase 10 Task 2 wiring pins (call-site + persisted flag + toggle). All
+// through generate_candidates (the background generate path) — never
+// processBlock. Flag OFF must be bit-identical to pre-phase behavior on
+// every fixture (blocker-grade); flag ON is deterministic (same seed ->
+// identical bytes, PCG); provider-unavailable falls back to greedy bytes
+// silently-safe (one-time background diagnostic only).
+namespace {
+
+std::uint64_t fnv1a_ids(const std::vector<int>& v) {
+  std::uint64_t h = 1469598103934665603ULL;
+  for (int x : v) {
+    const auto u = static_cast<std::uint32_t>(x);
+    for (int b = 0; b < 4; ++b) {
+      h ^= static_cast<unsigned char>((u >> (8 * b)) & 0xffu);
+      h *= 1099511628211ULL;
+    }
+  }
+  return h;
+}
+
+std::string hex64(std::uint64_t h) {
+  static const char* k = "0123456789abcdef";
+  std::string s(16, '0');
+  for (int i = 15; i >= 0; --i) {
+    s[static_cast<size_t>(i)] = k[h & 0xfu];
+    h >>= 4;
+  }
+  return s;
+}
+
+hf::infer::GenParams wiring_base(int seed, int bars, int tonic, const std::string& scale) {
+  hf::infer::GenParams p;
+  p.mode = hf::infer::GenMode::Strict;
+  p.seed = seed;
+  p.bars = bars;
+  p.tonic = tonic;
+  p.scale = scale;
+  return p;
+}
+
+std::array<hf::infer::GenParams, 3> wiring_fixtures() {
+  return {wiring_base(7, 4, 60, "major"), wiring_base(99, 2, 57, "natural_minor"),
+          wiring_base(3, 8, 65, "dorian")};
+}
+
+std::vector<std::vector<int>> encoded(
+    const std::array<hf::core::Pattern, 4>& cands) {
+  std::vector<std::vector<int>> out;
+  for (const auto& c : cands) out.push_back(hf::ser::encode_pattern(c));
+  return out;
+}
+
+}  // namespace
+
+TEST_CASE("wiring flag OFF keeps pre-phase history bytes", "[sampler][wiring]") {
+  // Pinned pre-phase hashes: captured 2026-10-15 from the untouched greedy
+  // path (empty model path, flag OFF). Any single-bit drift in the OFF path
+  // fails here — that is the blocker-grade property.
+  static const char* kPinned[3][4] = {
+      {"5429e4ce08459cb9", "b9ec31b30aab6551", "7b49e78121455d55", "27b45ea030db93b8"},
+      {"d556b000ba3e5d92", "e982b3a16fbf75ba", "f21387b7ffaadd59", "fc0fb10355f0e03c"},
+      {"f4c431dff63e935d", "c3493403ad23219b", "25790ec17e58f269", "4bd8094a872fc746"},
+  };
+  const auto fixtures = wiring_fixtures();
+  for (size_t f = 0; f < fixtures.size(); ++f) {
+    hf::infer::GenParams p = fixtures[f];
+    p.use_sampling = false;
+    const auto a = encoded(hf::infer::generate_candidates(p));
+    const auto b = encoded(hf::infer::generate_candidates(p));
+    for (int i = 0; i < 4; ++i) {
+      CHECK(a[static_cast<size_t>(i)] == b[static_cast<size_t>(i)]);
+      CHECK(hex64(fnv1a_ids(a[static_cast<size_t>(i)])) == kPinned[f][i]);
+    }
+  }
+}
+
+TEST_CASE("wiring unavailable provider falls back to greedy bytes", "[sampler][wiring]") {
+  // Unsatisfiable model path (no sidecar can resolve): flag ON must equal
+  // flag OFF byte-identically, in both ONNX-ON and WITH_ONNX=OFF builds.
+  // Empty model path + flag ON is the same case (nothing resolves) and is
+  // env-independent, so it is pinned here too.
+  const auto fixtures = wiring_fixtures();
+  for (auto p : fixtures) {
+    p.model_path = "Z:/definitely/not/here/model.onnx";
+    p.use_sampling = false;
+    const auto greedy = encoded(hf::infer::generate_candidates(p));
+    p.use_sampling = true;
+    const auto fb = encoded(hf::infer::generate_candidates(p));
+    for (int i = 0; i < 4; ++i)
+      CHECK(fb[static_cast<size_t>(i)] == greedy[static_cast<size_t>(i)]);
+  }
+  for (auto p : fixtures) {
+    p.model_path.clear();
+    p.use_sampling = false;
+    const auto greedy = encoded(hf::infer::generate_candidates(p));
+    p.use_sampling = true;
+    const auto fb = encoded(hf::infer::generate_candidates(p));
+    for (int i = 0; i < 4; ++i)
+      CHECK(fb[static_cast<size_t>(i)] == greedy[static_cast<size_t>(i)]);
+  }
+}
+
+TEST_CASE("wiring flag ON engages the sampler deterministically", "[sampler][wiring]") {
+  // Sibling resolution (mock weights -> training/model.logits.onnx). When
+  // the sidecar loads, flag ON must be deterministic (twice-identical) AND
+  // must actually engage the sampler (differs from greedy in >= 1
+  // candidate — pre-wiring this fails: the ignored flag returns greedy
+  // bytes). When unavailable (OFF builds, missing sidecar), the fallback
+  // pin above already covers the bytes; here determinism still holds.
+  hf::infer::OrtLogitsProvider probe(HARMONY_FORGE_MOCK_MODEL);
+  const auto fixtures = wiring_fixtures();
+  for (auto p : fixtures) {
+    p.model_path = HARMONY_FORGE_MOCK_MODEL;
+    p.use_sampling = false;
+    const auto greedy = encoded(hf::infer::generate_candidates(p));
+    p.use_sampling = true;
+    const auto a = encoded(hf::infer::generate_candidates(p));
+    const auto b = encoded(hf::infer::generate_candidates(p));
+    for (int i = 0; i < 4; ++i)
+      CHECK(a[static_cast<size_t>(i)] == b[static_cast<size_t>(i)]);
+    if (probe.available()) {
+      bool any_differs = false;
+      for (int i = 0; i < 4; ++i)
+        any_differs |= (a[static_cast<size_t>(i)] != greedy[static_cast<size_t>(i)]);
+      CHECK(any_differs);
+    } else {
+      for (int i = 0; i < 4; ++i)
+        CHECK(a[static_cast<size_t>(i)] == greedy[static_cast<size_t>(i)]);
+    }
+  }
 }
