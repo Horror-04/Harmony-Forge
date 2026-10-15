@@ -246,3 +246,30 @@ eliminated by redo, not averaged away.)
 - Resume: re-run A (fresh, seed 7 — deterministic, overwrites partial),
   then B, then C, sequential ≤2 workers; score all four ckpts with frozen
   `val_melody_ce` on the §D.2 slice; pick per §D.1 literally.
+
+## J. Independent verification (same session, minutes after 8b12bfc — this commit)
+
+- A second worker adopted the same live runs (A-cuda PID 20128 S1ep2,
+  B PID 24704 ep4 — no restarts), saw B finish (exit 0, 147.5 s), and
+  launched C on the freed slot. A concurrent C launch fired at the
+  same moment (sibling session's `powershell ... > training/t1_c.log`
+  vs this worker's `Start-Process`): TWO C workers briefly shared
+  `t1_c.pt`. This worker killed its own duplicate (PIDs 8880/24092)
+  BEFORE any `t1_c.*` file existed (verified: no match); the survivor
+  wrote fresh from ep0. Correction to §I "no kills": one
+  duplicate-launcher kill, zero contamination (final C numbers below
+  are triple-agreed). GPU workers never exceeded 2 after the kill.
+- Independent re-score (one process, one slice, frozen
+  `train.val_melody_ce`, `model.eval()`, CPU, keynorm views):
+  CTRL 0.728657 / A 0.711311 / B 0.750964 / C 0.775249 — exact 6-dp
+  agreement with §E.2 on all four. Pick = A confirmed; margin over
+  CTRL 0.017346 >> 1e-6 tie band. §D.1 needs no tie clause.
+- Method note (new): `train.py` never calls `model.eval()`, so in-run
+  bests are train-mode with dropout 0.15 active (stochastic,
+  inflated); `suffix_proxy` is eval-mode (deterministic). That is the
+  entire suffix_proxy-vs-in-run gap (uniform sign, rank order
+  identical under both: A < CTRL < B < C). Rule-literal either way
+  (frozen function + best ckpt + keynorm views); eval-mode was used
+  for all four and is the binding number.
+- `test_train_recipe: PASS` re-run by this worker post-runs (GREEN).
+  This worker made NO repo code changes and ran NO full runs.
