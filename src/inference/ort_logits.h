@@ -1,0 +1,65 @@
+// Copyright (C) 2026 Horror-04
+// SPDX-License-Identifier: AGPL-3.0-or-later
+#pragma once
+
+#include <cstddef>
+#include <memory>
+#include <string>
+
+#include "sampler.h"
+
+namespace hf::infer {
+
+// Production `ISamplerLogits` over the committed logits sidecar
+// (`training/model.logits.onnx`: graph surgery on `training/model.onnx`
+// exposing the terminal ArgMax input as the `logits` `[batch, seq, 256]`
+// float output; same weights, same `input_ids` contract).
+//
+// RT SHAPE (hard gate, mirrors `memo_filter.h` / `sampler.h`):
+// - Load-once in the ctor (background thread): one ORT session for the
+//   provider's lifetime. Per-call `get_logits` runs a single ORT step.
+// - `get_logits` fills exactly `kSamplerVocab` floats into CALLER-owned
+//   scratch (the last-position row): no allocation, no I/O per call.
+// - Never throws (`hf::infer`, JUCE-free): every entry point is no-throw;
+//   missing/corrupt sidecar -> `available() == false`, `get_logits` false.
+// - Background threads ONLY — never call from `processBlock`. Nothing
+//   calls this provider yet (Task 2 wires it into the generate path).
+//
+// SESSION LIFETIME (composition-vs-fork decision, Phase 10 Task 1):
+// composition over `OnnxRunner` was infeasible — `OnnxRunner::predict`
+// exposes only per-position argmax ids, never the 256-float logits row,
+// and routing per-call through it would defeat the load-once contract.
+// So this class owns its own ORT session, MIRRORED on `onnx_runner.cpp`'s
+// exact pattern (pimpl `Ort::Env` + `Ort::Session`, noexcept ctor with
+// try/catch degrading to the unloaded stub, mutex-serialized `Run`).
+// No session code was forked into a second manager: the pattern is
+// followed, not duplicated with drift-prone changes.
+class OrtLogitsProvider : public ISamplerLogits {
+ public:
+  explicit OrtLogitsProvider(const std::string& model_path) noexcept;  // throws nothing
+  ~OrtLogitsProvider() override;
+  OrtLogitsProvider(const OrtLogitsProvider&) = delete;
+  OrtLogitsProvider& operator=(const OrtLogitsProvider&) = delete;
+
+  bool available() const noexcept;
+  // Visible session-load hook for the reuse test (two fills, one load;
+  // never timing): 1 after a successful ctor load, else 0. Never changes
+  // across `get_logits` calls.
+  int load_count() const noexcept;
+  bool get_logits(const int* seq, size_t n, float* out) noexcept override;
+
+ private:
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+};
+
+// Resolves the runtime logits sidecar for a configured model: the given
+// path unchanged when it already names `model.logits.onnx`, else the
+// sibling `model.logits.onnx` next to the weights file (same sibling rule
+// as `memo_index_path_for_model`: a BARE filename falls back to
+// `model.logits.onnx` in the process working directory; an EMPTY model
+// path -> empty result). Pure path math, no probing: a resolved-but-absent
+// file fails to load downstream (safe unavailable stub). Never throws.
+std::string logits_sidecar_path_for_model(const std::string& model_path) noexcept;
+
+}  // namespace hf::infer

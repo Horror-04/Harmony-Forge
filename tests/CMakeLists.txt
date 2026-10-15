@@ -145,6 +145,10 @@ hf_add_test(test_memo_filter test_memo_filter.cpp)
 target_compile_definitions(test_memo_filter PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
 hf_add_test(test_sampler test_sampler.cpp)
+hf_add_test(test_ort_logits test_ort_logits.cpp)
+target_compile_definitions(test_ort_logits PRIVATE
+  HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
 target_compile_definitions(test_sampler PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin")
