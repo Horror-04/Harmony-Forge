@@ -65,6 +65,23 @@ def sample_ids(prefix_ids: list[int], meta: dict, cfg: D.Cfg,
                              random.Random(seed))
 
 
+def sample_ids_stats(prefix_ids: list[int], meta: dict, cfg: D.Cfg,
+                     seed: int, model_path: str = DEFAULT_MODEL_PATH
+                     ) -> tuple[list[int], dict]:
+    """Like ``sample_ids`` but also returns the sampler stats out-param.
+
+    Added for Phase 10 Task 4 (non-default-temperature conditions need the
+    strict-flip count for the intervention-rate column). The sampling path
+    is identical to ``sample_ids`` — same adapter, same imported
+    ``sample_continue``.
+    """
+    logits_fn = _LogitsFn(model_path)
+    stats: dict = {}
+    ids = D.sample_continue(logits_fn, list(prefix_ids), meta, cfg,
+                            random.Random(seed), stats)
+    return ids, stats
+
+
 def render(prefix_ids: list[int], meta: dict, cfg: D.Cfg,
            seed: int, model_path: str = DEFAULT_MODEL_PATH) -> bytes:
     """Sample a continuation with real model logits -> SMF0 bytes."""
