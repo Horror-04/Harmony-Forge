@@ -382,6 +382,78 @@ Full numbers banked: training/eval_v2_s{7,11,23,42,99}.json +
 training/eval_v2val_s{7,11,23,42,99}.json (operator's + mine, same
 protocol; s11 files mine post-re-export).
 
-Remaining: A/B renders (~20 clips, render_midi.exe present +
-python midi_writer path), MODEL_CARD v2 draft (in-report, unshipped),
-final report commit by 05:55.
+## L. A/B renders DONE (2026-10-15 ~01:00 UTC)
+
+`training/render_ab_task6.py` (committed tooling) → 20/20 clips in
+`training/ab_task6/` (+ manifest.json; .mid gitignored by repo
+policy — worktree deliverables for async listening, hashes below).
+5 clips × 4 conditions, paired RNG per clip (seed 7·1000+idx),
+Task-3C shipped sampler (T=1.0/p=0.95/memo_run=2/strict+fsm/lam=0.5),
+gate-identical prefixes; determinism asserted in-script (greedy
+two-session agree + sampled re-run agree). Clip rule: decodable
+under all 6 scored models, spread: os-lc4985925-w02,
+os-sq7114183-w02, os-sq8907120-w02, mut-Lobt_Gott-w02, composed-S-k2.
+A=v1-greedy(model.onnx), B=v1+decode, C=v2+decode(v2_s99.onnx, best
+val), D=theory-only. V1/v2 ONNX expose argmax only → decode explores
+around greedy via PSEUDO_PEAK=5.0 (decode_ab.py a priori value).
+
+| clip | A | B | C | D (sha16) |
+|---|---|---|---|---|
+| os-lc4985925-w02 | ecc81395 | f8708570 | 9428777e | 434c91de |
+| os-sq7114183-w02 | 871a2b25 | 78536aac | 0f88b251 | c7c1a3f3 |
+| os-sq8907120-w02 | 70a694c6 | 3a7106f8 | 126c844a | c237b539 |
+| mut-Lobt_Gott-w02 | f99dab65 | 6e4760ec | 4213bc2a | 76bb9cb7 |
+| composed-S-k2 | 87cca6cb | f0acd62c | 70910626 | 6172f898 |
+
+## Self-review (supervisor session)
+
+- Near-miss kills avoided: s99 "duplicate" was wrapper+worker
+  (CPU+parent check BEFORE kill — the prior agent's lesson applied);
+  s11 launch verified single-config; stale partials correctly left
+  for overwrite (no-resume design).
+- live mistakes: (1) clobbered `## Self-review` header in first
+  adoption edit — restored immediately; (2) `tail/head/wc` in
+  PowerShell — failed fast, switched to Select-Object; (3) background
+  gate-eval scored v1 generation (expected: --model default) — file
+  deleted, protocol corrected to export-first; (4) full-stdout
+  redirect logs deleted with cleanup — s11 log reconstructed from
+  completion record, render output preserved in manifest.
+- Open: transient ce-skip in one eval run (non-reproducing; probe +
+  all operator runs load STRICT-OK); mystery launcher identity
+  (operator session runs training+evals in parallel — adopted,
+  deconflicted by cmdline checks, shared evidence).
+- Concerns for controller: (a) suffix is the binding miss on BOTH
+  splits (test 0.77-0.82 vs 0.90; val 0.70-0.88 vs 0.969/1.000) while
+  compliance beats val baselines — recipe improves modeling but not
+  constraint satisfaction; next recipe should target suffix, not more
+  seeds. (b) S2 fine-tune never beats S1 best in 8/8 runs (5 finalists
+  + 3 penalty) — the 90/10 Stage-2 on a 75-rec pool is dead weight;
+  consider dropping or re-designing. (c) v2_s11.onnx pre-re-export
+  eval (partial weights) existed briefly — superseded by full-run
+  numbers above; ensure no stale file is cited.
+
+## K. MODEL_CARD v2 section DRAFT (unshipped — NEEDS_CONTEXT, do NOT
+## copy into training/MODEL_CARD.md until a green finalist exists)
+
+## v2 candidate (Phase 9 Task 6 — HELD, not shipped)
+
+Identity: decoder-only TinyLM-large, 3,558,144 params (d_model 256,
+n_layer 6, n_head 8, d_ff 512, ctx 1024, vocab 256). Keynorm ON
+(canonical-shifted chords meta both sides). Recipe: smart-proc 50/50
+Stage-1 30ep lr 5e-4 + composed 90/10 Stage-2 cosine 1e-4→1e-5
+(patience 5); dropout 0.15, WD 0.1, smoothing 0.05 pitch/dur/vel,
+Goldfish k=4, pitch-dropout 10% ctx-only, PENALTY_W 0.0 (a priori
+sweep {0, 0.1, 1.0} → 0.0 argmin on val composed melody-CE).
+Selection (val composed melody-CE): s99 0.6193 / s42 0.6319 /
+s11 0.6332 / s7 0.6388 / s23 0.6691.
+Locked-test (43 recs, 5-seed bootstrap): decodable 43/43 (v1: 34/43);
+new_notes 4.3–5.7 (bar 6.0); suffix 0.77–0.82 (bar 0.90); verbatim
+max 3; novel-4gram 0.63–0.65. Composed-val: comp 0.87–0.89 (beats KN
+0.707 + theory 0.800) BUT suffix 0.70–0.88 trails KN 0.969 +
+theory 1.000. Exports: training/v2_s<seed>.onnx + .quant.onnx
+(opset 18, torch-vs-ORT argmax parity OK) — PRESENT IN WORKTREE ONLY,
+never committed. A/B: training/ab_task6/ (20 clips, manifest.json).
+Limits: suffix compliance is the binding miss; S2 fine-tune never
+beats S1 best (75-rec pool overfit); v1-greedy/v2 argmax-baked ONNX
+exposes no logits (decode explores around greedy via PSEUDO_PEAK).
+Next: recipe change targeting suffix (NOT more seeds of this recipe).
