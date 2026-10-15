@@ -138,3 +138,29 @@ TBC.
 ## G. Self-review + concerns
 
 TBC.
+
+## H. HALT NOTE (2026-10-16 ~01:5x UTC — external HALT, no pick made)
+
+- Order: user paused all work; two training workers killed from outside.
+  No new runs launched after this note. No winner picked, nothing frozen.
+- test_train_recipe.py re-run GREEN (`test_train_recipe: PASS`) before runs.
+- Carve re-verified present (val.jsonl: composed-O-k0/O-k1/P-k0/P-k1,
+  source=composed, tonics 50/55, 91 ids each; train id-overlap EMPTY;
+  test_locked NOT opened — Step-1 committed disjointness stands).
+- CTRL (all-defaults = T6 recipe) FINISHED: exit 0, shell wall 995 s
+  (in-run 992.7 s), in-run best val_melody_ce 0.7372 @S2ep2; ep0
+  3.0299/1.7704 reproduces the T6 s7 trajectory bit-exact (default-sanity
+  signal, uncommitted analysis only). Log `training/t1_ctrl.log`; ckpt
+  `training/checkpoints/t1_ctrl.pt` + `.progress.json` + curve (gitignored).
+- A (`--suffix-upweight 3.0`) KILLED twice, never finished: attempt 1
+  EXIT=-1 @S1ep4 (in-run wall 582.3 s, best-so-far 0.8848); attempt 2
+  (relaunch, overwrote log/ckpt) EXIT=-1 @S1ep2 after 53 s. No traceback
+  in log (process terminated, not a code crash). Partial ckpt on disk =
+  attempt-2 best-so-far (S1ep2), NOT a finished run — do not score it.
+- B (single-stage) and C (melody-penalty-mult 4.0 @ 0.1) NEVER launched.
+- suffix_proxy scoring never ran (only CTRL finished; scoring all four
+  under the §D.1 rule is the resume step). Pick rule (§D.1) + carve (§D.2)
+  above unchanged and still binding on resume.
+- Resume: re-run A (fresh, seed 7 — deterministic, overwrites partial),
+  then B, then C, sequential ≤2 workers; score all four ckpts with frozen
+  `val_melody_ce` on the §D.2 slice; pick per §D.1 literally.
