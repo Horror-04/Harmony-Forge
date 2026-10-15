@@ -290,8 +290,9 @@ ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
 |---|---|---|---|---|
 | 7 | 0.6388 (ep29) | early-stop ep24, never beats S1 | 765.6s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
 | 99 | 0.6193 (ep29, S1) | early-stop ep24, never beats S1 | 170.0s | 14 MB, 78 tensors, 3,558,144 params VERIFIED |
-| 11 | running S1 (~4s/ep, GPU free) | — | — | — |
-| 23/42 | queued sequential | — | — | — |
+| 11 | 0.6332 (ep15, S1) | early-stop ep24, never beats S1 | 159.5s | re-exported fp32+quant, torch-vs-ORT parity OK |
+| 23 | 0.6691 | done (log `v2 done`, wall 263s) | 263.4s | operator-run, adopted |
+| 42 | 0.6319 | done (log `v2 done`, wall 416s) | 416.4s | operator-run, adopted |
 
 - s7 reproduces pre-restart val bit-exact (0.6388) → determinism holds
   across the restart; 6eb9899 fix verified (state dict present).
@@ -337,3 +338,50 @@ ready (torch CPU path, no ONNX needed for gates); `export_onnx.py --ckpt
   train (same data v2 sees — disclosed, not cherry-picked).
 - Watch: v1-test gap (suffix 0.742, new_notes 4.5) vs DoD (0.90, 6.0) is
   wide; theory-only composed-val suffix 1.000 is the bar to beat.
+
+## J. FINAL: gates + DoD + verdict (2026-10-15 ~00:20 UTC)
+
+All 5 finalists exported fp32+quant (opset 18, parity OK; s11 needed
+`$env:PYTHONIOENCODING='utf-8'` — torch exporter prints ✅, cp1251
+console crashes without it; recorded env quirk, not a model bug) and
+scored `evaluate.py --model v2_s<seed>.onnx --split test_locked --seeds
+7,11,23,42,99` (+ val split). s7/s99/s23/s42 training+exports+evals by
+parallel operator session, adopted read-only (identical recipe/args,
+commands match brief protocol; provenance verified per file).
+
+test_locked DoD (43 recs, 5-seed bootstrap per model):
+
+| model | decodable | new_notes (≥6.0) | suffix (≥0.90) | maxverb (<4) | novel4 (≥0.60) | comp | ce |
+|---|---|---|---|---|---|---|---|
+| v1 ref | 34/43 FAIL | 4.50 FAIL | 0.742 FAIL | 3 PASS | 0.684 PASS | 0.857 | — |
+| v2_s7 | 43/43 PASS | 5.07 FAIL | 0.823 FAIL | 3 PASS | 0.636 PASS | 0.870 | 1.482 |
+| v2_s11 | 43/43 PASS | 5.67 FAIL | 0.800 FAIL | 3 PASS | 0.639 PASS | 0.873 | 1.236 |
+| v2_s23 | 43/43 PASS | 4.30 FAIL | 0.785 FAIL | 3 PASS | 0.654 PASS | 0.872 | 1.468 |
+| v2_s42 | 43/43 PASS | 5.26 FAIL | 0.776 FAIL | 3 PASS | 0.633 PASS | 0.865 | 1.293 |
+| v2_s99 | 43/43 PASS | 5.16 FAIL | 0.766 FAIL | 3 PASS | 0.639 PASS | 0.863 | 1.464 |
+
+DoD: 3/5 PASS (decodable, verbatim, novelty) / 2 FAIL (new_notes best
+5.67 < 6.0; suffix best 0.823 < 0.90) — unanimous across 5 seeds.
+
+composed-val baselines (beat-target KN 0.707/0.969, theory 0.800/1.000):
+
+| model | comp | suffix | beats? |
+|---|---|---|---|
+| v2_s7 | 0.870 | 0.709 | comp yes / suffix NO |
+| v2_s11 | 0.891 | 0.883 | comp yes / suffix NO |
+| v2_s23 | 0.881 | 0.786 | comp yes / suffix NO |
+| v2_s42 | 0.872 | 0.705 | comp yes / suffix NO |
+| v2_s99 | 0.870 | 0.728 | comp yes / suffix NO |
+
+VERDICT: NEEDS_CONTEXT. Nothing ships (no weight/model.onnx/memo
+commit). v2 strictly improves on v1 everywhere on test_locked
+(decode 34→43/43, nn 4.5→5.1-5.7, suffix 0.742→0.77-0.82) but clears
+neither failing DoD bar; suffix also trails both composed-val
+baselines. Best-val seed s99 (0.6193); best test suffix s7 (0.823).
+Full numbers banked: training/eval_v2_s{7,11,23,42,99}.json +
+training/eval_v2val_s{7,11,23,42,99}.json (operator's + mine, same
+protocol; s11 files mine post-re-export).
+
+Remaining: A/B renders (~20 clips, render_midi.exe present +
+python midi_writer path), MODEL_CARD v2 draft (in-report, unshipped),
+final report commit by 05:55.
