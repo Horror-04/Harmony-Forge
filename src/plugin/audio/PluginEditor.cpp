@@ -666,13 +666,13 @@ bool HarmonyForgeEditor::DragSpaceKey::keyPressed(const juce::KeyPress& key,
   return false;
 }
 
-void HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int preferTrack) {
+int HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int preferTrack) {
   stopPreview();
   const hf::core::Track* mel = nullptr;
   if (preferTrack >= 0 && preferTrack < static_cast<int>(pat.tracks.size()))
     mel = &pat.tracks[static_cast<size_t>(preferTrack)];
   if (mel == nullptr || mel->notes.empty()) mel = melodyOf(pat);
-  if (mel == nullptr) return;
+  if (mel == nullptr) return 0;
   const double bpm = hf::plugin::bpm(proc.state());
   const double msPerTick = 60000.0 / (480.0 * bpm);
   previewQueue.clear();
@@ -686,6 +686,7 @@ void HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int prefe
             [](const PreviewEvent& a, const PreviewEvent& b) { return a.timeMs < b.timeMs; });
   previewNext = 0;
   previewT0 = juce::Time::getMillisecondCounter();
+  return static_cast<int>(mel->notes.size());
 }
 
 void HarmonyForgeEditor::startPreview() {
@@ -697,21 +698,35 @@ void HarmonyForgeEditor::startPreview() {
   // byte-identical to before (tripwire).
   if (hf::core::pattern_note_count(doc.pattern()) > 0) {
     cancelPendingPreviewExport();
-    schedulePattern(doc.pattern(), doc.trackShown());
+    const int n = schedulePattern(doc.pattern(), doc.trackShown());
+    statusLabel.setText(n > 0 ? juce::String("Preview: ") + juce::String(n) + " notes"
+                              : juce::String("Preview: pattern has no playable notes"),
+                        juce::dontSendNotification);
     return;
   }
   if (hf::plugin::modelPath(proc.state()).isEmpty()) {
     cancelPendingPreviewExport();
-    schedulePattern(patternForState(proc.state()));
+    const int n = schedulePattern(patternForState(proc.state()));
+    statusLabel.setText(n > 0 ? juce::String("Preview: ") + juce::String(n) + " notes"
+                              : juce::String("Preview: nothing to play yet"),
+                        juce::dontSendNotification);
     return;
   }
   submitPreviewExport(PendingOp::Preview);
 }
 
 void HarmonyForgeEditor::auditionCandidate(int i) {
-  if (!doc.hasCandidates() || i < 0 || i >= 4) return;
+  if (!doc.hasCandidates() || i < 0 || i >= 4) {
+    statusLabel.setText("No candidates yet - press Regenerate first",
+                        juce::dontSendNotification);
+    return;
+  }
   doc.setAuditionIndex(i);
-  schedulePattern(doc.candidate(i));
+  const int n = schedulePattern(doc.candidate(i));
+  statusLabel.setText(n > 0 ? juce::String("Auditioning candidate ") + juce::String(i + 1) +
+                                  juce::String(": ") + juce::String(n) + " notes"
+                            : juce::String("Candidate has no playable notes"),
+                    juce::dontSendNotification);
 }
 
 void HarmonyForgeEditor::doRegenerate() {
@@ -941,7 +956,10 @@ bool HarmonyForgeEditor::pollPreviewExport() {
   pendingOp_ = PendingOp::None;
   setPreviewBusy(false, "");
   if (op == PendingOp::Preview) {
-    schedulePattern(got->candidates[0], doc.trackShown());
+    const int n = schedulePattern(got->candidates[0], doc.trackShown());
+    statusLabel.setText(n > 0 ? juce::String("Preview: ") + juce::String(n) + " notes"
+                              : juce::String("Preview: generated pattern has no playable notes"),
+                        juce::dontSendNotification);
   } else if (op == PendingOp::Export) {
     finishExport(got->candidates[0]);
   }

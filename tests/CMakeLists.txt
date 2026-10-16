@@ -94,6 +94,23 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   hf_copy_ort_runtime(test_focus_resize)
   catch_discover_tests(test_focus_resize)
 endif()
+
+# Preview-synth audibility proof (user-reported "no sound on
+# audition/Preview" diagnosis): drives the real PreviewSynth exactly as
+# PluginProcessor::processBlock does (prepare -> noteOn -> render blocks
+# -> noteOff -> render) and asserts nonzero output while held plus decay
+# after release. Pure audio_basics DSP (no GUI/fonts), headless-safe.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_preview_synth test_preview_synth.cpp
+    ../src/plugin/audio/PreviewSynth.cpp)
+  target_link_libraries(test_preview_synth PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_audio_basics Catch2::Catch2WithMain)
+  target_include_directories(test_preview_synth PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_preview_synth PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_preview_synth)
+  catch_discover_tests(test_preview_synth)
+endif()
 # Phase 6 Task 5: visual-polish pins (ArrangeBar live counts, ExplainView
 # wrap metrics + narrow-paint bottom-band proxy, ChordTrack empty-state
 # probe). Links the real ArrangeBar (header-only, pure static under test),

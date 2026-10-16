@@ -179,7 +179,10 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
     int pitch = 60;
     int velocity = 90;
   };
-  void schedulePattern(const hf::core::Pattern& pat, int preferTrack = -1);
+  // Returns the number of notes scheduled (0 when the pattern has no
+  // playable notes on the preferred/melody track). Callers report the
+  // count in the status line so empty schedules are never silent.
+  int schedulePattern(const hf::core::Pattern& pat, int preferTrack = -1);
 
   // Phase 7 Task 2: LookAndFeel storage. Declared FIRST so it outlives every
   // child component below (members die in reverse declaration order) and the
