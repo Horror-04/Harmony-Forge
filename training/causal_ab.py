@@ -443,6 +443,46 @@ def load_pool() -> list[dict]:
     return pool
 
 
+def smart_counts(cfg: dict) -> tuple[int, int]:
+    """Per-epoch smart needs (stage 1, stage 2)."""
+    n1s = int(cfg["epoch_recs"] * cfg["stage1_smart_frac"])
+    return n1s, int(cfg["epoch_recs"] * 0.10)
+
+
+def cell_indexes(comp_train: list[dict],
+                 smart_used: list[dict]) -> tuple[set, dict, set]:
+    """Per-cell memo/DF/novel4 indexes from ACTUAL train material."""
+    idx_recs = comp_train + smart_used
+    memo_id8: set = set()
+    df_of: dict = {}
+    for r in idx_recs:
+        ids = r["ids"]
+        piece = piece_of(r["id"])
+        for k in range(max(0, len(ids) - 7)):
+            w = tuple(ids[k:k + 8])
+            memo_id8.add(w)
+            df_of.setdefault(w, set()).add(piece)
+    return memo_id8, df_of, E.interval_ngram_index(idx_recs, 4)
+
+
+def replay_smart_used(cfg: dict, fi: int, curve: list[dict]) -> list[dict]:
+    """Rebuild the exact unique smart records a cell consumed (deterministic
+    replay: one smart_for per non-stop curve entry, stage-sized; bank cycles
+    sequentially from 0, stream takes the first-N prefix)."""
+    n1s, n2s = smart_counts(cfg)
+    takes = [n1s if e.get("stage") == 1 else n2s
+             for e in curve if "stage" in e]
+    if cfg["smart_supply"] == "stream":
+        stream = PG.stream(cfg["stream_seed_base"] + fi)
+        return stream_take(stream, sum(takes))
+    bank, _man = SP.build(cfg["bank_size"], cfg["bank_seed_base"] + fi)
+    out, pos = [], 0
+    for n in takes:
+        chunk, pos = bank_take(bank, pos, n)
+        out.extend(chunk)
+    return list({r["id"]: r for r in out}.values())
+
+
 def train_cell(cfg: dict, fold_recs: dict, bank: list, stream,
                torch, device) -> dict:
     """One (arm, fold) cell: two-stage training, best-so-far on fold-held
@@ -592,18 +632,34 @@ def train_cell(cfg: dict, fold_recs: dict, bank: list, stream,
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
-    ap.add_argument("--expect-hash", required=True)
+    ap.add_argument("--expect-hash", default="",
+                    help="pinned control hash (REQUIRED for training runs; "
+                    "fail-closed gate before any training)")
     ap.add_argument("--config", default=os.path.join(HERE,
                                                      "causal_control.json"))
     ap.add_argument("--out", default=os.path.join(HERE, "causal_results.json"))
     ap.add_argument("--cellspec", default="",
                     help="subset like CTRL:0,A:1 (default: all 25)")
+    ap.add_argument("--summarize-only", action="store_true",
+                    help="CPU-only: recompute comparisons/verdicts from a "
+                    "complete results file (no training, torch unneeded)")
     args = ap.parse_args()
+
+    with open(args.config, encoding="utf-8") as f:
+        file_cfg = json.load(f)
+    if args.summarize_only:
+        with open(args.out, encoding="utf-8") as f:
+            state = json.load(f)
+        assert_config_pinned(file_cfg, state.get("control_hash", ""))
+        summarize_into(state, file_cfg, args.out)
+        return 0
 
     import torch
 
     with open(args.config, encoding="utf-8") as f:
         file_cfg = json.load(f)
+    if not args.expect_hash:
+        raise SystemExit("--expect-hash is required for training runs")
     pinned = assert_config_pinned(file_cfg, args.expect_hash)
     print(f"control {args.config} hash={pinned} (pinned, gate PASS)")
     torch.manual_seed(file_cfg["seed"])
@@ -691,23 +747,12 @@ def main() -> int:
                 m = mask_nll_record(model, r["ids"], torch, device)
                 nll_rows.append({"id": r["id"], "nll": m["nll"],
                                  "n_pos": m["n_pos"]})
-            # Per-cell memo/DF/novel4 indexes from ACTUAL train material.
+            # Per-cell memo/DF indexes from ACTUAL train material.
             seen_ids = list(dict.fromkeys(cell["smart_seen"]))
             smart_used = list({r["id"]: r
                                for r in cell["smart_rec_log"]}.values())
             assert {r["id"] for r in smart_used} == set(seen_ids)
-            idx_recs = comp_train + smart_used
-            memo_id8: set = set()
-            df_of: dict = {}
-            for r in idx_recs:
-                ids = r["ids"]
-                piece = piece_of(r["id"])
-                for k in range(max(0, len(ids) - 7)):
-                    w = tuple(ids[k:k + 8])
-                    memo_id8.add(w)
-                    df_of.setdefault(w, set()).add(piece)
-            index4 = E.interval_ngram_index(idx_recs, 4)
-            train_tuples = {tuple(r["ids"]) for r in idx_recs}
+            memo_id8, df_of, _index4 = cell_indexes(comp_train, smart_used)
             # Generations.
             eng, lok = [], []
             for pid, pre in eprefixes:
@@ -750,7 +795,214 @@ def main() -> int:
             if args.device == "cuda":
                 torch.cuda.empty_cache()
     print(f"wrote {args.out} cells={len(state['cells'])}/25")
+    if len(state["cells"]) == 25 and not args.cellspec:
+        summarize_into(state, file_cfg, args.out)
     return 0
+
+
+def matched_novel4(full: list[int], prefix_len: int, L: int,
+                   index4: set) -> float | None:
+    """novel4 on the first L new tokens (matched suffix)."""
+    trunc = full[:prefix_len + L]
+    try:
+        fin = E.finalize(trunc)
+    except Exception:
+        return None
+    return E.novel_ngram_rate(fin, index4, 4)
+
+
+def gen_flat8_rate(full: list[int]) -> float:
+    total, seen = 0, set()
+    for k in range(max(0, len(full) - 7)):
+        seen.add(tuple(full[k:k + 8]))
+        total += 1
+    return len(seen) / total if total else 0.0
+
+
+def gen_duration_entropy(full: list[int]) -> float | None:
+    """Melody duration-class entropy of a decoded generation."""
+    import math
+    try:
+        pat = tok.decode_tokens(E.finalize(full))
+    except Exception:
+        return None
+    if pat is None:
+        return None
+    counts: dict = {}
+    total = 0
+    for t in pat.get("tracks", []):
+        if t.get("type") != "Melody":
+            continue
+        for n in t["notes"]:
+            k = str(n["duration_ticks"])
+            counts[k] = counts.get(k, 0) + 1
+            total += 1
+    if not total:
+        return None
+    return -sum((c / total) * math.log2(c / total) for c in counts.values())
+
+
+def route_from(comp: dict) -> dict:
+    """Routing from per-arm comparisons (multiple-GO tiebreak,
+    pre-registered: largest memo reduction, then largest NLL gain)."""
+    go = sorted([a for a, c in comp.items()
+                 if c["verdict"]["verdict"] == "GO"],
+                key=lambda a: (comp[a]["memo_engine"]["diff"],
+                               comp[a]["nll"]["diff"]))
+    if go:
+        return {"decision": "SCALE-WINNER", "winner": go[0],
+                "order": "full-horizon single-lever scale-up of the winner; "
+                         "disentangle only on a bundled-lever go"}
+    return {"decision": "AFFIRM-PROGRAM-STOP", "winner": None,
+            "order": "no lever met the pre-registered bar; stop the "
+                     "data-entropy program absent new evidence"}
+
+
+def summarize_into(state: dict, file_cfg: dict, out_path: str) -> dict:
+    """Comparisons + verdicts + routing over the 25 committed cells.
+
+    Per-arm table with CIs; GO needs both pre-registered legs
+    (``verdict_for``). Multiple-GO tiebreak (pre-registered): largest
+    memo reduction, then largest NLL gain. Per-cell train material for
+    novel4/DF is rebuilt by deterministic replay (``replay_smart_used``).
+    CPU-only."""
+    rule = file_cfg["rule"]
+    n_res, b_seed = rule["bootstrap_resamples"], rule["bootstrap_seed"]
+    pool = load_pool()
+    by_id = {r["id"]: r for r in pool}
+    folds = build_folds(pool, file_cfg["cv"]["n_folds"])
+    cells = state["cells"]
+    assert len(cells) == 25, f"summarize needs 25 cells, has {len(cells)}"
+
+    def cfg_for(arm):
+        return arm_config(file_cfg, arm)
+
+    # Rebuilt per-cell indexes (memo/DF/novel4 basis).
+    idx: dict = {}
+    for arm in ARMS:
+        for fi in range(5):
+            key = f"{arm}:{fi}"
+            comp_train = [by_id[i] for i in folds[fi]["train"]]
+            smart_used = replay_smart_used(cfg_for(arm), fi,
+                                           cells[key]["curve"])
+            assert len(smart_used) == cells[key]["n_smart_unique"], key
+            memo_id8, df_of, index4 = cell_indexes(comp_train, smart_used)
+            idx[key] = {"index4": index4, "memo_id8": memo_id8,
+                        "df_of": df_of}
+
+    comp: dict = {}
+    for arm in [a for a in ARMS if a != "CTRL"]:
+        # NLL leg: pooled held-out records (each held-out exactly once).
+        an, cn, cl = [], [], []
+        for fi in range(5):
+            amap = {r["id"]: r["nll"]
+                    for r in cells[f"{arm}:{fi}"]["nll_rows"]}
+            cmap = {r["id"]: r["nll"]
+                    for r in cells[f"CTRL:{fi}"]["nll_rows"]}
+            for rid in folds[fi]["held"]:
+                an.append(amap[rid])
+                cn.append(cmap[rid])
+                cl.append(group_of(rid))
+        nll = paired_cluster_ci(an, cn, cl, n_res, b_seed)
+        nll_mean = {a: sum(v) / len(v)
+                    for a, v in (("arm", an), ("ctrl", cn))}
+        # Memo legs: pooled (fold, prompt/clip) verdict rates.
+        me_a, me_c, me_cl, lk_a, lk_c, lk_cl = [], [], [], [], [], []
+        for fi in range(5):
+            for ea, ec in zip(cells[f"{arm}:{fi}"]["engine"],
+                              cells[f"CTRL:{fi}"]["engine"]):
+                assert ea["id"] == ec["id"]
+                me_a.append(1.0 if ea["k_verdict"] else 0.0)
+                me_c.append(1.0 if ec["k_verdict"] else 0.0)
+                me_cl.append(ea["id"])
+            for la, lc in zip(cells[f"{arm}:{fi}"]["locked"],
+                              cells[f"CTRL:{fi}"]["locked"]):
+                assert la["id"] == lc["id"]
+                lk_a.append(1.0 if la["k_verdict"] else 0.0)
+                lk_c.append(1.0 if lc["k_verdict"] else 0.0)
+                lk_cl.append(piece_of(la["id"]))
+        memo_eng = paired_cluster_ci(me_a, me_c, me_cl, n_res, b_seed)
+        memo_lok = paired_cluster_ci(lk_a, lk_c, lk_cl, n_res, b_seed)
+        # novel4 at matched suffix (per fold+prompt min length; own index).
+        nv_a, nv_c, nv_cl, n_skip = [], [], [], 0
+        for fi in range(5):
+            ac, cc = cells[f"{arm}:{fi}"], cells[f"CTRL:{fi}"]
+            for ea, ec in zip(ac["engine"], cc["engine"]):
+                L = min(ea["new_tokens"], ec["new_tokens"])
+                if L < tok.TOKENS_PER_NOTE:
+                    n_skip += 1
+                    continue
+                va = matched_novel4(ea["full"], ea["prefix_len"], L,
+                                    idx[f"{arm}:{fi}"]["index4"])
+                vc = matched_novel4(ec["full"], ec["prefix_len"], L,
+                                    idx[f"CTRL:{fi}"]["index4"])
+                if va is None or vc is None:
+                    n_skip += 1
+                    continue
+                nv_a.append(va)
+                nv_c.append(vc)
+                nv_cl.append(ea["id"])
+        novel = (paired_cluster_ci(nv_a, nv_c, nv_cl, n_res, b_seed)
+                 | {"n_skip": n_skip})
+        # Manipulation checks (flat-8 rate, duration entropy, decodable).
+        manip = {}
+        for tag, fn in (("flat8", gen_flat8_rate),
+                        ("dur_ent", gen_duration_entropy)):
+            aa, cc, dd = [], [], []
+            for fi in range(5):
+                for ea, ec in zip(cells[f"{arm}:{fi}"]["engine"],
+                                  cells[f"CTRL:{fi}"]["engine"]):
+                    va, vc = fn(ea["full"]), fn(ec["full"])
+                    if va is None or vc is None:
+                        continue
+                    aa.append(va)
+                    cc.append(vc)
+                    dd.append(ea["id"])
+            if aa:
+                manip[tag] = paired_cluster_ci(aa, cc, dd, n_res, b_seed)
+            else:
+                manip[tag] = {"diff": 0.0, "lo": 0.0, "hi": 0.0,
+                              "n": 0, "n_clusters": 0}
+        # DF histogram over memorized engine occurrences (pooled folds).
+        hist: dict = {}
+        for fi in range(5):
+            memo_id8 = idx[f"{arm}:{fi}"]["memo_id8"]
+            df_of = idx[f"{arm}:{fi}"]["df_of"]
+            for er in cells[f"{arm}:{fi}"]["engine"]:
+                full, pre = er["full"], er["prefix_len"]
+                for k in range(max(pre - 7, 0), max(0, len(full) - 7)):
+                    w = tuple(full[k:k + 8])
+                    if w in memo_id8:
+                        d = len(df_of.get(w, ()))
+                        hist[str(d)] = hist.get(str(d), 0) + 1
+        verdict = verdict_for(nll, memo_eng, rule)
+        comp[arm] = {"nll": nll, "nll_means": nll_mean,
+                     "memo_engine": memo_eng,
+                     "memo_engine_means": {
+                         "arm": sum(me_a) / len(me_a),
+                         "ctrl": sum(me_c) / len(me_c)},
+                     "memo_locked": memo_lok,
+                     "memo_locked_means": {
+                         "arm": sum(lk_a) / len(lk_a),
+                         "ctrl": sum(lk_c) / len(lk_c)},
+                     "novel4_matched": novel,
+                     "manipulation": manip,
+                     "df_histogram": hist,
+                     "verdict": verdict}
+    routing = route_from(comp)
+    state["comparisons"] = comp
+    state["routing"] = routing
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(state, fh, indent=1)
+    for arm, c in comp.items():
+        print(f"{arm}: nll_diff={c['nll']['diff']:+.4f} "
+              f"[{c['nll']['lo']:+.4f},{c['nll']['hi']:+.4f}] "
+              f"memo_diff={c['memo_engine']['diff']:+.4f} "
+              f"[{c['memo_engine']['lo']:+.4f},{c['memo_engine']['hi']:+.4f}] "
+              f"-> {c['verdict']['verdict']}", flush=True)
+    print(f"routing: {routing['decision']} "
+          f"{routing['winner'] or ''}".strip(), flush=True)
+    return state
 
 
 if __name__ == "__main__":

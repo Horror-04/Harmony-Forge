@@ -505,3 +505,55 @@ columns (by construction); sampler does not claim to beat it.
   (5) DF-audit carried as monitoring.
 - Full numbers: `.superpowers/sdd/2026-10-16-phase-15/task-2-report.md`
   (evidence) + `task-3-report.md` (verdict).
+
+## Causal entropy experiment (Phase 17 Task 3 — VERDICT: all levers NO-GO, AFFIRM-PROGRAM-STOP)
+
+- Design (pre-registered BEFORE training, rule + folds frozen in
+  `.superpowers/sdd/2026-10-16-phase-17/task-3-report.md`, control
+  `training/causal_control.json` hash-pinned `e974390d…f082`): 5 arms ×
+  5 folds group-CV by piece over the 79-record human-composed pool
+  (0.73M arch, short schedule, identical folds); each arm EXACTLY ONE
+  lever vs frozen T6-recipe control (CTRL fixed-bank repetition; A
+  stream ≤1 exposure; B cap-10 + early-stop; C FSM-mask-train; D
+  goldfish-k2 + crop). Go per lever = NLL gain ≥ 0.02 nats AND memo
+  reduction ≥ 5 pp, both with 95% paired cluster-bootstrap CI
+  excluding 0. Evidence `training/causal_results.json` (25/25 cells,
+  all config hashes pinned, no weights).
+- Results (arm−CTRL): A NLL +0.0032 [−0.0011,+0.0082], memo −4.69 pp
+  [−6.72,−2.97] — memo directionally down but MISSES the −5 pp bar →
+  NO-GO (bar held, no relaxation); B NLL +0.0275 (degraded), memo
+  −1.09 pp (CI straddles) → NO-GO (cap bit all 5 folds, early-stop
+  never fired); C NLL −0.0631 (passes) BUT memo +6.56 pp (worse) →
+  NO-GO; D NLL +0.0713 (degraded), memo −0.47 pp (straddles) → NO-GO.
+- ROUTING: AFFIRM-PROGRAM-STOP — no lever met the pre-registered bar;
+  the data-entropy program stops absent new evidence. Nothing shipped;
+  `training/model.onnx` + quant + `checkpoints/best.pt` +
+  `memo_index.bin` all still v1-frozen. No weights committed here.
+- Full numbers: `.superpowers/sdd/2026-10-16-phase-17/task-3-report.md`,
+  evidence `training/causal_results.json`.
+
+## causal entropy screen (Phase 17 Task 3 -- VERDICT: ALL NO-GO, program-stop affirmed, weights NOT shipped)
+
+- Design (pre-registered, control committed first, hash-pinned
+  e974390d... in every run log): 5 arms x 5-fold group-CV by piece over
+  the 79-record human-composed pool (train hc + val hc; interval twins
+  composed-J/P merged pre-assignment; 31 super-groups; held 18/14/15/15/17;
+  zero collisions). Small arch (0.73M), short schedule (8+6ep, batch 16,
+  keynorm, pen 0.0, T6 components); best-so-far on fold-held keynormed
+  val_melody_ce. CTRL = fixed smart bank cycled (repetition regime);
+  A = fresh stream same steps (<=1 exposure); B = cap-10 + early-stop(2,2);
+  C = FSM-mask; D = goldfish-k2 + crop. Metrics: fold-held mask-conditioned
+  body-NLL + k-eidetic (DF<=2 run>=4) verdict rate on engine-fresh prompts
+  (runtime rebuild, new seed 16, n=128) + locked-43 dev generations (looked,
+  one row). GO needed BOTH NLL gain >= 0.02 nats AND memo reduction >= 5pp
+  (95% paired cluster CIs excluding 0). No weights ship regardless.
+- Outcome (25/25 cells, 	raining/causal_results.json): A NLL +0.0032 /
+  memo -0.0469 (near-miss on size, NLL leg fails -- NO-GO); B NLL +0.0275 /
+  memo -0.0109 (NO-GO); C NLL -0.0631 PASS but memo +0.0656 (MORE eidetic
+  recitation) + 71% of greedy generations undecodable (NO-GO, do-not-scale
+  flag); D NLL +0.0713 / memo -0.0047 with abs verbatim runs 13.0 vs CTRL
+  6.5 (NO-GO). Routing: AFFIRM-PROGRAM-STOP. Caveats: arm A train sets are
+  6.7x larger, pressuring both memo lenses mechanically (k-eidetic down,
+  absolute up 8.44 vs 6.49) -- a retest needs size-matched references;
+  C's NLL win rides with a decodability collapse (mechanism = follow-up).
+- Full numbers: .superpowers/sdd/2026-10-16-phase-17/task-3-report.md.

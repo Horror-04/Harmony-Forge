@@ -201,6 +201,59 @@ def main() -> int:
     check("hygiene.runner-carries-no-forbidden-split-ref",
           ("sea" + "led") not in src.lower(), "forbidden split named")
 
+    n1s, n2s = CA.smart_counts(CA.control_config())
+    check("replay.stage-sizes", (n1s, n2s) == (144, 28), f"{n1s}/{n2s}")
+    curve = ([{"stage": 1, "ep": e} for e in range(3)]
+             + [{"stage": 2, "ep": e} for e in range(2)])
+    rb = CA.replay_smart_used(CA.arm_config(CA.control_config(), "CTRL"),
+                              0, curve)
+    check("replay.bank-count",
+          len(rb) == len({r["id"] for r in rb}) == 144, str(len(rb)))
+    ra = CA.replay_smart_used(CA.arm_config(CA.control_config(), "A"),
+                              0, curve)
+    check("replay.stream-count",
+          len(ra) == 3 * 144 + 2 * 28
+          and len({r["id"] for r in ra}) == len(ra), str(len(ra)))
+    check("replay.stream-ids-namespaced",
+          all(r["id"].startswith("procedural-stream-") for r in ra))
+    check("replay.bank-ids-namespaced",
+          all(r["id"].startswith("procedural-smart-") for r in rb))
+    m1, d1, i1 = CA.cell_indexes(
+        [{"id": "os-z1-w00", "ids": [2, 0, 0, 1, 60, 4, 5, 1, 0, 1, 62,
+                                    4, 5]}], rb[:4])
+    m2, d2, i2 = CA.cell_indexes(
+        [{"id": "os-z1-w00", "ids": [2, 0, 0, 1, 60, 4, 5, 1, 0, 1, 62,
+                                    4, 5]}], rb[:4])
+    check("replay.indexes-deterministic",
+          m1 == m2 and i1 == i2 and len(m1) > 0, str(len(m1)))
+    full = [2, 0, 0, 1, 60, 4, 5, 1, 0, 1, 62, 4, 5, 2, 0, 2, 64, 4, 5]
+    check("replay.matched-novel4-range",
+          (CA.matched_novel4(full, 13, 6, set()) in (0.0, 1.0))
+          or CA.matched_novel4(full, 13, 6, set()) is None)
+    check("replay.flat8-range",
+          0.0 < CA.gen_flat8_rate(full) <= 1.0)
+    check("replay.dur-ent-nonnegtive",
+          (CA.gen_duration_entropy(full) or 0.0) >= 0.0)
+    rstop = CA.route_from({
+        "A": {"verdict": {"verdict": "NO-GO"},
+              "memo_engine": {"diff": -0.01}, "nll": {"diff": -0.01}},
+        "B": {"verdict": {"verdict": "GO"},
+              "memo_engine": {"diff": -0.06}, "nll": {"diff": -0.03}},
+        "C": {"verdict": {"verdict": "GO"},
+              "memo_engine": {"diff": -0.09}, "nll": {"diff": -0.01}},
+        "D": {"verdict": {"verdict": "NO-GO"},
+              "memo_engine": {"diff": 0.0}, "nll": {"diff": 0.0}}})
+    check("route.picks-largest-memo-reduction",
+          rstop == {"decision": "SCALE-WINNER", "winner": "C",
+                    "order": rstop["order"]}
+          and rstop["decision"] == "SCALE-WINNER", str(rstop))
+    rnone = CA.route_from({
+        "A": {"verdict": {"verdict": "NO-GO"},
+              "memo_engine": {"diff": 0.0}, "nll": {"diff": 0.0}}})
+    check("route.stop-when-none-go",
+          rnone["decision"] == "AFFIRM-PROGRAM-STOP"
+          and rnone["winner"] is None, str(rnone))
+
     bad = [p for p in PASS if not p[1]]
     print(f"test_causal_ab: {'PASS' if not bad else 'FAIL'} "
           f"({len(PASS) - len(bad)}/{len(PASS)})")
