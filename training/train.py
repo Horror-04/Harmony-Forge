@@ -65,6 +65,15 @@ WEIGHT_DECAY = 0.1     # AdamW weight decay (v2 recipe)
 # Phase 11 Task 1 (suffix-targeted levers; defaults = exact T6 behavior).
 SUFFIX_UPWEIGHT = 1.0   # masked-CE weight for bars>=2 melody-pitch slots
 MELODY_PEN_MULT = 1.0   # compliance-penalty multiplier for melody slots
+# Phase 17 Task 2 (training-harness levers; defaults = exact T6 behavior).
+# --max-composed-epochs caps composed-pool exposure (None = unlimited, T6);
+# --early-stop-patience gates the held-out-NLL early stop (0 = off: T6
+# single-stage had none; stage 2 keeps its frozen STAGE2_PATIENCE logic);
+# --fsm-mask-train / --crop-augment are opt-in loss/input modifiers.
+MAX_COMPOSED_EPOCHS = None
+EARLY_STOP_PATIENCE = 0
+FSM_MASK_TRAIN = False
+CROP_AUGMENT = False
 SCHEDULE_CHOICES = ("two-stage", "single-stage")
 DEFAULT_SCHEDULE = "two-stage"
 SINGLE_STAGE_EPS = 40     # single-stage cosine horizon (epochs)
@@ -170,8 +179,104 @@ def goldfish_keep(ids: list[int], k: int = GOLDFISH_K,
     return keep
 
 
+def composed_cap_reached(composed_epochs_done: int, cap) -> bool:
+    """True iff the composed-exposure cap is hit (Phase 17 Task 2 lever).
+
+    ``cap`` None = unlimited (frozen T6: no cap existed). Otherwise the cap
+    triggers exactly AT the cap (``done >= cap``); callers break out of the
+    epoch loop keeping best-so-far."""
+    if cap is None:
+        return False
+    return composed_epochs_done >= cap
+
+
+def heldout_early_stop(stale: int, patience: int, ep1: int,
+                       min_ep: int) -> bool:
+    """Held-out-NLL early-stop predicate (Phase 17 Task 2 gap-fill).
+
+    ``stale`` epochs without a best-so-far gain, ``ep1`` = completed epochs
+    (1-based), ``min_ep`` = warmup floor. ``patience <= 0`` disables (frozen
+    T6 single-stage behavior: no early stop). Stage 2 keeps its frozen
+    inline variant (warmup-gated increment); this predicate is the gap-fill
+    wired into the single-stage loop behind ``--early-stop-patience``."""
+    if patience <= 0:
+        return False
+    return ep1 >= min_ep and stale >= patience
+
+
+def fsm_slot_range(slot: int) -> range:
+    """Decode-valid id range for a body phase 0..5 (Phase 17 Task 2 lever).
+
+    MIRROR of ``decode.slot_valid_range`` (itself the inference/tokenizer
+    rule): bar 0..15, subbeat 0..15, track 0..5, pitch 0..127, duration
+    1..64, velocity bin 0..7. No forked constants: parity with
+    ``decode.slot_valid_range`` and ``baselines._slot_range`` is asserted in
+    ``training/tests/test_harness_levers.py`` (same-rule test)."""
+    if slot == 0:
+        return range(0, 16)
+    if slot == 1:
+        return range(0, 16)
+    if slot == 2:
+        return range(0, 6)
+    if slot == 3:
+        return range(0, 128)
+    if slot == 4:
+        return range(1, 65)
+    if slot == 5:
+        return range(0, 8)
+    raise ValueError(f"slot must lie in 0..5, got {slot!r}")
+
+
+_fsm_legal_cache = None
+
+
+def _fsm_legal_matrix(torch):
+    """[6, VOCAB] bool: row ``s`` marks ids legal for body slot ``s``.
+
+    Built once on CPU (mirrors the mask-cache convention above); use-sites
+    move the indexed rows onto the logits device."""
+    global _fsm_legal_cache
+    if _fsm_legal_cache is None:
+        rows = []
+        for s in range(6):
+            legal = [False] * VOCAB
+            for v in fsm_slot_range(s):
+                legal[v] = True
+            rows.append(legal)
+        _fsm_legal_cache = torch.tensor(rows, dtype=torch.bool)
+    return _fsm_legal_cache
+
+
+def crop_augment_ids(ids: list[int], rng) -> list[int]:
+    """Random contiguous bar-crop (Phase 17 Task 2 lever, pure function).
+
+    Keeps the notes whose bar lies in a random contiguous window
+    (``rng.randrange`` — caller-owned ``random.Random``; same seed gives the
+    same crop). Whole notes only, count head fixed, absolute bar numbering
+    kept (chord metas stay bar-indexed). Single-bar (or empty) records are
+    returned unchanged (nothing to crop)."""
+    if not ids:
+        return list(ids)
+    total = ids[0]
+    notes = [ids[1 + j * 6:1 + (j + 1) * 6] for j in range(total)]
+    notes = [n for n in notes if len(n) == 6]
+    if not notes:
+        return list(ids)
+    bars = sorted({n[0] for n in notes})
+    if len(bars) < 2:
+        return list(ids)
+    lo = rng.randrange(len(bars))
+    hi = rng.randrange(lo, len(bars))
+    win = set(bars[lo:hi + 1])
+    kept = [n for n in notes if n[0] in win]
+    out = [len(kept)]
+    for n in kept:
+        out.extend(n)
+    return out
+
+
 def masked_ce_loss(logits, tgt, keep: list[bool], slot_eps=None,
-                   ce_weights=None):
+                   ce_weights=None, fsm_mask: bool = FSM_MASK_TRAIN):
     """Mean CE over kept, non-pad targets with per-slot label smoothing.
 
     ``logits`` [T, V] or [B, T, V]; ``tgt`` matching leading dims (pad-tail
@@ -185,7 +290,16 @@ def masked_ce_loss(logits, tgt, keep: list[bool], slot_eps=None,
     ``ce_weights`` (Phase 11 Task 1 lever a: ``suffix_ce_weights`` output,
     flat length T or nested [B][T]) multiplies each kept target's loss
     before the mean (divisor = raw valid count). ``None`` (default) skips
-    the multiply entirely (frozen T6 path, bit-identical)."""
+    the multiply entirely (frozen T6 path, bit-identical).
+
+    ``fsm_mask`` (Phase 17 Task 2 lever: ``--fsm-mask-train``) applies the
+    grammar mask INSIDE the softmax: structurally-illegal ids
+    (``fsm_slot_range`` for position ``t`` = slot ``t % 6``; 2D input is one
+    row-sequence, 3D is per-row positions) get -inf before log_softmax, so
+    the distribution renormalizes over grammatical ids ONLY (pitch/dur/vel
+    shape untouched: no semantic scale/rub mask here). The smoothing mean
+    runs over grammatical ids (illegal logp is -inf and must not enter the
+    mean). ``False`` (default) is the frozen T6 path, bit-identical."""
     import torch as _torch
     import torch.nn.functional as F
 
@@ -206,11 +320,33 @@ def masked_ce_loss(logits, tgt, keep: list[bool], slot_eps=None,
     valid = (flat_tgt != -100) & keep_t
     if not bool(valid.any()):
         return (logits * 0).sum()
-    logp = F.log_softmax(flat_logits, dim=-1)
+    if fsm_mask:
+        mat = _fsm_legal_matrix(_torch)
+        if logits.dim() == 2:
+            npos = flat_logits.shape[0]
+            legal = mat[_torch.arange(npos) % 6].to(dev)
+        else:
+            bsz, tlen = logits.shape[0], logits.shape[1]
+            row = mat[_torch.arange(tlen) % 6].to(dev)
+            legal = row.unsqueeze(0).expand(bsz, tlen, row.shape[1])
+            legal = legal.reshape(-1, legal.shape[-1])
+        neg = _torch.tensor(float("-inf"), dtype=flat_logits.dtype,
+                            device=dev)
+        work = _torch.where(legal, flat_logits, neg)
+    else:
+        work, legal = flat_logits, None
+    logp = F.log_softmax(work, dim=-1)
     gather_tgt = flat_tgt.clamp(min=0)
     nll_true = -logp[_torch.arange(flat_logits.shape[0], device=dev),
                      gather_tgt]
-    mean_nll = -logp.mean(dim=-1)
+    if fsm_mask:
+        logp_safe = _torch.where(legal, logp,
+                                 _torch.zeros((), dtype=logp.dtype,
+                                              device=dev))
+        denom = legal.sum(dim=-1).to(logp.dtype).clamp(min=1)
+        mean_nll = logp_safe.sum(dim=-1) / denom
+    else:
+        mean_nll = -logp.mean(dim=-1)
     eps = _torch.tensor(flat_eps, dtype=logp.dtype, device=dev)
     per = (1.0 - eps) * nll_true + eps * mean_nll
     if ce_weights is not None:
@@ -392,7 +528,8 @@ def single_stage_lr(ep: int, max_ep: int = SINGLE_STAGE_EPS) -> float:
 def run_v2(args, torch, device) -> int:
     """Two-stage v2 recipe (Phase 9 Task 6): smart-proc pretrain -> composed
     fine-tune, keynorm views, goldfish + slot-only smoothing + pitch-dropout,
-    early stop on val melody-CE (composed split), ~60min time box."""
+    early stop on val melody-CE (composed split), ~60min time box.
+    Phase 17 Task 2 levers thread through with T6 defaults (None/0/False)."""
     import sys as _sys
     import time as _time
 
@@ -426,6 +563,12 @@ def run_v2(args, torch, device) -> int:
     # test_ckpt mini-run predate these flags and must keep working).
     suf_w = getattr(args, "suffix_upweight", SUFFIX_UPWEIGHT)
     mel_m = getattr(args, "melody_penalty_mult", MELODY_PEN_MULT)
+    # Phase 17 Task 2 levers (same getattr convention; defaults = T6).
+    max_comp = getattr(args, "max_composed_epochs", MAX_COMPOSED_EPOCHS)
+    fmask = bool(getattr(args, "fsm_mask_train", FSM_MASK_TRAIN))
+    gk = getattr(args, "goldfish_k", GOLDFISH_K)
+    crop = bool(getattr(args, "crop_augment", CROP_AUGMENT))
+    comp_epochs = 0
 
     def time_left() -> bool:
         return _time.time() - t0 < args.time_box
@@ -441,11 +584,17 @@ def run_v2(args, torch, device) -> int:
         if not time_left():
             print(f"stage1: time box hit @ep{ep}, best-so-far kept")
             break
+        if composed_cap_reached(comp_epochs, max_comp):
+            print(f"stage1: composed-epoch cap hit @ep{ep} "
+                  f"({comp_epochs}/{max_comp}), best-so-far kept")
+            break
         smart, _ = SP.build(n1_smart, seed=args.seed * 1000 + ep)
         tce, tpen = run_epoch_v2(
             model, opt, smart, comp,
             mix_batches(n1_smart, n1_comp, len(comp), args.batch, rng),
-            True, torch, args.penalty, rng, device, suf_w, mel_m)
+            True, torch, args.penalty, rng, device, suf_w, mel_m,
+            fmask, gk, crop)
+        comp_epochs += 1
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((1, ep, tce, tpen, float("nan"), vmel, STAGE1_LR))
         best, improved = _record_best_v2(model, best, vmel, ep, t0,
@@ -468,6 +617,10 @@ def run_v2(args, torch, device) -> int:
         if not time_left():
             print(f"stage2: time box hit @ep{ep2}, best-so-far kept")
             break
+        if composed_cap_reached(comp_epochs, max_comp):
+            print(f"stage2: composed-epoch cap hit @ep{ep2} "
+                  f"({comp_epochs}/{max_comp}), best-so-far kept")
+            break
         lr = stage2_lr(ep2, args.stage2_max)
         for g in opt2.param_groups:
             g["lr"] = lr
@@ -475,7 +628,9 @@ def run_v2(args, torch, device) -> int:
         tce, tpen = run_epoch_v2(
             model, opt2, smart, comp,
             mix_batches(n2_smart, n2_comp, len(comp), args.batch, rng),
-            True, torch, args.penalty, rng, device, suf_w, mel_m)
+            True, torch, args.penalty, rng, device, suf_w, mel_m,
+            fmask, gk, crop)
+        comp_epochs += 1
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((2, ep2, tce, tpen, float("nan"), vmel, lr))
         best, improved = _record_best_v2(model, best, vmel, ep2, t0,
@@ -518,10 +673,12 @@ def run_single_stage(args, torch, device) -> int:
     SINGLE_STAGE_LR_HI -> SINGLE_STAGE_LR_LO over SINGLE_STAGE_EPS epochs
     (loop capped by --single-epochs), composed-only mix (Stage-2 fractions
     90% composed + 10% smart), no phase change, best-so-far selection on
-    val melody-CE (composed split), time box respected. No patience
-    early-stop by design (the T6 dead-weight pattern is handled by
+    val melody-CE (composed split), time box respected. Patience early-stop
+    is opt-in via --early-stop-patience (default 0 = off, the frozen T6
+    behavior; the T6 dead-weight pattern is otherwise handled by
     best-so-far); the final ckpt is the best-so-far state (same frozen
-    save_v2_ckpt payload as run_v2)."""
+    save_v2_ckpt payload as run_v2). --max-composed-epochs caps total
+    composed-exposed epochs (default None = unlimited, T6)."""
     import sys as _sys
     import time as _time
 
@@ -543,6 +700,13 @@ def run_single_stage(args, torch, device) -> int:
     suf_w = getattr(args, "suffix_upweight", SUFFIX_UPWEIGHT)
     mel_m = getattr(args, "melody_penalty_mult", MELODY_PEN_MULT)
     n_eps = getattr(args, "single_epochs", SINGLE_STAGE_EPS)
+    # Phase 17 Task 2 levers (same getattr convention; defaults = T6).
+    max_comp = getattr(args, "max_composed_epochs", MAX_COMPOSED_EPOCHS)
+    esp = int(getattr(args, "early_stop_patience", EARLY_STOP_PATIENCE))
+    emin = int(getattr(args, "early_stop_min_epochs", STAGE2_MIN_EP))
+    fmask = bool(getattr(args, "fsm_mask_train", FSM_MASK_TRAIN))
+    gk = getattr(args, "goldfish_k", GOLDFISH_K)
+    crop = bool(getattr(args, "crop_augment", CROP_AUGMENT))
     print(f"v2-single: train={len(train_recs)} (composed pool={len(comp)}) "
           f"val={len(val_recs)} (composed split={len(val_comp)}) "
           f"arch={args.arch} keynorm={args.keynorm} penalty={args.penalty} "
@@ -562,9 +726,14 @@ def run_single_stage(args, torch, device) -> int:
     best = (float("inf"), None, -1)  # (val_melody_ce, state, epoch)
     n_smart = int(STAGE_EPOCH_RECS * STAGE2_SMART_FRAC)
     n_comp = STAGE_EPOCH_RECS - n_smart
+    comp_epochs, stale = 0, 0
     for ep in range(n_eps):
         if not time_left():
             print(f"single: time box hit @ep{ep}, best-so-far kept")
+            break
+        if composed_cap_reached(comp_epochs, max_comp):
+            print(f"single: composed-epoch cap hit @ep{ep} "
+                  f"({comp_epochs}/{max_comp}), best-so-far kept")
             break
         lr = single_stage_lr(ep, SINGLE_STAGE_EPS)
         for g in opt.param_groups:
@@ -573,14 +742,24 @@ def run_single_stage(args, torch, device) -> int:
         tce, tpen = run_epoch_v2(
             model, opt, smart, comp,
             mix_batches(n_smart, n_comp, len(comp), args.batch, rng),
-            True, torch, args.penalty, rng, device, suf_w, mel_m)
+            True, torch, args.penalty, rng, device, suf_w, mel_m,
+            fmask, gk, crop)
+        comp_epochs += 1
         vmel = val_melody_ce(model, val_comp, torch, device)
         curve.append((0, ep, tce, tpen, float("nan"), vmel, lr))
         best, improved = _record_best_v2(model, best, vmel, ep, t0,
                                          args, torch, 0)
+        if improved:
+            stale = 0
+        else:
+            stale += 1
         print(f"single ep{ep}: train_ce={tce:.4f} train_pen={tpen:.4f} "
               f"val_melody_ce={vmel:.4f} lr={lr:.2e}"
               + (" <- best" if improved else ""), flush=True)
+        if heldout_early_stop(stale, esp, ep + 1, emin):
+            print(f"single: early stop @ep{ep} "
+                  f"(no val_melody_ce gain for {stale})")
+            break
     if best[1] is not None:
         model.load_state_dict({k: v.to(device)
                                for k, v in best[1].items()})
@@ -739,14 +918,19 @@ STAGE2_PATIENCE = 5
 
 
 def pad_batch_pair(clean: list[list[int]], corrupt: list[list[int]],
-                   torch, device=None):
+                   torch, device=None, goldfish_k: int | None = GOLDFISH_K):
     """v2 batch: inputs from pitch-dropped ids, targets from clean ids.
 
     ``tgt`` is the clean sequence shifted by one (pad-tail -100 past each
     row's true length); ``x`` is the corrupted input (same lengths — pitch
     dropout never changes lengths). Returns (x, tgt, slot_eps, keep_mask)
     where slot_eps/loss-masks are computed on CLEAN ids (stable,
-    deterministic per record)."""
+    deterministic per record).
+
+    ``goldfish_k`` (Phase 17 Task 2 lever: ``--goldfish-k``) routes through
+    the SINGLE T6 implementation (``goldfish_keep``, by call — no copied
+    masking code). Default ``GOLDFISH_K`` (4) is the frozen T6 path;
+    None / <= 0 disables the mask (keep-all)."""
     assert len(clean) == len(corrupt)
     assert all(len(a) == len(b) for a, b in zip(clean, corrupt))
     lens = [len(s) for s in clean]
@@ -760,8 +944,12 @@ def pad_batch_pair(clean: list[list[int]], corrupt: list[list[int]],
                                            device=device)
     slot_eps = [[smooth_weight_for_pos(t + 1) for t in range(m)]
                 for _ in clean]
-    keep = [goldfish_keep(c, GOLDFISH_K, GOLDFISH_WIDTH)
-            + [False] * (m - (len(c) - 1)) for c in clean]
+    if goldfish_k is None or goldfish_k <= 0:
+        keep = [[True] * (len(c) - 1) + [False] * (m - (len(c) - 1))
+                for c in clean]
+    else:
+        keep = [goldfish_keep(c, goldfish_k, GOLDFISH_WIDTH)
+                + [False] * (m - (len(c) - 1)) for c in clean]
     return x[:, :-1], tgt, slot_eps, keep
 
 
@@ -792,18 +980,22 @@ def val_melody_ce(model, recs: list[dict], torch, device) -> float:
     return tot / n if n else float("inf")
 
 
-def batch_v2_loss(logits, tgt, keep, slot_eps, ce_weights=None):
+def batch_v2_loss(logits, tgt, keep, slot_eps, ce_weights=None,
+                  fsm_mask: bool = FSM_MASK_TRAIN):
     """Mean smoothed masked CE over every kept, non-pad target in the batch
     (single code path for backward AND the curve — no per-row rebuild).
-    ``ce_weights`` None = frozen T6 path."""
-    return masked_ce_loss(logits, tgt, keep, slot_eps, ce_weights)
+    ``ce_weights`` None + ``fsm_mask`` False = frozen T6 path."""
+    return masked_ce_loss(logits, tgt, keep, slot_eps, ce_weights, fsm_mask)
 
 
 def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
                  idx_batches: list[list[tuple]], train: bool, torch,
                  penalty_w: float, rng, device=None,
                  suffix_upweight: float = SUFFIX_UPWEIGHT,
-                 melody_mult: float = MELODY_PEN_MULT):
+                 melody_mult: float = MELODY_PEN_MULT,
+                 fsm_mask: bool = FSM_MASK_TRAIN,
+                 goldfish_k: int | None = GOLDFISH_K,
+                 crop_augment: bool = CROP_AUGMENT):
     """One v2 epoch over pre-mixed batches of (pool, index) refs.
 
     Train: inputs get 10% pitch-dropout (context only); loss = smoothed
@@ -811,7 +1003,8 @@ def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
     compliance-penalty (melody-scaled when != 1.0) on clean metas.
     Val: pure masked CE (no dropout, penalty_w ignored). Returns (ce, pen)
     batch-means for the curve. Defaults = exact T6 behavior (weights path
-    skipped entirely at 1.0; penalty x1.0 is IEEE-exact)."""
+    skipped entirely at 1.0; penalty x1.0 is IEEE-exact; fsm mask off;
+    goldfish k=4; no crop)."""
     import random as _random
 
     model.train(train)
@@ -820,6 +1013,8 @@ def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
     for batch in idx_batches:
         rows = [pools[p][i] for p, i in batch]
         clean = [r["ids"] for r in rows]
+        if train and crop_augment:
+            clean = [crop_augment_ids(c, rng) for c in clean]
         if train:
             corrupt = [pitch_dropout_ids(c, r["tonic"], PITCH_DROP_RATE,
                                          _random.Random(rng.randrange(1 << 30)))
@@ -827,7 +1022,8 @@ def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
         else:
             corrupt = clean
         inp, tgt, slot_eps, keep = pad_batch_pair(clean, corrupt, torch,
-                                                  device)
+                                                  device,
+                                                  goldfish_k=goldfish_k)
         logits = model(inp)
         if train and suffix_upweight != 1.0:
             m = tgt.shape[1]
@@ -835,7 +1031,8 @@ def run_epoch_v2(model, opt, recs_smart: list[dict], recs_comp: list[dict],
                           + [1.0] * (m - (len(c) - 1)) for c in clean]
         else:
             ce_weights = None
-        ce = batch_v2_loss(logits, tgt, keep, slot_eps, ce_weights)
+        ce = batch_v2_loss(logits, tgt, keep, slot_eps, ce_weights,
+                           fsm_mask=fsm_mask)
         if train and penalty_w > 0:
             lens = [len(s) for s in clean]
             pen = compliance_penalty(logits, inp, lens, rows, torch,
@@ -883,7 +1080,8 @@ def run_epoch(model, opt, loss_fn, recs: list[dict], idx_batches,
     return ce_tot / n, pen_tot / n
 
 
-def main() -> int:
+def build_arg_parser():
+    """CLI parser (factored for tests: defaults pin the frozen T6 recipe)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--epochs", type=int, default=60)
@@ -925,7 +1123,30 @@ def main() -> int:
                     help="wall-clock box per run in seconds (~60 min)")
     ap.add_argument("--ckpt-out", default=os.path.join(CKPT_DIR, "best.pt"))
     ap.add_argument("--curve-out", default=os.path.join(HERE, "loss_curve.csv"))
-    args = ap.parse_args()
+    # Phase 17 Task 2 (harness levers; defaults = frozen T6 behavior).
+    ap.add_argument("--max-composed-epochs", type=int,
+                    default=MAX_COMPOSED_EPOCHS,
+                    help="cap on composed-exposed epochs (None = unlimited)")
+    ap.add_argument("--early-stop-patience", type=int,
+                    default=EARLY_STOP_PATIENCE,
+                    help="held-out-NLL early-stop patience, single-stage "
+                    "only (0 = off)")
+    ap.add_argument("--early-stop-min-epochs", type=int,
+                    default=STAGE2_MIN_EP,
+                    help="early-stop warmup floor (completed epochs)")
+    ap.add_argument("--fsm-mask-train", action="store_true",
+                    default=FSM_MASK_TRAIN,
+                    help="grammar mask inside the training softmax")
+    ap.add_argument("--goldfish-k", type=int, default=GOLDFISH_K,
+                    help="goldfish hash divisor (T6 path; <=0 disables)")
+    ap.add_argument("--crop-augment", action="store_true",
+                    default=CROP_AUGMENT,
+                    help="random contiguous bar-crop per train batch")
+    return ap
+
+
+def main() -> int:
+    args = build_arg_parser().parse_args()
 
     import torch
     import torch.nn as nn
