@@ -305,25 +305,37 @@
   re-run bit-exact comp/suffix d=0.0); novel_interval_4gram 0.6976
   CI [0.657,0.737] (need >= 0.60 — PASS). Comp 0.902 CI [0.885,0.918]
   (informational; CI lower straddles 0.90 — recorded, not gated).
-- Baselines (frozen composed-val): KN 0.707/0.969 — V1 comp 0.902 and
-  suffix 0.9869 BEAT both. Theory-only 0.800/1.000 — V1 comp 0.902 beats
-  0.800, but suffix 0.9869 TRAILS the 1.000 ceiling by 0.0131 (CI top
-  0.996 < 1.000 — not beaten, no rounding). Ship rule (all-DoD +
-  baselines-beaten) FAILS on this single leg — no negotiation with bars.
-- VERDICT: NEEDS_CONTEXT — nothing shipped; `training/model.onnx` +
-  quant + `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+- ~~Baselines (frozen composed-val, Task-2): KN 0.707/0.969 — V1 comp
+  0.902 and suffix 0.9869 BEAT both; theory-only 0.800/1.000 — V1 comp
+  0.902 beats 0.800, but suffix 0.9869 TRAILS the 1.000 ceiling by
+  0.0131 (CI top 0.996 < 1.000 — not beaten, no rounding)~~ —
+  SUPERSEDED (Task-3): cross-split comparison, methodologically VOID
+  (V1 overall locked-43 means vs composed-val n=4 refs). Kept visible
+  above; no longer ruled on.
+- Baselines SAME-SPLIT (Task-3, locked-43 overall means, frozen scorer,
+  `training/baseline_scores_test_locked.json` re-run 2x byte-identical,
+  sha256 `3e41b80e…283d22b`; val-parity re-run reproduces committed
+  `baseline_scores.json` bytes, sha `c937a5d7…`): KN 0.7748/0.5552 —
+  V1 comp 0.9020 BEATS (+0.1273), suffix 0.9869 BEATS (+0.4317).
+  Theory-only 0.9129/1.000 — V1 comp 0.9020 TRAILS by 0.0109 AND suffix
+  0.9869 TRAILS by 0.0131 (exact means, no rounding). Ship rule
+  (all-DoD + baselines-beaten) FAILS on two valid legs.
+- VERDICT (amended Task-3): NEEDS_CONTEXT CONFIRMED on valid same-split
+  grounds — nothing shipped; `training/model.onnx` + quant +
+  `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
   Green-only steps (weight swap, keynorm-ON joint test, sampler
   re-validation, ctest + pluginval) SKIPPED per the red rule.
-- NEXT LEVER (single primary): keynorm-ON joint measurement of the winning
-  V1 config (frozen v2b_s11 + flag ON, locked-test suffix delta). V2b was
-  trained WITH keynorm but all Phase-12 measurement ran keynorm-OFF; the
-  joint config is the one unmeasured delta that could close the 0.013 gap
-  to the ceiling with NO retraining. Ship iff that joint run is all-green;
-  else shelve. Deferred: strict-OFF + soft-lam late (moves draws but
-  dismantles the mask that produces the 0.987 — contradicts the mechanism
-  finding); data-mixture change (untried, no direct evidence).
+- NEXT LEVER (single primary, stands): keynorm-ON joint measurement of
+  the winning V1 config (frozen v2b_s11 + flag ON, locked-test deltas to
+  close: comp −0.0109, suffix −0.0131; NO retraining). Ship iff that
+  joint run is all-green hereafter; else shelve. Deferred: strict-OFF +
+  soft-lam late (moves draws but dismantles the mask that produces the
+  0.987 — contradicts the mechanism finding); data-mixture change
+  (untried, no direct evidence).
 - Full numbers: `.superpowers/sdd/2026-10-16-phase-12/task-1-report.md` +
-  `task-2-report.md`, evidence `tools/task12_metrics.json`.
+  `task-2-report.md` + `task-3-report.md`, evidence
+  `tools/task12_metrics.json` +
+  `training/baseline_scores_test_locked.json`.
 ## Sampler production enablement (Phase 10 Task 4 � VERDICT: default-ON)
 
 Blind A/B over frozen val (33) + test_locked (43) prefixes, halved-prefix
