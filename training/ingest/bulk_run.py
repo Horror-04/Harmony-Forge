@@ -190,12 +190,19 @@ COMPOSER_DEATH: dict[str, int] = {
 }
 
 
+def _norm_composer(composer_dir: str) -> str:
+    import unicodedata
+    ascii_only = unicodedata.normalize(
+        "NFKD", composer_dir or "").encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z]+", " ", ascii_only.lower())
+
+
 def composer_gate(composer_dir: str) -> tuple[bool, str]:
     """s4(c) composer-date check on an OpenScore composer dir name."""
-    norm = (composer_dir or "").lower()
-    norm = re.sub(r"[^a-z]+", " ", norm)
+    norm = _norm_composer(composer_dir)
     for name, year in COMPOSER_DEATH.items():
-        if name.replace("-", " ") in norm or name in norm.replace(" ", ""):
+        plain = name.replace("-", " ")
+        if plain in norm or name in norm.replace(" ", ""):
             if year == 1928 and "janacek" in norm:
                 return (False, "refuse s4(c): Janacek d.1928, quartet No.2 "
                                 "published posthumously (composition-rights "
