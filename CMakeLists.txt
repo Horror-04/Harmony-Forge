@@ -14,7 +14,11 @@ option(HARMONY_FORGE_BUILD_PLUGIN "Build JUCE VST3/Standalone plugin" ON)
 option(HARMONY_FORGE_FETCH_CATCH2 "Fetch Catch2 via FetchContent" ON)
 
 if(MSVC)
-  add_compile_options(/W4 /permissive-)
+  # S0 baseline: explicit FP mode + UTF-8 sources. /fp:precise matches the
+  # MSVC default (verified in build tlogs: no /fp flag was passed), and
+  # /utf-8 only fixes the source/execution charset interpretation (all
+  # compiled sources incl. JUCE verified valid UTF-8 in S0). Behavior-neutral.
+  add_compile_options(/W4 /permissive- /fp:precise /utf-8)
 endif()
 
 # Debug sanitizers for non-MSVC (matches methodology guardrails).

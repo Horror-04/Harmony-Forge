@@ -1,0 +1,1 @@
+﻿LAYER CHECK CLEAN: src/core has no JUCE includes; src/inference has no plugin/JUCE-GUI includes.

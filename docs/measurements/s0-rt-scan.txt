@@ -1,0 +1,9 @@
+﻿processBlock body region: PluginProcessor.cpp:32-52
+RT-SCAN HITS (static, needs triage):
+  src/plugin/audio/PreviewSynth.cpp:60: [new] synth.addSound(new PreviewSound());
+  src/plugin/audio/PreviewSynth.cpp:61: [new] for (int i = 0; i < kNumVoices; ++i) synth.addVoice(new PreviewVoice());
+  src/plugin/audio/PluginProcessor.h:118: [ValueTree] juce::ValueTree& state() { return pluginState; }
+  src/plugin/audio/PluginProcessor.h:119: [ValueTree] const juce::ValueTree& state() const { return pluginState; }
+  src/plugin/audio/PluginProcessor.h:120: [UndoManager] juce::UndoManager& undo() { return undoManager; }
+  src/plugin/audio/PluginProcessor.h:129: [ValueTree] juce::ValueTree pluginState{"HarmonyForge"};
+  src/plugin/audio/PluginProcessor.h:130: [UndoManager] juce::UndoManager undoManager;

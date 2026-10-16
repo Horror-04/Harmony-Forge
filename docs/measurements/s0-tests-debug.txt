@@ -1,0 +1,196 @@
+﻿Test project F:/MyPrograms/Harmony Forge/build-full
+  Test   #1: major scale degrees
+  Test   #2: chromatic returns -1
+  Test   #3: snap tie goes up + idempotent
+  Test   #4: all seven modes resolve degrees
+  Test   #5: pentatonics + minors
+  Test   #6: unknown scale is safe
+  Test   #7: triad and seventh intervals
+  Test   #8: pattern helpers
+  Test   #9: quantize_tick strength 0 keeps tick
+  Test  #10: quantize_tick strength 100 snaps to nearest, ties up
+  Test  #11: quantize_tick strength 50 moves halfway
+  Test  #12: quantize_tick degenerate inputs are safe
+  Test  #13: in_register bass / melody boundaries at C3
+  Test  #14: in_register rejects invalid pitches, drums are permissive
+  Test  #15: transpose_pattern shifts and clamps
+  Test  #16: transpose_pattern skips drums
+  Test  #17: quantize_pattern snaps starts
+  Test  #18: snap_pattern_to_scale fixes chromatic, spares drums
+  Test  #19: selection primitives select and clear
+  Test  #20: freeze mask set and query
+  Test  #21: bar_of_tick and notes_in_bar
+  Test  #22: frozen track survives regenerate
+  Test  #23: freeze rhythm-vs-pitch locks pair by index
+  Test  #24: merge tolerates shape mismatch
+  Test  #25: note colours follow SPEC 6.1
+  Test  #26: note fill cues map each class beyond colour
+  Test  #27: note frame precedence keeps selection over frozen
+  Test  #28: seed history is bounded and ordered
+  Test  #29: smf1 round-trips sequential starts and durations
+  Test  #30: smf1 round-trips overlapping chord notes
+  Test  #31: frozen bar merge keeps start_tick order
+  Test  #32: smf1 multitrack export carries channels
+  Test  #33: smf1 writer clamps hostile notes
+  Test  #34: strict compliance stays above the 90 percent gate
+  Test  #35: detect_key finds C major
+  Test  #36: detect_key finds A minor
+  Test  #37: detect_key is safe on empty/chromatic input
+  Test  #38: recognize_chord triads and sevenths
+  Test  #39: recognize_chord bass disambiguates C6 vs Am7
+  Test  #40: recognize_chord unknown input is safe
+  Test  #41: validate_voice_leading flags parallel fifths
+  Test  #42: validate_voice_leading flags parallel octaves
+  Test  #43: validate_voice_leading clean contrary motion passes
+  Test  #44: validate_voice_leading flags range violations
+  Test  #45: validate_voice_leading flags strong-beat dissonance
+  Test  #46: validate_voice_leading empty pattern is clean
+  Test  #47: drums-only pattern is analysis-clean
+  Test  #48: drums do not skew pitched analysis
+  Test  #49: recognize_chord clamps out-of-range roots
+  Test  #50: strong-beat is start_tick % 480 == 0 in audit, resolve and scorer
+  Test  #51: tokenizer roundtrip
+  Test  #52: empty pattern survives
+  Test  #53: corrupt input gives nullopt, not UB
+  Test  #54: same notes give same tokens (deterministic)
+  Test  #55: golden: single melody note (parity training/parity_vectors.json#single-melody)
+  Test  #56: golden: drums bar1 subbeat5 (parity training/parity_vectors.json#drums-offbeat)
+  Test  #57: notes at bar >= 16 are dropped (16-bar cap)
+  Test  #58: context capped at 1024 tokens
+  Test  #59: decode rejects over-cap and out-of-range bars
+  Test  #60: golden: multi-track all six types (parity #multi-track)
+  Test  #61: golden: clamping edges (parity #clamp-edges)
+  Test  #62: golden: empty pattern (parity #empty)
+  Test  #63: golden: 16-bar cap drops bar-20 note (parity #cap-16bars)
+  Test  #64: golden: 1024-token cap keeps 170 notes (parity #cap-1024)
+  Test  #65: Strict output is 100% in-scale and strong-beat-safe
+  Test  #66: Strict compliance holds across keys and modes
+  Test  #67: same seed gives bit-identical candidates
+  Test  #68: all modes are deterministic and capped
+  Test  #69: rank is deterministic and prefers the clean pattern
+  Test  #70: job queue shutdown drains and joins
+  Test  #71: constraints stub links and is callable
+  Test  #72: strong-beat minor-2nd gets resolved
+  Test  #73: weak-beat tension is preserved
+  Test  #74: Am7 to Fmaj7 repairs only conflicting notes
+  Test  #75: missing or unknown chord leaves the bar untouched
+  Test  #76: drums tracks are untouched
+  Test  #77: out-of-register notes move minimally into register
+  Test  #78: starts snap to the 16th grid at full strength
+  Test  #79: mock model loads
+  Test  #80: fixed seed gives identical outputs
+  Test  #81: predict on empty input returns empty, never throws
+  Test  #82: async job completes with the sync result
+  Test  #83: perf: 8-bar predict well under SPEC budget
+  Test  #84: GenParams defaults to empty model path (current behavior)
+  Test  #85: model path sanitise keeps only existing .onnx files
+  Test  #86: async completion is bit-identical to the sync path
+  Test  #87: rapid regenerates supersede: latest wins, no crash
+  Test  #88: fake-latency runner proves the flow is non-blocking
+  Test  #89: model path threads into generation deterministically
+  Test  #90: picker display name maps the stored path to label text
+  Test  #91: picker rejection hint is user-facing and names the rule
+  Test  #92: picker transitions: sanitise keeps valid, clears invalid
+  Test  #93: preview projection: async candidates[0] equals the sync pattern
+  Test  #94: preview projection holds with a model configured
+  Test  #95: preview supersede: a new request wins, stale is dropped
+  Test  #96: arrangement section layout math (bar boundaries exact)
+  Test  #97: arrangement energy mapping is monotonic
+  Test  #98: arrangement 150-bar build has no hanging notes
+  Test  #99: arrangement key continuity (strict energy fully in-scale)
+  Test #100: arrangement build is deterministic
+  Test #101: arrangement variation carries the bar-0 motif
+  Test #102: arrange spec parsing round-trips
+  Test #103: read_smf round-trips type-0 writer output
+  Test #104: read_smf round-trips type-1 multitrack with drums
+  Test #105: read_smf treats note-on vel-0 as note-off
+  Test #106: read_smf rescales 240 PPQ to 480 with exact math
+  Test #107: read_smf rescales odd PPQ with round-half-up
+  Test #108: read_smf closes hanging note-ons at track end
+  Test #109: read_smf supports running status
+  Test #110: read_smf skips tempo meta without disturbing ticks
+  Test #111: read_smf routes channel-9 notes to Drums
+  Test #112: read_smf keeps overlapping same-pitch notes as-is
+  Test #113: read_smf rejects short and garbage headers
+  Test #114: read_smf hostile vectors are safe and report status
+  Test #115: analyze_reference reports key/chords/density on imported C-major fixture
+  Test #116: analyze_reference has no invented key on empty/single-note input
+  Test #117: merge_reference_chords adopts only bars present
+  Test #118: corrupt reference bytes report non-Ok (UI hint path)
+  Test #119: chord_function_name names diatonic degrees in C major
+  Test #120: chord_function_name works in a minor key
+  Test #121: chord_function_name reports Borrowed on unknown/non-diatonic
+  Test #122: chord_explain_line formats name + degree + function
+  Test #123: chord_explain_line detects secondary dominants
+  Test #124: chord_explain_line labels tensions and borrowed chords
+  Test #125: recommendation_for is empty when the report is clean
+  Test #126: recommendation_for maps each issue class to one line
+  Test #127: recommendation_for joins classes deterministically
+  Test #128: ChordTrack statics match the pre-edit capture
+  Test #129: delegated ChordTrack lookups equal the core helpers
+  Test #130: nudgeSelection moves pitch and time with drag bounds
+  Test #131: nudgeSelection clamps pitch and start like the drag
+  Test #132: resizeSelectionEnd snaps the end by the grid step
+  Test #133: adjustSelectionVelocity steps and clamps 1..127
+  Test #134: selection batch edits no-op without a selection
+  Test #135: PianoRoll arrows map to the same batch edits as drag
+  Test #136: PianoRoll arrows no-op without a selection
+  Test #137: ChordTrack Left/Right navigate bars and notify the editor row
+  Test #138: ChordTrack F toggles bar freeze like right-click
+  Test #139: focus ring token value is the reserved accent
+  Test #140: paintFocusRing emits 2px accent stroke pixels
+  Test #141: roll and chord surfaces opt into keyboard focus
+  Test #142: Task 2 contrast ratios meet their gates
+  Test #143: preview synth renders audible tone while held
+  Test #144: preview synth decays after noteOff
+  Test #145: verbatim run is truncated at the offending window
+  Test #146: clean generation passes through byte-identical
+  Test #147: missing index file loads nullopt and never throws
+  Test #148: memo filter is deterministic
+  Test #149: drums are untouched by the memo filter
+  Test #150: loader round-trips the binary format and rejects garbage
+  Test #151: committed training index loads (smoke)
+  Test #152: index path resolves to sibling, bare names to the working dir
+  Test #153: wired path truncates reciting model output, stays deterministic
+  Test #154: wired path without sibling index is byte-identical
+  Test #155: override with empty path filters via the working dir
+  Test #156: bare model filename resolves via the working dir
+  Test #157: sampler rejects invalid configs
+  Test #158: sampler same-seed twice-identical bytes
+  Test #159: sampler flag-off greedy path is byte-identical to the reference loop
+  Test #160: sampler tiny temperature pins the stub argmax
+  Test #161: sampler memo block run=2 turns away from recitation
+  Test #162: sampler strict mask changes top-1 only on violations
+  Test #163: sampler theory PoE flips a near-tie the prior disagrees with
+  Test #164: sampler FSM slot ranges match the shipped codec
+  Test #165: sampler FSM fuzz: >=50 prefixes all decodable
+  Test #166: sampler empty prefix starts from the count head
+  Test #167: sampler provider failure surfaces false, never throws
+  Test #168: sampler reuses the shipped memo index loader
+  Test #169: sampler runs only via the background worker, never the caller thread
+  Test #170: wiring flag OFF keeps pre-phase history bytes
+  Test #171: wiring unavailable provider falls back to greedy bytes
+  Test #172: wiring flag ON engages the sampler deterministically
+  Test #173: ort logits unavailable path never throws, fill is false
+  Test #174: ort logits corrupt sidecar is unavailable, never throws
+  Test #175: ort logits resolves the sidecar next to the weights path
+  Test #176: ort logits argmax matches greedy model.onnx on frozen + procedural prefixes
+  Test #177: ort logits loads once across fills (visible load counter)
+  Test #178: ort logits fill failure is per-call, provider stays usable
+  Test #179: keynorm canonical shift matches python over all tonics
+  Test #180: keynorm python parity vectors are byte-identical
+  Test #181: keynorm round-trip keeps drums and structure, bounds registers
+  Test #182: keynorm C-vs-G invariance on identical normalized ids
+  Test #183: keynorm chord roots shift identically with python parity
+  Test #184: keynorm chord shift clamps and preserves shape
+  Test #185: keynorm strict mask is identical in canonical space
+  Test #186: keynorm rejects bad buffers without throwing
+  Test #187: keynorm flag-off generate path is bit-identical to pre-task output
+  Test #188: keynorm flag-on echo round-trips C-major candidates exactly
+  Test #189: keynorm flag-on echo keeps G-major candidates pc-equivalent
+  Test #190: useSampling defaults true in a fresh tree
+  Test #191: useSampling setter is undoable
+  Test #192: useSampling survives an XML save/load round-trip
+  Test #193: useSampling sanitise fills a missing property with the default
+
+Total Tests: 193
