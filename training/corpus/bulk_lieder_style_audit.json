@@ -1,0 +1,956 @@
+[
+ {
+  "id": "os-lc5121134-w00",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "max-leap-16",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/6_Lieder%2C_Op.48/4_Die_Ehre_Gottes_aus_der_Natur/lc5121134.mscx"
+ },
+ {
+  "id": "os-lc5121134-w02",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "max-leap-16",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/6_Lieder%2C_Op.48/4_Die_Ehre_Gottes_aus_der_Natur/lc5121134.mscx"
+ },
+ {
+  "id": "os-lc5121134-w04",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/6_Lieder%2C_Op.48/4_Die_Ehre_Gottes_aus_der_Natur/lc5121134.mscx"
+ },
+ {
+  "id": "os-lc6491478-w00",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/8_Lieder%2C_Op.52/8_Das_Bl%C3%BCmchen_Wunderhold/lc6491478.mscx"
+ },
+ {
+  "id": "os-lc6491478-w02",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/8_Lieder%2C_Op.52/8_Das_Bl%C3%BCmchen_Wunderhold/lc6491478.mscx"
+ },
+ {
+  "id": "os-lc6491478-w04",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Beethoven%2C_Ludwig_van/8_Lieder%2C_Op.52/8_Das_Bl%C3%BCmchen_Wunderhold/lc6491478.mscx"
+ },
+ {
+  "id": "os-lc5153813-w00",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/4_Songs%2C_Op.43/1_Von_ewiger_Liebe/lc5153813.mscx"
+ },
+ {
+  "id": "os-lc5153813-w02",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/4_Songs%2C_Op.43/1_Von_ewiger_Liebe/lc5153813.mscx"
+ },
+ {
+  "id": "os-lc5153813-w04",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/4_Songs%2C_Op.43/1_Von_ewiger_Liebe/lc5153813.mscx"
+ },
+ {
+  "id": "os-lc5667944-w00",
+  "bars": 4,
+  "tokens": 259,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/5_Lieder%2C_Op.49/2_An_ein_Veilchen/lc5667944.mscx"
+ },
+ {
+  "id": "os-lc5667944-w02",
+  "bars": 4,
+  "tokens": 259,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/5_Lieder%2C_Op.49/2_An_ein_Veilchen/lc5667944.mscx"
+ },
+ {
+  "id": "os-lc5667944-w04",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/5_Lieder%2C_Op.49/2_An_ein_Veilchen/lc5667944.mscx"
+ },
+ {
+  "id": "os-lc4904021-w00",
+  "bars": 4,
+  "tokens": 301,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.3/2_Liebe_und_Fr%C3%BChling_I/lc4904021.mscx"
+ },
+ {
+  "id": "os-lc4904021-w02",
+  "bars": 4,
+  "tokens": 289,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.3/2_Liebe_und_Fr%C3%BChling_I/lc4904021.mscx"
+ },
+ {
+  "id": "os-lc4904021-w04",
+  "bars": 4,
+  "tokens": 265,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.3/2_Liebe_und_Fr%C3%BChling_I/lc4904021.mscx"
+ },
+ {
+  "id": "os-lc5639135-w00",
+  "bars": 4,
+  "tokens": 469,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.6/6_Nachtigallen_schwingen_lustig/lc5639135.mscx"
+ },
+ {
+  "id": "os-lc5639135-w02",
+  "bars": 4,
+  "tokens": 445,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.6/6_Nachtigallen_schwingen_lustig/lc5639135.mscx"
+ },
+ {
+  "id": "os-lc5639135-w04",
+  "bars": 4,
+  "tokens": 445,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/6_Songs%2C_Op.6/6_Nachtigallen_schwingen_lustig/lc5639135.mscx"
+ },
+ {
+  "id": "os-lc5705564-w00",
+  "bars": 4,
+  "tokens": 271,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/7_Lieder%2C_Op.48/4_Gold_%C3%BCberwiegt_die_Liebe/lc5705564.mscx"
+ },
+ {
+  "id": "os-lc5705564-w02",
+  "bars": 4,
+  "tokens": 259,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/7_Lieder%2C_Op.48/4_Gold_%C3%BCberwiegt_die_Liebe/lc5705564.mscx"
+ },
+ {
+  "id": "os-lc5705564-w04",
+  "bars": 4,
+  "tokens": 307,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/7_Lieder%2C_Op.48/4_Gold_%C3%BCberwiegt_die_Liebe/lc5705564.mscx"
+ },
+ {
+  "id": "os-lc5729178-w00",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_and_Romances%2C_Op.14/7_St%C3%A4ndchen/lc5729178.mscx"
+ },
+ {
+  "id": "os-lc5729178-w02",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_and_Romances%2C_Op.14/7_St%C3%A4ndchen/lc5729178.mscx"
+ },
+ {
+  "id": "os-lc5729178-w04",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_and_Romances%2C_Op.14/7_St%C3%A4ndchen/lc5729178.mscx"
+ },
+ {
+  "id": "os-lc5123355-w00",
+  "bars": 4,
+  "tokens": 337,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.58/1_Blinde_Kuh/lc5123355.mscx"
+ },
+ {
+  "id": "os-lc5123355-w02",
+  "bars": 4,
+  "tokens": 343,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.58/1_Blinde_Kuh/lc5123355.mscx"
+ },
+ {
+  "id": "os-lc5123355-w04",
+  "bars": 4,
+  "tokens": 331,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.58/1_Blinde_Kuh/lc5123355.mscx"
+ },
+ {
+  "id": "os-lc5058091-w00",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.59/3_Regenlied/lc5058091.mscx"
+ },
+ {
+  "id": "os-lc5058091-w02",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.59/3_Regenlied/lc5058091.mscx"
+ },
+ {
+  "id": "os-lc5058091-w04",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/8_Lieder_und_Ges%C3%A4nge%2C_Op.59/3_Regenlied/lc5058091.mscx"
+ },
+ {
+  "id": "os-lc5098728-w00",
+  "bars": 4,
+  "tokens": 295,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/9_Lieder_und_Ges%C3%A4nge%2C_Op.63/6_Junge_Lieder_II/lc5098728.mscx"
+ },
+ {
+  "id": "os-lc5098728-w02",
+  "bars": 4,
+  "tokens": 307,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/9_Lieder_und_Ges%C3%A4nge%2C_Op.63/6_Junge_Lieder_II/lc5098728.mscx"
+ },
+ {
+  "id": "os-lc5098728-w04",
+  "bars": 4,
+  "tokens": 301,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Brahms%2C_Johannes/9_Lieder_und_Ges%C3%A4nge%2C_Op.63/6_Junge_Lieder_II/lc5098728.mscx"
+ },
+ {
+  "id": "os-lc5054946-w00",
+  "bars": 4,
+  "tokens": 451,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Cornelius%2C_Peter/6_Lieder%2C_Op.1/3_Wiegenlied/lc5054946.mscx"
+ },
+ {
+  "id": "os-lc5054946-w02",
+  "bars": 4,
+  "tokens": 451,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Cornelius%2C_Peter/6_Lieder%2C_Op.1/3_Wiegenlied/lc5054946.mscx"
+ },
+ {
+  "id": "os-lc5054946-w04",
+  "bars": 4,
+  "tokens": 457,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Cornelius%2C_Peter/6_Lieder%2C_Op.1/3_Wiegenlied/lc5054946.mscx"
+ },
+ {
+  "id": "os-lc4976682-w00",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Franz%2C_Robert/6_Ges%C3%A4nge%2C_Op.14/5_Liebesfr%C3%BChling/lc4976682.mscx"
+ },
+ {
+  "id": "os-lc4976682-w02",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Franz%2C_Robert/6_Ges%C3%A4nge%2C_Op.14/5_Liebesfr%C3%BChling/lc4976682.mscx"
+ },
+ {
+  "id": "os-lc4976682-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Franz%2C_Robert/6_Ges%C3%A4nge%2C_Op.14/5_Liebesfr%C3%BChling/lc4976682.mscx"
+ },
+ {
+  "id": "os-lc5079368-w00",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Gounod%2C_Charles/6_M%C3%A9lodies/1_Le_Premier_Jour_de_Mai/lc5079368.mscx"
+ },
+ {
+  "id": "os-lc5079368-w02",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Gounod%2C_Charles/6_M%C3%A9lodies/1_Le_Premier_Jour_de_Mai/lc5079368.mscx"
+ },
+ {
+  "id": "os-lc5079368-w04",
+  "bars": 4,
+  "tokens": 169,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Gounod%2C_Charles/6_M%C3%A9lodies/1_Le_Premier_Jour_de_Mai/lc5079368.mscx"
+ },
+ {
+  "id": "os-lc4919798-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/5_Lieder%2C_Op.10/3_Abendbild/lc4919798.mscx"
+ },
+ {
+  "id": "os-lc4919798-w02",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/5_Lieder%2C_Op.10/3_Abendbild/lc4919798.mscx"
+ },
+ {
+  "id": "os-lc4919798-w04",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/5_Lieder%2C_Op.10/3_Abendbild/lc4919798.mscx"
+ },
+ {
+  "id": "os-lc5987806-w00",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.7/2_Erwin/lc5987806.mscx"
+ },
+ {
+  "id": "os-lc5987806-w02",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.7/2_Erwin/lc5987806.mscx"
+ },
+ {
+  "id": "os-lc5987806-w04",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.7/2_Erwin/lc5987806.mscx"
+ },
+ {
+  "id": "os-lc4986030-w00",
+  "bars": 4,
+  "tokens": 403,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.9/6_Die_Mainacht/lc4986030.mscx"
+ },
+ {
+  "id": "os-lc4986030-w02",
+  "bars": 4,
+  "tokens": 409,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross;max-leap-15",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.9/6_Die_Mainacht/lc4986030.mscx"
+ },
+ {
+  "id": "os-lc4986030-w04",
+  "bars": 4,
+  "tokens": 415,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross;max-leap-15",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Hensel%2C_Fanny/6_Lieder%2C_Op.9/6_Die_Mainacht/lc4986030.mscx"
+ },
+ {
+  "id": "os-lc4920211-w00",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Lang%2C_Josephine/6_Lieder%2C_Op.25/4_Lied_%28Immer_sich_rein_kindlich_erfreu%E2%80%99n%29/lc4920211.mscx"
+ },
+ {
+  "id": "os-lc4920211-w02",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Lang%2C_Josephine/6_Lieder%2C_Op.25/4_Lied_%28Immer_sich_rein_kindlich_erfreu%E2%80%99n%29/lc4920211.mscx"
+ },
+ {
+  "id": "os-lc4920211-w04",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Lang%2C_Josephine/6_Lieder%2C_Op.25/4_Lied_%28Immer_sich_rein_kindlich_erfreu%E2%80%99n%29/lc4920211.mscx"
+ },
+ {
+  "id": "os-lc6989204-w00",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Mendelssohn%2C_Felix/6_Ges%C3%A4nge%2C_Op.86/2_Morgenlied%2C_MWV_K_123/lc6989204.mscx"
+ },
+ {
+  "id": "os-lc6989204-w02",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Mendelssohn%2C_Felix/6_Ges%C3%A4nge%2C_Op.86/2_Morgenlied%2C_MWV_K_123/lc6989204.mscx"
+ },
+ {
+  "id": "os-lc6989204-w04",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Mendelssohn%2C_Felix/6_Ges%C3%A4nge%2C_Op.86/2_Morgenlied%2C_MWV_K_123/lc6989204.mscx"
+ },
+ {
+  "id": "os-lc5002096-w00",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Deutsche_und_Itali%C3%A4nische_Romantische_Ges%C3%A4nge/08_Poesie_von_Tieck/lc5002096.mscx"
+ },
+ {
+  "id": "os-lc5002096-w02",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Deutsche_und_Itali%C3%A4nische_Romantische_Ges%C3%A4nge/08_Poesie_von_Tieck/lc5002096.mscx"
+ },
+ {
+  "id": "os-lc5002096-w04",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Deutsche_und_Itali%C3%A4nische_Romantische_Ges%C3%A4nge/08_Poesie_von_Tieck/lc5002096.mscx"
+ },
+ {
+  "id": "os-lc5002006-w00",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge%2C_Op.3/06_Kriegslied_des_Mays/lc5002006.mscx"
+ },
+ {
+  "id": "os-lc5002006-w02",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge%2C_Op.3/06_Kriegslied_des_Mays/lc5002006.mscx"
+ },
+ {
+  "id": "os-lc5002006-w04",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge%2C_Op.3/06_Kriegslied_des_Mays/lc5002006.mscx"
+ },
+ {
+  "id": "os-lc5001870-w00",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge/04_Vaters_Klage/lc5001870.mscx"
+ },
+ {
+  "id": "os-lc5001870-w02",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge/04_Vaters_Klage/lc5001870.mscx"
+ },
+ {
+  "id": "os-lc5001870-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/12_Ges%C3%A4nge/04_Vaters_Klage/lc5001870.mscx"
+ },
+ {
+  "id": "os-lc5092560-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/6_Lieder_von_Novalis%2C_Op.4/3a_Geistliches_Lied/lc5092560.mscx"
+ },
+ {
+  "id": "os-lc5092560-w02",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/6_Lieder_von_Novalis%2C_Op.4/3a_Geistliches_Lied/lc5092560.mscx"
+ },
+ {
+  "id": "os-lc5092560-w04",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Reichardt%2C_Louise/6_Lieder_von_Novalis%2C_Op.4/3a_Geistliches_Lied/lc5092560.mscx"
+ },
+ {
+  "id": "os-lc6838113-w00",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.22/1_Der_Zwerg%2C_D.771/lc6838113.mscx"
+ },
+ {
+  "id": "os-lc6838113-w02",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.22/1_Der_Zwerg%2C_D.771/lc6838113.mscx"
+ },
+ {
+  "id": "os-lc6838113-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.22/1_Der_Zwerg%2C_D.771/lc6838113.mscx"
+ },
+ {
+  "id": "os-lc4981984-w00",
+  "bars": 4,
+  "tokens": 157,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.59/2_Dass_sie_hier_gewesen/lc4981984.mscx"
+ },
+ {
+  "id": "os-lc4981984-w02",
+  "bars": 4,
+  "tokens": 169,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.59/2_Dass_sie_hier_gewesen/lc4981984.mscx"
+ },
+ {
+  "id": "os-lc4981984-w04",
+  "bars": 4,
+  "tokens": 169,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Op.59/2_Dass_sie_hier_gewesen/lc4981984.mscx"
+ },
+ {
+  "id": "os-lc4985987-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Schwanengesang%2C_D.957/06_In_der_Ferne/lc4985987.mscx"
+ },
+ {
+  "id": "os-lc4985987-w02",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Schwanengesang%2C_D.957/06_In_der_Ferne/lc4985987.mscx"
+ },
+ {
+  "id": "os-lc4985987-w04",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Schwanengesang%2C_D.957/06_In_der_Ferne/lc4985987.mscx"
+ },
+ {
+  "id": "os-lc5015499-w00",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Winterreise%2C_D.911/03_Gefror%E2%80%99ne_Thr%C3%A4nen/lc5015499.mscx"
+ },
+ {
+  "id": "os-lc5015499-w02",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Winterreise%2C_D.911/03_Gefror%E2%80%99ne_Thr%C3%A4nen/lc5015499.mscx"
+ },
+ {
+  "id": "os-lc5015499-w04",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Winterreise%2C_D.911/03_Gefror%E2%80%99ne_Thr%C3%A4nen/lc5015499.mscx"
+ },
+ {
+  "id": "os-lc5014023-w00",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schubert%2C_Franz/Winterreise%2C_D.911/24_Der_Leiermann_%28Sp%C3%A4tere_Fassung%29/lc5014023.mscx"
+ },
+ {
+  "id": "os-lc5187781-w00",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Clara/Lieder%2C_Op.12/02_Er_ist_gekommen_in_Sturm_und_Regen/lc5187781.mscx"
+ },
+ {
+  "id": "os-lc5187781-w02",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Clara/Lieder%2C_Op.12/02_Er_ist_gekommen_in_Sturm_und_Regen/lc5187781.mscx"
+ },
+ {
+  "id": "os-lc5187781-w04",
+  "bars": 4,
+  "tokens": 301,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Clara/Lieder%2C_Op.12/02_Er_ist_gekommen_in_Sturm_und_Regen/lc5187781.mscx"
+ },
+ {
+  "id": "os-lc4976769-w00",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/02_Aus_meinen_Tr%C3%A4nen_sprie%C3%9Fen/lc4976769.mscx"
+ },
+ {
+  "id": "os-lc4976769-w02",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/02_Aus_meinen_Tr%C3%A4nen_sprie%C3%9Fen/lc4976769.mscx"
+ },
+ {
+  "id": "os-lc4976769-w04",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/02_Aus_meinen_Tr%C3%A4nen_sprie%C3%9Fen/lc4976769.mscx"
+ },
+ {
+  "id": "os-lc4978395-w00",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/12_Am_leuchtenden_Sommermorgen/lc4978395.mscx"
+ },
+ {
+  "id": "os-lc4978395-w02",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/12_Am_leuchtenden_Sommermorgen/lc4978395.mscx"
+ },
+ {
+  "id": "os-lc4978395-w04",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Dichterliebe%2C_Op.48/12_Am_leuchtenden_Sommermorgen/lc4978395.mscx"
+ },
+ {
+  "id": "os-lc4978494-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Frauenliebe_und_Leben%2C_Op.42/6_S%C3%BCsser_Freund%2C_du_blickest/lc4978494.mscx"
+ },
+ {
+  "id": "os-lc4978494-w02",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Frauenliebe_und_Leben%2C_Op.42/6_S%C3%BCsser_Freund%2C_du_blickest/lc4978494.mscx"
+ },
+ {
+  "id": "os-lc4978494-w04",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Frauenliebe_und_Leben%2C_Op.42/6_S%C3%BCsser_Freund%2C_du_blickest/lc4978494.mscx"
+ },
+ {
+  "id": "os-lc4987626-w00",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Liederkreis%2C_Op.39/03_Waldesgespr%C3%A4ch/lc4987626.mscx"
+ },
+ {
+  "id": "os-lc4987626-w02",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Liederkreis%2C_Op.39/03_Waldesgespr%C3%A4ch/lc4987626.mscx"
+ },
+ {
+  "id": "os-lc4987626-w04",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Liederkreis%2C_Op.39/03_Waldesgespr%C3%A4ch/lc4987626.mscx"
+ },
+ {
+  "id": "os-lc6915729-w00",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/11_Lieder_der_Braut_I_%28Mutter%21_Mutter%21%29/lc6915729.mscx"
+ },
+ {
+  "id": "os-lc6915729-w02",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/11_Lieder_der_Braut_I_%28Mutter%21_Mutter%21%29/lc6915729.mscx"
+ },
+ {
+  "id": "os-lc6915729-w04",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/11_Lieder_der_Braut_I_%28Mutter%21_Mutter%21%29/lc6915729.mscx"
+ },
+ {
+  "id": "os-lc6980134-w00",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/21_Was_will_die_einsame_Tr%C3%A4ne/lc6980134.mscx"
+ },
+ {
+  "id": "os-lc6980134-w02",
+  "bars": 4,
+  "tokens": 223,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/21_Was_will_die_einsame_Tr%C3%A4ne/lc6980134.mscx"
+ },
+ {
+  "id": "os-lc6980134-w04",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Schumann%2C_Robert/Myrthen%2C_Op.25/21_Was_will_die_einsame_Tr%C3%A4ne/lc6980134.mscx"
+ },
+ {
+  "id": "os-lc5052792-w00",
+  "bars": 4,
+  "tokens": 367,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Wolf%2C_Hugo/Eichendorff-Lieder/13_Der_Scholar/lc5052792.mscx"
+ },
+ {
+  "id": "os-lc5052792-w02",
+  "bars": 4,
+  "tokens": 367,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Wolf%2C_Hugo/Eichendorff-Lieder/13_Der_Scholar/lc5052792.mscx"
+ },
+ {
+  "id": "os-lc5052792-w04",
+  "bars": 4,
+  "tokens": 361,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/Lieder/main/scores/Wolf%2C_Hugo/Eichendorff-Lieder/13_Der_Scholar/lc5052792.mscx"
+ }
+]

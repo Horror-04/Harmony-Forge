@@ -1,0 +1,245 @@
+[
+ {
+  "id": "os-sq10502527-w00",
+  "bars": 4,
+  "tokens": 145,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/Grosse_Fuge_in_B-flat_major%2C_Op.133/sq10502527.mscx"
+ },
+ {
+  "id": "os-sq10502527-w02",
+  "bars": 4,
+  "tokens": 121,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/Grosse_Fuge_in_B-flat_major%2C_Op.133/sq10502527.mscx"
+ },
+ {
+  "id": "os-sq10502527-w04",
+  "bars": 4,
+  "tokens": 121,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Beethoven%2C_Ludwig_van/Grosse_Fuge_in_B-flat_major%2C_Op.133/sq10502527.mscx"
+ },
+ {
+  "id": "os-sq7108150-w00",
+  "bars": 4,
+  "tokens": 289,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Brahms%2C_Johannes/String_Quartet_No.1%2C_Op.51_No.1/sq7108150.mscx"
+ },
+ {
+  "id": "os-sq7108150-w02",
+  "bars": 4,
+  "tokens": 277,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Brahms%2C_Johannes/String_Quartet_No.1%2C_Op.51_No.1/sq7108150.mscx"
+ },
+ {
+  "id": "os-sq7108150-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Brahms%2C_Johannes/String_Quartet_No.1%2C_Op.51_No.1/sq7108150.mscx"
+ },
+ {
+  "id": "os-sq8556926-w00",
+  "bars": 4,
+  "tokens": 313,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B-flat_major%2C_Hob.III5%2C_Op.1_No.5/sq8556926.mscx"
+ },
+ {
+  "id": "os-sq8556926-w02",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B-flat_major%2C_Hob.III5%2C_Op.1_No.5/sq8556926.mscx"
+ },
+ {
+  "id": "os-sq8556926-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_B-flat_major%2C_Hob.III5%2C_Op.1_No.5/sq8556926.mscx"
+ },
+ {
+  "id": "os-sq8806134-w00",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III6%2C_Op.1_No.6/sq8806134.mscx"
+ },
+ {
+  "id": "os-sq8806134-w02",
+  "bars": 4,
+  "tokens": 229,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III6%2C_Op.1_No.6/sq8806134.mscx"
+ },
+ {
+  "id": "os-sq8806134-w04",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_C_major%2C_Hob.III6%2C_Op.1_No.6/sq8806134.mscx"
+ },
+ {
+  "id": "os-sq15049456-w00",
+  "bars": 4,
+  "tokens": 139,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_G_major%2C_Hob.III75%2C_Op.76_No.1/sq15049456.mscx"
+ },
+ {
+  "id": "os-sq15049456-w02",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_G_major%2C_Hob.III75%2C_Op.76_No.1/sq15049456.mscx"
+ },
+ {
+  "id": "os-sq15049456-w04",
+  "bars": 4,
+  "tokens": 145,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Haydn%2C_Joseph/String_Quartet_in_G_major%2C_Hob.III75%2C_Op.76_No.1/sq15049456.mscx"
+ },
+ {
+  "id": "os-sq8561633-w00",
+  "bars": 4,
+  "tokens": 313,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mendelssohn%2C_Felix/String_Quartet_No.6_in_F_Minor%2C_Op.80/sq8561633.mscx"
+ },
+ {
+  "id": "os-sq8561633-w02",
+  "bars": 4,
+  "tokens": 313,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mendelssohn%2C_Felix/String_Quartet_No.6_in_F_Minor%2C_Op.80/sq8561633.mscx"
+ },
+ {
+  "id": "os-sq8561633-w04",
+  "bars": 4,
+  "tokens": 277,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "max-leap-13",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mendelssohn%2C_Felix/String_Quartet_No.6_in_F_Minor%2C_Op.80/sq8561633.mscx"
+ },
+ {
+  "id": "os-sq7075297-w00",
+  "bars": 4,
+  "tokens": 157,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7075297.mscx"
+ },
+ {
+  "id": "os-sq7075297-w02",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7075297.mscx"
+ },
+ {
+  "id": "os-sq7075297-w04",
+  "bars": 4,
+  "tokens": 169,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7075297.mscx"
+ },
+ {
+  "id": "os-sq7093885-w00",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7093885.mscx"
+ },
+ {
+  "id": "os-sq7093885-w02",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7093885.mscx"
+ },
+ {
+  "id": "os-sq7093885-w04",
+  "bars": 4,
+  "tokens": 187,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Mozart%2C_Wolfgang_Amadeus/String_Quartet_No.18_in_A_major%2C_K.464_%28Op._10%2C_No._5%29/sq7093885.mscx"
+ },
+ {
+  "id": "os-sq7648382-w00",
+  "bars": 4,
+  "tokens": 361,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Schubert%2C_Franz/String_Quartet_in_C_minor%2C_D.703%2C_No.12/sq7648382.mscx"
+ },
+ {
+  "id": "os-sq7648382-w02",
+  "bars": 4,
+  "tokens": 241,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Schubert%2C_Franz/String_Quartet_in_C_minor%2C_D.703%2C_No.12/sq7648382.mscx"
+ },
+ {
+  "id": "os-sq7648382-w04",
+  "bars": 4,
+  "tokens": 295,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/OpenScore/StringQuartets/main/scores/Schubert%2C_Franz/String_Quartet_in_C_minor%2C_D.703%2C_No.12/sq7648382.mscx"
+ }
+]
