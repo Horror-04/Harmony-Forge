@@ -45,4 +45,4 @@ Committed-run total: **27**. Unlogged locals: uncounted (floor applies).
 
 | date | purpose | config | planned units | performer | actual | artifact |
 |---|---|---|---|---|---|---|
-| (none yet) | | | | | | |
+| 2026-10-16 | Phase-15 Task-2 evidence run (one-split table + oracle + DF-audit + canonical; Task-3 verdict input, MEASURE ONLY) | WIRED_CFG verbatim (T=1.0/top_p=1.0/memo-2/strict+fsm/lam=0); frozen scorer; cells v1_sampler/v2b_sampler/theory/rand_theory/kn_raw/kn_stack + oracle(true halves, scores-only) + K1 regen (DF/canonical source); seeds {7,11}, RNG seed*1000+idx | 559 locked units: v1 86, v2b 86, theory 43, randtheory 86, knraw 43, knstack 86, k1regen 86, oracle 43 (NLL on val-composed is NOT locked: 0) | task-2 worker (CPU) | | |
