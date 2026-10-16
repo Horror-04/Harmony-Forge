@@ -80,7 +80,7 @@ COMPARISONS = [
 ]
 SEEDS = (7, 11)
 WIRED = R.WIRED_CFG  # verbatim import (equality with the Cfg pinned in tests)
-DF_K = 2             # k-eidetic rule fixed a priori (Sonnet): DF<=2 counts
+DF_K = 2  # k-eidetic fixed a priori (Sonnet): 1<=DF<=2 counts (absent=novel)
 VERBATIM_K = 4       # §10 run length (untouched reference)
 BOX_S = 25 * 60
 N_BOOT = 1000
