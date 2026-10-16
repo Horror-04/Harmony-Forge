@@ -44,7 +44,8 @@ DET_MIN = (9, 10)      # detection >= 9/10 K1-violating clips
 FP_MAX = 0.05          # false-positive <= 5% on human-composed pool
 SURV_MIN = 0.95        # survival >= 95% of K1-novel-passing clips
 
-SHIFT = 5  # transposition used for the basis-mismatch fixture (semitones)
+SHIFT_CANDIDATES = (1, 2, 3, 4, 6, 7, 8, 10, 11)
+BAR_CANDIDATES = (4, 8, 2, 12)
 
 
 def _shift_all_pitches(ids, shift):
@@ -60,6 +61,21 @@ def _shift_all_pitches(ids, shift):
     return out
 
 
+def _shift_and_rebar(ids, shift, bar_offset):
+    """Transposed copy relocated by bar_offset bars (token surgery for the
+    fixture; bars must stay in range). Pitch intervals are preserved."""
+    total = ids[0]
+    out = [total]
+    for k in range(1, 1 + total * tok.TOKENS_PER_NOTE, tok.TOKENS_PER_NOTE):
+        bar, sub, tt, p, d, v = ids[k:k + 6]
+        if not (0 <= p + shift <= 127):
+            return None
+        if not (0 <= bar + bar_offset < tok.MAX_BARS):
+            return None
+        out.extend([bar + bar_offset, sub, tt, p + shift, d, v])
+    return out
+
+
 def _pick_long_train_rec(train, memo_id8, min_melody=12):
     """First train record with >= min_melody Melody notes, shiftable by
     SHIFT without clipping, and absolute self-run >= 4 (in-index)."""
@@ -68,12 +84,28 @@ def _pick_long_train_rec(train, memo_id8, min_melody=12):
         mel = E.melody_intervals(fin)
         if mel is None or len(mel) + 1 < min_melody:
             continue
-        if _shift_all_pitches(fin, SHIFT) is None:
+        if _shift_all_pitches(fin, SHIFT_CANDIDATES[0]) is None:
             continue
         if E.longest_verbatim_run(fin, memo_id8) < 4:
             continue
         return rec, fin, len(mel) + 1
     raise AssertionError("no suitable long train record")
+
+
+def _pick_mismatch_shift(fin, memo_id8):
+    """First (transposition, re-barring) whose shifted copy is invisible to
+    the absolute filter (run 0). Re-barring is needed on top of the shift
+    because train carries transposed augmentation siblings (k0/k1 keys and
+    procedural shapes): a pure shift lands on an indexed sibling. Pitch
+    intervals are preserved, so the interval run is unaffected."""
+    for s in SHIFT_CANDIDATES:
+        for b in BAR_CANDIDATES:
+            shifted = _shift_and_rebar(fin, s, b)
+            if shifted is None:
+                continue
+            if E.longest_verbatim_run(shifted, memo_id8) == 0:
+                return s, b, shifted
+    raise AssertionError("no basis-mismatch shift found")
 
 
 def _encode_monophonic(pitches, start_bar=0):
@@ -107,10 +139,10 @@ class TestIntervalMemoProbe(unittest.TestCase):
         self.assertEqual(P.SURV_MIN, SURV_MIN)
 
     def test_transposed_copy_caught_by_interval_not_absolute(self):
-        """Basis mismatch: +5-semitone transposed train copy is invisible to
-        the absolute filter but fully recited in interval coords."""
-        shifted = _shift_all_pitches(self.fin, SHIFT)
-        self.assertIsNotNone(shifted)
+        """Basis mismatch: a transposed train copy is invisible to the
+        absolute filter but fully recited in interval coords."""
+        shift, bar, shifted = _pick_mismatch_shift(self.fin, self.memo_id8)
+        self.assertGreater(shift, 0)
         self.assertEqual(E.longest_verbatim_run(shifted, self.memo_id8), 0)
         want_run = self.melody_n - VERDICT_N
         self.assertGreaterEqual(want_run, VERDICT_K)

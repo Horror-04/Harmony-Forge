@@ -1,0 +1,636 @@
+{
+ "protocol": "measurement-only probe; \u00a710 run>=4 untouched reference",
+ "pre_registered_rule": {
+  "verdict_cell": {
+   "n": 8,
+   "k": 4
+  },
+  "detection_ge": [
+   9,
+   10
+  ],
+  "fp_le": 0.05,
+  "survival_ge": 0.95,
+  "fp_pool": "val.jsonl human-composed subset (composed-O/P, n=4)",
+  "survival_pool": "K1 clips, absolute run<4 AND per-clip novel4>=0.6",
+  "detection_pool": "K1 clips, absolute verbatim run>=4",
+  "ordering_note": "rule frozen in tools/tests/test_interval_memo.py commit dba13f6 BEFORE any scoring run; verdict cell (n=8,k=4) is the direct \u00a710 analogue (same window count, same run, coords only)."
+ },
+ "mapping_table": [
+  {
+   "space": "absolute",
+   "window": "flat-id 8-gram",
+   "window_def": "8 consecutive flat token ids (note 6-tuples concatenated; a window spans ~1.33 notes)",
+   "n": 8,
+   "k": 4,
+   "run_unit": "consecutive 8-token windows present in memo id_8 index",
+   "floor": "prefix_len-7",
+   "floor_def": "flat-token windows starting at >= len(prefix)-7 (windows touching generated tokens only)",
+   "filter": "shipped \u00a710 memo_block (absolute memo_index)",
+   "anchor": true,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 4-gram",
+   "window_def": "4 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 4,
+   "k": 2,
+   "run_unit": "consecutive interval 4-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 4-gram",
+   "window_def": "4 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 4,
+   "k": 3,
+   "run_unit": "consecutive interval 4-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 4-gram",
+   "window_def": "4 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 4,
+   "k": 4,
+   "run_unit": "consecutive interval 4-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 8-gram",
+   "window_def": "8 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 8,
+   "k": 2,
+   "run_unit": "consecutive interval 8-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 8-gram",
+   "window_def": "8 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 8,
+   "k": 3,
+   "run_unit": "consecutive interval 8-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": false
+  },
+  {
+   "space": "interval",
+   "window": "melody-interval 8-gram",
+   "window_def": "8 consecutive Melody pitch differences in start_tick order (transposition-invariant)",
+   "n": 8,
+   "k": 4,
+   "run_unit": "consecutive interval 8-grams present in the train interval index",
+   "floor": "m_pre-n",
+   "floor_def": "melody-note windows starting at >= max(0, m_pre - n), where m_pre = Melody notes in the prefix (windows covering >= 1 generated Melody note; m_pre None/0 = whole sequence for full composed records)",
+   "filter": "probe-only (this file; shipped filter untouched)",
+   "anchor": false,
+   "verdict_cell": true
+  }
+ ],
+ "grid": {
+  "n": [
+   4,
+   8
+  ],
+  "k": [
+   2,
+   3,
+   4
+  ]
+ },
+ "index_sizes": {
+  "4": 2458,
+  "8": 1757
+ },
+ "pools": {
+  "train_n": 334,
+  "detection_n": 10,
+  "detection_pieces": {
+   "os-lc4985925": 1,
+   "os-lc4985938": 1,
+   "os-lc5025985": 1,
+   "os-lc4985951": 1,
+   "os-sq8075304": 1,
+   "os-sq8509238": 1,
+   "os-sq8907120": 1,
+   "mut-Lobt_Gott": 2,
+   "composed-R": 1
+  },
+  "survival_n": 54,
+  "novel4_none_n": 0,
+  "fp_human_ids": [
+   "composed-O-k0",
+   "composed-O-k1",
+   "composed-P-k0",
+   "composed-P-k1"
+  ],
+  "fp_human_n": 4,
+  "fp_fullval_n": 33,
+  "k0_regression_n": 86
+ },
+ "wall_s": 51.179458141326904,
+ "determinism": {
+  "k0_sha_pass1": "4d88366375c622ae4900940571bb2f5a7c53b5ae40a3edd360e0cad4b9a61a0a",
+  "k0_sha_pass2": "4d88366375c622ae4900940571bb2f5a7c53b5ae40a3edd360e0cad4b9a61a0a",
+  "k0_same_bytes": true,
+  "k1_sha_pass1": "597979c04f74bd3a70e432e2b80c3e35130ef13576975e6d4e15a4b9358caf3e",
+  "k1_sha_pass2": "597979c04f74bd3a70e432e2b80c3e35130ef13576975e6d4e15a4b9358caf3e",
+  "k1_same_bytes": true
+ },
+ "k0_repro": {
+  "mean_compliance": 0.902042945201576,
+  "mean_suffix": 0.9869186046511628,
+  "committed": [
+   0.902,
+   0.987
+  ],
+  "tol": 0.02,
+  "reproduced": true
+ },
+ "k1_absolute": {
+  "violations_ge4": 10,
+  "run_max": 6,
+  "n": 86,
+  "committed": {
+   "violations_ge4": 10,
+   "run_max": 6,
+   "n": 86
+  }
+ },
+ "floor_fallbacks_prefix_undecodable": 0,
+ "threshold_study": {
+  "n4_k2": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    5,
+    54
+   ],
+   "fp_human_flagged": [
+    4,
+    4
+   ],
+   "fp_fullval_flagged": [
+    18,
+    33
+   ],
+   "k0_flagged": [
+    4,
+    86
+   ]
+  },
+  "n4_k3": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    2,
+    54
+   ],
+   "fp_human_flagged": [
+    4,
+    4
+   ],
+   "fp_fullval_flagged": [
+    8,
+    33
+   ],
+   "k0_flagged": [
+    2,
+    86
+   ]
+  },
+  "n4_k4": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    0,
+    54
+   ],
+   "fp_human_flagged": [
+    0,
+    4
+   ],
+   "fp_fullval_flagged": [
+    1,
+    33
+   ],
+   "k0_flagged": [
+    1,
+    86
+   ]
+  },
+  "n8_k2": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    0,
+    54
+   ],
+   "fp_human_flagged": [
+    0,
+    4
+   ],
+   "fp_fullval_flagged": [
+    0,
+    33
+   ],
+   "k0_flagged": [
+    0,
+    86
+   ]
+  },
+  "n8_k3": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    0,
+    54
+   ],
+   "fp_human_flagged": [
+    0,
+    4
+   ],
+   "fp_fullval_flagged": [
+    0,
+    33
+   ],
+   "k0_flagged": [
+    0,
+    86
+   ]
+  },
+  "n8_k4": {
+   "detection": [
+    0,
+    10
+   ],
+   "detection_runs": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "per_piece": {
+    "os-lc4985925": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985938": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc5025985": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-lc4985951": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8075304": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8509238": {
+     "n": 1,
+     "flagged": 0
+    },
+    "os-sq8907120": {
+     "n": 1,
+     "flagged": 0
+    },
+    "mut-Lobt_Gott": {
+     "n": 2,
+     "flagged": 0
+    },
+    "composed-R": {
+     "n": 1,
+     "flagged": 0
+    }
+   },
+   "survival_flagged": [
+    0,
+    54
+   ],
+   "fp_human_flagged": [
+    0,
+    4
+   ],
+   "fp_fullval_flagged": [
+    0,
+    33
+   ],
+   "k0_flagged": [
+    0,
+    86
+   ]
+  }
+ },
+ "verdict_inputs": {
+  "cell": "n8_k4",
+  "detection": [
+   0,
+   10
+  ],
+  "detection_ok": false,
+  "fp_human": [
+   0,
+   4
+  ],
+  "fp_ok": true,
+  "survival_kept": [
+   54,
+   54
+  ],
+  "survival_ok": true
+ },
+ "verdict": "NO-GO"
+}
