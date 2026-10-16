@@ -410,3 +410,44 @@ bool flip); greedy path untouched (flag-off bytes still pinned by the
 decodability repair, and the 8.0-vs-1.82 generation yield, not the
 novelty margin. Theory-only remains the ceiling on all three quality
 columns (by construction); sampler does not claim to beat it.
+
+## interval-memo probe (Phase 14 — NO-GO on the rule, HELD, weights NOT shipped)
+
+- Probe (Task-1 frozen a priori, measurement ONLY — no `src/` changes, no
+  shipped-filter changes, no threshold moves, no weight writes; CPU ~51 s):
+  melody-interval n-gram index `E.interval_ngram_index(train, n)` (pitch
+  differences only — the imported novelty invariant; rhythm pinned future
+  work), frozen grid n in {4,8} x k in {2,3,4}, K1-violating detection
+  pool (n=10, spanning 9 pieces — not one-piece luck) + novel-passing
+  survival pool (n=54) + human-composed FP pool (n=4, composed-O/P full
+  records; full val n=33 incl. 29 procedural reported as secondary context
+  only — procedural records are machine-generated, not human-composed).
+- Locked numbers, verdict cell (n=8, k=4, the structural analogue of the
+  §10 rule — same window count, same run length, only the coordinate
+  space changes): detection 0/10 (need >= 9/10 — FAIL, not borderline);
+  FP 0/4 (need <= 5% — PASS); survival 54/54 (need >= 95% — PASS). Rule
+  needs all three → NO-GO. Threshold study: n=8 blind at every k (no
+  operating point); n=4 loose cells detect 0/10 while flagging 4/4
+  human-composed (formula-FP confirmed real and severe — a plain C-major
+  scale run flags at (4,2)) — no cell with detection > 0 and FP = 0
+  anywhere in the grid (lever-kill, not a threshold question).
+- SCOPE (precision matters): this NO-GO kills the MELODY-interval lens
+  ONLY. The memorized absolute windows inside the K1 violations are
+  accompaniment-dominated (sampled hit-window track-token histograms:
+  Chords/Bass, melody tokens not dominant), and the positive controls
+  work (transposed-copy fixture caught by interval yet invisible to
+  absolute) — the evidence does NOT kill interval-matching generally.
+- VERDICT: NO-GO — nothing shipped; `training/model.onnx` + quant +
+  `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+  Green-only steps SKIPPED per the red rule — no green path exists.
+- NEXT LEVER (single primary, new hypothesis not threshold move):
+  MULTI-TRACK interval probe (bass + chords interval indices alongside
+  melody) — the recitation lives where the current lens does not look.
+  Deferred: post-inverse-shift absolute re-check (incoherent as primary —
+  output is already absolute post-inverse; the failure IS the absolute
+  measurement — keep as diagnostic only); full-val FP pool expansion
+  (n=4 weakness noted, test_locked/train untouchable — accepted
+  limitation).
+- Full numbers: `.superpowers/sdd/2026-10-16-phase-14/task-1-report.md`
+  (measurement) + `task-2-report.md` (verdict), evidence
+  `tools/interval_memo_report.json`.
