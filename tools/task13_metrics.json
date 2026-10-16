@@ -1,0 +1,308 @@
+{
+ "grid": {
+  "K0": {
+   "T": 1.0,
+   "top_p": 1.0,
+   "memo_block_run": 2,
+   "strict_mask": true,
+   "fsm_mask": true,
+   "lambda_theory": 0.0,
+   "keynorm": false,
+   "model": "training/v2b_s11.onnx",
+   "sampler": "v1"
+  },
+  "K1": {
+   "T": 1.0,
+   "top_p": 1.0,
+   "memo_block_run": 2,
+   "strict_mask": true,
+   "fsm_mask": true,
+   "lambda_theory": 0.0,
+   "keynorm": true,
+   "model": "training/v2b_s11.onnx",
+   "sampler": "v1"
+  },
+  "K2": {
+   "keynorm": true,
+   "model": "training/v2b_s11.onnx",
+   "sampler": "greedy"
+  },
+  "K3": {
+   "T": 1.0,
+   "top_p": 1.0,
+   "memo_block_run": 2,
+   "strict_mask": true,
+   "fsm_mask": true,
+   "lambda_theory": 0.0,
+   "keynorm": true,
+   "model": "training/model.onnx",
+   "sampler": "v1-pseudo-logits",
+   "pseudo_peak": 5.0
+  }
+ },
+ "protocol": {
+  "split": "test_locked",
+  "prefix": "halved (evaluate protocol)",
+  "seeds": [
+   7,
+   11
+  ],
+  "rng": "Random(seed*1000+idx) per clip (decode_ab precedent); greedy K2 deterministic (seeds N/A)",
+  "logits": "real v2b logits via in-memory Identity tap (K0/K1/K2); v1 argmax + PSEUDO_PEAK=5.0 pseudo-logits (K3, decode_ab precedent)",
+  "scorer": "frozen E.score_continuation/suffix_compliance/novel_ngram_rate/longest_verbatim_run",
+  "memo_index": "absolute shipped memo_index (all arms)",
+  "box_s": 1500
+ },
+ "models": {
+  "K0-K2": "training/v2b_s11.onnx",
+  "K3": "training/model.onnx"
+ },
+ "k0_committed": {
+  "mean_compliance": 0.902,
+  "mean_suffix": 0.987,
+  "tol": 0.02
+ },
+ "baselines_same_split_test_locked": {
+  "kn": {
+   "mean_compliance": 0.7747507163878039,
+   "mean_suffix": 0.5552325581395349
+  },
+  "theory": {
+   "mean_compliance": 0.9128981357821176,
+   "mean_suffix": 1.0
+  },
+  "source": "training/baseline_scores_test_locked.json"
+ },
+ "dod_bars": {
+  "decodable_rate": 1.0,
+  "mean_new_notes_ge": 6.0,
+  "mean_suffix_ge": 0.9,
+  "verbatim_run_lt": 4,
+  "novel_n4_ge": 0.6,
+  "mean_compliance_ge": 0.9
+ },
+ "cells": {
+  "K0": {
+   "variant": "K0",
+   "keynorm": false,
+   "sampler": "v1",
+   "model": "v2b_s11.onnx",
+   "n_clips": 86,
+   "decodable_rate": 1.0,
+   "n_decodable": 86,
+   "mean_compliance": 0.902042945201576,
+   "compliance_ci95": [
+    0.884890009394544,
+    0.9178048259433077
+   ],
+   "n_compliance_scored": 86,
+   "mean_suffix": 0.9869186046511628,
+   "suffix_ci95": [
+    0.9752906976744186,
+    0.9956395348837209
+   ],
+   "n_suffix_scored": 86,
+   "novel_n4_mean": 0.6976349301284814,
+   "novel_n4_ci95": [
+    0.6568932468566602,
+    0.7366979346753652
+   ],
+   "n_novel_scored": 86,
+   "mean_new_notes": 8.0,
+   "verbatim_run_max": 1,
+   "verbatim_run_mean": 0.8953488372093024,
+   "verbatim_violations_ge4": 0,
+   "n_verbatim_scored": 86,
+   "intervention_rate": 0.2255772646536412,
+   "intervention_flips": 127,
+   "intervention_positions": 563,
+   "sampling_space_window_hit_rate": 0.0690406976744186,
+   "sampling_space_windows_hit": 285,
+   "sampling_space_windows_total": 4128,
+   "clamp_affected_clips": 0,
+   "mean_abs_shift": 0.0,
+   "frac_shift_zero": 0.0,
+   "region_steps": {
+    "early": 2614,
+    "late": 1514
+   },
+   "wall_s": 13.90143895149231,
+   "dod": {
+    "decodable_1.00": true,
+    "new_notes_ge_6.0": true,
+    "suffix_ge_0.90": true,
+    "verbatim_lt_4": true,
+    "novel4_ge_0.60": true,
+    "compliance_ge_0.90": true
+   },
+   "dod_all_green": true
+  },
+  "K1": {
+   "variant": "K1",
+   "keynorm": true,
+   "sampler": "v1",
+   "model": "v2b_s11.onnx",
+   "n_clips": 86,
+   "decodable_rate": 1.0,
+   "n_decodable": 86,
+   "mean_compliance": 0.9023814651191797,
+   "compliance_ci95": [
+    0.8855097822541977,
+    0.9183127501666213
+   ],
+   "n_compliance_scored": 86,
+   "mean_suffix": 0.9854651162790697,
+   "suffix_ci95": [
+    0.9738372093023255,
+    0.9956395348837209
+   ],
+   "n_suffix_scored": 86,
+   "novel_n4_mean": 0.6847205927848531,
+   "novel_n4_ci95": [
+    0.648105626438198,
+    0.7210772679632459
+   ],
+   "n_novel_scored": 86,
+   "mean_new_notes": 8.0,
+   "verbatim_run_max": 6,
+   "verbatim_run_mean": 1.4534883720930232,
+   "verbatim_violations_ge4": 10,
+   "n_verbatim_scored": 86,
+   "intervention_rate": 0.06666666666666667,
+   "intervention_flips": 38,
+   "intervention_positions": 570,
+   "sampling_space_window_hit_rate": 0.06807170542635659,
+   "sampling_space_windows_hit": 281,
+   "sampling_space_windows_total": 4128,
+   "clamp_affected_clips": 0,
+   "mean_abs_shift": 2.9767441860465116,
+   "frac_shift_zero": 0.06976744186046512,
+   "region_steps": {
+    "early": 2434,
+    "late": 1694
+   },
+   "wall_s": 12.453534841537476,
+   "dod": {
+    "decodable_1.00": true,
+    "new_notes_ge_6.0": true,
+    "suffix_ge_0.90": true,
+    "verbatim_lt_4": false,
+    "novel4_ge_0.60": true,
+    "compliance_ge_0.90": true
+   },
+   "dod_all_green": false
+  },
+  "K2": {
+   "variant": "K2",
+   "keynorm": true,
+   "sampler": "greedy",
+   "model": "v2b_s11.onnx",
+   "n_clips": 43,
+   "decodable_rate": 1.0,
+   "n_decodable": 43,
+   "mean_compliance": 0.888931525461028,
+   "compliance_ci95": [
+    0.8605412836291207,
+    0.9154030181127231
+   ],
+   "n_compliance_scored": 43,
+   "mean_suffix": 0.9272916666666667,
+   "suffix_ci95": [
+    0.8822619047619048,
+    0.9629464285714286
+   ],
+   "n_suffix_scored": 40,
+   "novel_n4_mean": 0.6413787032030982,
+   "novel_n4_ci95": [
+    0.587078116728669,
+    0.6930993306273243
+   ],
+   "n_novel_scored": 43,
+   "mean_new_notes": 5.627906976744186,
+   "verbatim_run_max": 10,
+   "verbatim_run_mean": 1.558139534883721,
+   "verbatim_violations_ge4": 5,
+   "n_verbatim_scored": 43,
+   "intervention_rate": null,
+   "intervention_flips": 0,
+   "intervention_positions": 0,
+   "sampling_space_window_hit_rate": 0.0943526170798898,
+   "sampling_space_windows_hit": 137,
+   "sampling_space_windows_total": 1452,
+   "clamp_affected_clips": 0,
+   "mean_abs_shift": 2.9767441860465116,
+   "frac_shift_zero": 0.06976744186046512,
+   "region_steps": {
+    "early": 0,
+    "late": 0
+   },
+   "wall_s": 13.33762788772583,
+   "dod": {
+    "decodable_1.00": true,
+    "new_notes_ge_6.0": false,
+    "suffix_ge_0.90": true,
+    "verbatim_lt_4": false,
+    "novel4_ge_0.60": true,
+    "compliance_ge_0.90": false
+   },
+   "dod_all_green": false
+  },
+  "K3": {
+   "variant": "K3",
+   "keynorm": true,
+   "sampler": "pseudo",
+   "model": "model.onnx",
+   "n_clips": 86,
+   "decodable_rate": 1.0,
+   "n_decodable": 86,
+   "mean_compliance": 0.8795933432243703,
+   "compliance_ci95": [
+    0.85896735808033,
+    0.8989913490589566
+   ],
+   "n_compliance_scored": 86,
+   "mean_suffix": 0.9738372093023255,
+   "suffix_ci95": [
+    0.9534883720930233,
+    0.9912790697674418
+   ],
+   "n_suffix_scored": 86,
+   "novel_n4_mean": 0.6897270181293488,
+   "novel_n4_ci95": [
+    0.6511688986244486,
+    0.7282916141868366
+   ],
+   "n_novel_scored": 86,
+   "mean_new_notes": 8.0,
+   "verbatim_run_max": 4,
+   "verbatim_run_mean": 0.6976744186046512,
+   "verbatim_violations_ge4": 1,
+   "n_verbatim_scored": 86,
+   "intervention_rate": 0.28688524590163933,
+   "intervention_flips": 70,
+   "intervention_positions": 244,
+   "sampling_space_window_hit_rate": 0.028585271317829456,
+   "sampling_space_windows_hit": 118,
+   "sampling_space_windows_total": 4128,
+   "clamp_affected_clips": 0,
+   "mean_abs_shift": 2.9767441860465116,
+   "frac_shift_zero": 0.06976744186046512,
+   "region_steps": {
+    "early": 2042,
+    "late": 2086
+   },
+   "wall_s": 4.826821327209473,
+   "dod": {
+    "decodable_1.00": true,
+    "new_notes_ge_6.0": true,
+    "suffix_ge_0.90": true,
+    "verbatim_lt_4": false,
+    "novel4_ge_0.60": true,
+    "compliance_ge_0.90": false
+   },
+   "dod_all_green": false
+  }
+ },
+ "box_hit": false,
+ "wall_s": 44.65801453590393
+}
