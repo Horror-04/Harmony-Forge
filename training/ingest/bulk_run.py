@@ -351,6 +351,39 @@ def dedupe_near_dup(records: list[dict], threshold: float = NEARDUP_THRESHOLD
     return kept, dropped
 
 
+# --- Prior-intake pool (cross-source near-dup) -------------------------------
+
+# Every banked intake file the probe must not duplicate: fenced corpora +
+# banked bulk probes (Mutopia-full included). Any further banked
+# bulk_*.jsonl output (sibling source) joins automatically; the in-progress
+# tag's own output is excluded so a rerun cannot near-dup against itself.
+PRIOR_INTAKE_FILES = ("mutopia.jsonl", "openscore.jsonl", "bulk_mutopia.jsonl")
+
+
+def _load_prior_intake(exclude_tag: str = "") -> list[dict]:
+    """All existing intake records for cross-source near-dup."""
+    import glob as _glob
+    names = list(PRIOR_INTAKE_FILES)
+    for path in sorted(_glob.glob(os.path.join(CORPUS_DIR, "bulk_*.jsonl"))):
+        base = os.path.basename(path)
+        if base in names or base == f"bulk_{exclude_tag}.jsonl":
+            continue
+        names.append(base)
+    recs: list[dict] = []
+    for name in names:
+        recs.extend(_load_jsonl(os.path.join(CORPUS_DIR, name)))
+    return recs
+
+
+def _annotate_match_source(drops: list[dict], pooled: list[dict]
+                           ) -> list[dict]:
+    """Name each near-dup drop's match source (cross-source pairs)."""
+    src = {r["id"]: (r.get("meta") or {}).get("source", "?") for r in pooled}
+    for d in drops:
+        d["match_source"] = src.get(d.get("match_id", ""), "?")
+    return drops
+
+
 # --- Ledger rows (real shas) -------------------------------------------------
 
 def ledger_row(*, source: str, url: str, license_spdx: str, content: bytes,
@@ -673,8 +706,7 @@ def run_source(tag: str, source: str, candidates: list,
     import tokenizer as tok
     train = _load_jsonl(os.path.join(CORPUS_DIR, "train.jsonl"))
     val = _load_jsonl(os.path.join(CORPUS_DIR, "val.jsonl"))
-    prior = (_load_jsonl(os.path.join(CORPUS_DIR, "mutopia.jsonl"))
-             + _load_jsonl(os.path.join(CORPUS_DIR, "openscore.jsonl")))
+    prior = _load_prior_intake(tag)
     heads = _head_recs()
     decodable = sum(1 for r in records
                     if tok.decode_tokens(r["ids"]) is not None)
@@ -683,8 +715,9 @@ def run_source(tag: str, source: str, candidates: list,
     _, dropped_near = dedupe_near_dup(pooled)
     near_ids = {d["id"] for d in dropped_near}
     kept = [r for r in kept_exact if r["id"] not in near_ids]
-    my_drops = [d for d in dropped_near
-                if d["id"] in {r["id"] for r in kept_exact}]
+    my_drops = _annotate_match_source(
+        [d for d in dropped_near
+         if d["id"] in {r["id"] for r in kept_exact}], pooled)
     kept_tokens = count_tokens(kept)
     outs = _write_outputs(tag, source, files, kept, dropped_exact, my_drops)
     # Ledger: one row per accepted FILE (real content-hash + quoted

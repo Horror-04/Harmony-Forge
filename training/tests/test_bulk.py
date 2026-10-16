@@ -144,6 +144,46 @@ check("gate.math",
 check("gate.miss-flag", proj["meets_1M"] is False, str(proj))
 
 
+# 7. prior-intake pool: Mutopia-full included, self-tag excluded -----------
+import glob as _glob
+import json as _json
+import tempfile as _tempfile
+_tmp = _tempfile.mkdtemp(prefix="bulk-prior-")
+_old_corpus = B.CORPUS_DIR
+B.CORPUS_DIR = _tmp
+try:
+    def _w(name, recs):
+        with open(os.path.join(_tmp, name), "w") as _f:
+            for _r in recs:
+                _f.write(_json.dumps(_r) + "\n")
+    _w("mutopia.jsonl", [_rec("fenced-mut-w00", base_ids)])
+    _w("openscore.jsonl", [_rec("fenced-os-w00", base_ids)])
+    _w("bulk_mutopia.jsonl", [_rec("mut-bwv649-w00", base_ids)])
+    _w("bulk_lieder.jsonl", [_rec("lied-schubert-w00", base_ids)])
+    _w("bulk_quartet.jsonl", [_rec("quart-mozart-w00", base_ids)])
+    _pool = B._load_prior_intake("lieder")
+    _pids = {r["id"] for r in _pool}
+    check("prior.includes-mutopia-full",
+          "mut-bwv649-w00" in _pids, str(sorted(_pids)))
+    check("prior.includes-fenced",
+          {"fenced-mut-w00", "fenced-os-w00"} <= _pids, str(sorted(_pids)))
+    check("prior.includes-sibling-bulk",
+          "quart-mozart-w00" in _pids, str(sorted(_pids)))
+    check("prior.excludes-self",
+          "lied-schubert-w00" not in _pids, str(sorted(_pids)))
+    _pooled = [dict(_rec("a-w00", base_ids),
+                    meta={"source": "openscore-lieder-full"}),
+               dict(_rec("b-w00", far_ids),
+                    meta={"source": "mutopia-full"})]
+    _drops = [{"id": "x-w00", "against": "near-dup",
+               "match_id": "b-w00", "jest": 0.97}]
+    _out = B._annotate_match_source(_drops, _pooled)
+    check("neardup.match-source",
+          _out[0].get("match_source") == "mutopia-full", str(_out))
+finally:
+    B.CORPUS_DIR = _old_corpus
+
+
 def main() -> int:
     bad = [p for p in PASS if not p[1]]
     print(f"test_bulk: {'PASS' if not bad else 'FAIL'} "
