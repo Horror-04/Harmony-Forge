@@ -106,6 +106,29 @@ def check_motivic_identity() -> None:
     exp_dn = [(PG.pull_mel(PG.scale_neighbors(p, 48, "major")[0]), d)
               for p, d in motive]
     assert seq == exp_up or seq == exp_dn, (seq, exp_up, exp_dn)
+    # Inversion == contour mirror, EXACT (crafted seed): C-E-G ascending
+    # quarters around median E (64) mirror to G-E-C (68 snaps to 67, 61
+    # snaps to 60 on the C-major tie-break-lo rule); rhythm preserved,
+    # every step flips direction.
+    inv_motive = [(60, 4), (64, 4), (67, 4)]
+    inv = PG.apply_device(list(inv_motive), "inversion", random.Random(0),
+                          48, "major")
+    assert inv == [(67, 4), (64, 4), (60, 4)], (inv, inv_motive)
+    assert [d for _, d in inv] == [d for _, d in inv_motive]
+    steps_in = [b - a for (a, _), (b, _) in zip(inv_motive, inv_motive[1:])]
+    steps_out = [b - a for (a, _), (b, _) in zip(inv, inv[1:])]
+    assert all(s > 0 for s in steps_in) and all(s < 0 for s in steps_out), (
+        steps_in, steps_out)
+    # Neighbour == step-away-and-back, EXACT (crafted seed): each quarter
+    # becomes [diatonic-neighbour 8th, main 8th] in one direction per call;
+    # short notes pass through; total duration preserved.
+    nb_motive = [(64, 4), (66, 2), (67, 4)]
+    nb = PG.apply_device(list(nb_motive), "neighbour", random.Random(7),
+                         48, "major")
+    exp_nb_up = [(65, 2), (64, 2), (66, 2), (69, 2), (67, 2)]
+    exp_nb_dn = [(62, 2), (64, 2), (66, 2), (65, 2), (67, 2)]
+    assert nb == exp_nb_up or nb == exp_nb_dn, (nb, exp_nb_up, exp_nb_dn)
+    assert sum(d for _, d in nb) == sum(d for _, d in nb_motive), nb
     # Diminution keeps pitch order, halves durations.
     dim = PG.apply_device(list(motive), "diminution", random.Random(0),
                           48, "major")
@@ -128,6 +151,7 @@ def check_records_shape_and_decode() -> None:
     seen = set()
     for r in recs:
         assert r["source"] == "procedural-smart", r["source"]
+        assert r["id"].startswith("procedural-stream-"), r["id"]
         for k in ("id", "source", "tonic", "scale", "bars", "chords",
                   "pattern", "ids"):
             assert k in r, (r.get("id"), k)
@@ -162,16 +186,24 @@ def check_entropy_above_old() -> None:
     old_pe = PG.pitch_class_entropy(old)
     new_pe = PG.pitch_class_entropy(new)
     assert new_pe > old_pe, (new_pe, old_pe)
-    # Coverage/balance direction: new spans all 15 named progs + 4 basses;
-    # old spans truncations of its single degree-loop across modes/scales
-    # (measured 12 signatures at N=400/s7 — all from one generative rule).
+    assert set(PG.bass_balance(new)["counts"]) == {"B1", "B2", "B3", "B4"}
+    assert PG.bass_balance(new)["entropy_bits"] > 0.0
+    assert PG.bass_balance(old)["entropy_bits"] == 0.0
+
+
+def check_coverage_one_rule_vs_fifteen() -> None:
+    # Headline: 1 generative rule vs 15 named loops. The old arm emits
+    # tonic-relative signatures (measured 12 at N=400/s7: truncations of
+    # its single I-V-vi-IV degree-loop across modes/scales); the new arm
+    # emits 15 named progressions. Both numbers kept with these labels.
+    n, seed = 400, 7
+    old = PG.sample_old(n, seed)
+    new = PG.sample_new(n, seed)
     new_cov = PG.progression_coverage(new)
     old_cov = PG.progression_coverage(old)
     assert new_cov["n"] == 15, new_cov
     assert new_cov["n"] > old_cov["n"], (new_cov, old_cov)
-    assert set(PG.bass_balance(new)["counts"]) == {"B1", "B2", "B3", "B4"}
-    assert PG.bass_balance(new)["entropy_bits"] > 0.0
-    assert PG.bass_balance(old)["entropy_bits"] == 0.0
+    assert old_cov["n"] == 12, old_cov  # 1 rule, 12 signatures
 
 
 def main() -> int:
@@ -181,8 +213,10 @@ def main() -> int:
     check_records_shape_and_decode()
     check_stream_determinism()
     check_entropy_above_old()
+    check_coverage_one_rule_vs_fifteen()
     print("test_procedural_gen: PASS (15 progs, 4 bass dispatch, motivic "
-          "identity, stream determinism, entropy-above-old)")
+          "identity, stream determinism, entropy-above-old, "
+          "1-rule-vs-15 coverage)")
     return 0
 
 

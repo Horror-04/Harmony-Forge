@@ -139,7 +139,9 @@
   },
   "progression_coverage_n": {
    "old": 12,
-   "new": 15
+   "new": 15,
+   "old_label": "1 generative rule (tonic-relative signatures)",
+   "new_label": "15 named loops"
   },
   "bass_entropy_bits": {
    "old": 0.0,

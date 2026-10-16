@@ -67,12 +67,17 @@ def stream(seed: int):
     """Infinite deterministic record iterator (no epoch repetition).
 
     Same seed -> same record sequence (prefix reproducible); each item is
-    a fresh seeded draw from the recipe, never a bank cycle.
+    a fresh seeded draw from the recipe, never a bank cycle. Ids are
+    namespaced ``procedural-stream-*`` so Task 3 pools can never mix
+    stream records with ``smart_proc.build`` (``procedural-smart-*``)
+    records ambiguously.
     """
     rng = random.Random(seed)
     idx = 0
     while True:
-        yield SP._smart_one(rng, idx)
+        rec = SP._smart_one(rng, idx)
+        rec["id"] = f"procedural-stream-{idx:04d}"
+        yield rec
         idx += 1
 
 
@@ -150,8 +155,12 @@ def _loop_signature(rec: dict) -> tuple:
 
 
 def progression_coverage(recs: list[dict]) -> dict:
-    """Distinct harmonic loops: named progressions when present (new arm),
-    else tonic-relative chord-loop signatures (old arm) — same function."""
+    """Distinct harmonic loops — headline: 1 generative rule vs 15 named.
+
+    New arm counts named progressions (15 loops); old arm counts
+    tonic-relative chord-loop signatures (N signatures, all emitted by one
+    generative rule). Same function, both numbers kept with these labels.
+    """
     keys = {r.get("progression") if r.get("progression") is not None
             else _loop_signature(r) for r in recs}
     named = sorted(k for k in keys if isinstance(k, str))
@@ -233,7 +242,9 @@ def write_entropy_report(path: str | None = None, n: int = 400,
             - report["old"]["pitch_class_entropy_bits"]},
         "progression_coverage_n": {
             "old": report["old"]["progression_coverage"]["n"],
-            "new": report["new"]["progression_coverage"]["n"]},
+            "new": report["new"]["progression_coverage"]["n"],
+            "old_label": "1 generative rule (tonic-relative signatures)",
+            "new_label": "15 named loops"},
         "bass_entropy_bits": {
             "old": report["old"]["bass_balance"]["entropy_bits"],
             "new": report["new"]["bass_balance"]["entropy_bits"]},
@@ -248,8 +259,8 @@ def write_entropy_report(path: str | None = None, n: int = 400,
           f"pc-ent {c['pitch_class_entropy_bits']['old']:.4f} -> "
           f"{c['pitch_class_entropy_bits']['new']:.4f} bits "
           f"(d={c['pitch_class_entropy_bits']['delta']:+.4f}); "
-          f"loops {c['progression_coverage_n']['old']} -> "
-          f"{c['progression_coverage_n']['new']}; "
+          f"loops 1-rule({c['progression_coverage_n']['old']}sigs) -> "
+          f"15-named({c['progression_coverage_n']['new']}); "
           f"bass-ent {c['bass_entropy_bits']['old']:.4f} -> "
           f"{c['bass_entropy_bits']['new']:.4f} bits")
     print(f"wrote {path}")
