@@ -1,0 +1,179 @@
+{
+ "status": "NEEDS_CONTEXT",
+ "piece_count": 41,
+ "record_count": 118,
+ "shortfall_vs_60": 19,
+ "cause": "Fresh pool holds only 58 fresh pieces (36 lieder + 13 mutopia + 9 quartet accepted into bulk jsonl; 3 further accepted files yielded 0 records at intake: lc5004731 dup-of-train, ricercare6/contrapunctusIV/D899 skips); strict surname composer-disjointness vs train/val/test_locked (Schubert/Mozart/Haydn/Beethoven already spent there) drops 17 more pieces, leaving a 41-piece max. Split not weakened: no spent composer reused, pieces not records-counted. Remedy: newly licensed composers from future intake (scale-by-licensing pivot pending).",
+ "pieces": [
+  "mut-MusAirCh",
+  "mut-TroisNouvellesEtudes_Chopin_n1",
+  "mut-UnquietThoughts",
+  "mut-belle",
+  "mut-bwv649",
+  "mut-claro-de-luna",
+  "mut-crucifixus_a_10_voce",
+  "mut-naujalis-popule-meus",
+  "mut-nmgtt",
+  "mut-rectus",
+  "os-lc4904021",
+  "os-lc4919798",
+  "os-lc4920211",
+  "os-lc4976682",
+  "os-lc4976769",
+  "os-lc4978395",
+  "os-lc4978494",
+  "os-lc4986030",
+  "os-lc4987626",
+  "os-lc5001870",
+  "os-lc5002006",
+  "os-lc5002096",
+  "os-lc5052792",
+  "os-lc5054946",
+  "os-lc5058091",
+  "os-lc5079368",
+  "os-lc5092560",
+  "os-lc5098728",
+  "os-lc5123355",
+  "os-lc5153813",
+  "os-lc5187781",
+  "os-lc5639135",
+  "os-lc5667944",
+  "os-lc5705564",
+  "os-lc5729178",
+  "os-lc5987806",
+  "os-lc6915729",
+  "os-lc6980134",
+  "os-lc6989204",
+  "os-sq7108150",
+  "os-sq8561633"
+ ],
+ "composers": [
+  "arbeau",
+  "bach",
+  "brahms",
+  "chopin",
+  "cornelius",
+  "dowland",
+  "franz",
+  "gounod",
+  "hensel",
+  "lang",
+  "lotti",
+  "mason",
+  "mendelssohn",
+  "naujalis",
+  "reichardt",
+  "root",
+  "schumann",
+  "tarrega",
+  "wolf"
+ ],
+ "forbidden_composers": [
+  "anonymous",
+  "beethoven",
+  "haydn",
+  "mozart",
+  "schubert",
+  "source:composed",
+  "source:distilled",
+  "source:procedural"
+ ],
+ "dropped_pieces": [
+  {
+   "piece": "mut-AnSylvia",
+   "records": 2,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "mut-SchubertF-D983_Juenglingswonne",
+   "records": 3,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "mut-tantum_ergo",
+   "records": 3,
+   "reason": "composer-haydn-in-refs"
+  },
+  {
+   "piece": "os-lc4981984",
+   "records": 3,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-lc4985987",
+   "records": 3,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-lc5014023",
+   "records": 1,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-lc5015499",
+   "records": 3,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-lc5121134",
+   "records": 3,
+   "reason": "composer-beethoven-in-refs"
+  },
+  {
+   "piece": "os-lc6491478",
+   "records": 3,
+   "reason": "composer-beethoven-in-refs"
+  },
+  {
+   "piece": "os-lc6838113",
+   "records": 3,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-sq10502527",
+   "records": 3,
+   "reason": "composer-beethoven-in-refs"
+  },
+  {
+   "piece": "os-sq15049456",
+   "records": 1,
+   "reason": "composer-haydn-in-refs"
+  },
+  {
+   "piece": "os-sq7075297",
+   "records": 3,
+   "reason": "composer-mozart-in-refs"
+  },
+  {
+   "piece": "os-sq7093885",
+   "records": 3,
+   "reason": "composer-mozart-in-refs"
+  },
+  {
+   "piece": "os-sq7648382",
+   "records": 1,
+   "reason": "composer-schubert-in-refs"
+  },
+  {
+   "piece": "os-sq8556926",
+   "records": 3,
+   "reason": "composer-haydn-in-refs"
+  },
+  {
+   "piece": "os-sq8806134",
+   "records": 3,
+   "reason": "composer-haydn-in-refs"
+  }
+ ],
+ "empty_hash_ids": [
+  "mut-TroisNouvellesEtudes_Chopin_n1-w04"
+ ],
+ "sources": [
+  "mutopia-full",
+  "openscore-lieder-full",
+  "openscore-quartet-full"
+ ],
+ "sealed_sha256": "006e15df59bc898e940df4971d56982fad7dfdd238ee5609a8376e2687bc26c7",
+ "carve_rule": "bulk fresh pieces NOT in train/val/test_locked/fenced/distilled; surname-composer disjoint; interval_hash melody disjoint (dedupe.py, no fork); whole pieces; own-heads/distilled excluded",
+ "never_opened": "no eval/smoke/baseline process opened sealed_test.jsonl; first opening is the v2c single run"
+}
