@@ -141,6 +141,29 @@ def check_fsm_mask_loss() -> None:
         import math
 
         assert abs(float(per) + math.log(float(renorm))) < 1e-5, (t, slot)
+    # Smoothed (eps>0) masked loss equals the manual computation:
+    # (1-eps)*NLL(true) + eps*mean(-logp over grammatical ids).
+    # (Regression: the masked mean once averaged +logp, deflating the
+    # loss and reversing the smoothing gradient.)
+    epsv = [0.05] * T
+    got = TR.masked_ce_loss(logits, tgt, keep, slot_eps=list(epsv),
+                            fsm_mask=True)
+    tot, n = 0.0, 0
+    mlogits = logits.clone()
+    for t in range(T):
+        legal_s = set(D.slot_valid_range(t % 6))
+        illegal = [v for v in range(V) if v not in legal_s]
+        mlogits[t][illegal] = float("-inf")
+    mlogp = F.log_softmax(mlogits, dim=-1)
+    for t in range(T):
+        legal = list(D.slot_valid_range(t % 6))
+        lp = mlogp[t]
+        nll = -float(lp[tgt[t].item()])
+        mean_legal = -float(lp[legal].mean())
+        tot += (1.0 - 0.05) * nll + 0.05 * mean_legal
+        n += 1
+    assert abs(float(got) - tot / n) < 1e-5, (float(got), tot / n)
+    assert float(got) > 0.0, "smoothed masked loss must stay positive"
     # Illegal ids carry EXACTLY zero gradient under the mask.
     lg = logits.detach().clone().requires_grad_(True)
     TR.masked_ce_loss(lg, tgt, keep, fsm_mask=True).backward()

@@ -344,7 +344,7 @@ def masked_ce_loss(logits, tgt, keep: list[bool], slot_eps=None,
                                  _torch.zeros((), dtype=logp.dtype,
                                               device=dev))
         denom = legal.sum(dim=-1).to(logp.dtype).clamp(min=1)
-        mean_nll = logp_safe.sum(dim=-1) / denom
+        mean_nll = -logp_safe.sum(dim=-1) / denom
     else:
         mean_nll = -logp.mean(dim=-1)
     eps = _torch.tensor(flat_eps, dtype=logp.dtype, device=dev)
