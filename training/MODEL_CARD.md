@@ -288,12 +288,48 @@
 - Full numbers: `.superpowers/sdd/2026-10-15-phase-11/task-2-report.md`
   (finalists) + `task-3-report.md` (verdict), evidence
   `training/eval_v2b_s*.json`.
-## Sampler production enablement (Phase 10 Task 4 � VERDICT: default-ON)
+
+## v2 decode-time pressure (Phase 12 — HELD on the gate, weights NOT shipped)
+
+- Grid (Task-1 frozen a priori, NO retraining, v2b read-only — sha256 12/12
+  match BEFORE/AFTER): V0 greedy-v2b control (BIT-EXACT repro 0.8650/0.7735)
+  + V1 shipped sampler Cfg (T=1.0, strict+fsm, memo-2, lam=0) + V2/V3/V4/V5
+  pressure variants + V6 v1-greedy contrast. test_locked-43, seeds {7,11},
+  frozen scorer, CPU ORT. Mechanism proven BEFORE scoring: with the hard
+  Strict mask ON, lam cannot move draws (test-proven) — predicted
+  V1=V2=V3=V5 trajectories, confirmed bit-identical empirically.
+- Locked-test DoD, winning variant V1 (86 units, 86/86 decodable):
+  decodable 1.00 (need 1.00 — PASS); mean_new_notes 8.0 (need >= 6.0 —
+  PASS); suffix 0.9869 CI [0.975,0.996] (need >= 0.90 — PASS, CI clears);
+  verbatim max 1, 0/86 violations (need <4 100% — PASS, deterministic V1
+  re-run bit-exact comp/suffix d=0.0); novel_interval_4gram 0.6976
+  CI [0.657,0.737] (need >= 0.60 — PASS). Comp 0.902 CI [0.885,0.918]
+  (informational; CI lower straddles 0.90 — recorded, not gated).
+- Baselines (frozen composed-val): KN 0.707/0.969 — V1 comp 0.902 and
+  suffix 0.9869 BEAT both. Theory-only 0.800/1.000 — V1 comp 0.902 beats
+  0.800, but suffix 0.9869 TRAILS the 1.000 ceiling by 0.0131 (CI top
+  0.996 < 1.000 — not beaten, no rounding). Ship rule (all-DoD +
+  baselines-beaten) FAILS on this single leg — no negotiation with bars.
+- VERDICT: NEEDS_CONTEXT — nothing shipped; `training/model.onnx` +
+  quant + `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+  Green-only steps (weight swap, keynorm-ON joint test, sampler
+  re-validation, ctest + pluginval) SKIPPED per the red rule.
+- NEXT LEVER (single primary): keynorm-ON joint measurement of the winning
+  V1 config (frozen v2b_s11 + flag ON, locked-test suffix delta). V2b was
+  trained WITH keynorm but all Phase-12 measurement ran keynorm-OFF; the
+  joint config is the one unmeasured delta that could close the 0.013 gap
+  to the ceiling with NO retraining. Ship iff that joint run is all-green;
+  else shelve. Deferred: strict-OFF + soft-lam late (moves draws but
+  dismantles the mask that produces the 0.987 — contradicts the mechanism
+  finding); data-mixture change (untried, no direct evidence).
+- Full numbers: `.superpowers/sdd/2026-10-16-phase-12/task-1-report.md` +
+  `task-2-report.md`, evidence `tools/task12_metrics.json`.
+## Sampler production enablement (Phase 10 Task 4 � VERDICT: default-ON)
 
 Blind A/B over frozen val (33) + test_locked (43) prefixes, halved-prefix
 convention, sampling seed 7, frozen cfg (memo_block_run=2, strict+fsm on,
 ?_theory=0, top_p=1.0; T per condition). 304 attempts, 294 shipped
-(10 greedy attempts undecodable � greedy argmax has no FSM mask; the
+(10 greedy attempts undecodable � greedy argmax has no FSM mask; the
 misses are the decodable-rate column, not a batch failure). Audio:
 `tools/batch/task4/audio/` (local-only); key `tools/task4_blind_key.json`;
 full table `tools/task4_metrics.json`; blind score sheet
@@ -313,7 +349,7 @@ regression) AND latency p95 0.09 s ? 2 s budget > default-ON.
 `StateDefaults::useSampling` flipped false > true (the single in-scope
 bool flip); greedy path untouched (flag-off bytes still pinned by the
 `[wiring]` OFF-history test). Honesty note: the novelty margin is thin
-(+0.017, CIs overlap) � the verdict rides the decisive suffix win, the
+(+0.017, CIs overlap) � the verdict rides the decisive suffix win, the
 decodability repair, and the 8.0-vs-1.82 generation yield, not the
 novelty margin. Theory-only remains the ceiling on all three quality
 columns (by construction); sampler does not claim to beat it.
