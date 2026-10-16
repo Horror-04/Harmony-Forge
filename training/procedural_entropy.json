@@ -1,0 +1,149 @@
+{
+ "n": 400,
+ "seed": 7,
+ "metric": "flat-id 8-grams (no cross-record windows); melody pitch-class entropy (bits); tonic-relative loop coverage; bass-type balance; melody duration mix",
+ "old_arm": "dataset._procedural_one (compose_base mirror)",
+ "new_arm": "procedural_gen.stream (procedural_spec.md x15/B4/motivic)",
+ "old": {
+  "records": 400,
+  "flat8_windows": 84822,
+  "flat8_distinct": 5764,
+  "flat8_rate": 0.06795406851995944,
+  "pitch_class_entropy_bits": 3.4363353054702355,
+  "progression_coverage": {
+   "n": 12,
+   "keys": [
+    "('dorian', ((0, 'min'), (7, 'min')))",
+    "('dorian', ((0, 'min'), (7, 'min'), (9, 'dim')))",
+    "('dorian', ((0, 'min'), (7, 'min'), (9, 'dim'), (5, 'maj')))",
+    "('major', ((0, 'maj'), (7, 'maj')))",
+    "('major', ((0, 'maj'), (7, 'maj'), (9, 'min')))",
+    "('major', ((0, 'maj'), (7, 'maj'), (9, 'min'), (5, 'maj')))",
+    "('mixolydian', ((0, 'maj'), (7, 'min')))",
+    "('mixolydian', ((0, 'maj'), (7, 'min'), (9, 'min')))",
+    "('mixolydian', ((0, 'maj'), (7, 'min'), (9, 'min'), (5, 'maj')))",
+    "('natural_minor', ((0, 'min'), (7, 'min')))",
+    "('natural_minor', ((0, 'min'), (7, 'min'), (8, 'maj')))",
+    "('natural_minor', ((0, 'min'), (7, 'min'), (8, 'maj'), (5, 'min')))"
+   ]
+  },
+  "bass_balance": {
+   "counts": {
+    "B1-fixed": 400
+   },
+   "entropy_bits": 0.0
+  },
+  "duration_mix": {
+   "counts": {
+    "480": 5252
+   },
+   "entropy_bits": 0.0
+  },
+  "manifest": {
+   "total": 400,
+   "prog_counts": {
+    "?": 400
+   },
+   "bass_counts": {
+    "B1-fixed": 400
+   },
+   "device_counts": {}
+  }
+ },
+ "new": {
+  "records": 400,
+  "flat8_windows": 154020,
+  "flat8_distinct": 39642,
+  "flat8_rate": 0.25738215816127774,
+  "pitch_class_entropy_bits": 3.4650326202892683,
+  "progression_coverage": {
+   "n": 15,
+   "keys": [
+    "I-IV-V-I",
+    "I-V-IV-V",
+    "I-V-vi-IV",
+    "I-VII-IV-I",
+    "I-iii-IV-V",
+    "I-vi-IV-V",
+    "IV-I-V-vi",
+    "i-II-i-VII",
+    "i-VI-III-VII",
+    "i-VII-VI-VII",
+    "i-iv-V-i",
+    "i-iv-VII-III",
+    "ii-V-I-vi",
+    "lament-8bar",
+    "vi-IV-I-V"
+   ]
+  },
+  "bass_balance": {
+   "counts": {
+    "B3": 96,
+    "B1": 109,
+    "B2": 102,
+    "B4": 93
+   },
+   "entropy_bits": 1.997312075314586
+  },
+  "duration_mix": {
+   "counts": {
+    "240": 7904,
+    "120": 2776,
+    "480": 1634
+   },
+   "entropy_bits": 1.2817254355317522
+  },
+  "manifest": {
+   "total": 400,
+   "prog_counts": {
+    "IV-I-V-vi": 30,
+    "i-VII-VI-VII": 38,
+    "I-VII-IV-I": 27,
+    "lament-8bar": 32,
+    "i-VI-III-VII": 30,
+    "i-iv-V-i": 22,
+    "ii-V-I-vi": 21,
+    "i-II-i-VII": 31,
+    "vi-IV-I-V": 28,
+    "I-V-vi-IV": 19,
+    "I-vi-IV-V": 25,
+    "I-iii-IV-V": 27,
+    "I-V-IV-V": 38,
+    "I-IV-V-I": 20,
+    "i-iv-VII-III": 12
+   },
+   "bass_counts": {
+    "B3": 96,
+    "B1": 109,
+    "B2": 102,
+    "B4": 93
+   },
+   "device_counts": {
+    "sequence": 323,
+    "diminution": 280,
+    "neighbour": 285,
+    "inversion": 282
+   }
+  }
+ },
+ "comparison": {
+  "flat8_rate": {
+   "old": 0.06795406851995944,
+   "new": 0.25738215816127774,
+   "delta": 0.1894280896413183
+  },
+  "pitch_class_entropy_bits": {
+   "old": 3.4363353054702355,
+   "new": 3.4650326202892683,
+   "delta": 0.028697314819032815
+  },
+  "progression_coverage_n": {
+   "old": 12,
+   "new": 15
+  },
+  "bass_entropy_bits": {
+   "old": 0.0,
+   "new": 1.997312075314586
+  }
+ }
+}
