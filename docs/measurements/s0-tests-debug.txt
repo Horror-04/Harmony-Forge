@@ -1,4 +1,4 @@
-﻿Test project F:/MyPrograms/Harmony Forge/build-full
+﻿Test project F:/MyPrograms/Harmony Forge/build-off
   Test   #1: major scale degrees
   Test   #2: chromatic returns -1
   Test   #3: snap tie goes up + idempotent
@@ -126,71 +126,48 @@
   Test #125: recommendation_for is empty when the report is clean
   Test #126: recommendation_for maps each issue class to one line
   Test #127: recommendation_for joins classes deterministically
-  Test #128: ChordTrack statics match the pre-edit capture
-  Test #129: delegated ChordTrack lookups equal the core helpers
-  Test #130: nudgeSelection moves pitch and time with drag bounds
-  Test #131: nudgeSelection clamps pitch and start like the drag
-  Test #132: resizeSelectionEnd snaps the end by the grid step
-  Test #133: adjustSelectionVelocity steps and clamps 1..127
-  Test #134: selection batch edits no-op without a selection
-  Test #135: PianoRoll arrows map to the same batch edits as drag
-  Test #136: PianoRoll arrows no-op without a selection
-  Test #137: ChordTrack Left/Right navigate bars and notify the editor row
-  Test #138: ChordTrack F toggles bar freeze like right-click
-  Test #139: focus ring token value is the reserved accent
-  Test #140: paintFocusRing emits 2px accent stroke pixels
-  Test #141: roll and chord surfaces opt into keyboard focus
-  Test #142: Task 2 contrast ratios meet their gates
-  Test #143: preview synth renders audible tone while held
-  Test #144: preview synth decays after noteOff
-  Test #145: verbatim run is truncated at the offending window
-  Test #146: clean generation passes through byte-identical
-  Test #147: missing index file loads nullopt and never throws
-  Test #148: memo filter is deterministic
-  Test #149: drums are untouched by the memo filter
-  Test #150: loader round-trips the binary format and rejects garbage
-  Test #151: committed training index loads (smoke)
-  Test #152: index path resolves to sibling, bare names to the working dir
-  Test #153: wired path truncates reciting model output, stays deterministic
-  Test #154: wired path without sibling index is byte-identical
-  Test #155: override with empty path filters via the working dir
-  Test #156: bare model filename resolves via the working dir
-  Test #157: sampler rejects invalid configs
-  Test #158: sampler same-seed twice-identical bytes
-  Test #159: sampler flag-off greedy path is byte-identical to the reference loop
-  Test #160: sampler tiny temperature pins the stub argmax
-  Test #161: sampler memo block run=2 turns away from recitation
-  Test #162: sampler strict mask changes top-1 only on violations
-  Test #163: sampler theory PoE flips a near-tie the prior disagrees with
-  Test #164: sampler FSM slot ranges match the shipped codec
-  Test #165: sampler FSM fuzz: >=50 prefixes all decodable
-  Test #166: sampler empty prefix starts from the count head
-  Test #167: sampler provider failure surfaces false, never throws
-  Test #168: sampler reuses the shipped memo index loader
-  Test #169: sampler runs only via the background worker, never the caller thread
-  Test #170: wiring flag OFF keeps pre-phase history bytes
-  Test #171: wiring unavailable provider falls back to greedy bytes
-  Test #172: wiring flag ON engages the sampler deterministically
-  Test #173: ort logits unavailable path never throws, fill is false
-  Test #174: ort logits corrupt sidecar is unavailable, never throws
-  Test #175: ort logits resolves the sidecar next to the weights path
-  Test #176: ort logits argmax matches greedy model.onnx on frozen + procedural prefixes
-  Test #177: ort logits loads once across fills (visible load counter)
-  Test #178: ort logits fill failure is per-call, provider stays usable
-  Test #179: keynorm canonical shift matches python over all tonics
-  Test #180: keynorm python parity vectors are byte-identical
-  Test #181: keynorm round-trip keeps drums and structure, bounds registers
-  Test #182: keynorm C-vs-G invariance on identical normalized ids
-  Test #183: keynorm chord roots shift identically with python parity
-  Test #184: keynorm chord shift clamps and preserves shape
-  Test #185: keynorm strict mask is identical in canonical space
-  Test #186: keynorm rejects bad buffers without throwing
-  Test #187: keynorm flag-off generate path is bit-identical to pre-task output
-  Test #188: keynorm flag-on echo round-trips C-major candidates exactly
-  Test #189: keynorm flag-on echo keeps G-major candidates pc-equivalent
-  Test #190: useSampling defaults true in a fresh tree
-  Test #191: useSampling setter is undoable
-  Test #192: useSampling survives an XML save/load round-trip
-  Test #193: useSampling sanitise fills a missing property with the default
+  Test #128: verbatim run is truncated at the offending window
+  Test #129: clean generation passes through byte-identical
+  Test #130: missing index file loads nullopt and never throws
+  Test #131: memo filter is deterministic
+  Test #132: drums are untouched by the memo filter
+  Test #133: loader round-trips the binary format and rejects garbage
+  Test #134: committed training index loads (smoke)
+  Test #135: index path resolves to sibling, bare names to the working dir
+  Test #136: wired path truncates reciting model output, stays deterministic
+  Test #137: wired path without sibling index is byte-identical
+  Test #138: override with empty path filters via the working dir
+  Test #139: bare model filename resolves via the working dir
+  Test #140: sampler rejects invalid configs
+  Test #141: sampler same-seed twice-identical bytes
+  Test #142: sampler flag-off greedy path is byte-identical to the reference loop
+  Test #143: sampler tiny temperature pins the stub argmax
+  Test #144: sampler memo block run=2 turns away from recitation
+  Test #145: sampler strict mask changes top-1 only on violations
+  Test #146: sampler theory PoE flips a near-tie the prior disagrees with
+  Test #147: sampler FSM slot ranges match the shipped codec
+  Test #148: sampler FSM fuzz: >=50 prefixes all decodable
+  Test #149: sampler empty prefix starts from the count head
+  Test #150: sampler provider failure surfaces false, never throws
+  Test #151: sampler reuses the shipped memo index loader
+  Test #152: sampler runs only via the background worker, never the caller thread
+  Test #153: wiring flag OFF keeps pre-phase history bytes
+  Test #154: wiring unavailable provider falls back to greedy bytes
+  Test #155: wiring flag ON engages the sampler deterministically
+  Test #156: ort logits unavailable path never throws, fill is false
+  Test #157: ort logits corrupt sidecar is unavailable, never throws
+  Test #158: ort logits resolves the sidecar next to the weights path
+  Test #159: ort logits unavailable without ORT (offline stub)
+  Test #160: keynorm canonical shift matches python over all tonics
+  Test #161: keynorm python parity vectors are byte-identical
+  Test #162: keynorm round-trip keeps drums and structure, bounds registers
+  Test #163: keynorm C-vs-G invariance on identical normalized ids
+  Test #164: keynorm chord roots shift identically with python parity
+  Test #165: keynorm chord shift clamps and preserves shape
+  Test #166: keynorm strict mask is identical in canonical space
+  Test #167: keynorm rejects bad buffers without throwing
+  Test #168: keynorm flag-off generate path is bit-identical to pre-task output
+  Test #169: keynorm flag-on echo round-trips C-major candidates exactly
+  Test #170: keynorm flag-on echo keeps G-major candidates pc-equivalent
 
-Total Tests: 193
+Total Tests: 170
