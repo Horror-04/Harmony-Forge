@@ -3,9 +3,11 @@
 """Phase 15 Task 1: engine-fresh neutral pool + Constraint-Engine transform log.
 
 Pool: deterministic theory-engine full patterns (Strict/Creative), seed-fixed,
-committed ``tools/engine_fresh_pool.jsonl``. NEVER scored on locked-43,
-never seen by any model, never used for selection: the NEUTRAL ground for
-gate-v3 delta (product reasoning) and future calibration.
+committed ``tools/engine_fresh_pool.jsonl``. Provenance-fresh,
+exact-disjoint, never-scored (never selected on, never seen by any model):
+the NEUTRAL ground for gate-v3 delta (product reasoning) and future
+calibration. Memorization-probe reuse is BARRED without a pool rebuild
+(new seed + amendment entry).
 
 Transform log: per-record application of the shipped Constraint Engine's
 harmony transforms — Strict scale-snap (mirror of
@@ -17,8 +19,9 @@ weak beats / missing chords / unknown chord types / drums untouched) —
 measuring the compliance lift the engine repairs INVISIBLY on neutral
 material. That lift grounds gate-v3 delta (amendment, not this file).
 
-Docs + pool ONLY: no model calls, no weights, no scorer/threshold changes,
-no locked-43/test_locked reads. CPU, stdlib + training/ imports.
+Docs + pool ONLY: no model calls, no weights, no scorer/threshold changes.
+Reads train/val/test_locked ID lists for exact-disjointness only (no
+scores computed, no selection signal). CPU, stdlib + training/ imports.
 
 Run (training/.venv):
   ``python tools/engine_fresh.py --n 256 --seed 15
@@ -53,10 +56,10 @@ REASONS = ("undecodable", "exact_copy")
 # Memo-index overlap is RECORDED, never filtered: raw engine idiom lives on
 # the train manifold (measured mean longest run ~55 windows), so a
 # memo-clean filter would reject ~everything and bias the pool toward
-# off-idiom material. The pool is provenance-fresh (fixed seed, exact-
-# disjoint from train/val/test_locked, never scored, never selected on) —
-# the neutral ground the transform log needs. Memorization-probe use is
-# explicitly NOT claimed (see the task report).
+# off-idiom material. The pool is provenance-fresh, exact-disjoint,
+# never-scored (never selected on, never seen by any model) — the neutral
+# ground the transform log needs. Memorization-probe reuse is BARRED
+# without a pool rebuild (new seed + amendment entry).
 
 
 # ------------------------------------------------------- engine (neutral) ---
@@ -255,6 +258,11 @@ def sha256_file(path: str) -> str:
 
 
 def build_pool(n: int, seed: int) -> tuple[list[dict], dict, dict]:
+    """Generate n provenance-fresh records (deterministic in seed).
+
+    Reads train/val/test_locked ID lists for exact-disjointness only —
+    no scores computed, no selection signal leaves this function.
+    """
     rng = random.Random(seed)
     train_ids = {tuple(r["ids"]) for r in
                  E.load_jsonl("train.jsonl")}

@@ -18,7 +18,7 @@ Any future change to these six knobs needs a new dated amendment. No
 weights / code-behavior / scorer / threshold changes ride along with this
 amendment (docs + pool only).
 
-## 2. Non-inferiority margin δ = 0.08 (product-grounded, a priori)
+## 2. Non-inferiority margin δ = 0.06 (product-grounded, a priori)
 
 δ is the compliance-points footprint of the shipped Constraint Engine's
 own invisible repairs on NEUTRAL material — gaps at or below δ are within
@@ -30,8 +30,9 @@ Derivation (neutral only — no candidate, no locked-43, no model):
 - Neutral set: `tools/engine_fresh_pool.jsonl` (N=256 deterministic
   theory-engine full patterns, Strict/Creative 128/128, seed 15,
   sha256 `0bf91eb612d3da23e556f3f2ac53dad1775a87bf5805a8f2ef55b21c2ef3b310`;
-  provenance-fresh, exact-disjoint from train/val/test_locked, never
-  scored, never selected on).
+  provenance-fresh, exact-disjoint, never-scored — never selected on,
+  never seen by any model). Memorization-probe reuse of this pool is
+  BARRED without a pool rebuild (new seed + amendment entry).
 - Transform: per-record application of the shipped harmony transforms —
   Strict scale-snap (mirror of `ScaleDatabase::snap_to_scale`,
   ties up) then strong-beat minor-2nd resolution (mirror of
@@ -42,8 +43,14 @@ Derivation (neutral only — no candidate, no locked-43, no model):
   Strict subset mean **0.0529** (flip rate 0.0530, n=128),
   Creative subset mean **0.0947** (flip rate 0.0940, n=128),
   **ALL mean 0.0738** (sd 0.0455, max 0.225, n=256).
-- A priori rule (fixed here, before any candidate scoring): δ = ALL-mean
-  lift rounded UP to 2 decimals → **δ = 0.08**.
+- A priori rule (fixed here, before any candidate scoring): δ = the
+  Strict-subset mean lift rounded UP to 2 decimals → **δ = 0.06**.
+  Restatement note (fix round 1, 2026-10-16): δ was 0.08 from the ALL-mean
+  in the as-committed text; it is restated to the Strict subset because
+  the Strict lift is the invisible-fix footprint (repairs the product
+  applies silently), while Creative-mode repairs ride on advertised
+  ornament behavior with a different product meaning. Impact: no decided
+  verdict flips — see the appendix.
 
 Forbidden-inputs statement (validity condition): δ uses only the neutral
 transform log above. No number derived from any candidate-vs-theory or
@@ -72,10 +79,9 @@ Point estimates alone never pass anything.
   Matching the anchor on both axes is not a ship.
 - (d) Absolute legs carried unchanged: decodable 1.00, mean_new_notes ≥
   6.0, verbatim run < 4 on 100%, novelty floor ≥ 0.60.
-- Anchors are re-measured every scoring run (paired by prefix). Historical
-  context only (NOT gate inputs): test_locked-43 theory-only suffix 1.000
-  / novel_n4 0.5874; shipped v1+sampler-T1.0 suffix 0.9884 / novel_n4
-  0.6589 (from committed `tools/task4_metrics.json` rows).
+- Anchors are re-measured every scoring run (paired by prefix).
+  Historical values are NOT gate inputs and live only in the non-normative
+  appendix below — the gate body contains zero locked-43 numbers.
 
 ## 4. Power math (honest: n=43 adequate a priori, trigger armed anyway)
 
@@ -86,7 +92,7 @@ statistic over n=43 prefixes:
 - SE(43) ≈ 0.0455 / √43 ≈ **0.0069**;
 - minimum detectable (two-sided 95%) ≈ 1.96 × SE ≈ **0.014**;
   one-sided non-inferiority critical distance ≈ 1.645 × SE ≈ **0.011**.
-- 0.014 << δ = 0.08 → n=43 is adequate for this δ a priori.
+- 0.014 << δ = 0.06 → n=43 is adequate for this δ a priori.
 
 Normative trigger (binding regardless of the above): at every future
 scoring, compute the empirical paired-bootstrap SE of the gate statistic.
@@ -127,3 +133,14 @@ Task-3. Their committed numbers, verdicts, and shelve decisions STAND
 unchanged as history — this amendment edits none of them; it only bars
 their reuse as gate evidence. A dated pointer addendum is appended to the
 MODEL_CARD Phase-12 section (additive only).
+
+## Appendix (non-normative — historical context, NOT gate inputs)
+
+Locked-43 historical values, cited here only so the gate body stays
+number-free: test_locked-43 theory-only suffix 1.000 / novel_n4 0.5874;
+shipped v1+sampler-T1.0 suffix 0.9884 / novel_n4 0.6589 (committed
+`tools/task4_metrics.json` rows). Nothing in §§1–8 depends on them.
+
+Restatement impact (fix round 1): the recorded V1–theory suffix gap
+0.0131 sits below BOTH the as-committed δ = 0.08 and the restated
+δ = 0.06 — no decided verdict flips either way.
