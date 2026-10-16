@@ -1,0 +1,416 @@
+[
+ {
+  "id": "mut-AnSylvia-w00",
+  "bars": 4,
+  "tokens": 265,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D891/AnSylvia/AnSylvia.ly"
+ },
+ {
+  "id": "mut-AnSylvia-w02",
+  "bars": 4,
+  "tokens": 295,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D891/AnSylvia/AnSylvia.ly"
+ },
+ {
+  "id": "mut-AnSylvia-w04",
+  "bars": 4,
+  "tokens": 325,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D891/AnSylvia/AnSylvia.ly"
+ },
+ {
+  "id": "mut-MusAirCh-w00",
+  "bars": 4,
+  "tokens": 319,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "max-leap-13",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/RootGF/MusAirCh/MusAirCh.ly"
+ },
+ {
+  "id": "mut-MusAirCh-w02",
+  "bars": 4,
+  "tokens": 331,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "max-leap-13",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/RootGF/MusAirCh/MusAirCh.ly"
+ },
+ {
+  "id": "mut-SchubertF-D899-4-Impromptu-w00",
+  "bars": 4,
+  "tokens": 331,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D899/SchubertF-D899-4-Impromptu/SchubertF-D899-4-Impromptu.ly"
+ },
+ {
+  "id": "mut-SchubertF-D899-4-Impromptu-w02",
+  "bars": 4,
+  "tokens": 313,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D899/SchubertF-D899-4-Impromptu/SchubertF-D899-4-Impromptu.ly"
+ },
+ {
+  "id": "mut-SchubertF-D899-4-Impromptu-w04",
+  "bars": 4,
+  "tokens": 349,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D899/SchubertF-D899-4-Impromptu/SchubertF-D899-4-Impromptu.ly"
+ },
+ {
+  "id": "mut-SchubertF-D983_Juenglingswonne-w00",
+  "bars": 4,
+  "tokens": 265,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D983/SchubertF-D983_Juenglingswonne/SchubertF-D983_Juenglingswonne.ly"
+ },
+ {
+  "id": "mut-SchubertF-D983_Juenglingswonne-w02",
+  "bars": 4,
+  "tokens": 277,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D983/SchubertF-D983_Juenglingswonne/SchubertF-D983_Juenglingswonne.ly"
+ },
+ {
+  "id": "mut-SchubertF-D983_Juenglingswonne-w04",
+  "bars": 4,
+  "tokens": 253,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/SchubertF/D983/SchubertF-D983_Juenglingswonne/SchubertF-D983_Juenglingswonne.ly"
+ },
+ {
+  "id": "mut-TroisNouvellesEtudes_Chopin_n1-w00",
+  "bars": 4,
+  "tokens": 211,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/ChopinFF/B130/TroisNouvellesEtudes_Chopin_n1/TroisNouvellesEtudes_Chopin_n1.ly"
+ },
+ {
+  "id": "mut-TroisNouvellesEtudes_Chopin_n1-w02",
+  "bars": 4,
+  "tokens": 247,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/ChopinFF/B130/TroisNouvellesEtudes_Chopin_n1/TroisNouvellesEtudes_Chopin_n1.ly"
+ },
+ {
+  "id": "mut-TroisNouvellesEtudes_Chopin_n1-w04",
+  "bars": 4,
+  "tokens": 271,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/ChopinFF/B130/TroisNouvellesEtudes_Chopin_n1/TroisNouvellesEtudes_Chopin_n1.ly"
+ },
+ {
+  "id": "mut-UnquietThoughts-w00",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/DowlandJ/ALS1/UnquietThoughts/UnquietThoughts.ly"
+ },
+ {
+  "id": "mut-UnquietThoughts-w02",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/DowlandJ/ALS1/UnquietThoughts/UnquietThoughts.ly"
+ },
+ {
+  "id": "mut-UnquietThoughts-w04",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/DowlandJ/ALS1/UnquietThoughts/UnquietThoughts.ly"
+ },
+ {
+  "id": "mut-belle-w00",
+  "bars": 4,
+  "tokens": 295,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/ArbeauT/Orch/belle/belle.ly"
+ },
+ {
+  "id": "mut-belle-w02",
+  "bars": 4,
+  "tokens": 295,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/ArbeauT/Orch/belle/belle.ly"
+ },
+ {
+  "id": "mut-bwv649-w00",
+  "bars": 4,
+  "tokens": 331,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV649/bwv649/bwv649.ly"
+ },
+ {
+  "id": "mut-bwv649-w02",
+  "bars": 4,
+  "tokens": 373,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV649/bwv649/bwv649.ly"
+ },
+ {
+  "id": "mut-bwv649-w04",
+  "bars": 4,
+  "tokens": 373,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV649/bwv649/bwv649.ly"
+ },
+ {
+  "id": "mut-claro-de-luna-w00",
+  "bars": 4,
+  "tokens": 397,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/TarregaF/claro-de-luna/claro-de-luna.ly"
+ },
+ {
+  "id": "mut-claro-de-luna-w02",
+  "bars": 4,
+  "tokens": 409,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/TarregaF/claro-de-luna/claro-de-luna.ly"
+ },
+ {
+  "id": "mut-claro-de-luna-w04",
+  "bars": 4,
+  "tokens": 385,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/TarregaF/claro-de-luna/claro-de-luna.ly"
+ },
+ {
+  "id": "mut-contrapunctusIV-w00",
+  "bars": 4,
+  "tokens": 139,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/contrapunctusIV/contrapunctusIV.ly"
+ },
+ {
+  "id": "mut-contrapunctusIV-w02",
+  "bars": 4,
+  "tokens": 163,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/contrapunctusIV/contrapunctusIV.ly"
+ },
+ {
+  "id": "mut-contrapunctusIV-w04",
+  "bars": 4,
+  "tokens": 169,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/contrapunctusIV/contrapunctusIV.ly"
+ },
+ {
+  "id": "mut-crucifixus_a_10_voce-w00",
+  "bars": 4,
+  "tokens": 109,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/LottiA/crucifixus_a_10_voce/crucifixus_a_10_voce.ly"
+ },
+ {
+  "id": "mut-crucifixus_a_10_voce-w02",
+  "bars": 4,
+  "tokens": 181,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "bass-mean-off",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/LottiA/crucifixus_a_10_voce/crucifixus_a_10_voce.ly"
+ },
+ {
+  "id": "mut-crucifixus_a_10_voce-w04",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "bass-mean-off;mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/LottiA/crucifixus_a_10_voce/crucifixus_a_10_voce.ly"
+ },
+ {
+  "id": "mut-naujalis-popule-meus-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/NaujalisJ/O7/naujalis-popule-meus/naujalis-popule-meus.ly"
+ },
+ {
+  "id": "mut-naujalis-popule-meus-w02",
+  "bars": 4,
+  "tokens": 199,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/NaujalisJ/O7/naujalis-popule-meus/naujalis-popule-meus.ly"
+ },
+ {
+  "id": "mut-naujalis-popule-meus-w04",
+  "bars": 4,
+  "tokens": 217,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/NaujalisJ/O7/naujalis-popule-meus/naujalis-popule-meus.ly"
+ },
+ {
+  "id": "mut-nmgtt-w00",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/MasonL/nmgtt/nmgtt.ly"
+ },
+ {
+  "id": "mut-nmgtt-w02",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "fixable-pattern",
+  "reviewer_notes": "mel-bass-cross",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/MasonL/nmgtt/nmgtt.ly"
+ },
+ {
+  "id": "mut-nmgtt-w04",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/MasonL/nmgtt/nmgtt.ly"
+ },
+ {
+  "id": "mut-rectus-w00",
+  "bars": 4,
+  "tokens": 265,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/rectus/rectus.ly"
+ },
+ {
+  "id": "mut-rectus-w02",
+  "bars": 4,
+  "tokens": 349,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/rectus/rectus.ly"
+ },
+ {
+  "id": "mut-rectus-w04",
+  "bars": 4,
+  "tokens": 403,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1080/rectus/rectus.ly"
+ },
+ {
+  "id": "mut-ricercare6-w00",
+  "bars": 4,
+  "tokens": 73,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody+Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1079/ricercare6/ricercare6.ly"
+ },
+ {
+  "id": "mut-ricercare6-w02",
+  "bars": 4,
+  "tokens": 73,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody+Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1079/ricercare6/ricercare6.ly"
+ },
+ {
+  "id": "mut-ricercare6-w04",
+  "bars": 4,
+  "tokens": 73,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "reject",
+  "reviewer_notes": "degenerate window: empty Melody+Bass (fugal exposition window; per-piece style filter did not see per-window texture)",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/BachJS/BWV1079/ricercare6/ricercare6.ly"
+ },
+ {
+  "id": "mut-tantum_ergo-w00",
+  "bars": 4,
+  "tokens": 235,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/HaydnFJ/tantum_ergo/tantum_ergo.ly"
+ },
+ {
+  "id": "mut-tantum_ergo-w02",
+  "bars": 4,
+  "tokens": 205,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/HaydnFJ/tantum_ergo/tantum_ergo.ly"
+ },
+ {
+  "id": "mut-tantum_ergo-w04",
+  "bars": 4,
+  "tokens": 193,
+  "auto": "keep (style_filter passed at intake)",
+  "reviewer_verdict": "usable",
+  "reviewer_notes": "stepwise singable melody, bass below",
+  "url": "https://raw.githubusercontent.com/MutopiaProject/MutopiaProject/master/ftp/HaydnFJ/tantum_ergo/tantum_ergo.ly"
+ }
+]
