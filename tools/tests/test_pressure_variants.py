@@ -157,43 +157,77 @@ class AdapterExactnessTest(unittest.TestCase):
 
 
 class GatingControlTest(unittest.TestCase):
+    def _bar_stub(self, bar: int, meta: dict):
+        """Stub emitting a fixed bar every note (FSM-valid, strict-safe).
+
+        Slot peaks: bar (0..15) / subbeat 0 / track 1 (Melody) / smallest
+        safe pitch at gated steps (60 fallback) / dur 4 / vel 4. Pins the
+        region trace: the model cannot jump bars under this stub, so the
+        scope under test is exact.
+        """
+        def stub(seq: list[int]) -> list[float]:
+            out = [0.0] * D.VOCAB
+            slot = (len(seq) - 1) % tok.TOKENS_PER_NOTE if seq else -1
+            if slot == 0:
+                out[bar] = 5.0
+            elif slot == 1:
+                out[0] = 5.0
+            elif slot == 2:
+                out[1] = 5.0
+            elif slot == 3:
+                allowed = D.strict_allowed_ids(seq, meta)
+                if allowed:
+                    out[min(allowed)] = 5.0
+                else:
+                    out[60] = 5.0
+            elif slot == 4:
+                out[4] = 5.0
+            elif slot == 5:
+                out[4] = 5.0
+            return out
+
+        return stub
+
     def test_late_only_prefix_never_engages_early(self):
-        """V5-ablation control (i): a prefix already at bar>=2 must trace
-        all-late, and the region run must equal the uniform-late run."""
+        """V5-ablation control (i): pinned-bar stubs prove scope.
+
+        Late stub (bar 5) from a late-start prefix traces all-late and
+        equals the uniform-late run; early stub (bar 0) from a first-note
+        prefix traces all-early and equals the uniform-early run. (A live
+        model may jump bars mid-continuation, so scope must be pinned by
+        stub — the equality then characterizes the gating exactly.)
+        """
         recs = {r["id"]: r for r in E.load_jsonl("test_locked.jsonl")}
-        target = None
-        for rec in recs.values():
-            if R.region_of(_prefix(rec["ids"])) == "late":
-                target = rec
-                break
-        self.assertIsNotNone(target, msg="need a late-start clip on corpus")
-        prefix = _prefix(target["ids"])
+        late_rec = next(r for r in recs.values()
+                        if R.region_of(_prefix(r["ids"])) == "late")
+        late_prefix = _prefix(late_rec["ids"])
+        early_prefix = _prefix(recs[FIXTURES[0]]["ids"])[:7]
+        self.assertEqual(R.region_of(early_prefix), "early")
         _, memo_id8 = E.load_memo()
-        meta = {"tonic": target["tonic"], "scale": target["scale"],
-                "chords": target["chords"], "memo_id8": memo_id8}
         early = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2, strict_mask=True,
                       fsm_mask=True, lambda_theory=0.0)
         late = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2, strict_mask=True,
                      fsm_mask=True, lambda_theory=0.5)
-
-        def peaked(seq: list[int]) -> list[float]:
-            out = [0.0] * D.VOCAB
-            out[60] = 5.0
-            return out
-
-        trace: list = []
-        region = R.RegionCfg(early=early, late=late)
-        adapter = R.make_region_adapter(peaked, region, meta, trace)
         call_cfg = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2,
                          strict_mask=True, fsm_mask=True, lambda_theory=0.0)
-        via_region = D.sample_continue(adapter, prefix, meta, call_cfg,
-                                       random.Random(SEED))
-        self.assertTrue(trace, msg="empty trace")
-        self.assertTrue(all(t == "late" for t in trace),
-                        msg=f"early engaged on late-start {target['id']}")
-        uniform_late = D.sample_continue(peaked, prefix, meta, late,
-                                         random.Random(SEED))
-        self.assertEqual(via_region, uniform_late)
+        for rec, prefix, bar, uniform in (
+                (late_rec, late_prefix, 5, late),
+                (recs[FIXTURES[0]], early_prefix, 0, early)):
+            meta = {"tonic": rec["tonic"], "scale": rec["scale"],
+                    "chords": rec["chords"], "memo_id8": memo_id8}
+            stub = self._bar_stub(bar, meta)
+            trace: list = []
+            region = R.RegionCfg(early=early, late=late)
+            adapter = R.make_region_adapter(stub, region, meta, trace)
+            via_region = D.sample_continue(adapter, prefix, meta, call_cfg,
+                                           random.Random(SEED))
+            want_region = "late" if bar >= R.LATE_BAR else "early"
+            self.assertTrue(trace, msg=f"bar={bar}: empty trace")
+            self.assertTrue(all(t == want_region for t in trace),
+                            msg=f"bar={bar}: trace leaked regions")
+            uniform_run = D.sample_continue(stub, prefix, meta, uniform,
+                                            random.Random(SEED))
+            self.assertEqual(via_region, uniform_run)
 
     def test_v2_v5_cfg_identity(self):
         """V5-ablation control (ii): V5 ('same knobs as V3-late on all bars')
