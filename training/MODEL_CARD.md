@@ -354,6 +354,51 @@ full table `tools/task4_metrics.json`; blind score sheet
 | sampler T=0.85 | 76 | 1.000 | 0.988 [0.973,1.000] (n=76) | 0.937 [0.903,0.964] (n=76) | 0.553 | 8.00 | 0.06/0.09 s |
 | theory-only | 76 | 1.000 | 1.000 [1.000,1.000] | 0.960 [0.954,0.966] | 0.000 | 8.00 | 0.00/0.00 s |
 
+## keynorm-ON joint (Phase 13 — HELD on the gate, weights NOT shipped)
+
+- Grid (Task-1 frozen a priori, NO retraining, v2b read-only — sha256 5/5
+  match BEFORE/AFTER): K0 OFF·V1·v2b control (BIT-EXACT repro
+  0.9020/0.9869) + K1 ON·V1·v2b + K2 ON·greedy·v2b + K3 ON·V1·v1.
+  test_locked-43, halved prefixes, seeds {7,11} (K0/K1/K3 n=86, K2 n=43),
+  frozen scorer, CPU ORT. Product keynorm flag untouched (OFF); no
+  C++/threshold/baseline/gate/weight changes.
+- Locked-test DoD, K1 (86 units, 86/86 decodable): decodable 1.00 (need
+  1.00 — PASS); mean_new_notes 8.00 (need >= 6.0 — PASS); suffix 0.9855
+  CI [0.9738,0.9956] (need >= 0.90 — PASS, CI clears); verbatim max 6,
+  10/86 violations (need <4 100% — FAIL); novel_interval_4gram 0.6847
+  CI [0.6481,0.7211] (need >= 0.60 — PASS). Comp 0.9024
+  CI [0.8855,0.9183] (informational; matches K0 0.9020, CIs overlap —
+  no lift). K2 fails 3 legs (comp 0.8889, new_notes 5.63, verbatim 10/5);
+  K3 fails comp (0.8796) + verbatim (4/1).
+- Baselines SAME-SPLIT (unchanged Phase-12 posture,
+  `training/baseline_scores_test_locked.json`): KN 0.7748/0.5552 — K1
+  comp 0.9024 BEATS (+0.1276), suffix 0.9855 BEATS (+0.4303). Theory-only
+  0.9129/1.000 — K1 comp 0.9024 TRAILS by 0.0105 AND suffix 0.9855
+  TRAILS by 0.0145. Ship rule (all-DoD + baselines-beaten) FAILS on the
+  verbatim leg alone (single red leg = shelve per the unchanged rule).
+- Mechanism (probed, Task-1): transpose-into-memory — the model generates
+  canonical phrase Pₙ; inverse-shift outputs Pₐ = Pₙ − shift; when Pₙ
+  textually equals memorized absolute phrase M + shift, Pₐ = M: a
+  verbatim absolute copy the during-generation block cannot see
+  (canonical max run 1 over 86 units — block perfect in its own coords;
+  absolute post-hoc max 6, 10 violations; per-span abs-hits 4–6/span vs
+  canon-hits 0–2).
+- VERDICT: NEEDS_CONTEXT (shelve) — nothing shipped; `training/model.onnx`
+  + quant + `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen.
+  Green-only steps (weight swap, keynorm flag ON, sampler re-validations,
+  drop-in) SKIPPED per the red rule — no green path exists.
+- NEXT LEVER (single primary): interval-invariant memo index
+  (canonical/interval coords for the memo check — block runs in the
+  coords the model actually generates in; absolute index stays as
+  fallback/artifact). Directly attacks the proven failure (canonical max
+  run 1 + absolute blindness) with no retraining. Deferred:
+  post-inverse-shift absolute re-check during generation (cheaper but
+  keeps the absolute basis); interval-hash memo rebuild (new artifact,
+  leakage surface).
+- Full numbers: `.superpowers/sdd/2026-10-16-phase-13/task-1-report.md`
+  (grid + mechanism) + `task-2-report.md` (verdict), evidence
+  `tools/task13_metrics.json` + `tools/task13_shas.txt`.
+
 Rule application (fixed a priori in the Task-4 brief, no tuning):
 sampler-T1.0 suffix 0.989 > greedy 0.707 (CIs disjoint) AND novelty
 0.937 > 0.920 AND decodable 1.000 ? 0.868 (strict improvement, no
