@@ -27,6 +27,7 @@ if _TRAINING not in sys.path:
 
 import decode as D
 import evaluate as E
+import keynorm as K
 import midi_writer as M
 import tokenizer as tok
 
@@ -287,6 +288,151 @@ def sample_ids_region(prefix_ids: list[int], meta: dict, region: RegionCfg,
     adapter = make_region_adapter(base, region, meta, trace)
     return D.sample_continue(adapter, list(prefix_ids), meta, call_cfg,
                              random.Random(seed), stats)
+
+
+# ---------------------------------------------------------------------------
+# Phase-13 Task-1 additive API (keynorm-ON joint measurement, no retraining).
+#
+# The lever: v2b was trained on canonical views (train.py applies
+# K.normalized_view) but every gate so far measured it on absolute pitches.
+# The hook removes our own input mismatch: normalize the prefix to canonical
+# (keynorm.py by import — the EXACT train-side functions, no fork), run the
+# frozen sampler on the canonical prefix with canonical meta, inverse-shift
+# the sampled ids back to absolute for the frozen scorer.
+#
+# Train-side identity (re-verified by tools/tests/test_keynorm_ab.py, not
+# memory): keynorm_prepare(prefix, meta_abs) yields prefix_n/meta_n with
+#   prefix_n == K.to_canonical(prefix, tonic, scale)[0],
+#   meta_n.tonic/chords == K.normalized_view(rec).tonic/chords
+# for the same record (train.py wraps records with K.normalized_view, so the
+# shifted (tonic, chords) pair the sampler sees here is the pair the model
+# saw in training).
+#
+# Memo basis (analysis owned by the task report): meta_n carries the
+# ABSOLUTE shipped memo index (the identical set object — no rebuild, no
+# canonical index). The during-generation block therefore compares
+# canonical-space windows against absolute-space 8-grams (fires ~never);
+# the DoD verbatim gate is measured post-hoc on the inverse-shifted
+# ABSOLUTE ids with the same absolute index — the space where recitation is
+# defined (corpus records are absolute). Interval novelty (novel_n4) is
+# transposition-invariant by construction.
+# ---------------------------------------------------------------------------
+
+# Frozen V1 sampler config (== WIRED_CFG: shipped sampler, T=1.0).
+V1_CFG = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2, strict_mask=True,
+               fsm_mask=True, lambda_theory=0.0)
+
+# decode_ab.py a priori value for the v1 argmax-only graph (model.onnx
+# exposes NO logits: peak PSEUDO_PEAK at the greedy id, 0.0 elsewhere).
+PSEUDO_PEAK = 5.0
+
+_SESS_CACHE: dict[str, object] = {}
+
+
+def _plain_session(model_path: str):
+    """Cached read-only ORT session (output_ids; never writes weights)."""
+    if model_path not in _SESS_CACHE:
+        _SESS_CACHE[model_path] = E.make_session(model_path)
+    return _SESS_CACHE[model_path]
+
+
+def keynorm_prepare(prefix_ids: list[int], meta_abs: dict
+                    ) -> tuple[list[int], dict, int]:
+    """Normalize a prefix + sampling meta to the canonical key.
+
+    Returns (prefix_n, meta_n, shift) with prefix_n/meta_n the exact
+    train-side view (K.to_canonical / K.shift_chords by import) and
+    meta_n.memo_id8 the SAME absolute shipped index object.
+
+    Stale-head rule (evaluate/pressure_ab protocol): halved prefixes keep
+    the FULL record's count head (token 0 != notes present). The head is
+    preserved byte-identical (so K0/K1 see the same token 0 — the ONLY
+    input difference is the keynorm body wrap); the BODY equals
+    K.to_canonical applied to the head-repaired prefix. Undo with
+    keynorm_inverse (never K.from_canonical directly on stale heads).
+    """
+    tonic = meta_abs["tonic"]
+    scale = meta_abs["scale"]
+    n = (len(prefix_ids) - 1) // tok.TOKENS_PER_NOTE
+    body = [n] + list(prefix_ids[1:1 + n * tok.TOKENS_PER_NOTE])
+    norm_body, shift = K.to_canonical(body, tonic, scale)
+    prefix_n = ([prefix_ids[0]] + norm_body[1:]) if prefix_ids else []
+    meta_n = {"tonic": tonic + shift, "scale": scale,
+              "chords": K.shift_chords(meta_abs.get("chords") or [], shift),
+              "memo_id8": meta_abs.get("memo_id8")}
+    return prefix_n, meta_n, shift
+
+
+def keynorm_inverse(sampled_ids: list[int], shift: int) -> list[int]:
+    """Inverse-shift sampled canonical ids to absolute (stale-head safe).
+
+    Head-repairs (E.finalize), inverts via K.from_canonical, then restores
+    the incoming head token so scorer-side conventions (stale head +
+    finalize) are unchanged. keynorm_inverse(keynorm_prepare(p)[0], s)
+    restores p byte-exact.
+    """
+    if not sampled_ids:
+        return []
+    fin = E.finalize(list(sampled_ids))
+    back = K.from_canonical(fin, shift)
+    return [sampled_ids[0]] + back[1:]
+
+
+def sample_ids_keynorm(prefix_ids: list[int], meta_abs: dict,
+                       cfg: D.Cfg, seed: int, model_path: str,
+                       stats: dict | None = None
+                       ) -> tuple[list[int], int]:
+    """Normalize -> frozen sampler on real v2b logits -> inverse-shift.
+
+    The sampling path is sample_ids_region with a uniform RegionCfg
+    (early == late == cfg), i.e. the identical call the K0 control makes;
+    the ONLY difference is the keynorm wrap. Deterministic in seed.
+    Returns (absolute_ids, shift).
+    """
+    prefix_n, meta_n, shift = keynorm_prepare(prefix_ids, meta_abs)
+    region = RegionCfg(early=cfg, late=cfg)
+    full_n = sample_ids_region(prefix_n, meta_n, region, seed,
+                               model_path, stats)
+    return keynorm_inverse(full_n, shift), shift
+
+
+def sample_ids_keynorm_pseudo(prefix_ids: list[int], meta_abs: dict,
+                              cfg: D.Cfg, seed: int, model_path: str,
+                              stats: dict | None = None
+                              ) -> tuple[list[int], int]:
+    """K3 path: V1 sampler around v1-greedy (argmax-only graph) in canonical
+    space -> inverse-shift. Pseudo-logits precedent: decode_ab.py /
+    render_ab_task6.py (PSEUDO_PEAK at the greedy id). Deterministic.
+    """
+    import numpy as np
+
+    prefix_n, meta_n, shift = keynorm_prepare(prefix_ids, meta_abs)
+    sess = _plain_session(model_path)
+
+    def pseudo(seq: list[int]) -> list[float]:
+        x = np.array([seq], dtype=np.int64)
+        (y,) = sess.run(["output_ids"], {"input_ids": x})
+        g = int(y[0, -1])
+        out = [0.0] * D.VOCAB
+        out[g] = PSEUDO_PEAK
+        return out
+
+    full_n = D.sample_continue(pseudo, prefix_n, meta_n, cfg,
+                               random.Random(seed), stats)
+    return keynorm_inverse(full_n, shift), shift
+
+
+def greedy_keynorm(prefix_ids: list[int], meta_abs: dict,
+                   model_path: str) -> tuple[list[int], int]:
+    """K2 path: greedy + §10 memo filter in canonical space -> inverse-shift.
+
+    Same memo basis as every other arm (absolute shipped index, passed
+    through untouched). Deterministic (argmax loop).
+    """
+    prefix_n, meta_n, shift = keynorm_prepare(prefix_ids, meta_abs)
+    sess = _plain_session(model_path)
+    full_n = E.greedy_continue(sess, prefix_n, meta_n["memo_id8"], True)
+    return keynorm_inverse(full_n, shift), shift
 
 
 def main() -> int:

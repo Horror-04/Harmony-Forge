@@ -1,0 +1,12 @@
+# Phase-13 Task-1 weight hashes (READ-ONLY gate)
+# Recorded BEFORE any scoring run (2026-10-16, branch phase-13-keynorm-joint).
+# AFTER section appended post-run; any drift = instant fail + report + stop.
+# Scope per brief: v2b_s11 (consumed by K0/K1/K2) + v1 files (model.onnx
+# consumed by K3; .logits/.quant sidecars hashed as drift witnesses, not inputs).
+
+## BEFORE
+FD0BD82F73E6B2EB4B8C4F43AAB5382A325B142DB8EE5C749D3C685C17A030A0  training/v2b_s11.onnx
+53BCA5023038F9EC4A45AA2678CFF931A16B443ACDFB98D98E9342ECA03A24C7  training/v2b_s11.quant.onnx
+FC29E74520A03D849ADE6DBB80DDA007985D701411321A22004BBDC47926F3C1  training/model.onnx
+70961F32A8DEBE023924C5A54290F5E3946B95776112C9C776D88AE2BED58823  training/model.logits.onnx
+8D39F019AC2F173C80B98639A569CBF3520E142B2889092371D1F93A9896D5FE  training/model.quant.onnx
