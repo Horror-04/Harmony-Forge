@@ -458,3 +458,50 @@ columns (by construction); sampler does not claim to beat it.
 - Full numbers: `.superpowers/sdd/2026-10-16-phase-14/task-1-report.md`
   (measurement) + `task-2-report.md` (verdict), evidence
   `tools/interval_memo_report.json`.
+
+## gate v3 adoption + v2b evidence verdict (Phase 15 — VERDICT: GO to v2c/data-scale)
+
+- Instrument (Tasks 1–2, weights untouched): gate-v3 amendment committed
+  BEFORE any scoring
+  (`docs/superpowers/plans/2026-10-16-gate-v3-amendment.md`) — frozen
+  WIRED_CFG (T=1.0, top_p=1.0, memo_block_run=2, strict+fsm, lam=0);
+  δ = 0.06 (Strict-subset invisible-repair footprint, a priori); paired
+  per-prefix gate with 95% bootstrap CIs; Pareto strict-improvement;
+  shipped-v1+sampler anchor + blind-gated ship; sealed-split trigger
+  (1.96·SE > δ → INCONCLUSIVE, raise n never δ); looks discipline (row
+  #28 BEFORE scoring, METRICS 0→1; phases 9/11–14 marked EXPLORATORY,
+  history unchanged).
+- Evidence (one split, test_locked-43 dev, seeds {7,11}, frozen scorer,
+  559/559 units, `tools/step1_table.json`): v2b+sampler suffix 0.9869
+  [0.9679,1.0000] / novel4 0.6976 [0.6378,0.7637] vs v1+sampler
+  0.9811/0.6801 (wash confirmed) vs theory 1.0000/0.5874. Paired legs:
+  v2b−theory @suffix −0.0131, lo −0.0288 (> −0.06 — PASS); v2b−v1
+  @novel4 +0.0176, lo −0.0027 (> −0.06 — PASS); Pareto point-strict on
+  novelty (+0.0176) and suffix vs v1 (+0.0058, lo −0.0042 — PASS).
+  Absolute legs all green: dec 1.00, new_notes 8.0, verbatim max 1
+  (0 violations), novelty floor. Power to spare: 1.96·SE 0.0162/0.0247
+  << 0.06 — sealed trigger NOT tripped.
+- Honesty note: the novelty win is thin (+0.0176, CI straddles 0) — the
+  GO rides non-inferiority with power to spare plus absolute-leg
+  cleanliness, not the margin (Phase-10 posture). Discounted, not legs:
+  rand_theory novelty +0.27 @suffix 1.0 = noise ceiling (discounted as
+  quality evidence); oracle suffix 0.8945 [0.8518,0.9353] < theory 1.000
+  = anchor-exceeds-human note, not a fail; DF 3/10 k-eidetic + canonical
+  120/120 catch / 256/256 FP carried as monitoring (gate verbatim leg
+  green 0/86; detector diagnostic only). NLL v2b 0.539 < KN 0.967
+  supporting.
+- VERDICT: GO — every gate-v3 leg passes, trigger untripped. Nothing
+  shipped here (docs-only phase); `training/model.onnx` + quant +
+  `checkpoints/best.pt` + `memo_index.bin` all still v1-frozen. Blind
+  listening (v2b vs v1) outstanding, async-human — gates SHIP, subsumed
+  by the v2c ≥60-pair A/B unless the controller pairs them.
+- WORK ORDER (v2c/data-scale seed): (1) sealed trigger armed (1.96·SE >
+  0.06 → INCONCLUSIVE → sealed split, n 43→86, δ never moves);
+  (2) data recipe pointer — Sonnet Step 3: auto-scale ≥10–30M tokens,
+  per-file manifest (licensed-clean, R1; v2c plan pins exact recipe
+  pre-training); (3) single boxed run (locked-43, seeds {7,11}, frozen
+  scorer + WIRED_CFG, looks row BEFORE, paired CIs, same-run anchors);
+  (4) blind A/B ≥60 pairs vs v1+sampler, non-loss rule, gates ship;
+  (5) DF-audit carried as monitoring.
+- Full numbers: `.superpowers/sdd/2026-10-16-phase-15/task-2-report.md`
+  (evidence) + `task-3-report.md` (verdict).
