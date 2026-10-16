@@ -336,6 +336,13 @@
   `task-2-report.md` + `task-3-report.md`, evidence
   `tools/task12_metrics.json` +
   `training/baseline_scores_test_locked.json`.
+
+> Gate-v3 amendment pointer (2026-10-16, ADDITIVE ONLY — no number,
+> verdict, or shelve decision above is altered): for gate-v3 purposes
+> this phase is EXPLORATORY (uncounted-looks era; see
+> `docs/superpowers/looks-log.md` backfill and
+> `docs/superpowers/plans/2026-10-16-gate-v3-amendment.md` §8). Its
+> numbers stand as committed history, barred from reuse as gate evidence.
 ## Sampler production enablement (Phase 10 Task 4 � VERDICT: default-ON)
 
 Blind A/B over frozen val (33) + test_locked (43) prefixes, halved-prefix
