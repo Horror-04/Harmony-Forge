@@ -418,7 +418,10 @@ def mutopia_piece_candidates() -> list[str]:
         stem = os.path.basename(d)
         pick = next((f for f in files
                      if f.rsplit("/", 1)[-1] == stem + ".ly"), files[0])
-        out.append(pick)
+        # Strip the repo-root "ftp/" so paths follow the M.CANDIDATES
+        # convention (M.RAW_BASE and M.midi_url_for add it themselves).
+        assert pick.startswith("ftp/")
+        out.append(pick[len("ftp/"):])
     return out
 
 
