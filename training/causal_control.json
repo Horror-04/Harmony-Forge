@@ -1,0 +1,79 @@
+{
+ "phase": "17-task-3",
+ "arch": "small",
+ "seed": 7,
+ "keynorm": true,
+ "penalty": 0.0,
+ "dropout": 0.15,
+ "weight_decay": 0.1,
+ "label_smoothing": 0.05,
+ "goldfish_k": 4,
+ "goldfish_width": 8,
+ "pitch_drop_rate": 0.1,
+ "batch": 16,
+ "stage1_epochs": 8,
+ "stage1_lr": 0.0005,
+ "stage1_smart_frac": 0.5,
+ "stage2_max": 6,
+ "stage2_lr_hi": 0.0001,
+ "stage2_lr_lo": 1e-05,
+ "stage2_min_ep": 20,
+ "stage2_patience": 5,
+ "epoch_recs": 288,
+ "smart_supply": "fixed-bank",
+ "bank_size": 144,
+ "bank_seed_base": 31000,
+ "stream_seed_base": 71000,
+ "max_exposure_per_record": null,
+ "max_composed_epochs": null,
+ "early_stop_patience": 0,
+ "early_stop_min_epochs": 20,
+ "fsm_mask_train": false,
+ "crop_augment": false,
+ "cv": {
+  "pool": [
+   "train.hc",
+   "val.hc"
+  ],
+  "n_folds": 5,
+  "group_rule": "strip -wNN/-kNN; head-keys merge; interval-twin super-groups merged pre-assignment",
+  "assignment": "round-robin over sorted super-groups"
+ },
+ "arms": {
+  "CTRL": {},
+  "A": {
+   "smart_supply": "stream",
+   "max_exposure_per_record": 1
+  },
+  "B": {
+   "max_composed_epochs": 10,
+   "early_stop_patience": 2,
+   "early_stop_min_epochs": 2
+  },
+  "C": {
+   "fsm_mask_train": true
+  },
+  "D": {
+   "goldfish_k": 2,
+   "crop_augment": true
+  }
+ },
+ "gen": {
+  "budget_tokens": 48,
+  "memo_filter": false,
+  "greedy": true,
+  "engine_fresh_n": 128,
+  "engine_fresh_seed": 16
+ },
+ "rule": {
+  "nll_min_gain_nats": 0.02,
+  "memo_min_reduction_pp": 0.05,
+  "ci_level": 0.95,
+  "bootstrap_resamples": 1000,
+  "bootstrap_seed": 7,
+  "go_needs": [
+   "nll",
+   "memo"
+  ]
+ }
+}

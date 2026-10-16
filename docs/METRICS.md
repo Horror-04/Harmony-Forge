@@ -61,7 +61,7 @@ review-era "20+" was a floor, superseded by reconstruction).
 |---|---|
 | past committed locked-43 runs (backfilled, exact rows) | 27 |
 | past unlogged local looks (AB renders, listening, rescores) | uncounted |
-| forward runs since 2026-10-16 (this table + looks-log) | 1 |
+| forward runs since 2026-10-16 (this table + looks-log) | 2 |
 
 Frozen sampler (verbatim `WIRED_CFG` from `tools/render_model.py` — read,
 not re-derived; any future change needs a new amendment):
