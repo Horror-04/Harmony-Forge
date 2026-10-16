@@ -167,6 +167,26 @@ COMPOSER_DEATH: dict[str, int] = {
     "delius": 1934, "elgar": 1934, "moeran": 1950, "nielsen": 1931,
     "muller-hermann": 1941, "andree": 1929, "janacek": 1928,
     "indy": 1931, "duparc": 1933, "krzyzanowska": 1999,
+    # Lieder-corpus moderns (high-confidence death years; songs may be
+    # pre-1929-published but per-file publication evidence is unavailable
+    # at bulk scale -> refuse on doubt, quantified as known yield loss):
+    "warlock": 1930, "chaminade": 1944, "gonzaga": 1935,
+    "somervell": 1934, "webern": 1945, "mahler": 1911,
+    "burleigh": 1949, "coleridge-taylor": 1912, "davies": 1941,
+    "mackenzie": 1935, "parry": 1918, "gurney": 1937, "bantock": 1946,
+    "jacobs-bond": 1946, "cowen": 1935, "german": 1936,
+    "poldowski": 1932, "bonis": 1937, "sullivan": 1900, "tegner": 1943,
+    "rootham": 1938, "hopekirk": 1945, "joplin": 1917,
+    "liliuokalani": 1917, "satie": 1925, "chabrier": 1894,
+    "viardot": 1910, "stanford": 1924, "fanny": 1847,
+    "holmes": 1903, "lang": 1880, "franz": 1892, "kinkel": 1858,
+    "reichardt": 1826, "cornelius": 1874,
+    "bizet": 1875, "schroter": 1802,
+    "boulanger": 1918, "parratt": 1924, "butterworth": 1916,
+    "chausson": 1899, "munktell": 1919, "paradis": 1824, "wagner": 1883,
+    "barnby": 1896, "bishop": 1855, "cellier": 1891, "corder": 1927,
+    "farrenc": 1875, "shield": 1829, "wood": 1926, "le-beau": 1927,
+    "netzel": 1927, "gail": 1819, "thys": 1909,
 }
 
 
@@ -194,6 +214,34 @@ def composer_gate(composer_dir: str) -> tuple[bool, str]:
 IDIOM_LO, IDIOM_HI = 21, 108  # piano range; voices must live inside it
 
 
+def _check_texture(satb: dict) -> tuple[bool, str]:
+    """Homophonic 4-voice texture for picked top/bottom lines.
+
+    Same bars/density bars as the shared mutopia check, but monophony is
+    onset-based (no two events share a start_sub within a voice) rather
+    than span-based: picked top/bottom lines legitimately carry legato
+    overlap (a sustained note ringing under the next onset), which is
+    still homophonic texture. True polyphony (two pitches, one onset)
+    cannot occur in picked lines -- shared onsets across *events* flag
+    unmerged double-stops / corrupt picks.
+    """
+    for v in ("soprano", "alto", "tenor", "bass"):
+        evs = satb.get(v)
+        if not evs:
+            return False, f"skip: voice {v!r} missing or empty"
+        starts = [e["start_sub"] for e in evs]
+        if len(set(starts)) != len(starts):
+            return False, f"skip: voice {v!r} polyphonic (shared onset)"
+    bars = satb.get("bars", 0)
+    if bars < J.WINDOW_BARS:
+        return False, f"skip: only {bars} bars (< {J.WINDOW_BARS})"
+    for v in ("soprano", "alto", "tenor", "bass"):
+        if len(satb[v]) / max(1, bars) > M.MAX_NOTES_PER_BAR:
+            return False, (f"skip: voice {v!r} too dense "
+                           f"({len(satb[v]) / bars:.1f} notes/bar)")
+    return True, "ok: homophonic 4-voice texture"
+
+
 def style_filter(satb: dict, instrument_tag: str | None = None
                  ) -> tuple[bool, str]:
     """Keep/discard one SATB mini-score.
@@ -206,7 +254,7 @@ def style_filter(satb: dict, instrument_tag: str | None = None
     ok_i, why_i = M.check_instrument(instrument_tag)
     if not ok_i:
         return False, why_i
-    ok_h, why_h = M.check_homophonic(satb)
+    ok_h, why_h = _check_texture(satb)
     if not ok_h:
         return False, why_h
     for v in ("soprano", "alto", "tenor", "bass"):
