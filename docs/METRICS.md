@@ -49,6 +49,35 @@ date,seed,params,kept,score,notes
   `kept`: 1 (keep) or 0 (drop). `score`: mean of the three 1–5 ratings.
   `notes`: free text, may include `ttul=HH:MM:SS`.
 
+## Phase-15 looks counter + frozen sampler + dev-declaration (Task 1)
+
+Itemized log: `docs/superpowers/looks-log.md` (append-only; one row per
+locked-43 scoring BEFORE running — no row = the run did not happen).
+Backfill: **27 committed runs** reconstructed from committed eval/AB
+JSONs + uncounted locals on top (accountable past total **27+**; the
+review-era "20+" was a floor, superseded by reconstruction).
+
+| counter | value |
+|---|---|
+| past committed locked-43 runs (backfilled, exact rows) | 27 |
+| past unlogged local looks (AB renders, listening, rescores) | uncounted |
+| forward runs since 2026-10-16 (this table + looks-log) | 0 |
+
+Frozen sampler (verbatim `WIRED_CFG` from `tools/render_model.py` — read,
+not re-derived; any future change needs a new amendment):
+
+```python
+WIRED_CFG = D.Cfg(T=1.0, top_p=1.0, memo_block_run=2, strict_mask=True,
+                  fsm_mask=True, lambda_theory=0.0)
+```
+
+Dev-declaration (binding from 2026-10-16, gate-v3 amendment): locked-43 /
+test_locked-43 is DEV from here. Past phases scored on it are exploratory
+for gate-v3 purposes (numbers and shelve-verdicts stand as committed
+history, never edited). Future ship evidence needs the sealed split
+(amendment clause) once the power trigger fires; until then n=43 with the
+paired non-inferiority rule.
+
 ## Phase-10 sampler A/B decision protocol (Task 4)
 
 Render: `python tools/render_batch.py --out tools/batch/task4/audio
