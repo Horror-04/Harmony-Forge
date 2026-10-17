@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import sys
 
@@ -25,6 +26,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
 _TRAINING = os.path.join(_REPO, "training")
 _GOLDEN = os.path.join(_REPO, "tests", "golden", "slot_bitmap.txt")
+_MANIFEST = os.path.join(_REPO, "tests", "golden", "manifest.json")
 
 sys.path.insert(0, _TRAINING)
 
@@ -71,11 +73,50 @@ def _read_golden() -> list[str]:
     return rows
 
 
+def _frozen_mark() -> tuple[bool, str]:
+    """Read the frozen mark from tests/golden/manifest.json.
+
+    Returns (frozen, note). Missing/unparseable manifest == not marked
+    (fail-open would hide a deleted mark, so callers treat that as a
+    distinct error, never as consent to rewrite).
+    """
+    try:
+        with open(_MANIFEST, encoding="utf8") as f:
+            man = json.load(f)
+    except (OSError, ValueError) as e:
+        return False, f"manifest unreadable: {e}"
+    if man.get("frozen") is True:
+        return True, str(man.get("never_regenerate") or "frozen: true")
+    return False, "manifest does not mark the golden frozen"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--write", action="store_true",
                     help="rewrite the golden file (FROZEN goldens: never)")
+    ap.add_argument("--force-frozen-rewrite", action="store_true",
+                    help="S4b-only escape hatch: rewrite even when the "
+                         "manifest marks the golden frozen (requires "
+                         "--reason; the S4a gate still fails on any regen)")
+    ap.add_argument("--reason", default="",
+                    help="human reason recorded when --force-frozen-rewrite "
+                         "is used")
     args = ap.parse_args()
+    if args.write:
+        # S2b.0 NEVER-REGENERATE mechanism (1): refuse BEFORE importing any
+        # training module or touching the golden file, so the refusal is
+        # fast, dependency-free, and cannot partially rewrite.
+        frozen, note = _frozen_mark()
+        if "unreadable" in note:
+            print(f"update_goldens --write: REFUSED ({note})")
+            return 2
+        if frozen and not (args.force_frozen_rewrite and args.reason):
+            print("update_goldens --write: REFUSED - golden is FROZEN "
+                  f"({_MANIFEST}: {note}). Not rewritten.")
+            return 2
+        if frozen:
+            print("update_goldens --write: FORCED frozen rewrite "
+                  f"(reason: {args.reason})")
     ranges_rows = _bitmap_from_ranges()
     decode_rows = _bitmap_from_tokenizer_decode()
     if ranges_rows != decode_rows:
