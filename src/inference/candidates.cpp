@@ -4,30 +4,16 @@
 // mode post-processing. See candidates.h. Never throws; pure C++20, no JUCE.
 #include "candidates.h"
 
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <cstdint>
-#include <cstdio>
-#include <memory>
-#include <mutex>
 #include <random>
 #include <vector>
 
-#include "constraints.h"
-#include "core/model/pattern_ops.h"
 #include "core/music/chord.h"
 #include "detail/candidate_helpers.h"
-#include "core/music/ranges.h"
 #include "core/music/scale.h"
-#include "core/serialization/tokenizer.h"
 #include "core/serialization/vocab_layout.gen.h"
 #include "inference_runner.h"
 #include "keynorm.h"
 #include "memo_filter.h"
-#include "onnx_runner.h"
-#include "ort_logits.h"
-#include "sampler.h"
 
 namespace hf::infer {
 namespace {

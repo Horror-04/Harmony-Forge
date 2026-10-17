@@ -51,7 +51,7 @@
     "scale_or_major": {
       "sig": "std::vector<int> scale_or_major",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 95, "end": 99},
-      "new": {"path": "src/inference/candidates.cpp", "start": 72, "end": 76},
+      "new": {"path": "src/inference/candidates.cpp", "start": 58, "end": 62},
       "allow": []
     },
     "material_from_runner": {
@@ -105,49 +105,49 @@
     "fnv1a": {
       "sig": "uint64_t fnv1a",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 47, "end": 54},
-      "new": {"path": "src/inference/candidates.cpp", "start": 46, "end": 53},
+      "new": {"path": "src/inference/candidates.cpp", "start": 32, "end": 39},
       "allow": []
     },
     "mix64": {
       "sig": "uint64_t mix64",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 56, "end": 59},
-      "new": {"path": "src/inference/candidates.cpp", "start": 55, "end": 58},
+      "new": {"path": "src/inference/candidates.cpp", "start": 41, "end": 44},
       "allow": []
     },
     "stream_seed": {
       "sig": "uint32_t stream_seed",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 61, "end": 69},
-      "new": {"path": "src/inference/candidates.cpp", "start": 60, "end": 68},
+      "new": {"path": "src/inference/candidates.cpp", "start": 46, "end": 54},
       "allow": []
     },
     "enforce_caps": {
       "sig": "void enforce_caps",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 367, "end": 386},
-      "new": {"path": "src/inference/candidates.cpp", "start": 92, "end": 111},
+      "new": {"path": "src/inference/candidates.cpp", "start": 78, "end": 97},
       "allow": []
     },
     "generate_candidates_impl": {
       "sig": "std::array<core::Pattern, 4> generate_candidates_impl",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 522, "end": 591},
-      "new": {"path": "src/inference/candidates.cpp", "start": 123, "end": 192},
+      "new": {"path": "src/inference/candidates.cpp", "start": 109, "end": 178},
       "allow": []
     },
     "progression_for_params": {
       "sig": "core::ChordProgression progression_for_params",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 595, "end": 619},
-      "new": {"path": "src/inference/candidates.cpp", "start": 200, "end": 224},
+      "new": {"path": "src/inference/candidates.cpp", "start": 186, "end": 210},
       "allow": []
     },
     "generate_candidates_with_runner": {
       "sig": "std::array<core::Pattern, 4> generate_candidates_with_runner",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 621, "end": 624},
-      "new": {"path": "src/inference/candidates.cpp", "start": 226, "end": 229},
+      "new": {"path": "src/inference/candidates.cpp", "start": 212, "end": 215},
       "allow": []
     },
     "generate_candidates": {
       "sig": "std::array<core::Pattern, 4> generate_candidates",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 626, "end": 628},
-      "new": {"path": "src/inference/candidates.cpp", "start": 231, "end": 233},
+      "new": {"path": "src/inference/candidates.cpp", "start": 217, "end": 219},
       "allow": []
     }
   }
