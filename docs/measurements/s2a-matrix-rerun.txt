@@ -1,0 +1,50 @@
+# S2a full-matrix re-run evidence (2280 cells, zero true drift)
+
+Code under test: commit 065f1f5 (canonical slot_valid_range in
+training/tokenizer.py; thin aliases in decode.py / baselines.py).
+No src/training changes since that commit; this file is evidence only.
+
+## 1. Banked 1896-row re-run (adopted live worker, Temp/opencode/s2a_matrix_rerun.py)
+
+  banked rows: 1896
+  DONE 1896 rows in 157s: 960 ok-identical, 32 ERROR-identical,
+  904 MISMATCH, v2b-leg cells: 32
+  (raw log: Temp/opencode/s2a_matrix.log; ERROR text never compared)
+
+All 904 mismatches are banked-ERROR -> now-ok. ZERO banked-ok cells differ.
+
+  - 960 ok-identical: every banked-ok row byte-identical post-S2a,
+    incl. model leg (S0 OFF/ON 64, OFF/OFF 32, ON/OFF 32, v2b ON/ON 32).
+  - 32 ERROR-identical: model (ON,ON) S0-model tap-refusal rows, still ERROR.
+  - 904 ex-ERROR now-ok, classified (Temp/opencode/s2a_sibcheck.py):
+    - 512 Creative render_midi (seeds 0-31, error-duplicate copies):
+      fresh outputs byte-identical to the banked-ok duplicate same-key rows.
+    - 384 Strict alias render_midi (OFF/ON, ON/OFF, ON/ON, seeds 0-31):
+      fresh outputs byte-identical to the banked Strict/OFF/OFF siblings
+      (alias property preserved). Sibling check: 896/896 identical, 0 fail.
+    - 8 render_model (OFF,ON) seeds 17,27,30,36,50,52,62,67: banked ERROR at
+      S0 ( ran under system Python314 without deps -> CalledProcessError );
+      now deterministically ok through the unified code path, same path as
+      the 64 identical S0-model sibling rows. Fresh SHAs (bytes):
+      17:7ed717b3..bcc59 (339) 27:b50e08b4..54791 (338) 30:bfc9ae40..62086 (338)
+      36:527a08a3..e7e7c6 (338) 50:04409128..5b2d641 (340) 52:44704fae..22cf0 (342)
+      62:0dab3c18..baebd (338) 67:76ecc438..e880c5 (341)
+
+## 2. Pre-drop alias batch, 384 rows (Temp/opencode/s2a_alias_rerun.py)
+
+The 384 Strict keynorm/sampling-ON ok rows dropped in cf4e094, re-run from
+cf4e094^ banked values with identical argv:
+
+  DONE 384 alias rows in 10s: 384 identical, 0 MISMATCH
+
+## 3. Suites (fresh, this session)
+
+  pytest training/tests + tools/tests: 70 passed, 10 subtests passed
+  ctest build-full (Release): 195/195, 100% passed
+  ctest build-off (Debug): 172/172, 100% passed
+  bitmap: tests/golden/slot_bitmap.txt sha d66faabf (pinned by tests)
+
+## 4. Totals
+
+Cells executed: 1896 + 384 = 2280. Banked-ok cells differing: 0.
+Drift: NONE. S2a unification is output-identical to baseline.
