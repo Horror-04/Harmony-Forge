@@ -13,8 +13,8 @@
 
 namespace hf::infer {
 
-// Runtime §10 memo-filter (SPEC §10 "фильтр запоминания (защита от
-// плагиата)"): the eval-time memo-ban (`training/evaluate.py`, window 8
+// Runtime Sec.10 memo-filter (SPEC Sec.10 "memorization filter (protection
+// against plagiarism)"): the eval-time memo-ban (`training/evaluate.py`, window 8
 // flat codec ids, early-stop before completing a run of >= 4 consecutive
 // memorized windows) enforced on the shipped C++ generation path.
 //
