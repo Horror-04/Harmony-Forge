@@ -17,7 +17,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 | 4 sseed-of-other (:497, known headwind) | <2 min + test authoring | 4 (5s+7s+5s+final) |
 | 5a transforms↔modes | <1 min + probe | 2 (4s+5s) |
 | 5b mode↔denormalize (flag-ON probe) | <1 min | 1 (6s incr.) |
-| 6 stream 3-i | _pending_ | _pending_ |
+| 6 stream 3-i | <1 min | 1 (5s incr.) |
 
 ## Results
 
@@ -29,7 +29,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 | 4 | `sseed` of candidate `(i+1)%4` (:491-492) | NO red (unreachable, SITE=0); seed-sensitivity pinned on direct ENTER path instead | ALL SIX GREEN (baseline-identical counts); cube 0 moves (sampling→greedy alias intact) → CHARACTERIZATION `test_s30_sampler_seed.cpp` (ff2dd75): green-clean 8/8, red-corrupted 7/8 | CLOSED BY NEW TEST |
 | 5a | swap :572/:573 (transform↔mode) | units green; cands[0]-cube silent (idx0 untouched); all-4 probe moves | PREDICTION WRONG ON UNITS — RED: test_candidates "Strict compliance holds across keys and modes" (dorian Catchy 0.975 — displaced trailing conflict-resolution) + test_sampler wiring pins (4 asserts); render spot 0/8 (cands[0] blind by construction); all-4 probe: Strict-idx1, Creative-idx1/2/3, Experimental-idx1 MOVED | GUARDED |
 | 5b | swap :573/:569 (mode↔denormalize), flag-ON probe | exactly G-major pc-equivalence (+ 5a-echo on flag-OFF, per pre-run analysis); flag-OFF cube silent | EXACTLY that: keynorm ONLY :338 (41 asserts, C-major :311 silent = shift-0); candidates :74 + sampler :699 (5a-echo pair); arrangement/tokenizer/memo green; render spot 0/16 (tonic-60 blind — G-major unit test is the probe) | GUARDED |
-| 6 | `stream_seed(p,i)`→`(p,3-i)` (:533) | units green; ALL MIDI cube legs move | _pending_ | _pending_ |
+| 6 | `stream_seed(p,i)`→`(p,3-i)` (:533) | wiring-pins red; candidates/keynorm/tokenizer/memo green; ALL MIDI cube legs move | RED: test_sampler wiring pins (12/12 pinned asserts); GREEN rest (incl. motif — no collision this content); cube spot 20/20 MOVED | GUARDED |
 
 ## Characterization tests added
 
