@@ -1,11 +1,17 @@
 # Harmony Forge invariants
 
-Every invariant below binds to test names verified present in `ctest -N`
-(build-full/Release, 193 tests; build-off/Debug, 170 tests) and to the CI
-job `build-test-validate` (`.github/workflows/ci.yml`). No aspirational
-references: a binding names only tests and jobs confirmed to exist.
+Binding granularity is BINARY: each invariant binds to ctest binary
+(test-executable) names, not to individual case strings. A binary is
+cited only after verifying its `.exe` exists AND its cases register:
+build-full/tests/Release holds all 9 cited binaries;
+build-off/tests/Debug holds 8 of 9 (test_preview_synth is plugin-ON
+gated and has no off build -- stated, not fudged). Suite totals
+re-verified via `ctest -N`: 193 tests (build-full/Release), 170 tests
+(build-off/Debug). Per invariant, one "Spot-check" line names 1-2 exact
+Catch2 case strings personally verified present in BOTH suites'
+`ctest -N` (numbers are the observed full/off test numbers).
 
-CI job for all five: `build-test-validate` (runs-on windows-2022).
+CI job for all five: `build-test-validate` (`.github/workflows/ci.yml`).
 Relevant steps: `Test` (`ctest --test-dir build -C Release
 --output-on-failure`), `Determinism proof (render_midi byte-identity)`
 (seed-7 double render + `fc /b`), `Validate VST3 (strictness 5)`.
@@ -17,12 +23,15 @@ Neural inference, allocation, locks, and file I/O never run in
 lock-free ring buffer; generation runs on background workers.
 Sources: SPEC section 11, THREADING_MODEL.md.
 
-| bound test | binary | suites |
-|---|---|---|
-| fake-latency runner proves the flow is non-blocking | test_async_generate | full + off |
-| async completion is bit-identical to the sync path | test_async_generate | full + off |
-| preview synth renders audible tone while held | test_preview_synth | full only (plugin-ON) |
-| preview synth decays after noteOff | test_preview_synth | full only (plugin-ON) |
+| binary (binding) | suites |
+|---|---|
+| test_async_generate | full + off |
+| test_preview_synth | full only (plugin-ON; no off build) |
+
+Spot-check: "fake-latency runner proves the flow is non-blocking"
+(full #88 / off #88). Also covered: "async completion is bit-identical
+to the sync path", "preview synth renders audible tone while held",
+"preview synth decays after noteOff".
 
 CI: `build-test-validate`, steps `Test` + `Validate VST3 (strictness 5)`.
 
@@ -30,12 +39,15 @@ CI: `build-test-validate`, steps `Test` + `Validate VST3 (strictness 5)`.
 
 Fixed seeds and parameters reproduce outputs exactly, end to end.
 
-| bound test | binary | suites |
-|---|---|---|
-| same seed gives bit-identical candidates | test_candidates | full + off |
-| all modes are deterministic and capped | test_candidates | full + off |
-| model path threads into generation deterministically | test_async_generate | full + off |
-| memo filter is deterministic | test_memo_filter | full + off |
+| binary (binding) | suites |
+|---|---|
+| test_candidates | full + off |
+| test_async_generate | full + off |
+| test_memo_filter | full + off |
+
+Spot-check: "same seed gives bit-identical candidates" (full #67 /
+off #67). Also covered: "model path threads into generation
+deterministically", "memo filter is deterministic".
 
 CI: `build-test-validate`, step `Determinism proof (render_midi
 byte-identity)` (render_midi seed-7 twice + binary compare).
@@ -50,11 +62,15 @@ Deliberately unregistered binaries are NOT part of this gate:
 test_note_cues and test_visual_polish (headless drawText teardown crash,
 see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag).
 
-| bound test | binary | suites |
-|---|---|---|
-| (entire registered set: all 193 / 170 names in `ctest -N`) | all | full + off |
-| keynorm flag-off generate path is bit-identical to pre-task output | test_keynorm | full + off |
-| arrangement build is deterministic | test_arrangement | full + off |
+| binary (binding) | suites |
+|---|---|
+| (entire registered set: all binaries in `ctest -N`) | full + off |
+| test_keynorm | full + off |
+| test_arrangement | full + off |
+
+Spot-check: "keynorm flag-off generate path is bit-identical to
+pre-task output" (full #187 / off #168). Also covered: "arrangement
+build is deterministic".
 
 CI: `build-test-validate`, step `Test`.
 
@@ -67,22 +83,23 @@ clean input passes through untouched; empty/missing index is a safe no-op;
 same Pattern + same index gives identical results; never throws; file I/O
 restricts it to background threads.
 
-| bound test | binary | suites |
-|---|---|---|
-| verbatim run is truncated at the offending window | test_memo_filter | full + off |
-| clean generation passes through byte-identical | test_memo_filter | full + off |
-| missing index file loads nullopt and never throws | test_memo_filter | full + off |
-| memo filter is deterministic | test_memo_filter | full + off |
-| drums are untouched by the memo filter | test_memo_filter | full + off |
-| loader round-trips the binary format and rejects garbage | test_memo_filter | full + off |
-| committed training index loads (smoke) | test_memo_filter | full + off |
-| index path resolves to sibling, bare names to the working dir | test_memo_filter | full + off |
-| wired path truncates reciting model output, stays deterministic | test_memo_filter | full + off |
-| wired path without sibling index is byte-identical | test_memo_filter | full + off |
-| override with empty path filters via the working dir | test_memo_filter | full + off |
-| bare model filename resolves via the working dir | test_memo_filter | full + off |
-| sampler memo block run=2 turns away from recitation | test_sampler | full + off |
-| sampler reuses the shipped memo index loader | test_sampler | full + off |
+| binary (binding) | suites |
+|---|---|
+| test_memo_filter (all 12 registered cases) | full + off |
+| test_sampler (memo cases) | full + off |
+
+Spot-check: "verbatim run is truncated at the offending window"
+(full #145 / off #128). Also covered: "clean generation passes through
+byte-identical", "missing index file loads nullopt and never throws",
+"memo filter is deterministic", "drums are untouched by the memo
+filter", "loader round-trips the binary format and rejects garbage",
+"committed training index loads (smoke)", "index path resolves to
+sibling, bare names to the working dir", "wired path truncates reciting
+model output, stays deterministic", "wired path without sibling index
+is byte-identical", "override with empty path filters via the working
+dir", "bare model filename resolves via the working dir", "sampler memo
+block run=2 turns away from recitation", "sampler reuses the shipped
+memo index loader".
 
 CI: `build-test-validate`, step `Test`.
 
@@ -92,13 +109,15 @@ MIDI file export round-trips exactly and clamps hostile input instead of
 emitting corrupt files. (FL_SMOKE.md: with no FL licence on the dev
 machine, this ctest layer is the export-path coverage.)
 
-| bound test | binary | suites |
-|---|---|---|
-| smf1 round-trips sequential starts and durations | test_selection | full + off |
-| smf1 round-trips overlapping chord notes | test_selection | full + off |
-| smf1 multitrack export carries channels | test_selection | full + off |
-| smf1 writer clamps hostile notes | test_selection | full + off |
-| read_smf round-trips type-0 writer output | test_midi_read | full + off |
-| read_smf round-trips type-1 multitrack with drums | test_midi_read | full + off |
+| binary (binding) | suites |
+|---|---|
+| test_selection (smf1 writer cases) | full + off |
+| test_midi_read (read_smf cases) | full + off |
+
+Spot-check: "smf1 round-trips sequential starts and durations"
+(full #29 / off #29). Also covered: "smf1 round-trips overlapping chord
+notes", "smf1 multitrack export carries channels", "smf1 writer clamps
+hostile notes", "read_smf round-trips type-0 writer output",
+"read_smf round-trips type-1 multitrack with drums".
 
 CI: `build-test-validate`, step `Test`.

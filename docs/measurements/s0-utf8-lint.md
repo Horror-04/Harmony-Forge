@@ -33,5 +33,5 @@ as strict UTF-8. Basis for the S0 `/utf-8` flag edit being behavior-neutral.
 - `src/inference/memo_filter.h:16-17`: FIXED in S1 (plain-ASCII gloss of
   the SPEC section-10 title; intent verified against docs/SPEC.md:181 and
   git history since 5b13f06). Remaining non-ASCII in compiled sources:
-  two pre-existing U+2014 em-dashes (memo_filter.h:46,89) — valid UTF-8,
+  two pre-existing U+2014 em-dashes (memo_filter.h:46,89) -- valid UTF-8,
   not mojibake, out of S1 scope.
