@@ -756,3 +756,39 @@ TEST_CASE("wiring flag ON engages the sampler deterministically", "[sampler][wir
     }
   }
 }
+
+// S2b step 4b: out-of-bitmap behavior of fsm_allowed_range (recorded from
+// the OLD switch BEFORE the gen.h-backed swap: slot -1 -> 0..170, every
+// other non-0..5 slot -> false with lo/hi untouched). Post-swap this same
+// test proves byte-identical reproduction through the gen.h tables. The
+// body-slot literals are pinned independently by the unmodified
+// "sampler FSM slot ranges match the shipped codec" case above; the loop
+// below additionally ties them to the frozen gen.h tables the wrapper
+// reads (single source, no second table).
+TEST_CASE("sampler FSM out-of-bitmap slots reproduce the frozen behavior",
+          "[sampler]") {
+  int lo = -999, hi = -999;
+  // Count head (-1) is the Task-2 I1 rule: 0..kSamplerMaxNotes (0..170).
+  REQUIRE(hf::infer::fsm_allowed_range(-1, lo, hi));
+  CHECK(lo == 0);
+  CHECK(hi == hf::infer::kSamplerMaxNotes);
+  CHECK(hi == 170);
+  // Body slots 0..5 read the frozen gen.h tables ([lo, hi) -> inclusive).
+  for (int s = 0; s < 6; ++s) {
+    lo = -999;
+    hi = -999;
+    REQUIRE(hf::infer::fsm_allowed_range(s, lo, hi));
+    CHECK(lo == hf::ser::kVocabSlotLo[s]);
+    CHECK(hi == hf::ser::kVocabSlotHi[s] - 1);
+  }
+  // Out-of-bitmap: all other slots fail and leave lo/hi untouched
+  // (the OLD switch `default` arm wrote nothing).
+  const int bad[] = {-1000000, -100, -2, 6, 7, 8, 100, 1000000};
+  for (int s : bad) {
+    lo = -999;
+    hi = -999;
+    CHECK_FALSE(hf::infer::fsm_allowed_range(s, lo, hi));
+    CHECK(lo == -999);
+    CHECK(hi == -999);
+  }
+}
