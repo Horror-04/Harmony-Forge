@@ -87,7 +87,8 @@ import/subprocess grep — and the step-5 replication (37/37: 30 sha-diffs
 + 4 M1 flips + 3 v2b diffs, `s2b-step5-chain-proof.md` §3) proves the
 Python `decode.sample_continue`/`keynorm.py` path is what moves under
 these legs. Sampling/keynorm for model legs happen in
-`training/decode.py` (`WIRED_CFG` T=1.0) and `training/keynorm.py`.
+`training/decode.py` (`tools/render_model.py:41` `WIRED_CFG` T=1.0 via
+`D.Cfg`) and `training/keynorm.py`.
 
 ## 3. Unit-test sets (`build-off` Debug, all green)
 

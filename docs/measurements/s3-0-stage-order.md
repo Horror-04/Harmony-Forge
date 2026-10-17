@@ -92,7 +92,8 @@ this level; per-chunk seeds re-enter stage 1 above.
   `evaluate`, `keynorm`, `midi_writer`, `tokenizer` + ORT; grep this
   task: zero references to subprocess/`render_midi`/build dirs/`src/`).
   It never enters any C++ stage — its sampling/keynorm happen in
-  `training/decode.py` (`WIRED_CFG` T=1.0) and `training/keynorm.py`.
+  `training/decode.py` (`tools/render_model.py:41` `WIRED_CFG` T=1.0
+  via `D.Cfg`) and `training/keynorm.py`.
 - `tools/dump_worker_ids.cpp` (:137): calls `sample_continue`
   **directly** (fixed prefix, PCG seed argv) — exercises the sampler
   body but none of stages 0-9.
