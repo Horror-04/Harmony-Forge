@@ -8,11 +8,12 @@
 #include "core/model/note.h"
 #include "inference_runner.h"
 
-// S3 slices 1-3: candidate TU re-exports. Included here so existing consumers
+// S3 slices 1-4: candidate TU re-exports. Included here so existing consumers
 // of this header keep seeing the full candidate API (re-export; declarations
 // stay valid). These headers never include candidates.h back (forward
 // declarations only), so there is no include cycle.
 #include "candidate_base.h"
+#include "candidate_model.h"
 #include "candidate_modes.h"
 #include "candidate_transforms.h"
 // Shared parameter types (`GenMode`, `GenParams`) live in the narrow

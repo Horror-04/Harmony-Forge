@@ -12,6 +12,7 @@ add_library(harmony_forge_inference STATIC
   constraints.cpp
   candidates.cpp
   candidate_base.cpp
+  candidate_model.cpp
   candidate_modes.cpp
   candidate_transforms.cpp
   ranking.cpp
