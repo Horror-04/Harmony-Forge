@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Vocab layout check (spec -> gen.h freshness + frozen pin)
+        # Stdlib only, seconds: spec-bitmap == frozen d66faabf pin AND
+        # committed vocab_layout.gen.h == generator output. Must run BEFORE
+        # build so a stale/mismatched generated header fails fast.
+        run: python tools/gen_vocab_layout.py --check
+
       - name: Configure
         run: cmake -S . -B build -DHARMONY_FORGE_BUILD_PLUGIN=ON
 
