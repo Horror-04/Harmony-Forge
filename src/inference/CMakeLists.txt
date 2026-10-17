@@ -11,6 +11,7 @@ option(HARMONY_FORGE_WITH_ONNX
 add_library(harmony_forge_inference STATIC
   constraints.cpp
   candidates.cpp
+  candidate_base.cpp
   ranking.cpp
   memo_filter.cpp
   onnx_runner.cpp

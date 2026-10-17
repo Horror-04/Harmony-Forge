@@ -8,6 +8,12 @@
 #include "core/model/note.h"
 #include "inference_runner.h"
 
+// S3 slice 1: `compose_base` TU. Included here so existing consumers of this
+// header keep seeing the full candidate API (re-export; declarations stay
+// valid). This header does NOT include candidates.h back (forward declaration
+// only), so there is no include cycle.
+#include "candidate_base.h"
+
 namespace hf::infer {
 
 // Generation modes (SPEC §5.1).

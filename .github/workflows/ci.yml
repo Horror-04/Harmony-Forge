@@ -36,6 +36,13 @@ jobs:
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
 
+      - name: S3 body-identity check (advisory)
+        # S3 slice 1: exact-move guard for the candidates.cpp split
+        # (tools/check_bodies.py, stdlib only, seconds). ADVISORY until the
+        # split lands — never fail the job.
+        continue-on-error: true
+        run: python tools/check_bodies.py
+
       - name: Determinism proof (render_midi byte-identity)
         run: |
           .\build\tools\Release\render_midi.exe --seed 7 --bars 4 --out ci_a.mid

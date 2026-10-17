@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "compose_base": {
+      "sig": "core::Pattern compose_base",
+      "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 118, "end": 174},
+      "new": {"path": "src/inference/candidates.cpp", "start": 537, "end": 593},
+      "allow": []
+    },
+    "tone_pcs": {
+      "sig": "std::vector<int> tone_pcs",
+      "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 108, "end": 114},
+      "new": {"path": "src/inference/candidates.cpp", "start": 108, "end": 114},
+      "allow": []
+    }
+  }
+}

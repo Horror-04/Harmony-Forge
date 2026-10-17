@@ -135,6 +135,11 @@ model_path set, keynorm/sampling OFF → IMPL+MODE+G_PATH+memo filter).
   "wiring flag ON engages the sampler deterministically" (engages iff
   provider available) and "wiring unavailable provider falls back to
   greedy bytes". No build-off test can reach `:497` (stub provider).
+  S3 I1 probe (2026-10-18, `refactor/s3`, ENTER-seed corruption
+  `Pcg32 rng(seed)` → `Pcg32 rng(0)` in `sampler.cpp:208`): `test_s30_sampler_seed`
+  reddens in BOTH configs (build-off Debug + build-full Release, 7/8 assertions,
+  `a != c` fails with identical bytes), reverts to green in both — the ENTER body is
+  pinned in the fast loop; only the `:497` call-site reach itself stays build-full-only.
 - Sampler body: `test_sampler` 16 cases (stub-driven, direct) + the 128
   output-sha set (`docs/measurements/s2b-sampler-output-shas.json`,
   re-run + byte-compared by
