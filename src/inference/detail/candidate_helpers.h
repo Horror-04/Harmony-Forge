@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "core/music/scale.h"
-
 namespace hf::infer::detail {
 
 constexpr int kBeatsPerBar = 4;
@@ -28,16 +26,6 @@ inline int octave_pull(int pitch, int lo, int hi) {
   while (pitch > hi) pitch -= 12;
   while (pitch < lo) pitch += 12;
   return pitch;
-}
-
-// Facade-called scale lookup with major fallback (S3 slice 3): the single
-// caller is `generate_candidates_impl`, which passes the result into the
-// mode/transform stages as `iv`. Body verbatim from the pre-cut
-// `src/inference/candidates.cpp` anonymous-namespace original.
-inline std::vector<int> scale_or_major(const std::string& scale) {
-  auto iv = hf::music::ScaleDatabase::intervals(scale);
-  if (!iv.empty()) return iv;
-  return hf::music::ScaleDatabase::intervals("major");
 }
 
 }  // namespace hf::infer::detail

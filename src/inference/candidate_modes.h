@@ -1,10 +1,8 @@
 // Copyright (C) 2026 Horror-04
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Candidate mode post-processing TU (S3 slice 3): `apply_mode` + its
-// modes-only helpers (`snap_to_pcs`, `is_minor_family`, `kGrid`;
-// `scale_or_major` is facade-called, so it lives in `detail/` — see
-// docs/measurements/s3-remainder.md). Re-exported through `candidates.h`;
-// declarations stay valid.
+// modes-only helpers (`snap_to_pcs`, `is_minor_family`, `kGrid`).
+// Re-exported through `candidates.h`; declarations stay valid.
 #pragma once
 
 #include <random>

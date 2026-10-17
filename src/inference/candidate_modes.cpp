@@ -3,8 +3,7 @@
 // Candidate mode post-processing TU (S3 slice 3): `apply_mode` moved
 // byte-identically from `src/inference/candidates.cpp` (pre-cut 311-364;
 // see tools/check_bodies_s3.json) with its modes-only helpers
-// (`snap_to_pcs`, `is_minor_family`, `kGrid`; `scale_or_major` is
-// facade-called and lives in `detail/candidate_helpers.h`). Shared names
+// (`snap_to_pcs`, `is_minor_family`, `kGrid`). Shared names
 // resolve to `detail/` via the using-directive below, so the moved bodies
 // carry zero edits; `GenParams`/`GenMode` arrive via the narrow
 // `detail/candidate_params.h` (never the candidates.h re-export header).

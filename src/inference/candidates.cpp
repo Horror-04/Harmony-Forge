@@ -67,6 +67,14 @@ uint32_t stream_seed(const GenParams& p, int index) {
   return static_cast<uint32_t>(h ^ (h >> 32));
 }
 
+// Facade-called scale lookup with major fallback (sole caller is
+// `generate_candidates_impl`; TU-local per the single-consumer rule).
+std::vector<int> scale_or_major(const std::string& scale) {
+  auto iv = hf::music::ScaleDatabase::intervals(scale);
+  if (!iv.empty()) return iv;
+  return hf::music::ScaleDatabase::intervals("major");
+}
+
 // Runner stage: encode the base, run the model, decode. The mock model
 // echoes its input (decode then yields ~base with binned velocities); with
 // no model path the runner is unloaded and predict returns empty, so decode

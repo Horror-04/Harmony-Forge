@@ -21,37 +21,37 @@
     "mod12": {
       "sig": "int mod12",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 44, "end": 44},
-      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 25, "end": 25},
+      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 23, "end": 23},
       "allow": []
     },
     "octave_pull": {
       "sig": "int octave_pull",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 71, "end": 75},
-      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 27, "end": 31},
+      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 25, "end": 29},
       "allow": []
     },
     "apply_mode": {
       "sig": "void apply_mode",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 311, "end": 364},
-      "new": {"path": "src/inference/candidate_modes.cpp", "start": 60, "end": 113},
+      "new": {"path": "src/inference/candidate_modes.cpp", "start": 59, "end": 112},
       "allow": []
     },
     "snap_to_pcs": {
       "sig": "int snap_to_pcs",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 79, "end": 93},
-      "new": {"path": "src/inference/candidate_modes.cpp", "start": 36, "end": 50},
+      "new": {"path": "src/inference/candidate_modes.cpp", "start": 35, "end": 49},
       "allow": []
     },
     "is_minor_family": {
       "sig": "bool is_minor_family",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 101, "end": 105},
-      "new": {"path": "src/inference/candidate_modes.cpp", "start": 52, "end": 56},
+      "new": {"path": "src/inference/candidate_modes.cpp", "start": 51, "end": 55},
       "allow": []
     },
     "scale_or_major": {
       "sig": "std::vector<int> scale_or_major",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 95, "end": 99},
-      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 37, "end": 41},
+      "new": {"path": "src/inference/candidates.cpp", "start": 72, "end": 76},
       "allow": []
     }
   }
