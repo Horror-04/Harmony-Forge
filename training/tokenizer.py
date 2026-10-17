@@ -27,6 +27,8 @@ Patterns are plain dicts (no MIDI libs needed)::
 
 from __future__ import annotations
 
+import vocab_spec as _vocab_spec  # frozen layout spec (S2b step 1, DATA ONLY)
+
 TRACK_ORDER = ["Chords", "Melody", "Bass", "Arpeggio", "CounterMelody", "Drums"]
 
 TICKS_PER_BEAT = 480
@@ -61,28 +63,28 @@ def _clamp(v: int, lo: int, hi: int) -> int:
 def slot_valid_range(slot: int) -> range:
     """Decode-valid id range for a body phase 0..5 (CANONICAL single source).
 
-    S2a unification: the one implementation of the slot-valid-range rule
-    (``training/decode.py::slot_valid_range`` and
-    ``training/baselines.py::_slot_range`` are thin aliases of this
-    function; ``training/train.py::fsm_slot_range`` stays a separate copy
-    until S2b). Bounds mirror ``decode_tokens`` below (bar 0..15, subbeat
-    0..15, track 0..5, pitch 0..127, duration 1..64, velocity bin 0..7);
-    byte-equality against the frozen ``tests/golden/slot_bitmap.txt`` is
-    asserted by ``tools/tests/test_slot_bitmap.py`` (via the aliases) and
-    ``training/tests/test_slot_range_unified.py`` (directly here).
+    S2b step 2: bounds are READ from the frozen ``vocab_spec.SLOTS`` table
+    (``[lo, hi)`` per slot: bar 0..15, subbeat 0..15, track 0..5, pitch
+    0..127, duration 1..64, velocity bin 0..7) instead of a local if-chain;
+    no range literal lives here. ``training/decode.py::slot_valid_range``
+    and ``training/baselines.py::_slot_range`` stay thin aliases of this
+    function (unchanged); ``training/train.py::fsm_slot_range`` stays a
+    separate copy until S2b step 3. Byte-equality against the frozen
+    ``tests/golden/slot_bitmap.txt`` is asserted by
+    ``tools/tests/test_slot_bitmap.py`` (via the aliases) and
+    ``training/tests/test_slot_range_unified.py`` (directly here), plus the
+    spec-read path test ``training/tests/test_tokenizer_spec_read.py``.
+
+    Task-2 I1 carryover: the empty-prefix count head (``len == 0`` -> ids
+    ``0..MAX_NOTES`` == ``0..170``, i.e. ``range(MAX_NOTES + 1)`` in
+    ``decode.sample_continue``) is NOT a body slot and is NOT served here:
+    invalid slots (including ``-1``) raise ``ValueError``. The head rule is
+    pinned by ``test_tokenizer_spec_read.py`` (``MAX_NOTES == 170`` from the
+    spec side) and the existing ``test_decode`` empty-prefix check.
     """
-    if slot == 0:
-        return range(0, 16)
-    if slot == 1:
-        return range(0, 16)
-    if slot == 2:
-        return range(0, 6)
-    if slot == 3:
-        return range(0, 128)
-    if slot == 4:
-        return range(1, 65)
-    if slot == 5:
-        return range(0, 8)
+    for spec_slot in _vocab_spec.SLOTS:
+        if spec_slot["index"] == slot:
+            return range(spec_slot["lo"], spec_slot["hi"])
     raise ValueError(f"slot must lie in 0..5, got {slot!r}")
 
 
