@@ -32,7 +32,7 @@ void usage(const char* argv0) {
   std::printf(
       "usage: %s --model <logits.onnx> --memo <memo_index.bin|-> "
       "--tonic N --scale name --chords R:T,... --prefix-file F --seed N "
-      "--T f --out F\n",
+      "--T f [--fsm ON|OFF] [--strict ON|OFF] --out F\n",
       argv0);
 }
 
@@ -118,6 +118,13 @@ int main(int argc, char** argv) {
   cfg.memo_block_run = 2;
   cfg.strict_mask = true;
   cfg.fsm_mask = true;
+  // S2b step 4b fix: committed --fsm/--strict pass-through (Gate-4 sweep
+  // flags; defaults preserve the historical default path). Forwarded to the
+  // same sample_continue path below; no other behavior change.
+  std::string fsm_s, strict_s;
+  if (parse_arg(argc, argv, "--fsm", fsm_s)) cfg.fsm_mask = (fsm_s == "ON");
+  if (parse_arg(argc, argv, "--strict", strict_s))
+    cfg.strict_mask = (strict_s == "ON");
   cfg.lambda_theory = 0.0f;
   cfg.use_sampling = true;
 
