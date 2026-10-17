@@ -152,9 +152,12 @@ def main() -> int:
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', newline='', encoding='utf8') as f:
         if extended:
+            # Uniform LF terminators in extended files (csv default CRLF
+            # would leave the '#' legend line as the lone bare-LF line).
             f.write(LEGEND + '\n')
         w = csv.DictWriter(f, fieldnames=EXTENDED_FIELDS if extended
-                           else LEGACY_FIELDS)
+                           else LEGACY_FIELDS,
+                           lineterminator='\n' if extended else '\r\n')
         w.writeheader()
         w.writerows(rows)
     n = len(rows)
