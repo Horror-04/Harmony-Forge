@@ -2,15 +2,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "core/serialization/tokenizer.h"
 
+#include "core/serialization/vocab_layout.gen.h"
+
 namespace hf::ser {
 namespace {
 
-// Final vocab caps (Sprint 2, shared with training/tokenizer.py):
-// at most 16 bars (bar index 0..15) and 1024 ids of context.
-constexpr int kMaxBars = 16;
-constexpr int kMaxTokens = 1024;
-constexpr int kTokensPerNote = 6;
-constexpr int kMaxNotes = (kMaxTokens - 1) / kTokensPerNote;  // 170
+// Frozen vocab caps (S2b step 4a): single-sourced from vocab_layout.gen.h
+// (generated from training/vocab_spec.py) — no manual copies. The slot
+// bounds below also come from the header tables ([lo, hi) per slot;
+// integer-exact rewrites of the old literals: `x > N` == `x >= N + 1`).
+constexpr int kMaxBars = kVocabMaxBars;
+constexpr int kMaxTokens = kVocabMaxTokens;
+constexpr int kTokensPerNote = kVocabTokensPerNote;
+constexpr int kMaxNotes = kVocabMaxNotes;  // 170: decode side of the
+// Task-2 I1 count-head rule (empty prefix -> head 0..170); the sampler keeps
+// the -1 slot spelling of the same bound (see sampler.h, Task 4 owns it).
+static_assert(kMaxBars == 16 && kMaxTokens == 1024 && kTokensPerNote == 6 &&
+              kMaxNotes == (kMaxTokens - 1) / kTokensPerNote);
 
 int vel_to_bin(int vel) {
   if (vel < 1) vel = 1;
@@ -69,9 +77,13 @@ std::optional<core::Pattern> decode_tokens(const std::vector<int>& ids) {
   for (int i = 0; i < total; ++i) {
     const int bar = ids[k++], sub = ids[k++], tt = ids[k++];
     const int pitch = ids[k++], dur = ids[k++], vb = ids[k++];
-    if (tt < 0 || tt > 5 || pitch < 0 || pitch > 127 || dur < 1 || dur > 64 || vb < 0 || vb > 7)
+    if (tt < kVocabSlotLo[2] || tt >= kVocabSlotHi[2] || pitch < kVocabSlotLo[3] ||
+        pitch >= kVocabSlotHi[3] || dur < kVocabSlotLo[4] || dur >= kVocabSlotHi[4] ||
+        vb < kVocabSlotLo[5] || vb >= kVocabSlotHi[5])
       return std::nullopt;
-    if (bar < 0 || bar >= kMaxBars || sub < 0 || sub > 15) return std::nullopt;
+    if (bar < kVocabSlotLo[0] || bar >= kMaxBars || sub < kVocabSlotLo[1] ||
+        sub >= kVocabSlotHi[1])
+      return std::nullopt;
     // Find or create track of this type on channel 0.
     core::Track* tr = nullptr;
     for (auto& t : p.tracks) {

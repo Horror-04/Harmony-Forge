@@ -4,6 +4,8 @@
 // See ort_logits.h. Pure C++20, no JUCE. Never throws.
 #include "ort_logits.h"
 
+#include "core/serialization/vocab_layout.gen.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -32,7 +34,8 @@ constexpr const char* kSidecarFile = "model.logits.onnx";
 constexpr const char* kLogitsOutput = "logits";
 // Codec cap (tokenizer.py): the sidecar keeps the dynamic batch/seq
 // contract, but prefixes longer than the codec can never occur.
-constexpr size_t kMaxIds = 1024;
+// S2b step 4a: single-sourced from vocab_layout.gen.h (was 1024 literal).
+constexpr size_t kMaxIds = hf::ser::kVocabMaxTokens;
 
 bool names_sidecar(const std::string& path) {
   try {

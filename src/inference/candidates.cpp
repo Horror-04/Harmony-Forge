@@ -20,6 +20,7 @@
 #include "core/music/ranges.h"
 #include "core/music/scale.h"
 #include "core/serialization/tokenizer.h"
+#include "core/serialization/vocab_layout.gen.h"
 #include "inference_runner.h"
 #include "keynorm.h"
 #include "memo_filter.h"
@@ -33,8 +34,8 @@ namespace {
 constexpr int kBeatsPerBar = 4;
 constexpr int kBarTicks = 480 * kBeatsPerBar;  // 1920
 constexpr int kGrid = 120;                     // 16th note
-constexpr int kMaxBars = 16;
-constexpr int kMaxNotes = (1024 - 1) / 6;  // codec cap: 170 notes / 1024 ids
+constexpr int kMaxBars = hf::ser::kVocabMaxBars;
+constexpr int kMaxNotes = hf::ser::kVocabMaxNotes;  // codec cap: 170 notes / 1024 ids
 constexpr int kMelodyLo = 60;              // C3 register floor
 constexpr int kMelodyHi = 84;
 constexpr int kBassLo = 24;
@@ -184,7 +185,7 @@ core::Pattern compose_base(const GenParams& p, const core::ChordProgression& pro
 // go through `material_from_runner_with` below.
 core::Pattern material_from_runner(const core::Pattern& base, unsigned seed) {
   InferenceConfig cfg;
-  cfg.max_tokens = 1024;
+  cfg.max_tokens = hf::ser::kVocabMaxTokens;
   cfg.seed = seed;
   OnnxRunner runner(cfg);
   const std::vector<int> ids = hf::ser::encode_pattern(base);
@@ -216,7 +217,7 @@ core::Pattern material_from_runner_with(const core::Pattern& base, unsigned seed
                                         IInferenceRunner* runner_override) {
   InferenceConfig cfg;
   cfg.model_path = model_path;
-  cfg.max_tokens = 1024;
+  cfg.max_tokens = hf::ser::kVocabMaxTokens;
   cfg.seed = seed;
   if (runner_override != nullptr) return material_with_runner(base, cfg, *runner_override);
   OnnxRunner runner(cfg);

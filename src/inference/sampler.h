@@ -8,6 +8,7 @@
 #include <string>
 
 #include "core/model/note.h"
+#include "core/serialization/vocab_layout.gen.h"
 #include "memo_filter.h"
 
 namespace hf::infer {
@@ -38,9 +39,17 @@ namespace hf::infer {
 // bit-identical to a plain argmax continuation, pinned by test).
 // `SamplerStats` is an OUT-param struct, never an input parameter.
 inline constexpr int kSamplerVocab = 256;
-inline constexpr int kSamplerMaxTokens = 1024;      // codec cap (tokenizer.py)
-inline constexpr int kSamplerTokensPerNote = 6;     // 6-phase note layout
-inline constexpr int kSamplerMaxNotes = (1024 - 1) / 6;  // 170 (count head)
+inline constexpr int kSamplerMaxTokens = hf::ser::kVocabMaxTokens;  // S2b step 4a (was 1024)
+inline constexpr int kSamplerTokensPerNote = hf::ser::kVocabTokensPerNote;  // S2b step 4a (was 6)
+inline constexpr int kSamplerMaxNotes = hf::ser::kVocabMaxNotes;  // S2b step 4a (was (1024-1)/6)
+// Task-2 I1 carryover (S2b step 4a): the empty-prefix count head is slot -1
+// -> ids 0..kSamplerMaxNotes (0..170 at len==0). The spelling of that bound
+// (fsm_allowed_range case -1 in sampler.cpp:159-189 + its call site :262)
+// is INTENTIONALLY untouched here — the sampler call-site swap is Task 4,
+// not this step. These asserts pin the values the untouched bodies observe.
+static_assert(kSamplerMaxTokens == 1024, "codec cap must stay 1024 ids");
+static_assert(kSamplerTokensPerNote == 6, "note layout must stay 6-phase");
+static_assert(kSamplerMaxNotes == 170, "count head must stay 0..170");
 inline constexpr int kSamplerGenTokens = 48;        // budget (evaluate.py)
 inline constexpr int kSamplerMemoWindow = 8;        // memo 8-gram window
 

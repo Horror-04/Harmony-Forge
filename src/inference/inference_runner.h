@@ -5,11 +5,13 @@
 #include <string>
 #include <vector>
 
+#include "core/serialization/vocab_layout.gen.h"
+
 namespace hf::infer {
 
 struct InferenceConfig {
   std::string model_path;
-  int max_tokens = 1024;
+  int max_tokens = hf::ser::kVocabMaxTokens;  // S2b step 4a: codec cap (was 1024 literal)
   unsigned seed = 0;
 };
 

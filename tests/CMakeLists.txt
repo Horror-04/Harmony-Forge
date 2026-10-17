@@ -30,6 +30,9 @@ hf_add_test(test_tokenizer test_tokenizer.cpp)
 hf_add_test(test_slot_bitmap test_slot_bitmap.cpp)
 target_compile_definitions(test_slot_bitmap PRIVATE
   HARMONY_FORGE_SLOT_BITMAP="${CMAKE_SOURCE_DIR}/tests/golden/slot_bitmap.txt")
+hf_add_test(test_vocab_layout test_vocab_layout.cpp)
+target_compile_definitions(test_vocab_layout PRIVATE
+  HARMONY_FORGE_SLOT_BITMAP="${CMAKE_SOURCE_DIR}/tests/golden/slot_bitmap.txt")
 hf_add_test(test_candidates test_candidates.cpp)
 hf_add_test(test_constraints test_constraints.cpp)
 hf_add_test(test_inference test_inference.cpp)
