@@ -29,9 +29,11 @@ S0.5 cells: defaults reproduce the S0 invocation EXACTLY (same 9-column
 schema, same loops, same 360 rows for --seeds 72). Any non-default
 --modes/--keynorm-modes/--sampling-modes switches to the extended schema
 (added `sampling` column) and banks every requested cell: the S0-expressible
-corner (Strict/OFF/OFF, plus render_model mode=n/a) runs for real; corners
-the current runner CLIs cannot express are banked as `skip:` rows with cause
-(no src changes, no driver forks in S0.5).
+corner (Strict/OFF/OFF) runs for real; render_midi corners the binary cannot
+express stay `skip:` rows with cause (Strict-only binary; no src changes in
+S0.5), while all four render_model keynorm x sampling corners run for real
+via the render_model.py S0.5 CLI (frozen pass-through paths; render_model
+mode stays 'n/a' — see LEGEND).
 """
 from __future__ import annotations
 
@@ -67,11 +69,13 @@ LEGACY_FIELDS = ['leg', 'seed', 'mode', 'keynorm',
 EXTENDED_FIELDS = ['leg', 'seed', 'mode', 'keynorm', 'sampling',
                    'onnx', 'multi', 'bytes', 'sha256', 'status']
 
+LEGEND = ('# legend: mode=n/a on render_model rows (this renderer has no mode '
+          'dimension; not missing data). sampling: S0-carried render_midi '
+          'rows=OFF (deterministic composer, no sampler); S0-carried '
+          'render_model rows=ON (WIRED_CFG T=1.0 sampler).')
+
 SKIP_MIDI = ('skip: render_midi binary is Strict-only '
              '(no --mode/--keynorm/--sampling flags); src changes out of scope for S0.5')
-SKIP_MODEL = ('skip: render_model.py CLI exposes only the WIRED_CFG path '
-              '(--rec/--seed/--model/--out); keynorm/sampling driver variants '
-              'unbanked in S0.5 (pending)')
 
 
 def sha_file(path: str) -> str:
@@ -97,11 +101,21 @@ def run_render_midi(exe: str, seed: int, multi: bool) -> tuple[str, int]:
             pass
 
 
-def run_render_model(seed: int) -> tuple[str, int]:
+def run_render_model(seed: int, keynorm: str | None = None,
+                       sampling: str | None = None) -> tuple[str, int]:
     with tempfile.NamedTemporaryFile(suffix='.mid', delete=False) as t:
         tmp = t.name
     try:
-        cmd = [sys.executable, RENDER_MODEL, '--seed', str(seed), '--out', tmp]
+        # Flags are appended only when explicitly given: the legacy (S0)
+        # call passes neither, keeping its argv — and any recorded
+        # exception text — byte-identical to S0. argparse defaults
+        # (--keynorm OFF, --sampling ON) select the same S0 path.
+        cmd = [sys.executable, RENDER_MODEL, '--seed', str(seed)]
+        if keynorm is not None:
+            cmd += ['--keynorm', keynorm]
+        if sampling is not None:
+            cmd += ['--sampling', sampling]
+        cmd += ['--out', tmp]
         subprocess.run(cmd, check=True, capture_output=True, timeout=600,
                        cwd=os.path.join(_REPO, 'training'))
         return sha_file(tmp), os.path.getsize(tmp)
@@ -137,6 +151,8 @@ def main() -> int:
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', newline='', encoding='utf8') as f:
+        if extended:
+            f.write(LEGEND + '\n')
         w = csv.DictWriter(f, fieldnames=EXTENDED_FIELDS if extended
                            else LEGACY_FIELDS)
         w.writeheader()
@@ -203,20 +219,13 @@ def _run_extended(seeds: list[int], modes: list[str], keynorms: list[str],
                                          'bytes': size, 'sha256': sha,
                                          'status': status})
     # render_model has no Strict/Creative switch in its CLI (mode stays 'n/a'
-    # per S0); the matrix dims that reach it are keynorm x sampling.
+    # per S0); the matrix dims that reach it are keynorm x sampling, all four
+    # runnable via the render_model.py S0.5 CLI (frozen pass-through paths).
     for seed in seeds:
         for keynorm in keynorms:
             for sampling in samplings:
-                runnable = (keynorm == 'OFF' and sampling == 'OFF')
-                if not runnable:
-                    rows.append({'leg': 'render_model', 'seed': seed,
-                                 'mode': 'n/a', 'keynorm': keynorm,
-                                 'sampling': sampling, 'onnx': 'py-1.31.0',
-                                 'multi': 0, 'bytes': 0, 'sha256': '',
-                                 'status': SKIP_MODEL})
-                    continue
                 try:
-                    sha, size = run_render_model(seed)
+                    sha, size = run_render_model(seed, keynorm, sampling)
                     status = 'ok'
                 except Exception as e:  # noqa: BLE001
                     sha, size, status = '', 0, f'ERROR {e}'

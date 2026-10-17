@@ -11,6 +11,12 @@ SMF0 via the Phase-9-tested stdlib writer (``training/midi_writer.py``
 
 Offline only: never called from ``processBlock``. No changes to ``src/``,
 weights, corpus, or eval semantics.
+
+S0.5 matrix cells (CLI-only glue in ``main`` below; the sampling paths are
+the frozen importables, never forked): ``--keynorm OFF|ON`` (ON routes the
+prefix through ``sample_ids_keynorm``/``greedy_keynorm``) and ``--sampling
+ON|OFF`` (ON = WIRED_CFG sampler via ``render``; OFF = greedy argmax via
+``E.greedy_continue`` with the §10 filter on, per tools/keynorm_ab.py).
 """
 
 from __future__ import annotations
@@ -435,11 +441,31 @@ def greedy_keynorm(prefix_ids: list[int], meta_abs: dict,
     return keynorm_inverse(full_n, shift), shift
 
 
+def _to_smf0(full_abs: list[int]) -> bytes:
+    """Frozen render tail (the exact finalize -> decode -> SMF0 tail of
+    ``render`` above), applied to already-sampled absolute ids.
+
+    S0.5 CLI glue only: every call (``E.finalize``, ``tok.decode_tokens``,
+    ``M.pattern_to_smf0``) is the frozen importable ``render`` uses, in the
+    same order. No sampling/scoring logic lives here.
+    """
+    pat = tok.decode_tokens(E.finalize(list(full_abs)))
+    assert pat is not None, "finalized ids must decode"
+    return M.pattern_to_smf0(pat)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Render one fixture to SMF0.")
     ap.add_argument("--rec", default="os-lc4985925-w02")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--model", default=DEFAULT_MODEL_PATH)
+    ap.add_argument("--keynorm", default="OFF", choices=("OFF", "ON"),
+                    help="ON: normalize the prefix to the canonical key via "
+                         "the frozen keynorm hook (sample_ids_keynorm / "
+                         "greedy_keynorm); OFF: absolute pitches (S0 path).")
+    ap.add_argument("--sampling", default="ON", choices=("ON", "OFF"),
+                    help="ON: WIRED_CFG sampler (S0 path); OFF: greedy argmax "
+                         "continuation (E.greedy_continue, §10 filter on).")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     recs = {r["id"]: r for r in E.load_jsonl("test_locked.jsonl")}
@@ -452,8 +478,21 @@ def main() -> int:
             "chords": rec["chords"], "memo_id8": memo_id8}
     import time
     t0 = time.time()
-    data = render(prefix, meta, WIRED_CFG, args.seed, args.model)
-    print(f"render: rec={args.rec} seed={args.seed} bytes={len(data)} "
+    if args.keynorm == "OFF" and args.sampling == "ON":
+        data = render(prefix, meta, WIRED_CFG, args.seed, args.model)
+    elif args.keynorm == "ON" and args.sampling == "ON":
+        full_abs, _ = sample_ids_keynorm(prefix, meta, WIRED_CFG,
+                                         args.seed, args.model)
+        data = _to_smf0(full_abs)
+    elif args.keynorm == "OFF" and args.sampling == "OFF":
+        sess = E.make_session(args.model)
+        full_abs = E.greedy_continue(sess, prefix, memo_id8, True)
+        data = _to_smf0(full_abs)
+    else:  # keynorm ON, sampling OFF
+        full_abs, _ = greedy_keynorm(prefix, meta, args.model)
+        data = _to_smf0(full_abs)
+    print(f"render: rec={args.rec} seed={args.seed} keynorm={args.keynorm} "
+          f"sampling={args.sampling} bytes={len(data)} "
           f"wall={time.time() - t0:.2f}s")
     if args.out:
         with open(args.out, "wb") as f:
