@@ -20,6 +20,13 @@ jobs:
         # build so a stale/mismatched generated header fails fast.
         run: python tools/gen_vocab_layout.py --check
 
+      - name: Golden pin lint (frozen bitmap pin, NEVER-REGENERATE)
+        # Stdlib only, seconds: canonical bitmap sha == in-script d66faabf
+        # pin (tools/lint_golden_pin.py) + manifest frozen/file cross-check.
+        # Runs AFTER the vocab check (same gate family) and BEFORE build so
+        # a tampered frozen golden fails fast. Blocking: non-zero fails job.
+        run: python tools/lint_golden_pin.py
+
       - name: Configure
         run: cmake -S . -B build -DHARMONY_FORGE_BUILD_PLUGIN=ON
 

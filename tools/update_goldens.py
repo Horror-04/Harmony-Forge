@@ -33,6 +33,27 @@ sys.path.insert(0, _TRAINING)
 GOLDEN_ROWS = 6
 GOLDEN_COLS = 256
 
+# S2b Task 2 NEVER-REGENERATE +2(a): CI-env values that lock the
+# --force-frozen-rewrite escape hatch (GitHub Actions sets CI=true).
+_CI_LOCK_TRUE_VALUES = ("1", "true", "yes")
+
+
+def _ci_freeze_lock_value(env=None):
+    """CI-env value locking frozen rewrites, or None when unlocked.
+
+    Reads the standard CI env var (GitHub Actions convention: CI=true).
+    A set/truthy value LOCKS the hatch: --force-frozen-rewrite refuses
+    even with --reason. Unset/empty (local runs) leaves the hatch working
+    as before. Pure (no I/O); unit-tested both branches in
+    tools/tests/test_update_goldens_refusal.py.
+    """
+    if env is None:
+        env = os.environ
+    raw = env.get("CI", "")
+    if raw.strip().lower() in _CI_LOCK_TRUE_VALUES:
+        return raw
+    return None
+
 
 def _bitmap_from_ranges() -> list[str]:
     import baselines as B
@@ -114,7 +135,13 @@ def main() -> int:
             print("update_goldens --write: REFUSED - golden is FROZEN "
                   f"({_MANIFEST}: {note}). Not rewritten.")
             return 2
-        if frozen:
+        if frozen and args.force_frozen_rewrite:
+            ci_lock = _ci_freeze_lock_value()
+            if ci_lock is not None:
+                print("update_goldens --write: REFUSED - CI environment "
+                      f"(CI={ci_lock}): --force-frozen-rewrite is locked "
+                      "under CI. Re-run locally with --reason.")
+                return 2
             print("update_goldens --write: FORCED frozen rewrite "
                   f"(reason: {args.reason})")
     ranges_rows = _bitmap_from_ranges()
