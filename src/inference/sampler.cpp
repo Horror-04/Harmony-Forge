@@ -157,35 +157,20 @@ int fsm_slot_for_pos(size_t n) noexcept {
 }
 
 bool fsm_allowed_range(int slot, int& lo, int& hi) noexcept {
-  switch (slot) {
-    case -1:
-      lo = 0;
-      hi = kSamplerMaxNotes;
-      return true;
-    case 0:
-    case 1:
-      lo = 0;
-      hi = 15;
-      return true;
-    case 2:
-      lo = 0;
-      hi = 5;
-      return true;
-    case 3:
-      lo = 0;
-      hi = 127;
-      return true;
-    case 4:
-      lo = 1;
-      hi = 64;
-      return true;
-    case 5:
-      lo = 0;
-      hi = 7;
-      return true;
-    default:
-      return false;
+  // S2b step 4b: thin wrapper over the frozen vocab_layout.gen.h tables
+  // (single source; no second table). Slot -1 is the Task-2 I1 count head
+  // 0..kSamplerMaxNotes; body slots convert the header [lo, hi) bounds to
+  // the inclusive range this API returns. Out-of-bitmap slots return false
+  // leaving lo/hi untouched, exactly like the retired switch `default` arm.
+  if (slot == -1) {
+    lo = 0;
+    hi = kSamplerMaxNotes;
+    return true;
   }
+  if (slot < 0 || slot >= hf::ser::kVocabSlotCount) return false;
+  lo = hf::ser::kVocabSlotLo[slot];
+  hi = hf::ser::kVocabSlotHi[slot] - 1;
+  return true;
 }
 
 int strict_allowed_ids(const int* seq, size_t n, const SamplerMeta& meta, int* out,
