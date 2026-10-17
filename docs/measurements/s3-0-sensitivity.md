@@ -13,7 +13,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 |---|---|---|
 | 1 seed+1 | ~9 min (incl. mechanism analysis) | 1 (4s incr.) |
 | 2 mode-predicate flip | <1 min | 1 (4s incr.) |
-| 3 kn_shift+1 (flag-ON probe) | _pending_ | _pending_ |
+| 3 kn_shift+1 (flag-ON probe) | ~1 min + analysis | 1 (5s incr.) |
 | 4 sseed-of-other (:497, known headwind) | _pending_ | _pending_ |
 | 5a transforms↔modes | _pending_ | _pending_ |
 | 5b mode↔denormalize (flag-ON probe) | _pending_ | _pending_ |
@@ -25,7 +25,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 |---|---|---|---|---|
 | 1 | `stream_seed(p,i)`→`(p,i+1)` (:533) | units green (relational); ALL MIDI cube legs move | RED: test_sampler "wiring flag OFF keeps pre-phase history bytes" (12 asserts, pinned byte-hashes) + test_arrangement "variation carries the bar-0 motif" (1 assert, downstream content pin, mechanism in report); GREEN: candidates/keynorm/tokenizer/memo_filter; cube spot 20/20 MOVED | GUARDED |
 | 2 | Creative passing-tone strong-beat flip (:355) | units green; Creative cube legs move, Strict silent | ALL SIX GREEN (candidates 6/11127 — count shift proves live binary; sampler wiring pins green = Strict-only fixtures, verified); cube spot 8/8 Creative MOVED + 8/8 Strict SAME | GUARDED |
-| 3 | `kn_shift+=1` (:543-544), flag-ON probe | exactly the 2 flag-ON keynorm tests | _pending_ | _pending_ |
+| 3 | `kn_shift+=1` (:543-544), flag-ON probe | exactly the 2 flag-ON keynorm tests | EXACTLY those 2 (test_keynorm.cpp:311 + :338, 6 asserts); all other suites green; cube: 4/4 Creative/on MOVED, Strict/on SAME on seeds 0-3 but 4/32 differ on 32-seed widen (snap-heal mechanism, see report) | GUARDED |
 | 4 | `sseed` of candidate `(i+1)%4` (:491-492) | NO red (unreachable, SITE=0); seed-sensitivity pinned on direct ENTER path instead | _pending_ | _pending_ |
 | 5a | swap :572/:573 (transform↔mode) | units green; cands[0]-cube silent (idx0 untouched); all-4 probe moves | _pending_ | _pending_ |
 | 5b | swap :573/:569 (mode↔denormalize), flag-ON probe | exactly G-major pc-equivalence; flag-OFF cube silent | _pending_ | _pending_ |
