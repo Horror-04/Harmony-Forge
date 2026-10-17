@@ -13,6 +13,7 @@
 // (generate_candidates and both writers are deterministic; no timestamps or
 // random IDs in the SMF).
 
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -29,13 +30,19 @@ namespace {
 void usage(const char* argv0) {
   std::printf("usage:\n");
   std::printf("  %s --seed N --bars B --out file.mid [--multi]\n", argv0);
+  std::printf("         [--mode Strict|Creative] [--keynorm off|on] [--sampling off|on]\n");
   std::printf("  %s --arrange SPEC --out file.mid [--multi]\n", argv0);
+  std::printf("         [--mode Strict|Creative] [--keynorm off|on] [--sampling off|on]\n");
   std::printf("arrange SPEC format: Type:bars:energy:variation:seed,... e.g.\n");
   std::printf("  Intro:4:0.3:0.2:7,Verse:8:0.5:0.3:7,Chorus:8:0.9:0.4:8\n");
   std::printf("  Types: Intro Verse PreChorus Chorus Bridge Breakdown Buildup Drop Outro\n");
   std::printf("Both modes build with Strict/tonic 60 (C3)/major and write SMF-0\n");
   std::printf("melody by default, SMF-1 multitrack with --multi. Same args ->\n");
   std::printf("byte-identical file (deterministic generation + writers).\n");
+  std::printf("--mode/--keynorm/--sampling pass straight through to GenParams\n");
+  std::printf("(defaults Strict/off/off == the historical invocation); --arrange\n");
+  std::printf("keeps its documented Strict base (energy owns that axis) while\n");
+  std::printf("--keynorm/--sampling flow through to each section build.\n");
 }
 
 bool parse_int(const char* s, int& out) {
@@ -45,6 +52,22 @@ bool parse_int(const char* s, int& out) {
   } catch (...) {
     return false;
   }
+}
+
+// Case-insensitive off/on flag value (S0.5 CLI glue; render_model.py
+// spells the same dims OFF/ON).
+bool parse_flag(const char* s, bool& out) {
+  std::string v = s;
+  for (auto& c : v) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  if (v == "off") {
+    out = false;
+    return true;
+  }
+  if (v == "on") {
+    out = true;
+    return true;
+  }
+  return false;
 }
 
 }  // namespace
@@ -57,6 +80,9 @@ int main(int argc, char** argv) {
   bool have_seed = false, have_bars = false, have_out = false;
   bool have_arrange = false;
   bool multi = false;
+  hf::infer::GenMode mode = hf::infer::GenMode::Strict;
+  std::string mode_name = "Strict";
+  bool keynorm = false, sampling = false;
 
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i];
@@ -72,6 +98,22 @@ int main(int argc, char** argv) {
       have_out = true;
     } else if (a == "--multi") {
       multi = true;
+    } else if (a == "--mode" && i + 1 < argc) {
+      const std::string v = argv[++i];
+      if (v == "Strict") {
+        mode = hf::infer::GenMode::Strict;
+        mode_name = "Strict";
+      } else if (v == "Creative") {
+        mode = hf::infer::GenMode::Creative;
+        mode_name = "Creative";
+      } else {
+        usage(argv[0]);
+        return 2;
+      }
+    } else if (a == "--keynorm" && i + 1 < argc && parse_flag(argv[++i], keynorm)) {
+      // value stored in keynorm
+    } else if (a == "--sampling" && i + 1 < argc && parse_flag(argv[++i], sampling)) {
+      // value stored in sampling
     } else {
       usage(argv[0]);
       return 2;
@@ -91,28 +133,36 @@ int main(int argc, char** argv) {
       return 2;
     }
     hf::arr::ArrangeParams ap;
-    ap.base.mode = hf::infer::GenMode::Strict;
+    ap.base.mode = mode;
     ap.base.seed = 0;
     ap.base.bars = 4;
     ap.base.tonic = 60;
     ap.base.scale = "major";
+    ap.base.keynorm_use_canonical = keynorm;
+    ap.base.use_sampling = sampling;
     safe = hf::arr::build_arrangement(*arr, ap);
-    tag = "arrange bars=" + std::to_string(arr->total_bars());
+    tag = "arrange bars=" + std::to_string(arr->total_bars()) + " mode=" + mode_name +
+          " keynorm=" + (keynorm ? "on" : "off") + " sampling=" +
+          (sampling ? "on" : "off");
   } else {
     if (!have_seed || !have_bars) {
       usage(argv[0]);
       return 2;
     }
     hf::infer::GenParams gp;
-    gp.mode = hf::infer::GenMode::Strict;
+    gp.mode = mode;
     gp.seed = seed;
     gp.bars = bars;
     gp.tonic = 60;
     gp.scale = "major";
+    gp.keynorm_use_canonical = keynorm;
+    gp.use_sampling = sampling;
 
     const auto cands = hf::infer::generate_candidates(gp);
     safe = cands[0];
-    tag = "seed=" + std::to_string(seed) + " bars=" + std::to_string(bars);
+    tag = "seed=" + std::to_string(seed) + " bars=" + std::to_string(bars) + " mode=" +
+          mode_name + " keynorm=" + (keynorm ? "on" : "off") + " sampling=" +
+          (sampling ? "on" : "off");
   }
 
   std::vector<std::uint8_t> bytes;
