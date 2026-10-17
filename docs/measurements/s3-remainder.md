@@ -11,7 +11,7 @@ NLOC/CCN per function; consumers decide the TU, not size.
 | `mix64` | 56-59 | 4/1 | `stream_seed` only | facade (seed family) |
 | `stream_seed` | 61-69 | 9/1 | impl `:533`-area (mode-in-seed `:66` stays) | facade |
 | `snap_to_pcs` | 73-87 | 12/9 | `apply_mode` only (`:171`) | modes TU-local (slice 3) |
-| `scale_or_major` | 89-93 | 5/2 | impl (`:378`) + modes | `detail` inline (SPLIT consumer) |
+| `scale_or_major` | 89-93 | 5/2 | impl (`:378`) ONLY (slice-3 grep; the remainder's "+modes" was wrong — `apply_mode` never calls it) | `detail` inline (safe superset, pre-decided) |
 | `is_minor_family` | 95-99 | 5/5 | `apply_mode` only (`:163`,`:174`) | modes TU-local (slice 3) |
 | `material_from_runner` | 111-122 | 12/3 | impl (`:416`) | model (stage 4g) |
 | `material_with_runner` | 125-133 | 9/3 | `material_from_runner_with` | model |
