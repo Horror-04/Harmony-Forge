@@ -12,9 +12,9 @@
 #include <string>
 #include <vector>
 
-#include "candidates.h"
 #include "core/music/chord.h"
 #include "detail/candidate_helpers.h"
+#include "detail/candidate_params.h"
 
 namespace hf::infer {
 namespace {

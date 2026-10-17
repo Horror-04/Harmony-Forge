@@ -62,6 +62,15 @@ different post-processing.
   Parallel implementation, shared predicates — recorded as the overlap
   surface for S3 refactors; `ranking.cpp:23` shares the semantics a third
   way. No rules were touched.
+- TU-local `mod12`/`octave_pull` duplicates (pre-cut idiom, internal
+  linkage, NOT merged in S3): `mod12` in `sampler.cpp:22`,
+  `constraints.cpp:19`, `ranking.cpp:17`, `keynorm.cpp:17`, `scale.cpp:27`,
+  `chord_detect.cpp:21`, `key_detect.cpp:22`, `voice_leading.cpp:16`,
+  `selection.cpp:14`; `octave_pull` in `keynorm.cpp:19`. The single external
+  definitions are `detail::mod12`/`detail::octave_pull`
+  (`detail/candidate_helpers.h:20,22`, S3 slice 1). None of these TUs
+  includes `detail/*.h` (verified by grep this task). Adding such an
+  include to any of them would resurrect the slice-1 C2668 ambiguity.
 
 ## 4. Arrangement level (`src/core/arrangement/arrangement.cpp`)
 
