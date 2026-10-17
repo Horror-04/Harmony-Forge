@@ -59,8 +59,8 @@ second shift variant needed (refinement 1 not triggered).
 
 | cells | live vs banked | verdict |
 |---|---|---|
-| `render_model` (OFF,ON) × E2's 34 seeds | 30 sha-diffs + 4 M1 ERROR→ok flips (17,27,36,52); seed-1 live `d9232d43…` == E2 recorded scratch sha | ✅ 34/34 E2 set replicated |
-| `render_model` v2b (ON,ON) × seeds 0–31 (`training/v2b_s11.onnx`) | diffs exactly {6, 9, 22}; other 29 identical | ✅ E2 set replicated |
+| `render_model` (OFF,ON) × E2's 34 seeds | 30 sha-diffs + 4 M1 ERROR→ok flips (17,27,36,52); seed-1 live `d9232d43…` == E2 recorded scratch sha | ✅ 34/34 E2 set replicated — **Phase A** (Python reads the spec; `gen.h`-independent: the C++ legs below are identical in both binary states, so these Python diffs belong to A) |
+| `render_model` v2b (ON,ON) × seeds 0–31 (`training/v2b_s11.onnx`) | diffs exactly {6, 9, 22}; other 29 identical | ✅ E2 set replicated — **Phase A** (same reason) |
 | `render_model` (OFF,OFF)+(ON,OFF) × seeds 1,3,5 (controls) | 6/6 identical | ✅ E2-consistent (greedy corners don't draw track 5) |
 | S0 (ON,ON) ERROR × seeds 1,2,3 | identical tap refusal (modulo scratch-run interpreter path in argv; cause text proven by green `test_expected_errors`) | ✅ negative control |
 | `render_midi` Release/old × seeds 0,1,5 × multi × Strict/Creative (OFF/OFF cells) | 12/12 identical | ✅ Phase-A C++ green |
@@ -85,8 +85,8 @@ contamination. `git status` clean (3 pre-existing untracked dirs only).
 
 ## 5. "Expected-red-but-green" list for S3.0 (no chain holes; absolute pins on both languages all reddened)
 
-1. `test_matrix_spot_37_named_rows` — coherence pin, blind to coherent shifts by construction (§1).
-2. wiring `#160`/`:752` — determinism/fallback pin; coherent-shift-blind, incoherence-sensitive (§2).
-3. output-sha 128-cell set — boundary-blind for track 5 (proven: 1152 draws, 0 hits); needs a boundary-hitting cell or stage-sensitivity coverage (§2).
-4. build-full ONNX `ort_logits` trio — not executed; construction-blind (§2).
+1. `test_matrix_spot_37_named_rows` — coherence pin, blind to coherent shifts by construction (§1). GUARD RULE: this spot is NOT spec-drift protection; drift is guarded by the frozen bitmap + `d66faabf` lint pin + the absolute red tests (Python bitmap/sha, C++ #66/#68, `--check`). Never cite the spot as drift defense.
+2. wiring `#160`/`:752` — determinism/fallback pin; coherent-shift-blind, incoherence-sensitive (§2). CORRECTION (controller): the Phase-B red expectation for `:752` was erroneous — the test checks determinism and fallback, so a coherent shift correctly leaves it green; the test is right, the expectation was wrong.
+3. output-sha 128-cell set — boundary-blind for track 5 (proven: 1152 draws, 0 hits); needs a boundary-hitting cell or stage-sensitivity coverage (§2). S4b BACKLOG: add a cell where the mock model puts mass on slot id 5 (non-blocking for S3: ranges frozen there; 4b's boundary cover stands on the sampler-copy bitmap-MATCH + #152).
+4. build-full ONNX `ort_logits` trio — NOT RUN, basis: grep (`src/inference/ort_logits.cpp:38` consumes only `kVocabMaxTokens`; zero slot references in `tests/test_ort_logits.cpp`); construction-blind to slot-bound shifts (§2).
 5. (Verified-blind, NOT gaps: `#69`/`#161`/`#154`, S0 ERROR rows, greedy corners, all `render_midi` rows.)
