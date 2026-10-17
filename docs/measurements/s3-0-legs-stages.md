@@ -138,8 +138,12 @@ model_path set, keynorm/sampling OFF → IMPL+MODE+G_PATH+memo filter).
   S3 I1 probe (2026-10-18, `refactor/s3`, ENTER-seed corruption
   `Pcg32 rng(seed)` → `Pcg32 rng(0)` in `sampler.cpp:208`): `test_s30_sampler_seed`
   reddens in BOTH configs (build-off Debug + build-full Release, 7/8 assertions,
-  `a != c` fails with identical bytes), reverts to green in both — the ENTER body is
-  pinned in the fast loop; only the `:497` call-site reach itself stays build-full-only.
+  `a != c` fails with identical bytes), reverts to green in both — the fast loop
+  guards call-site ENTRY (force-greedy at the site reddens the wiring flag-ON
+  test), NOT the seed VALUE: the `p.seed+i` binding is silent in every exercised
+  path (S3 slice 4a pair-probe). Consequence: NO byte test executes the full
+  `generate → sampler` path — cube legs are SITE=0 everywhere, and the 128-sha
+  set lives at the sampler level (direct `sample_continue`, no `+i`).
 - Sampler body: `test_sampler` 16 cases (stub-driven, direct) + the 128
   output-sha set (`docs/measurements/s2b-sampler-output-shas.json`,
   re-run + byte-compared by
