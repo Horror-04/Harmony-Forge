@@ -6,6 +6,12 @@
       "new": {"path": "src/inference/candidate_base.cpp", "start": 37, "end": 93},
       "allow": []
     },
+    "apply_candidate_transform": {
+      "sig": "void apply_candidate_transform",
+      "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 228, "end": 306},
+      "new": {"path": "src/inference/candidate_transforms.cpp", "start": 28, "end": 106},
+      "allow": []
+    },
     "tone_pcs": {
       "sig": "std::vector<int> tone_pcs",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 108, "end": 114},

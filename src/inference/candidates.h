@@ -8,49 +8,18 @@
 #include "core/model/note.h"
 #include "inference_runner.h"
 
-// S3 slice 1: `compose_base` TU. Included here so existing consumers of this
-// header keep seeing the full candidate API (re-export; declarations stay
-// valid). This header does NOT include candidates.h back (forward declaration
-// only), so there is no include cycle.
+// S3 slices 1-2: candidate TU re-exports. Included here so existing consumers
+// of this header keep seeing the full candidate API (re-export; declarations
+// stay valid). These headers never include candidates.h back (forward
+// declarations only), so there is no include cycle.
 #include "candidate_base.h"
+#include "candidate_transforms.h"
+// Shared parameter types (`GenMode`, `GenParams`) live in the narrow
+// detail/candidate_params.h; re-exported here so existing consumers are
+// unaffected by the S3 TU split.
+#include "detail/candidate_params.h"
 
 namespace hf::infer {
-
-// Generation modes (SPEC §5.1).
-enum class GenMode { Strict, Creative, Experimental };
-
-struct GenParams {
-  GenMode mode = GenMode::Strict;
-  int seed = 0;
-  int bars = 4;
-  int tonic = 60;             ///< MIDI pitch anchor (pitch class = tonic % 12)
-  std::string scale = "major";  ///< lowercase scale name (see ScaleDatabase)
-  /// Model file wired from state (Phase 2 Task 4, item A). Default empty ==
-  /// pre-Task-4 behavior: the runner stage is unloaded and generation falls
-  /// back to the deterministic composer. Non-empty builds OnnxRunner with
-  /// this path (real weights). Deliberately EXCLUDED from the candidate
-  /// stream seeds, so empty-path output is bit-identical to before.
-  std::string model_path;
-  /// Key-normalized inference (Phase 9 Task 5b): when true, the background
-  /// generate path transposes the runner feed to the canonical key (major
-  /// -> C, else -> A, drums untouched) before the runner stage and shifts
-  /// the decoded material back after. Default false == pre-task behavior
-  /// (the hook is inert; output bit-identical). Deliberately EXCLUDED from
-  /// the candidate stream seeds (same rationale as model_path): the flag
-  /// changes pitches, not the RNG streams. Background threads only.
-  bool keynorm_use_canonical = false;
-  /// Token-level sampling (Phase 10 Task 2): when true, the background
-  /// generate path continues the encoded feed through `sample_continue`
-  /// with the production `OrtLogitsProvider` instead of the greedy runner
-  /// stage. Default false == pre-task behavior (the hook is inert; output
-  /// bit-identical — flag OFF is a blocker-grade property). Provider
-  /// unavailable (missing/corrupt sidecar) falls back to the greedy bytes
-  /// silently-safe (one-time background diagnostic only). Deliberately
-  /// EXCLUDED from the candidate stream seeds (same rationale as
-  /// model_path): the flag selects the continuation engine, not the RNG
-  /// streams. Background threads only — never processBlock.
-  bool use_sampling = false;
-};
 
 // Diatonic triad-per-bar progression for `params` (degrees I-V-vi-IV cycled,
 // quality derived from the scale thirds/fifths; always known chord types, so
