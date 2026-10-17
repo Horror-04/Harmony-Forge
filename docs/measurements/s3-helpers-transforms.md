@@ -8,7 +8,8 @@ modes TU may call.
 
 ## Result: `apply_candidate_transform` moves ALONE
 
-The body (`candidates.cpp:153-231`, pre-cut `:228-306`) calls NO
+The body (`candidates.cpp:153-231` post-slice-1 numbering, i.e. pre-cut
+`880bb15:228-306`) calls NO
 file-local `candidates.cpp` helper. Every unqualified name it uses already
 lives in `detail/candidate_helpers.h` (shared, stays); everything else is
 core-lib or stdlib. Transforms-only helpers to move: NONE.
@@ -41,7 +42,7 @@ core-lib or stdlib. Transforms-only helpers to move: NONE.
 | `enforce_caps` (`:292`) | `generate_candidates_impl` (`:499`) | `candidates.cpp` (facade) |
 | `progression_for_params` | impl (`:453`); `async_generate` (2x); `ranking` | public API in `candidates.h` (stays) |
 | `compose_base` | `generate_candidates_impl` (`:459`) | base TU (slice 1, done) |
-| `apply_candidate_transform` | `generate_candidates_impl` (`:497`) | **MOVED to `candidate_transforms.cpp:26`** (this slice) |
+| `apply_candidate_transform` | `generate_candidates_impl` (`:497`) | **MOVED to `candidate_transforms.cpp:28-106` (def; this slice)** |
 
 Notes: `constraints.cpp:82` declares a LOCAL VARIABLE named `tone_pcs`
 (unrelated to the moved function). TU-local `mod12`/`octave_pull` copies in

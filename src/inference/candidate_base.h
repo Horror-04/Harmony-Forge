@@ -11,7 +11,7 @@
 
 namespace hf::infer {
 
-// Forward declaration (defined in candidates.h): only referenced here,
+// Forward declaration (defined in detail/candidate_params.h): only referenced here,
 // never named by value, so no include cycle with the candidates.h re-export.
 struct GenParams;
 
