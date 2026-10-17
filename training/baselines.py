@@ -91,18 +91,8 @@ def _kn_prob(w: int, ctx: tuple, levels: list[dict], order: int) -> float:
 
 
 def _slot_range(slot: int):
-    """Decode-valid id range for a body phase (mirrors tok.decode_tokens)."""
-    if slot == 0:
-        return range(0, 16)    # bar
-    if slot == 1:
-        return range(0, 16)    # subbeat
-    if slot == 2:
-        return range(0, 6)     # track
-    if slot == 3:
-        return range(0, 128)   # pitch
-    if slot == 4:
-        return range(1, 65)    # duration
-    return range(0, 8)         # velocity bin
+    """Thin alias of ``tok.slot_valid_range`` (S2a unification)."""
+    return tok.slot_valid_range(slot)
 
 
 def kn_continue(prefix_ids: list[int], order: int = 4) -> list[int]:

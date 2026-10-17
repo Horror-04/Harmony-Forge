@@ -107,25 +107,8 @@ class Cfg:
 
 
 def slot_valid_range(slot: int) -> range:
-    """Decode-valid id range for a body phase 0..5.
-
-    Mirrors ``tokenizer.decode_tokens`` (bar 0..15, subbeat 0..15,
-    track 0..5, pitch 0..127, duration 1..64, velocity bin 0..7);
-    parity with ``baselines._slot_range`` is asserted in tests.
-    """
-    if slot == 0:
-        return range(0, 16)
-    if slot == 1:
-        return range(0, 16)
-    if slot == 2:
-        return range(0, 6)
-    if slot == 3:
-        return range(0, 128)
-    if slot == 4:
-        return range(1, 65)
-    if slot == 5:
-        return range(0, 8)
-    raise ValueError(f"slot must lie in 0..5, got {slot!r}")
+    """Thin alias of ``tokenizer.slot_valid_range`` (S2a unification)."""
+    return tok.slot_valid_range(slot)
 
 
 def _strict_safe_set(tonic: int, scale: str, chords: list[dict],

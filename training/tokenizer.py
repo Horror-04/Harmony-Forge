@@ -58,6 +58,34 @@ def _clamp(v: int, lo: int, hi: int) -> int:
     return max(lo, min(hi, v))
 
 
+def slot_valid_range(slot: int) -> range:
+    """Decode-valid id range for a body phase 0..5 (CANONICAL single source).
+
+    S2a unification: the one implementation of the slot-valid-range rule
+    (``training/decode.py::slot_valid_range`` and
+    ``training/baselines.py::_slot_range`` are thin aliases of this
+    function; ``training/train.py::fsm_slot_range`` stays a separate copy
+    until S2b). Bounds mirror ``decode_tokens`` below (bar 0..15, subbeat
+    0..15, track 0..5, pitch 0..127, duration 1..64, velocity bin 0..7);
+    byte-equality against the frozen ``tests/golden/slot_bitmap.txt`` is
+    asserted by ``tools/tests/test_slot_bitmap.py`` (via the aliases) and
+    ``training/tests/test_slot_range_unified.py`` (directly here).
+    """
+    if slot == 0:
+        return range(0, 16)
+    if slot == 1:
+        return range(0, 16)
+    if slot == 2:
+        return range(0, 6)
+    if slot == 3:
+        return range(0, 128)
+    if slot == 4:
+        return range(1, 65)
+    if slot == 5:
+        return range(0, 8)
+    raise ValueError(f"slot must lie in 0..5, got {slot!r}")
+
+
 def encode_pattern(pattern: dict) -> list[int]:
     """Encode a pattern dict to a flat id list (deterministic)."""
     tpb = pattern.get("ticks_per_beat", TICKS_PER_BEAT)
