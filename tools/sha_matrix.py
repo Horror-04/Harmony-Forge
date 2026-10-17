@@ -29,9 +29,11 @@ S0.5 cells: defaults reproduce the S0 invocation EXACTLY (same 9-column
 schema, same loops, same 360 rows for --seeds 72). Any non-default
 --modes/--keynorm-modes/--sampling-modes/--v2b-model switches to the
 extended schema (added `sampling` column) and banks every requested cell
-for real: all render_midi mode x keynorm x sampling corners run through
-the render_midi S0.5 CLI (parse + pass-through; Strict/OFF/OFF argv and
-bytes identical to S0), all four render_model keynorm x sampling corners
+for real: all render_midi mode corners run through
+the render_midi CLI (S2 entry: keynorm/sampling corners are permanent
+model-unloaded aliases, 512/512 byte-identical to OFF twins, no longer
+emitted; Strict/OFF/OFF argv and bytes identical to S0), all four
+render_model keynorm x sampling corners
 run for real via the render_model.py S0.5 CLI (frozen pass-through paths;
 render_model mode stays 'n/a' — see LEGEND), and --v2b-model appends the
 (ON,ON) leg against that read-only checkpoint (tap-asserted logits).
@@ -209,26 +211,30 @@ def _run_legacy(seeds: list[int], rows: list[dict]) -> None:
 def _run_extended(seeds: list[int], modes: list[str], keynorms: list[str],
                   samplings: list[str], rows: list[dict],
                   v2b_model: str | None = None) -> None:
+    # S2 entry: the render_midi keynorm/sampling corners are permanent
+    # aliases with the model unloaded (banked 512/512 byte-identical to
+    # their OFF twins over 32 seeds; removed from the matrix). Only the
+    # mode cube is banked for this leg (Strict/OFF/OFF argv stays
+    # S0-identical: run_render_midi appends no flags at the default
+    # corner). keynorm/sampling dims still reach the render_model leg
+    # below (model-backed, real axes there).
     for seed in seeds:
         for mode in modes:
-            for keynorm in keynorms:
-                for sampling in samplings:
-                    for multi in (False, True):
-                        for label, exe in (('onnx-on', FULL_RENDER),
-                                           ('onnx-off', OFF_RENDER)):
-                            try:
-                                sha, size = run_render_midi(exe, seed, multi,
-                                                            mode, keynorm,
-                                                            sampling)
-                                status = 'ok'
-                            except Exception as e:  # noqa: BLE001
-                                sha, size, status = '', 0, f'ERROR {e}'
-                            rows.append({'leg': 'render_midi', 'seed': seed,
-                                         'mode': mode, 'keynorm': keynorm,
-                                         'sampling': sampling,
-                                         'onnx': label, 'multi': int(multi),
-                                         'bytes': size, 'sha256': sha,
-                                         'status': status})
+            for multi in (False, True):
+                for label, exe in (('onnx-on', FULL_RENDER),
+                                   ('onnx-off', OFF_RENDER)):
+                    try:
+                        sha, size = run_render_midi(exe, seed, multi,
+                                                    mode, 'OFF', 'OFF')
+                        status = 'ok'
+                    except Exception as e:  # noqa: BLE001
+                        sha, size, status = '', 0, f'ERROR {e}'
+                    rows.append({'leg': 'render_midi', 'seed': seed,
+                                 'mode': mode, 'keynorm': 'OFF',
+                                 'sampling': 'OFF',
+                                 'onnx': label, 'multi': int(multi),
+                                 'bytes': size, 'sha256': sha,
+                                 'status': status})
     # render_model has no Strict/Creative switch in its CLI (mode stays 'n/a'
     # per S0); the matrix dims that reach it are keynorm x sampling, all four
     # runnable via the render_model.py S0.5 CLI (frozen pass-through paths).
