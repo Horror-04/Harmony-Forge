@@ -11,6 +11,18 @@
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 108, "end": 114},
       "new": {"path": "src/inference/candidate_base.cpp", "start": 25, "end": 31},
       "allow": []
+    },
+    "mod12": {
+      "sig": "int mod12",
+      "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 44, "end": 44},
+      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 20, "end": 20},
+      "allow": []
+    },
+    "octave_pull": {
+      "sig": "int octave_pull",
+      "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 71, "end": 75},
+      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 22, "end": 26},
+      "allow": []
     }
   }
 }
