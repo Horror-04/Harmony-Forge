@@ -15,7 +15,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 | 2 mode-predicate flip | <1 min | 1 (4s incr.) |
 | 3 kn_shift+1 (flag-ON probe) | ~1 min + analysis | 1 (5s incr.) |
 | 4 sseed-of-other (:497, known headwind) | <2 min + test authoring | 4 (5s+7s+5s+final) |
-| 5a transforms↔modes | _pending_ | _pending_ |
+| 5a transforms↔modes | <1 min + probe | 2 (4s+5s) |
 | 5b mode↔denormalize (flag-ON probe) | _pending_ | _pending_ |
 | 6 stream 3-i | _pending_ | _pending_ |
 
@@ -27,7 +27,7 @@ Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-r
 | 2 | Creative passing-tone strong-beat flip (:355) | units green; Creative cube legs move, Strict silent | ALL SIX GREEN (candidates 6/11127 — count shift proves live binary; sampler wiring pins green = Strict-only fixtures, verified); cube spot 8/8 Creative MOVED + 8/8 Strict SAME | GUARDED |
 | 3 | `kn_shift+=1` (:543-544), flag-ON probe | exactly the 2 flag-ON keynorm tests | EXACTLY those 2 (test_keynorm.cpp:311 + :338, 6 asserts); all other suites green; cube: 4/4 Creative/on MOVED, Strict/on SAME on seeds 0-3 but 4/32 differ on 32-seed widen (snap-heal mechanism, see report) | GUARDED |
 | 4 | `sseed` of candidate `(i+1)%4` (:491-492) | NO red (unreachable, SITE=0); seed-sensitivity pinned on direct ENTER path instead | ALL SIX GREEN (baseline-identical counts); cube 0 moves (sampling→greedy alias intact) → CHARACTERIZATION `test_s30_sampler_seed.cpp` (ff2dd75): green-clean 8/8, red-corrupted 7/8 | CLOSED BY NEW TEST |
-| 5a | swap :572/:573 (transform↔mode) | units green; cands[0]-cube silent (idx0 untouched); all-4 probe moves | _pending_ | _pending_ |
+| 5a | swap :572/:573 (transform↔mode) | units green; cands[0]-cube silent (idx0 untouched); all-4 probe moves | PREDICTION WRONG ON UNITS — RED: test_candidates "Strict compliance holds across keys and modes" (dorian Catchy 0.975 — displaced trailing conflict-resolution) + test_sampler wiring pins (4 asserts); render spot 0/8 (cands[0] blind by construction); all-4 probe: Strict-idx1, Creative-idx1/2/3, Experimental-idx1 MOVED | GUARDED |
 | 5b | swap :573/:569 (mode↔denormalize), flag-ON probe | exactly G-major pc-equivalence; flag-OFF cube silent | _pending_ | _pending_ |
 | 6 | `stream_seed(p,i)`→`(p,3-i)` (:533) | units green; ALL MIDI cube legs move | _pending_ | _pending_ |
 
