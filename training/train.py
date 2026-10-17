@@ -43,6 +43,7 @@ CKPT_DIR = os.path.join(HERE, "checkpoints")
 
 sys.path.insert(0, HERE)
 import theory as T
+import tokenizer as tok
 from tinilm import CONFIG, CTX, VOCAB, build_model, param_count
 import keynorm as K
 
@@ -207,24 +208,14 @@ def heldout_early_stop(stale: int, patience: int, ep1: int,
 def fsm_slot_range(slot: int) -> range:
     """Decode-valid id range for a body phase 0..5 (Phase 17 Task 2 lever).
 
-    MIRROR of ``decode.slot_valid_range`` (itself the inference/tokenizer
-    rule): bar 0..15, subbeat 0..15, track 0..5, pitch 0..127, duration
-    1..64, velocity bin 0..7. No forked constants: parity with
+    S2b step 3: thin alias of ``tokenizer.slot_valid_range`` (itself the
+    spec-read canonical rule since step 2, shared with
+    ``decode.slot_valid_range`` and ``baselines._slot_range``) — the 4th
+    copy is removed, no forked constants. Parity with
     ``decode.slot_valid_range`` and ``baselines._slot_range`` is asserted in
-    ``training/tests/test_harness_levers.py`` (same-rule test)."""
-    if slot == 0:
-        return range(0, 16)
-    if slot == 1:
-        return range(0, 16)
-    if slot == 2:
-        return range(0, 6)
-    if slot == 3:
-        return range(0, 128)
-    if slot == 4:
-        return range(1, 65)
-    if slot == 5:
-        return range(0, 8)
-    raise ValueError(f"slot must lie in 0..5, got {slot!r}")
+    ``training/tests/test_harness_levers.py`` (same-rule test, unmodified).
+    """
+    return tok.slot_valid_range(slot)
 
 
 _fsm_legal_cache = None
