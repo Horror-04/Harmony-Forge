@@ -1,0 +1,102 @@
+# Copyright (C) 2026 Horror-04
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Regenerate test goldens (INFRA ONLY - not part of any gate run).
+
+Contract: ``--check`` (default) recomputes the slot bitmap from the four
+independent Python sources (training/tokenizer.py, training/decode.py,
+training/baselines.py, training/train.py) and diffs against
+tests/golden/slot_bitmap.txt (exit 0 = match, 1 = mismatch). ``--write``
+rewrites the golden file and prints the manifest fields to update by hand.
+
+FROZEN NOTICE: the S2-entry bitmap (tests/golden/manifest.json,
+"frozen": true) must NEVER be regenerated - any regen fails the S4a gate.
+This script exists for post-S4b use only. It was NOT run to produce the
+frozen bitmap (that file was written once from the OLD code and committed).
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import os
+import sys
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_REPO = os.path.dirname(_HERE)
+_TRAINING = os.path.join(_REPO, "training")
+_GOLDEN = os.path.join(_REPO, "tests", "golden", "slot_bitmap.txt")
+
+sys.path.insert(0, _TRAINING)
+
+GOLDEN_ROWS = 6
+GOLDEN_COLS = 256
+
+
+def _bitmap_from_ranges() -> list[str]:
+    import baselines as B
+    import decode as D
+    import train as TR
+
+    fns = [D.slot_valid_range, B._slot_range, TR.fsm_slot_range]
+    rows: list[str] = []
+    for slot in range(GOLDEN_ROWS):
+        sets = [set(fn(slot)) for fn in fns]
+        if any(s != sets[0] for s in sets[1:]):
+            raise ValueError(f"python copies disagree at slot {slot}")
+        rows.append("".join("1" if v in sets[0] else "0"
+                            for v in range(GOLDEN_COLS)))
+    return rows
+
+
+def _bitmap_from_tokenizer_decode() -> list[str]:
+    import tokenizer as tok
+
+    rows: list[str] = []
+    for slot in range(GOLDEN_ROWS):
+        bits = []
+        for v in range(GOLDEN_COLS):
+            ids = [1, 0, 0, 1, 60, 4, 6]
+            ids[1 + slot] = v
+            bits.append("1" if tok.decode_tokens(ids) is not None else "0")
+        rows.append("".join(bits))
+    return rows
+
+
+def _read_golden() -> list[str]:
+    with open(_GOLDEN, encoding="utf8") as f:
+        rows = [ln.strip() for ln in f if ln.strip()]
+    if len(rows) != GOLDEN_ROWS or any(len(r) != GOLDEN_COLS
+                                       for r in rows):
+        raise ValueError("golden file is not 6x256")
+    return rows
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--write", action="store_true",
+                    help="rewrite the golden file (FROZEN goldens: never)")
+    args = ap.parse_args()
+    ranges_rows = _bitmap_from_ranges()
+    decode_rows = _bitmap_from_tokenizer_decode()
+    if ranges_rows != decode_rows:
+        print("update_goldens: python sources disagree with "
+              "tokenizer.decode_tokens")
+        return 1
+    if not args.write:
+        golden = _read_golden()
+        if golden == ranges_rows:
+            print("update_goldens --check: MATCH")
+            return 0
+        print("update_goldens --check: MISMATCH")
+        return 1
+    with open(_GOLDEN, "w", encoding="utf8", newline="") as f:
+        f.write("\n".join(ranges_rows) + "\n")
+    raw = "".join(ranges_rows).encode()
+    print("update_goldens --write: rewrote %s" % _GOLDEN)
+    print("canonical sha256: %s" % hashlib.sha256(raw).hexdigest())
+    print("update tests/golden/manifest.json file_sha256/file_bytes by hand")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
