@@ -80,7 +80,8 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       roll(doc),
       candidateBar(doc),
       explainView(doc),
-      previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)) {
+      previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)),
+      previewCtl_(*previewGen_) {
   // Phase 7 Task 2: single LookAndFeel point — propagates to all children via
   // the JUCE hierarchy lookup (restored in the dtor). Paint only; no
   // callbacks change. The Preview CTA gets the primary variant tag here, at
@@ -106,7 +107,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   // worker still finishes but the completion is discarded - no new threads).
   // Otherwise it starts the preview as before.
   previewButton.onClick = [this] {
-    if (previewBusy_)
+    if (previewCtl_.busy())
       cancelPreviewExport();
     else
       startPreview();
@@ -535,7 +536,7 @@ void HarmonyForgeEditor::timerCallback() {
   // Phase 6 Task 5 (A): indeterminate progress - while busy, the status text
   // gains a cycling 1..3-dot ellipsis (~300 ms steps) on this message-thread
   // Timer. No new threads; the worker is untouched. Redraws only on change.
-  if (previewBusy_) {
+  if (previewCtl_.busy()) {
     const int dots = (tick / 12) % 3 + 1;
     if (dots != previewAnimDots_) {
       previewAnimDots_ = dots;
@@ -887,7 +888,8 @@ void HarmonyForgeEditor::refreshModelRow() {
 }
 
 void HarmonyForgeEditor::setPreviewBusy(bool busy, const juce::String& status) {
-  previewBusy_ = busy;
+  // S7 slice 4: busy STATE lives in PreviewController now; this keeps only
+  // the button/status/animation UI (same text as before, byte-identical).
   // Phase 6 Task 5 (A): the base text carries no dots - the Timer animation
   // above appends the cycling ellipsis. The button doubles as Cancel while
   // busy (always enabled) so a pending job can be dropped from the UI;
@@ -904,20 +906,18 @@ void HarmonyForgeEditor::cancelPreviewExport() {
   // User-pressed Cancel: same id-drop as the sync-takeover path, then an
   // honest status (a cancel is never silent). The worker, if still running,
   // completes bounded and its completion is discarded by id.
-  const PendingOp op = pendingOp_;
+  // S7 slice 4: the op is read from the controller DIRECTLY (never via
+  // poll — a still-generating job polls noop and the text would be lost).
+  const hf::plugin::PreviewAction op = previewCtl_.pendingOp();
   cancelPendingPreviewExport();
-  statusLabel.setText(op == PendingOp::Export ? "Export cancelled." : "Preview cancelled.",
+  statusLabel.setText(op == hf::plugin::PreviewAction::Export ? "Export cancelled." : "Preview cancelled.",
                       juce::dontSendNotification);
 }
 
 void HarmonyForgeEditor::cancelPendingPreviewExport() {
-  // Last-wins: a synchronous preview/export (working pattern present, or no
-  // model configured) supersedes any in-flight async job — e.g. Build
-  // arrangement adopting a pattern while a preview generation is pending.
-  // The worker completion, if any, stays queued but is never collected while
-  // previewBusy_ is false; a later submit drains it via try_take_latest.
-  pendingOp_ = PendingOp::None;
-  pendingPreviewId_ = 0;  // 0 is never issued (ids start at 1)
+  // S7 slice 4: the last-wins id-drop lives in PreviewController (see its
+  // contract); the Editor keeps only the busy-UI reset.
+  previewCtl_.cancel();
   setPreviewBusy(false, "");
 }
 
@@ -928,8 +928,16 @@ void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
   // request supersedes a pending one by id (see pollPreviewExport).
   const auto gp = hf::plugin::paramsFromState(
       proc.state(), hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
-  pendingPreviewId_ = previewGen_->generate_async(gp);
-  pendingOp_ = op;
+  // S7 slice 4: the id/op/busy transitions live in PreviewController; the
+  // Editor keeps the busy-UI text (same strings as before, byte-identical).
+  // The op map is total (None can never be submitted — both call sites pass
+  // Preview/Export — and poll dispatches None to no arm, as before).
+  hf::plugin::PreviewAction action = hf::plugin::PreviewAction::None;
+  if (op == PendingOp::Preview)
+    action = hf::plugin::PreviewAction::Preview;
+  else if (op == PendingOp::Export)
+    action = hf::plugin::PreviewAction::Export;
+  previewCtl_.submit(gp, action);
   // Phase 6 Task 5 (A): dot-free base - the Timer appends the ellipsis.
   setPreviewBusy(true, op == PendingOp::Preview ? "Generating preview"
                                                 : "Generating MIDI for export");
@@ -938,19 +946,18 @@ void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
 bool HarmonyForgeEditor::pollPreviewExport() {
   // Message-thread Timer poll: apply the latest completion for the pending
   // id, drop stale superseded ones. No-op unless a job is pending.
-  if (!previewBusy_) return false;
-  auto got = previewGen_->try_take_latest(pendingPreviewId_);
-  if (!got.has_value()) return false;  // worker still generating
-  const PendingOp op = pendingOp_;
-  pendingOp_ = PendingOp::None;
+  // S7 slice 4: collection lives in PreviewController (same try_take_latest
+  // discipline); the Editor keeps the schedule/finish dispatch (same text).
+  const hf::plugin::PreviewPollResult result = previewCtl_.poll();
+  if (!result.applied) return false;  // idle or worker still generating
   setPreviewBusy(false, "");
-  if (op == PendingOp::Preview) {
-    const int n = schedulePattern(got->candidates[0], doc.trackShown());
+  if (result.action == hf::plugin::PreviewAction::Preview) {
+    const int n = schedulePattern(result.pattern, doc.trackShown());
     statusLabel.setText(n > 0 ? juce::String("Preview: ") + juce::String(n) + " notes"
                               : juce::String("Preview: generated pattern has no playable notes"),
                         juce::dontSendNotification);
-  } else if (op == PendingOp::Export) {
-    finishExport(got->candidates[0]);
+  } else if (result.action == hf::plugin::PreviewAction::Export) {
+    finishExport(result.pattern);
   }
   return true;
 }

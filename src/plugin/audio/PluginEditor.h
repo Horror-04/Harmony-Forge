@@ -8,6 +8,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include "../controllers/PreviewController.h"
 #include "../state/PluginState.h"
 #include "../ui/ArrangeBar.h"
 #include "../ui/CandidateBar.h"
@@ -309,9 +310,11 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   // not in PatternDocument — so Regenerate polling can never drain these
   // completions and vice versa.
   std::unique_ptr<hf::infer::AsyncGenerateQueue> previewGen_;
-  PendingOp pendingOp_ = PendingOp::None;
-  hf::infer::GenJobId pendingPreviewId_ = 0;
-  bool previewBusy_ = false;
+  // S7 slice 4: the pending preview/export job state (id + op + busy) lives
+  // in PreviewController; the Editor keeps only status/UI text + dispatch.
+  // Declared AFTER previewGen_ so it dies FIRST — the queue ref never
+  // dangles across the queue's shutdown-join (s5a-inventory §2 teardown map).
+  hf::plugin::PreviewController previewCtl_;
   // Phase 6 Task 5 (A): ellipsis animation base (status without dots) + last
   // drawn dot count (-1 = force redraw on the next Timer tick).
   juce::String previewStatusBase_;
