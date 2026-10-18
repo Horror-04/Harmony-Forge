@@ -284,4 +284,8 @@ rule file-absence-safe via `includes_of` OSError tolerance).
   coverage explicitly NOT claimed.
 - Commit on green only: lifecycle Debug + Release + plugin-OFF green,
   layers `--strict` green, gate tests 6/6 — shutdown-safe.
-...[truncated 3881 chars]
+...[truncated 3881 chars]\\
+\## Follow-up close-out (controller, post-review)\
+\\
+\- Layers-rule red-proof: planted #include <juce_gui_basics/juce_gui_basics.h> in PatternDocument.h (scratch) -> --strict exit nonzero naming the file; reverted -> CLEAN. Ratchet proven live, not just green.\
+\- Item-3 #5 exact patterns (re-runnable): launchAsync -> 3 sites (:812 export bytes-only safe, :826 + :947 SafePointer-guarded); \[this\] in PluginEditor.cpp -> 35, all sync UI callbacks (zero callAsync/std::thread/std::async in file); outbox.push -> 1 site, definition-only (PluginProcessor.h:95 in enqueueMidi); previewNoteOn|Off -> 2 sites, tick-drain only (:549/:551). Zero claim holds with patterns attached.\
