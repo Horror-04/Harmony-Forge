@@ -23,6 +23,8 @@ target_sources(HarmonyForge PRIVATE
   audio/PluginEditor.h
   audio/PreviewSynth.cpp
   audio/PreviewSynth.h
+  audio/RtViolationCounter.cpp
+  audio/RtViolationCounter.h
   state/PluginState.cpp
   state/PluginState.h
   ui/PatternDocument.h

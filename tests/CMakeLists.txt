@@ -186,6 +186,34 @@ target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
 
+# S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
+# PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
+# for the createEditor link; the editor is never constructed — headless).
+# Headless-safe: constructs the real processor, calls processBlock directly
+# with a MidiBuffer (no host, no message loop). Plugin-ON only.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_rt_violation_counter test_rt_violation_counter.cpp
+    ../src/plugin/audio/PluginProcessor.cpp
+    ../src/plugin/audio/PluginEditor.cpp
+    ../src/plugin/audio/PreviewSynth.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/ui/PianoRoll.cpp
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/ExplainView.cpp
+    ../src/plugin/ui/HFLookAndFeel.cpp)
+  target_link_libraries(test_rt_violation_counter PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
+    juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures
+    Catch2::Catch2WithMain)
+  target_include_directories(test_rt_violation_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_rt_violation_counter PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_rt_violation_counter)
+  catch_discover_tests(test_rt_violation_counter)
+endif()
+
 # Phase 10 Task 2: PluginState useSampling (persisted flag) coverage. Links
 # the real PluginState.cpp (JUCE), so it only builds where the plugin is
 # configured. Headless-safe: ValueTree + UndoManager only, no components.

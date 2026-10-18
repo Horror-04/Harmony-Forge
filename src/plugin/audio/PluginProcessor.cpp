@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 
 #include "PluginEditor.h"
+#include "RtViolationCounter.h"
 
 HarmonyForgeProcessor::HarmonyForgeProcessor()
     : AudioProcessor(BusesProperties()
@@ -31,6 +32,8 @@ bool HarmonyForgeProcessor::isBusesLayoutSupported(const BusesLayout& layouts) c
 // no ValueTree/Undo access. ONLY the four steps below.
 void HarmonyForgeProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                          juce::MidiBuffer& midiMessages) {
+  // S5a-RT: Debug-only alloc-counter flag (empty type, zero cost in Release).
+  const hf::rt::ScopedFlag rtAudioScope;
   juce::ScopedNoDenormals noDenormals;
   // 1. Clear audio (we are a MIDI effect + preview synth; no audio input use).
   buffer.clear();
