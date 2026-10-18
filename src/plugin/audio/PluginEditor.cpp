@@ -724,11 +724,7 @@ void HarmonyForgeEditor::doRegenerate() {
   proc.undo().beginNewTransaction("Seed/bars");
   hf::plugin::setSeed(proc.state(), seed, &proc.undo());
   hf::plugin::setBars(proc.state(), bars, &proc.undo());
-  const auto gp = PatternDocument::makeParamsWithModel(
-      seed, bars, hf::plugin::rootKey(proc.state()),
-      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString(),
-      hf::plugin::useSampling(proc.state()));
+  const auto gp = hf::plugin::paramsFromState(proc.state(), seed, bars);
   doc.regenerate(gp);
 }
 
@@ -742,11 +738,7 @@ void HarmonyForgeEditor::doRegenerateSelection() {
   proc.undo().beginNewTransaction("Seed/bars");
   hf::plugin::setSeed(proc.state(), seed, &proc.undo());
   hf::plugin::setBars(proc.state(), bars, &proc.undo());
-  const auto gp = PatternDocument::makeParamsWithModel(
-      seed, bars, hf::plugin::rootKey(proc.state()),
-      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString(),
-      hf::plugin::useSampling(proc.state()));
+  const auto gp = hf::plugin::paramsFromState(proc.state(), seed, bars);
   doc.regenerateSelection(gp);
 }
 
@@ -764,11 +756,7 @@ void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>&
   arr.sections = sections;
   // Per-section seeds/bars rule generation and layout; the state seed/bars
   // below are unused placeholders (bars is clamped by makeParamsWithModel).
-  const auto gp = PatternDocument::makeParamsWithModel(
-      hf::plugin::seed(proc.state()), 4, hf::plugin::rootKey(proc.state()),
-      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString(),
-      hf::plugin::useSampling(proc.state()));
+  const auto gp = hf::plugin::paramsFromState(proc.state(), hf::plugin::seed(proc.state()), 4);
   hf::arr::ArrangeParams ap;
   ap.base = gp;
   const auto t0 = juce::Time::getMillisecondCounter();
@@ -938,12 +926,8 @@ void HarmonyForgeEditor::submitPreviewExport(PendingOp op) {
   // identical generate_candidates, so the completion's candidates[0] equals
   // patternForState bit-identically (asserted in test_model_preview). A new
   // request supersedes a pending one by id (see pollPreviewExport).
-  const auto gp = PatternDocument::makeParamsWithModel(
-      hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()),
-      hf::plugin::rootKey(proc.state()),
-      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
-      hf::plugin::modelPath(proc.state()).toStdString(),
-      hf::plugin::useSampling(proc.state()));
+  const auto gp = hf::plugin::paramsFromState(
+      proc.state(), hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
   pendingPreviewId_ = previewGen_->generate_async(gp);
   pendingOp_ = op;
   // Phase 6 Task 5 (A): dot-free base - the Timer appends the ellipsis.
