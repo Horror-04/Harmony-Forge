@@ -147,6 +147,28 @@ TEST_CASE("cancel resets to idle; late completion is never applied",
   CHECK_FALSE(ctl.busy());
 }
 
+TEST_CASE("pendingOp reports the submitted op and None when idle",
+          "[preview-controller]") {
+  auto runner = std::make_shared<GateRunner>();
+  hf::infer::AsyncGenerateQueue q(runner, 1);
+  hf::plugin::PreviewController ctl(q);
+
+  // Idle: None (the Editor's cancel-text default when nothing is pending).
+  CHECK(ctl.pendingOp() == hf::plugin::PreviewAction::None);
+
+  ctl.submit(preview_params(7), hf::plugin::PreviewAction::Export);
+  REQUIRE(ctl.busy());
+  CHECK(ctl.pendingOp() == hf::plugin::PreviewAction::Export);
+
+  ctl.cancel();
+  CHECK_FALSE(ctl.busy());
+  CHECK(ctl.pendingOp() == hf::plugin::PreviewAction::None);
+  // The worker is pinned inside the cancelled job's predict; release it so
+  // the queue join at destruction cannot block (same discipline as the
+  // cancel test above).
+  runner->release.store(true, std::memory_order_release);
+}
+
 TEST_CASE("second submit supersedes the first by id",
           "[preview-controller]") {
   auto runner = std::make_shared<GateRunner>();

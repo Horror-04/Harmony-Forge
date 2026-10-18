@@ -55,6 +55,10 @@ class PreviewController {
 
   bool busy() const { return busy_; }
 
+  // The pending op (None when idle). Lets the Editor pick the cancel/status
+  // text for the in-flight job without touching the queue.
+  PreviewAction pendingOp() const { return pending_op_; }
+
  private:
   hf::infer::AsyncGenerateQueue& queue_;
   hf::infer::GenJobId pending_id_ = 0;  // 0 is never issued (ids start at 1)
