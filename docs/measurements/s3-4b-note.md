@@ -80,3 +80,19 @@ guard is the only pre-S4b страж, shown alive twice, scratch, reverted:
 Rule to the pin (Sonnet condition 2): any commit touching
 `candidate_model.cpp` or the call-site passes only with `check_bodies`
 sans allowlist; seed-value changes go in a separate PR with the pin.
+
+## 7. Guard retired post-Pcg32 (2026-10-18, HEAD past `a442e63`)
+
+The guardrails session replaced the candidates RNG (`mt19937` →
+`hf::infer::Pcg32`) — a sanctioned behavior change, not a move — so this
+script is RED on master and its S3 invariant ("facade differs only by
+removals") no longer holds. RETIRED as a gate (it stays advisory in CI
+and keeps working for future mechanical moves against `880bb15`).
+Precise blast boundary, proven live this date (not asserted):
+- SURVIVE (re-verified green at HEAD): frozen bitmap/`d66faabf`,
+  128-sha harness 128/128, boundary cell (`8466a0d6…`), v2b-32,
+  all suites, all workflow gates.
+- STALE (pre-Pcg32 numbers, audit trail — do not delete):
+  `cube-baseline-v2` (composer streams moved; spot 0/16),
+  C1–C6 guard shapes, wiring/binding/shape golden VALUES (pins still
+  live, re-banked under the new streams with documented reason).

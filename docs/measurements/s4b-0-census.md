@@ -151,3 +151,7 @@ S5–S9 add no off-golden literals — new pins go to golden files (or the
 manifest `in_test` registry with reason), new tests use the
 parity-file/relational/echo patterns. CI runs the lint as ADVISORY
 (non-blocking, commented); the local run is the record.
+\\
+\## 7. Re-baseline (2026-10-18, guardrails merge)\
+\\
+\New TOTAL: digest64=0 - hex16=12 - vectors=275 (elems=3290) - assert>=1000=35 - toler=80. Delta vs S2 (+4 vector blocks/+32 elems/+8 toler) comes from guardrails tests (selection vectors, candidates tolerances, new vertical_slice file) — legitimate new-test literals, not migration debt. Ratchet re-baselined HERE; must not grow from these numbers.\

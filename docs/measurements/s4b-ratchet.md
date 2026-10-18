@@ -42,3 +42,7 @@ Shape goldens G1/G2/G3: exact lists = run-captured GOLDENS (manifest
 not goldens, no script. Binding `kPinned` hashes likewise registered.
 `update_goldens.py` domain (frozen slot bitmap only) unchanged by design;
 frozen `d66faabf` + lint green; `cube-baseline-v2` not rewritten.
+\\
+\## 6. Post-Pcg32 status (2026-10-18)\
+\\
+\Binding/shape golden VALUES re-banked under Pcg32 streams by the guardrails session (pins live, reasons documented in-test). Boundary cell + 128-sha + v2b-32 re-verified IDENTICAL at HEAD (sampler/Python paths unaffected). Cube-baseline-v2 + C-series shapes are pre-Pcg32 history (see s3-4b-note S7).\
