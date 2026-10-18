@@ -1,0 +1,13 @@
+# S6.4 export golden: exact SMF bytes for the fixed in-code pattern in
+# tests/test_s6_4_export.cpp (Melody 3 notes / Bass 1 / Chords 2 / Drums 2,
+# deliberately wrong preset channels 7/5/9/2 -> assigned 0/1/2/9).
+#
+# Run-captured on the clean tree (Release; Debug re-ran green unchanged):
+# build the test, run it once (it INFO-dumps size + hex, see the test
+# header capture procedure), write the dump here, re-run green.
+# Registered in tests/golden_manifest.json in_test (S6.4 entries). These
+# are NEW golden files: the frozen three (slot_bitmap.txt + 2 seed .mid)
+# are untouched (lint_golden_pin.py still passes).
+bytes=131
+tracks=4
+hex=4d546864000000060001000401e04d54726b0000001f00903c648360803c400090405a836080404000904350817080434000ff2f004d54726b0000000d0091246e874081244000ff2f004d54726b00000015009230500092375083608230400082374000ff2f004d54726b00000014009926787889264078992a6478892a4000ff2f00

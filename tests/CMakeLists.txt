@@ -240,6 +240,13 @@ target_compile_definitions(test_s6_3_reference_controller PRIVATE
   HARMONY_FORGE_S6_3_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/s6_3_reference_report.txt")
 hf_copy_ort_runtime(test_s6_3_reference_controller)
 catch_discover_tests(test_s6_3_reference_controller)
+# S6.4 commit 1: MIDI-export flow characterization (JUCE-free fixed-pattern
+# test, builds in BOTH configs incl. plugin-off). Goldens: tests/golden/
+# s6_4_export_bytes.txt (fixed pattern) + s6_4_export_empty.txt (empty
+# fallback); no .mid INPUT fixtures needed for export (see test header).
+hf_add_test(test_s6_4_export test_s6_4_export.cpp)
+target_compile_definitions(test_s6_4_export PRIVATE
+  HARMONY_FORGE_S6_4_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden")
 # S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
 # PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
 # for the createEditor link; the editor is never constructed — headless).

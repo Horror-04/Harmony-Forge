@@ -1,0 +1,7 @@
+# S6.4 export golden: exact SMF bytes for the EMPTY pattern (deterministic
+# empty-fallback half of s6-0-composition.md section 3e; the fallback SOURCE
+# (patternForState generation) is not pinned here). Single empty track,
+# format 1, 480 PPQ. Run-captured like s6_4_export_bytes.txt above.
+bytes=26
+tracks=1
+hex=4d546864000000060001000101e04d54726b0000000400ff2f00

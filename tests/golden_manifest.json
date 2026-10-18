@@ -2,6 +2,18 @@
   "doc": "Registry for in-test golden values (S4b). These literals live in test sources (NOT under tests/golden/) and are exempt from the S4b.0 off-golden-literal lint via this registry (allowlist with reason, same mechanism as score_sheet.md). The frozen slot bitmap (tests/golden/, d66faabf) is a different domain owned by update_goldens.py + lint_golden_pin.py and is untouched by every entry here.",
   "in_test": [
     {
+      "test": "s6.4 export fixed-pattern + drag encode to exact bytes (tests/test_s6_4_export.cpp, [s6_4][export]/[s6_4][drag])",
+      "pins": "tests/golden/s6_4_export_bytes.txt exact SMF bytes (131, 4 tracks, format 1, 480 PPQ) for the fixed in-code pattern (Melody 3/Bass 1/Chords 2/Drums 2, preset channels 7/5/9/2 -> assigned 0/1/2/9) + MThd/format/track/PPQ structure + both Editor encode sites (finishDrag :809-812, finishExport :839-841) vs the same golden — GOLDEN class (run-captured on the clean tree; Release+Debug identical). No .mid INPUT fixture (export needs none).",
+      "how": "ctest -R 's6.4' (build-full Release or build-off Debug); bytes read from the INFO dump on the clean tree per the test-header capture procedure",
+      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)"
+    },
+    {
+      "test": "s6.4 export empty-fallback + error-path contracts (tests/test_s6_4_export.cpp, [s6_4][export])",
+      "pins": "tests/golden/s6_4_export_empty.txt exact SMF bytes (26, single empty track) for the empty pattern + hostile-input totality (negative tick / pitch 200/-5 / zero duration / channel 99 -> no throw, deterministic, read_smf round-trip clamps) + input-immutability (copy discipline); cancelled-save silent return (:848-851) + ignored replaceWithData (:850) marked UNPINNABLE (FileChooser/juce::File, JUCE-bound) with line cites — pinned as documented contracts, not weakened.",
+      "how": "ctest -R 's6.4' (build-full Release or build-off Debug)",
+      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)"
+    },
+    {
       "test": "s6.3 reference-import happy-path bytes->report (tests/test_s6_3_reference_import.cpp, [s6_3][reference])",
       "pins": "tests/golden/s6_3_reference_report.txt exact AnalysisReport for tests/fixtures/ref_happy_c_major.mid (tonic 60/major/conf 1.0, chords 60:maj + 65:maj, density 4.0, drums 2, bars 2, tpb 480) — GOLDEN class (run-captured on the clean tree; Release+Debug identical). Fixture generator tools/gen_s6_3_fixtures.py.",
       "how": "ctest -R 's6.3' (build-full Release or build-off Debug); values read from the INFO dump on the clean tree per the test-header capture procedure",
