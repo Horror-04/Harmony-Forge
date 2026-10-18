@@ -373,6 +373,19 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   catch_discover_tests(test_params_from_state)
 endif()
 
+# S7 slice 5 (GREEN): PreviewScheduler schedule/tick/stop standalone unit,
+# no Editor wiring. JUCE-free controller under src/plugin/controllers,
+# compiled directly into the test so it builds in BOTH configs (plugin-ON/
+# OFF). TDD: red-proven first (test-only registration failed C1083 on the
+# missing controllers/PreviewScheduler.h — see task report), then the
+# minimal implementation turned it green.
+add_executable(test_preview_scheduler test_preview_scheduler.cpp
+  ../src/plugin/controllers/PreviewScheduler.cpp)
+target_link_libraries(test_preview_scheduler PRIVATE harmony_forge_core harmony_forge_inference Catch2::Catch2WithMain)
+target_include_directories(test_preview_scheduler PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+target_compile_features(test_preview_scheduler PRIVATE cxx_std_20)
+hf_copy_ort_runtime(test_preview_scheduler)
+catch_discover_tests(test_preview_scheduler)
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).
 # Deliberately NOT registered with catch_discover_tests: the binary never
 # appears in `ctest -N`, so the default fast suite keeps its count and
