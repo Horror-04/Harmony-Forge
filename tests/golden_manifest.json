@@ -1,0 +1,29 @@
+{
+  "doc": "Registry for in-test golden values (S4b). These literals live in test sources (NOT under tests/golden/) and are exempt from the S4b.0 off-golden-literal lint via this registry (allowlist with reason, same mechanism as score_sheet.md). The frozen slot bitmap (tests/golden/, d66faabf) is a different domain owned by update_goldens.py + lint_golden_pin.py and is untouched by every entry here.",
+  "in_test": [
+    {
+      "test": "s4b Creative arm adds weak-beat chromatic passing tones (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
+      "pins": "G1 exact passing-tone (tick,pitch) list kTones (4 pairs) — GOLDEN class (run-captured; arm is rng-free deterministic, values captured from a run). Structural CHECKs in the same case (counts, 16th-grid, duration 120, velocity 70, semitone approach, selectivity skips) are NOT goldens.",
+      "how": "ctest -R 's4b Creative' (build-off Debug or build-full Release, identical — no sampler/model in path); values read from INFO 'tones (tick,pitch)' dump on the clean tree",
+      "commit": "1746ae0"
+    },
+    {
+      "test": "s4b Experimental arm flips weak-beat color tones at ~25pc (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
+      "pins": "G2 exact flip list kFlips (tick:old->new, rng seed 7 pinned in-test) — GOLDEN class (run-captured, seed-dependent). Per-flip properties (weak beat, color degree, -1, Melody-only) + selectivity controls are NOT goldens.",
+      "how": "ctest -R 's4b Experimental arm flips' ; values read from INFO 'flips (tick:old->new)' dump on the clean tree",
+      "commit": "1746ae0"
+    },
+    {
+      "test": "s4b Experimental arm keeps parallel-union pitches (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
+      "pins": "G3 exact kept-probe list kKept (3 pairs) — GOLDEN class (deterministic rng-free union snap, run-verified). Union-membership property + Strict-moves foil are NOT goldens.",
+      "how": "ctest -R 's4b Experimental arm keeps' ; values read from INFO 'probes (tick,pitch)' dump on the clean tree",
+      "commit": "1746ae0"
+    },
+    {
+      "test": "s4b sampler index-seed binding is pinned per candidate (tests/test_s4b_seed_binding.cpp, [sampler][s4b])",
+      "pins": "kPinned[3][4] per-index FNV-1a hashes (64-hex digests) for seeds 0/10/11 — GOLDEN class (run-captured; recaptured clean at seed-0 fix-forward, seeds 10/11 banked after per-seed swap-sensitivity proof). Determinism/engagement/sensitivity preconditions are NOT goldens.",
+      "how": "ctest -R 's4b sampler index-seed' (build-full Release, engaged path); values read from failure-diff / INFO dump on the clean tree, double-confirmed; swap red-proof per seed in task reports",
+      "commit": "6519803"
+    }
+  ]
+}
