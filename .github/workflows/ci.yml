@@ -9,7 +9,36 @@ on:
   pull_request:
 
 jobs:
+  gates:
+    # Task 3 enforce gates (stdlib only, seconds, no build): fail fast
+    # before configure/build/test. Enforce ONLY banned tokens + layer
+    # includes + golden pin + sealed-split isolation — no style gates.
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Layer gate (src/core JUCE-free, inference plugin-free)
+        run: python tools/check_layers.py --strict
+
+      - name: RT gate (no banned tokens in audio-path scope)
+        run: python tools/rt_scan.py --strict
+
+      - name: Golden pin lint (frozen bitmap pin, NEVER-REGENERATE)
+        run: python tools/lint_golden_pin.py
+
+      - name: Sealed-test isolation grep
+        # No training/eval code may reference the sealed split. The only
+        # legitimate references are the one-time producer
+        # (training/ingest/carve_sealed.py: wrote the split at creation,
+        # never scores) and the verifier (training/tests/test_sealed.py:
+        # manifest cross-checks only). Anything else fails the job.
+        run: |
+          $hits = Get-ChildItem -Path training -Recurse -Filter *.py | Select-String -Pattern 'sealed_test' | Where-Object { $_.Path -notmatch 'carve_sealed\.py$' -and $_.Path -notmatch 'test_sealed\.py$' }
+          if ($hits) { $hits | ForEach-Object { Write-Host $_ }; exit 1 }
+          Write-Host 'sealed-grep CLEAN: only carve_sealed.py + test_sealed.py reference sealed_test'
+
   build-test-validate:
+    needs: gates
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
