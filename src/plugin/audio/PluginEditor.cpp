@@ -330,6 +330,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   chordTrack.onBarSelected = [this](int bar) { refreshChordRow(bar); };
 
   candidateBar.onRegenerate = [this] { doRegenerate(); };
+  candidateBar.onRegenerateSelection = [this] { doRegenerateSelection(); };
   candidateBar.onAudition = [this](int i) { auditionCandidate(i); };
   candidateBar.onKeep = [this](int i) { doKeep(i); };
   candidateBar.onRecallHistory = [this](const hf::core::HistoryEntry& e) {
@@ -746,6 +747,24 @@ void HarmonyForgeEditor::doRegenerate() {
       hf::plugin::modelPath(proc.state()).toStdString(),
       hf::plugin::useSampling(proc.state()));
   doc.regenerate(gp);
+}
+
+void HarmonyForgeEditor::doRegenerateSelection() {
+  // Task 4 vertical slice: same seed/bars persistence and GenParams build
+  // as doRegenerate (one undoable transaction), but only the selected
+  // region regenerates — the document freezes everything outside the
+  // selection at submit time. Message thread only; processBlock untouched.
+  const int seed = candidateBar.seedValue();
+  const int bars = candidateBar.barsValue();
+  proc.undo().beginNewTransaction("Seed/bars");
+  hf::plugin::setSeed(proc.state(), seed, &proc.undo());
+  hf::plugin::setBars(proc.state(), bars, &proc.undo());
+  const auto gp = PatternDocument::makeParamsWithModel(
+      seed, bars, hf::plugin::rootKey(proc.state()),
+      hf::plugin::scaleName(proc.state()).toLowerCase().toStdString(),
+      hf::plugin::modelPath(proc.state()).toStdString(),
+      hf::plugin::useSampling(proc.state()));
+  doc.regenerateSelection(gp);
 }
 
 void HarmonyForgeEditor::doKeep(int i) {

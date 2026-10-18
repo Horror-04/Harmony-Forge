@@ -121,6 +121,14 @@ class PatternDocument : public juce::ChangeBroadcaster {
   // regions of the pattern at submit time merge into every candidate on
   // completion (SPEC: frozen survives Regenerate).
   bool regenerate(const hf::infer::GenParams& params);
+  // Task 4 vertical slice: selection-scoped regenerate (ADD-only). Same
+  // background-queue flow as regenerate(), but the submit-time freeze mask
+  // is (user freeze UNION freeze_complement_of_selection(pattern_,
+  // selection_)), so only the selected region changes; everything outside
+  // the selection survives byte-identical. Empty selection == regenerate().
+  // poll_regenerate()/keepCandidate() are shared unchanged. Message thread
+  // only; never touches processBlock state.
+  bool regenerateSelection(const hf::infer::GenParams& params);
   // Collect a finished regeneration on the message thread (call from the
   // editor's Timer tick): applies the latest completion, merges the
   // submit-time frozen regions, stores A/B/C/D + pushes a history entry,

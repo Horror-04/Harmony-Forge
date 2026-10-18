@@ -458,3 +458,19 @@ bool PatternDocument::adoptReferenceChords(
   commit(pattern_, merged.merged, freeze_, "Adopt reference chords");
   return true;
 }
+
+bool PatternDocument::regenerateSelection(const hf::infer::GenParams& params) {
+  if (params.bars < 1) return false;
+  // Message thread: same background-queue flow as regenerate(), but the
+  // submit-time mask also freezes everything outside the current selection,
+  // so only the selected bars/tracks/notes change. poll_regenerate() merges
+  // pending_freeze_ unchanged. Empty selection -> complement is empty ->
+  // identical to regenerate().
+  pending_pattern_ = pattern_;
+  pending_freeze_ = hf::core::union_freeze(
+      freeze_, hf::core::freeze_complement_of_selection(pattern_, selection_));
+  pending_gen_ = gen_queue_->generate_async(params);
+  gen_pending_ = true;
+  sendChangeMessage();
+  return true;
+}
