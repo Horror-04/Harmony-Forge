@@ -50,18 +50,27 @@ def walk(root: str):
                 yield os.path.join(dp, fn)
 
 
+def _display(path: str) -> str:
+    try:
+        return os.path.relpath(path, _REPO)
+    except ValueError:
+        # Synthetic trees in tests may live on another drive (Windows);
+        # fall back to absolute instead of crashing the gate.
+        return os.path.abspath(path)
+
+
 def check_tree(core_root: str, inf_root: str) -> list[str]:
     """Return layer violations for the two roots (empty == clean)."""
     violations: list[str] = []
     for path in walk(core_root):
         for inc in includes_of(path):
             if is_juce(inc):
-                violations.append(f'{os.path.relpath(path, _REPO)} includes {inc}')
+                violations.append(f'{_display(path)} includes {inc}')
     for path in walk(inf_root):
         for inc in includes_of(path):
             rel = inc.replace('\\', '/')
             if is_juce(inc) or 'plugin/' in rel or rel.startswith('plugin'):
-                violations.append(f'{os.path.relpath(path, _REPO)} includes {inc}')
+                violations.append(f'{_display(path)} includes {inc}')
     return violations
 
 
