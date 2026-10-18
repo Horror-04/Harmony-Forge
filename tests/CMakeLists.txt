@@ -176,6 +176,8 @@ target_compile_definitions(test_sampler PRIVATE
 hf_add_test(test_s30_sampler_seed test_s30_sampler_seed.cpp)
 # S4b slice 1 (T3): index->seed binding pin (new test, no existing test modified).
 hf_add_test(test_s4b_seed_binding test_s4b_seed_binding.cpp)
+# S4b slice 2 (I2): Creative/Experimental mode-arm shape goldens (new test, no existing test modified).
+hf_add_test(test_s4b_mode_shape test_s4b_mode_shape.cpp)
 target_compile_definitions(test_s4b_seed_binding PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_ort_logits test_ort_logits.cpp)
