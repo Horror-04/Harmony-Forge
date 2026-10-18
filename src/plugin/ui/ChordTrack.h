@@ -29,6 +29,7 @@
 class ChordTrack : public juce::Component, private juce::ChangeListener {
  public:
   explicit ChordTrack(PatternDocument& doc);
+  ~ChordTrack() override;
 
   void setKey(int tonic, const std::string& scale);
   void setPxPerTick(float px);

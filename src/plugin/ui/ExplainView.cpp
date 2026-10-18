@@ -41,6 +41,8 @@ ExplainView::ExplainView(PatternDocument& doc) : doc_(doc) {
   refresh();
 }
 
+ExplainView::~ExplainView() { doc_.removeChangeListener(this); }
+
 void ExplainView::setKey(int tonic, const std::string& scale) {
   tonic_ = tonic;
   scale_ = scale;

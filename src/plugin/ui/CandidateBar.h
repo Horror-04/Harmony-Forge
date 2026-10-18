@@ -87,6 +87,8 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     refreshFromDoc();
   }
 
+  ~CandidateBar() override { doc_.removeChangeListener(this); }
+
   int seedValue() const { return seedBox_.getText().getIntValue(); }
   int barsValue() const {
     return juce::jlimit(1, 16, barsBox_.getText().getIntValue());

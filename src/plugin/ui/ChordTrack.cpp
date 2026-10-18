@@ -27,6 +27,8 @@ ChordTrack::ChordTrack(PatternDocument& doc) : doc_(doc) {
   refreshSize();
 }
 
+ChordTrack::~ChordTrack() { doc_.removeChangeListener(this); }
+
 void ChordTrack::setKey(int tonic, const std::string& scale) {
   tonic_ = tonic;
   scale_ = scale;

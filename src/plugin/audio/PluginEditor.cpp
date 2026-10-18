@@ -375,6 +375,7 @@ HarmonyForgeEditor::~HarmonyForgeEditor() {
   setLookAndFeel(nullptr);
   stopTimer();
   dragButton.removeKeyListener(&dragSpaceKey_);
+  doc.removeChangeListener(this);
   proc.state().removeListener(this);
   proc.previewAllNotesOff();
 }

@@ -41,6 +41,7 @@
 class ExplainView : public juce::Component, private juce::ChangeListener {
  public:
   explicit ExplainView(PatternDocument& doc);
+  ~ExplainView() override;
 
   // Editor state key (same feed as ChordTrack::setKey, via
   // valueTreePropertyChanged). Repaints with the new functions.

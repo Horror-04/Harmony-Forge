@@ -59,6 +59,7 @@
 class PianoRoll : public juce::Component, private juce::ChangeListener {
  public:
   explicit PianoRoll(PatternDocument& doc);
+  ~PianoRoll() override;
 
   void setKey(int tonic, const std::string& scale);
   void setSnapGrid(int gridTicks);

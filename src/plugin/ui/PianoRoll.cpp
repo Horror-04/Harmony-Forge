@@ -42,6 +42,8 @@ PianoRoll::PianoRoll(PatternDocument& doc) : doc_(doc) {
   refreshSize();
 }
 
+PianoRoll::~PianoRoll() { doc_.removeChangeListener(this); }
+
 void PianoRoll::setKey(int tonic, const std::string& scale) {
   tonic_ = tonic;
   scale_ = scale;
