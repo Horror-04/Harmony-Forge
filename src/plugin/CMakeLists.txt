@@ -56,6 +56,7 @@ target_compile_definitions(HarmonyForge PUBLIC
 target_link_libraries(HarmonyForge PRIVATE
   harmony_forge_core
   harmony_forge_inference
+  harmony_forge_app
   juce::juce_audio_processors
   juce::juce_audio_utils
   juce::juce_gui_extra

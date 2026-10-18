@@ -229,6 +229,17 @@ hf_add_test(test_s6_3_reference_import test_s6_3_reference_import.cpp)
 target_compile_definitions(test_s6_3_reference_import PRIVATE
   HARMONY_FORGE_S6_3_FIXTURES="${CMAKE_SOURCE_DIR}/tests/fixtures"
   HARMONY_FORGE_S6_3_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/s6_3_reference_report.txt")
+# S6.3 commit 2: ReferenceImporter controller tests (parallel suite; the
+# commit-1 file above is byte-identical across the move). Links the app
+# lib (first app consumer in tests); JUCE-free, both configs.
+add_executable(test_s6_3_reference_controller test_s6_3_reference_controller.cpp)
+target_link_libraries(test_s6_3_reference_controller PRIVATE harmony_forge_app harmony_forge_core harmony_forge_inference Catch2::Catch2WithMain)
+target_compile_features(test_s6_3_reference_controller PRIVATE cxx_std_20)
+target_compile_definitions(test_s6_3_reference_controller PRIVATE
+  HARMONY_FORGE_S6_3_FIXTURES="${CMAKE_SOURCE_DIR}/tests/fixtures"
+  HARMONY_FORGE_S6_3_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/s6_3_reference_report.txt")
+hf_copy_ort_runtime(test_s6_3_reference_controller)
+catch_discover_tests(test_s6_3_reference_controller)
 # S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
 # PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
 # for the createEditor link; the editor is never constructed — headless).
@@ -247,7 +258,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_violation_counter PRIVATE
-    harmony_forge_core harmony_forge_inference
+    harmony_forge_core harmony_forge_inference harmony_forge_app
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
     juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures
     Catch2::Catch2WithMain)
@@ -277,7 +288,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_soak PRIVATE
-    harmony_forge_core harmony_forge_inference
+    harmony_forge_core harmony_forge_inference harmony_forge_app
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
     juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures
     Catch2::Catch2WithMain)

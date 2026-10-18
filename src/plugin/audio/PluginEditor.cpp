@@ -6,12 +6,11 @@
 #include <cstdint>
 #include <vector>
 
+#include "app/reference_importer.h"
 #include "candidates.h"
 #include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
-#include "core/music/reference_analyze.h"
 #include "core/serialization/midi_file.h"
-#include "core/serialization/midi_read.h"
 #include "model_path.h"
 #include "PluginProcessor.h"
 
@@ -56,23 +55,7 @@ juce::String trackName(hf::core::TrackType t) {
   return "?";
 }
 
-// Phase 5 Task 2: reference-report text helpers (message thread only).
-juce::String smfErrorText(hf::ser::SmfError e) {
-  switch (e) {
-    case hf::ser::SmfError::Ok:
-      return "ok";
-    case hf::ser::SmfError::Truncated:
-      return "file is truncated";
-    case hf::ser::SmfError::BadHeader:
-      return "not a supported MIDI header";
-    case hf::ser::SmfError::UnsupportedType:
-      return "MIDI format not supported (type 0/1 only)";
-    case hf::ser::SmfError::BadEvent:
-      return "corrupt MIDI events";
-  }
-  return "?";
-}
-
+// Phase 5 Task 2: reference-report text helper (message thread only).
 juce::String refKeyName(const hf::music::KeyEstimate& k) {
   static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
                                    "F#", "G",  "G#", "A",  "A#", "B"};
@@ -1005,11 +988,13 @@ void HarmonyForgeEditor::chooseReferenceFile() {
 }
 
 void HarmonyForgeEditor::importReferenceMidi(const juce::File& f) {
-  // Message thread file I/O + parse + analysis (processBlock untouched).
+  // Message thread file I/O + analysis (processBlock untouched).
   // A corrupt file writes a hint into the report row (replacing it and
   // disabling the adopt buttons) and leaves both the ValueTree state and
   // the PatternDocument untouched: no mutation happens before analysis
-  // succeeds.
+  // succeeds. The bytes->report core lives in the JUCE-free app
+  // controller; this shell keeps the File read, the hint/label
+  // composition, the enablement, and all three adopt writes.
   juce::MemoryBlock data;
   if (!f.loadFileAsData(data) || data.getSize() == 0) {
     hasRefReport_ = false;
@@ -1019,20 +1004,18 @@ void HarmonyForgeEditor::importReferenceMidi(const juce::File& f) {
   }
   const auto* bytes = static_cast<const std::uint8_t*>(data.getData());
   const std::vector<std::uint8_t> image(bytes, bytes + data.getSize());
-  const hf::ser::SmfReadResult r = hf::ser::read_smf(image);
-  if (r.error != hf::ser::SmfError::Ok) {
-    hasRefReport_ = false;
-    refStatus_ = "Reference not imported (" + f.getFileName() +
-                 "): " + smfErrorText(r.error) + " - state untouched";
+  const hf::app::ReferenceImportResult imp = hf::app::import_reference_bytes(image);
+  hasRefReport_ = imp.has_report;
+  if (!imp.has_report) {
+    refStatus_ =
+        "Reference not imported (" + f.getFileName() + "): " + juce::String(imp.detail);
     refreshReferenceRow();
     return;
   }
-  refReport_ = hf::music::analyze_reference(r.pattern);
-  refBars_ = juce::jmax(1, hf::core::pattern_num_bars(r.pattern));
-  hasRefReport_ = true;
+  refReport_ = imp.report;
+  refBars_ = imp.bars;
   if (!refReport_.enough_data) {
-    refStatus_ = "Ref " + f.getFileName() +
-                 ": too little pitched material - key/chords not adopted";
+    refStatus_ = "Ref " + f.getFileName() + ": " + juce::String(imp.detail);
   } else {
     juce::String chords;
     const size_t shown = std::min(refReport_.chords.size(), size_t{4});

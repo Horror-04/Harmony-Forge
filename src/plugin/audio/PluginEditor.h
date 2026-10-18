@@ -16,7 +16,7 @@
 #include "../ui/HFLookAndFeel.h"
 #include "../ui/PatternDocument.h"
 #include "../ui/PianoRoll.h"
-#include "core/music/reference_analyze.h"
+#include "app/reference_importer.h"
 
 class HarmonyForgeProcessor;
 

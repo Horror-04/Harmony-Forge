@@ -4,6 +4,7 @@
 # inference; core/inference must NOT depend on app (see check_layers.py).
 add_library(harmony_forge_app STATIC
   app_scaffold.cpp
+  reference_importer.cpp
 )
 
 target_include_directories(harmony_forge_app PUBLIC
