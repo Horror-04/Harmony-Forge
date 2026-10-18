@@ -1,14 +1,42 @@
 # Copyright (C) 2026 Horror-04
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""S0 RT-guard scan (report-only, static): banned-token search inside the
-processBlock body region of src/plugin/audio/PluginProcessor.cpp, plus the
-same tokens over its in-repo audio-thread callees (PreviewSynth).
+"""S0 RT-guard scan (static): banned-token search over the AUDIO-PATH code of
+src/plugin/audio/PluginProcessor.cpp, i.e. the processBlock callees only.
 
-Usage: py -3 tools/rt_scan.py
-Exit 0 always (report-only in S0); prints hits or clean.
+Usage:
+  py -3 tools/rt_scan.py           # report-only (exit 0 always; S0 behavior)
+  py -3 tools/rt_scan.py --strict  # enforce mode: exit 1 on any hit, else 0
+
+Audio-path scope (Task 1 hardening; everything else is message thread and
+is deliberately NOT scanned):
+- PluginProcessor.cpp: HarmonyForgeProcessor::processBlock body +
+  HarmonyForgeProcessor::publishTransport body (called only from
+  processBlock; plain optional reads + relaxed atomic stores).
+- PreviewSynth.cpp: PreviewVoice::startNote/stopNote/renderNextBlock +
+  PreviewSynth::render (the Synthesiser invokes start/stop/render on the
+  audio thread during render()). EXCLUDED: PreviewSynth ctor (message-thread
+  sound/voice preallocation: `new PreviewSound/Voice`) and prepare()
+  (message-thread rate forwarding).
+- PluginProcessor.h: `class MidiOutbox` block (lock-free queue impl, both
+  directions must stay lock-free) + `struct TransportView` (plain data) +
+  the processBlock/publishTransport declaration lines. EXCLUDED:
+  message-thread JUCE overrides (getName/getProgramName return juce::String
+  by JUCE contract), state()/undo() accessors and the ValueTree/UndoManager
+  members (message thread only; processBlock never touches them — enforced
+  at runtime by HF_ASSERT_AUDIO_THREAD, see src/plugin/audio/ThreadRole.h).
+- PreviewSynth.h: whole file (inline lock-free queue + declarations; the
+  message-thread noteOn/noteOff/allNotesOff only enqueue, no banned tokens).
+
+BANNED rationale (AGENTS.md RT rules): no allocation (new/malloc family,
+std::function may heap-allocate its target, juce::String heap-allocates,
+push_back may grow), no locks (mutex/CriticalSection/ScopedLock), no file
+I/O (fopen/fstream), no inference (InferenceSession/.predict(), which also
+allocates), no message-thread state (ValueTree/UndoManager), no debug I/O
+(DBG writes to the debugger/output and may block).
 
 NOTE (brief F): runtime allocation counters need code hooks and are
-explicitly OUT for S0; documented as an S5+ item.
+explicitly OUT for S0; the Debug operator-new hook + soak test
+(tests/test_rt_soak.cpp) cover that dynamically.
 """
 from __future__ import annotations
 
@@ -37,13 +65,44 @@ BANNED = [
     (r'\.predict\s*\(', '.predict('),
     (r'\bValueTree\b', 'ValueTree'),
     (r'\bUndoManager\b', 'UndoManager'),
+    # Task 1 extensions: heap-may-allocate helpers + debug I/O, all
+    # forbidden on the audio path (see module docstring).
+    (r'\bstd::function\b', 'std::function'),
+    (r'\bjuce::String\b', 'juce::String'),
+    (r'\bDBG\b', 'DBG'),
+    (r'\bpush_back\b', 'push_back'),
+]
+
+# (relative path, anchor kinds) describing the audio-path scope. A 'func'
+# anchor scans the brace-balanced body starting at the anchor line; a
+# 'class'/'struct' anchor scans the whole type block; a 'decl' anchor scans
+# the single matching declaration line.
+_AUDIO_SCOPE = [
+    ('src/plugin/audio/PluginProcessor.cpp', [
+        ('func', 'HarmonyForgeProcessor::processBlock'),
+        ('func', 'HarmonyForgeProcessor::publishTransport'),
+    ]),
+    ('src/plugin/audio/PreviewSynth.cpp', [
+        ('func', 'PreviewVoice::startNote'),
+        ('func', 'PreviewVoice::stopNote'),
+        ('func', 'PreviewVoice::renderNextBlock'),
+        ('func', 'PreviewSynth::render'),
+    ]),
+    ('src/plugin/audio/PluginProcessor.h', [
+        ('class', 'class MidiOutbox'),
+        ('struct', 'struct TransportView'),
+        ('decl', 'void processBlock(juce::AudioBuffer'),
+        ('decl', 'void publishTransport() noexcept'),
+    ]),
+    # PreviewSynth.h is header-inline queue + declarations only; the whole
+    # file is audio-safe by inspection (message-thread enqueue fns hold no
+    # banned tokens), so it is scanned whole.
+    ('src/plugin/audio/PreviewSynth.h', [('whole', '')]),
 ]
 
 
-def body_region(lines: list[str]) -> tuple[int, int, list[str]]:
-    """Return (start0, end0, body_lines) for the processBlock definition."""
-    start = next(i for i, l in enumerate(lines)
-                 if 'HarmonyForgeProcessor::processBlock' in l)
+def balanced_region(lines: list[str], start: int) -> tuple[int, int]:
+    """Brace-balanced region starting at anchor line `start` (0-based)."""
     depth = 0
     seen = False
     for i in range(start, len(lines)):
@@ -51,41 +110,56 @@ def body_region(lines: list[str]) -> tuple[int, int, list[str]]:
         if '{' in lines[i]:
             seen = True
         if seen and depth == 0:
-            return start, i, lines[start:i + 1]
-    raise ValueError('processBlock body end not found')
+            return start, i
+    raise ValueError(f'region end not found from line {start + 1}')
 
 
-def scan(lines: list[str], base_lineno: int, path: str) -> list[str]:
+def extract(path: str, kinds: list[tuple[str, str]]) -> list[tuple[int, str]]:
+    """Return (1-based lineno, text) lines of the audio-path scope."""
+    full = os.path.join(_REPO, *path.split('/'))
+    with open(full, encoding='utf8') as f:
+        lines = f.read().splitlines()
+    out: list[tuple[int, str]] = []
+    for kind, anchor in kinds:
+        if kind == 'whole':
+            out += [(i + 1, l) for i, l in enumerate(lines)]
+            continue
+        idx = next(i for i, l in enumerate(lines) if anchor in l)
+        if kind == 'decl':
+            out.append((idx + 1, lines[idx]))
+        else:  # func | class | struct
+            s, e = balanced_region(lines, idx)
+            out += [(i + 1, lines[i]) for i in range(s, e + 1)]
+    return out
+
+
+def scan(region: list[tuple[int, str]], path: str) -> list[str]:
     hits = []
-    for off, line in enumerate(lines):
+    for lineno, line in region:
         code = line.split('//')[0]
         for pat, name in BANNED:
             if re.search(pat, code):
-                hits.append(f'{path}:{base_lineno + off}: [{name}] {line.strip()}')
+                hits.append(f'{path}:{lineno}: [{name}] {line.strip()}')
     return hits
 
 
-def main() -> int:
-    pp = os.path.join(_REPO, 'src', 'plugin', 'audio', 'PluginProcessor.cpp')
-    lines = open(pp, encoding='utf8').read().splitlines()
-    s, e, body = body_region(lines)
-    print(f'processBlock body region: PluginProcessor.cpp:{s + 1}-{e + 1}')
-    hits = scan(body, s + 1, 'src/plugin/audio/PluginProcessor.cpp')
-    callees = ['src/plugin/audio/PreviewSynth.cpp',
-               'src/plugin/audio/PreviewSynth.h',
-               'src/plugin/audio/PluginProcessor.h']
-    for rel in callees:
-        p = os.path.join(_REPO, *rel.split('/'))
-        if os.path.exists(p):
-            cl = open(p, encoding='utf8').read().splitlines()
-            hits += scan(cl, 1, rel)
+def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    strict = argv == ['--strict']
+    hits: list[str] = []
+    for path, kinds in _AUDIO_SCOPE:
+        region = extract(path, kinds)
+        print(f'audio scope: {path} ({len(region)} lines)')
+        hits += scan(region, path)
     if hits:
         print('RT-SCAN HITS (static, needs triage):')
         for h in hits:
             print(f'  {h}')
     else:
-        print('RT-SCAN CLEAN: no banned tokens in processBlock body or '
-              'in-repo audio-thread callees.')
+        print('RT-SCAN CLEAN: no banned tokens in audio-path scope.')
+    if strict:
+        return 1 if hits else 0
     return 0
 
 

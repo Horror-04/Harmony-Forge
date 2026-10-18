@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 
+#include "../audio/ThreadRole.h"
 #include "constraints.h"
 #include "core/model/pattern_ops.h"
 #include "core/model/track_pattern.h"
@@ -109,6 +110,10 @@ hf::infer::GenParams PatternDocument::makeParams(int seed, int bars, int tonic,
 void PatternDocument::commit(const hf::core::Pattern& next,
                              const hf::core::ChordProgression& nextChords,
                              const hf::core::FreezeState& nextFreeze, const juce::String& name) {
+  // Message thread only: the ValueTree/UndoManager state touched here must
+  // never be entered from the audio thread (processBlock sees only the
+  // lock-free snapshot). Assert, never lock.
+  HF_ASSERT_MESSAGE_THREAD();
   if (undo_ == nullptr) {
     pattern_ = next;
     chords_ = nextChords;

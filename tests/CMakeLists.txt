@@ -51,9 +51,11 @@ hf_add_test(test_explain test_explain.cpp)
 
 # Phase 5 Task 3 fix F1: ChordTrack delegation pin. Links the real
 # ChordTrack.cpp (JUCE), so it only builds where the plugin is configured.
+# Task 1: + RtViolationCounter.cpp for the ThreadRole assert in commit.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_chordtrack_pin test_chordtrack_pin.cpp
-    ../src/plugin/ui/ChordTrack.cpp ../src/plugin/ui/PatternDocument.cpp)
+    ../src/plugin/ui/ChordTrack.cpp ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_chordtrack_pin PRIVATE
     harmony_forge_core harmony_forge_inference juce::juce_gui_basics
     Catch2::Catch2WithMain)
@@ -67,11 +69,13 @@ endif()
 # PianoRoll.cpp + ChordTrack.cpp + PatternDocument.cpp (JUCE), so it only
 # builds where the plugin is configured. Headless: synthetic KeyPresses are
 # dispatched directly into keyPressed (no peer/message loop needed beyond a
-# MessageManager for async change messages).
+# MessageManager for async change messages). Task 1: + RtViolationCounter.cpp
+# for the ThreadRole assert in PatternDocument::commit.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_keyboard_moves test_keyboard_moves.cpp
     ../src/plugin/ui/PianoRoll.cpp ../src/plugin/ui/ChordTrack.cpp
-    ../src/plugin/ui/PatternDocument.cpp)
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_keyboard_moves PRIVATE
     harmony_forge_core harmony_forge_inference juce::juce_gui_basics
     juce::juce_audio_basics Catch2::Catch2WithMain)
@@ -87,10 +91,12 @@ endif()
 # TextEditor/Slider/Viewport, hence the bars and the full editor) exits
 # nonzero in a headless process even bare (see NOTE in the test file), so
 # the two-size smoke lives in the report (arithmetic + screenshots).
+# Task 1: + RtViolationCounter.cpp for the ThreadRole assert in commit.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_focus_resize test_focus_resize.cpp
     ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/PianoRoll.cpp
-    ../src/plugin/ui/ChordTrack.cpp)
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_focus_resize PRIVATE
     harmony_forge_core harmony_forge_inference
     juce::juce_gui_basics juce::juce_audio_basics
@@ -131,10 +137,14 @@ endif()
 # drawText). The binary never appears in `ctest -N`. Explicit run from the
 # repo root:
 #   .\build-full\tests\Release\test_visual_polish.exe
+# Task 1: RtViolationCounter.cpp provides the insideProcessBlock definition
+# required by the HF_ASSERT_MESSAGE_THREAD in PatternDocument::commit
+# (Debug-only hook TU; no-op outside flagged regions).
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_visual_polish test_visual_polish.cpp
     ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/ExplainView.cpp
-    ../src/plugin/ui/ChordTrack.cpp)
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_visual_polish PRIVATE
     harmony_forge_core harmony_forge_inference
     juce::juce_gui_basics
@@ -153,9 +163,11 @@ endif()
 # after all assertions pass (see NOTE in the test file). The binary never
 # appears in `ctest -N`. Explicit run from the repo root:
 #   .\build-full\tests\Release\test_note_cues.exe
+# Task 1: + RtViolationCounter.cpp for the ThreadRole assert in commit.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_note_cues test_note_cues.cpp
-    ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/PianoRoll.cpp)
+    ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/PianoRoll.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_note_cues PRIVATE
     harmony_forge_core harmony_forge_inference
     juce::juce_gui_basics juce::juce_audio_basics
@@ -212,6 +224,36 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   target_compile_features(test_rt_violation_counter PRIVATE cxx_std_20)
   hf_copy_ort_runtime(test_rt_violation_counter)
   catch_discover_tests(test_rt_violation_counter)
+endif()
+
+# Task 1 (RT guardrails hardening): randomized soak over the real
+# processBlock — random block sizes/rates, FakePlayHead transport script,
+# concurrent generate_candidates + setStateInformation from a worker thread.
+# Same TU set as test_rt_violation_counter (real processor + editor TU for
+# the createEditor link; the editor is never constructed). Headless-safe:
+# constructs the real processor, drives processBlock directly (no host, no
+# message loop). Plugin-ON only.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_rt_soak test_rt_soak.cpp
+    ../src/plugin/audio/PluginProcessor.cpp
+    ../src/plugin/audio/PluginEditor.cpp
+    ../src/plugin/audio/PreviewSynth.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/ui/PianoRoll.cpp
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/ExplainView.cpp
+    ../src/plugin/ui/HFLookAndFeel.cpp)
+  target_link_libraries(test_rt_soak PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
+    juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures
+    Catch2::Catch2WithMain)
+  target_include_directories(test_rt_soak PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_rt_soak PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_rt_soak)
+  catch_discover_tests(test_rt_soak)
 endif()
 
 # Phase 10 Task 2: PluginState useSampling (persisted flag) coverage. Links
