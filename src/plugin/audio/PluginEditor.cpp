@@ -856,20 +856,22 @@ void HarmonyForgeEditor::chooseModelFile() {
       std::make_shared<juce::FileChooser>("Select model file", juce::File{}, "*.onnx");
   chooser->launchAsync(juce::FileBrowserComponent::openMode |
                            juce::FileBrowserComponent::canSelectFiles,
-                       [this, chooser](const juce::FileChooser& fc) {
+                       [editor = juce::Component::SafePointer<HarmonyForgeEditor>(this),
+                        chooser](const juce::FileChooser& fc) {
+                         if (editor == nullptr) return;
                          const juce::File f = fc.getResult();
                          if (f == juce::File{}) return;
                          if (!hf::infer::is_usable_model_path(
                                  f.getFullPathName().toStdString())) {
-                           modelHintLabel.setText(hf::infer::model_rejection_hint(),
-                                                  juce::dontSendNotification);
+                           editor->modelHintLabel.setText(hf::infer::model_rejection_hint(),
+                                                           juce::dontSendNotification);
                            return;
                          }
-                         proc.undo().beginNewTransaction("Model");
-                         hf::plugin::setModelPath(proc.state(), f.getFullPathName(),
-                                                  &proc.undo());
-                         modelHintLabel.setText("", juce::dontSendNotification);
-                         refreshModelRow();
+                         editor->proc.undo().beginNewTransaction("Model");
+                         hf::plugin::setModelPath(editor->proc.state(), f.getFullPathName(),
+                                                  &editor->proc.undo());
+                         editor->modelHintLabel.setText("", juce::dontSendNotification);
+                         editor->refreshModelRow();
                        });
 }
 
@@ -973,10 +975,12 @@ void HarmonyForgeEditor::chooseReferenceFile() {
       std::make_shared<juce::FileChooser>("Select reference MIDI file", juce::File{}, "*.mid");
   chooser->launchAsync(juce::FileBrowserComponent::openMode |
                            juce::FileBrowserComponent::canSelectFiles,
-                       [this, chooser](const juce::FileChooser& fc) {
+                       [editor = juce::Component::SafePointer<HarmonyForgeEditor>(this),
+                        chooser](const juce::FileChooser& fc) {
+                         if (editor == nullptr) return;
                          const juce::File f = fc.getResult();
                          if (f == juce::File{}) return;
-                         importReferenceMidi(f);
+                         editor->importReferenceMidi(f);
                        });
 }
 
