@@ -23,10 +23,8 @@ hf::core::Pattern patternForState(const juce::ValueTree& tree) {
   // model (see PluginEditor.h). Async preview/export completes to
   // candidates[0] of these same params — that projection is asserted
   // bit-identical in tests/test_model_preview.cpp.
-  hf::infer::GenParams gp = PatternDocument::makeParamsWithModel(
-      hf::plugin::seed(tree), hf::plugin::bars(tree), hf::plugin::rootKey(tree),
-      hf::plugin::scaleName(tree).toLowerCase().toStdString(),
-      hf::plugin::modelPath(tree).toStdString(), hf::plugin::useSampling(tree));
+  hf::infer::GenParams gp = hf::plugin::paramsFromState(
+      tree, hf::plugin::seed(tree), hf::plugin::bars(tree));
   const auto cands = hf::infer::generate_candidates(gp);
   return cands[0];
 }
