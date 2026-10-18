@@ -41,6 +41,10 @@ target_compile_definitions(test_inference PRIVATE
 hf_add_test(test_async_generate test_async_generate.cpp)
 target_compile_definitions(test_async_generate PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
+# S8-SKIP item 1: close-path lifecycle characterization — destruction with an
+# in-flight job (new test file + registration ONLY; no existing test touched).
+# JUCE-free (hf_add_test), so it builds in BOTH configs incl. plugin-off.
+hf_add_test(test_s8_close_lifecycle test_s8_close_lifecycle.cpp)
 hf_add_test(test_model_preview test_model_preview.cpp)
 target_compile_definitions(test_model_preview PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")

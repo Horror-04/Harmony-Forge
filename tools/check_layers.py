@@ -5,6 +5,9 @@ src/inference must not include plugin/JUCE GUI headers.
 S6.1: src/app may include core/inference but must stay JUCE-free;
 src/core and src/inference must not include app/*; src/plugin may
 include app (no plugin-side restriction to enforce here).
+S8-SKIP ratchet: src/plugin/ui/PatternDocument.{h,cpp} must not include
+juce_gui_basics (the document stays data_structures-only; a hit is a
+phase-B backlog finding, never fixed in the ratchet commit).
 
 Usage:
   py -3 tools/check_layers.py           # report-only (exit 0 always)
@@ -88,6 +91,25 @@ def check_tree(core_root: str, inf_root: str,
     return violations
 
 
+# S8-SKIP ratchet: PatternDocument.{h,cpp} must stay juce_gui_basics-free
+# (data_structures-only document). A hit is a phase-B backlog finding —
+# recorded, never fixed in the ratchet commit.
+PATTERN_DOC_FILES = (
+    os.path.join('src', 'plugin', 'ui', 'PatternDocument.h'),
+    os.path.join('src', 'plugin', 'ui', 'PatternDocument.cpp'),
+)
+
+
+def check_pattern_document(repo_root: str) -> list[str]:
+    """Return juce_gui_basics includes in PatternDocument.{h,cpp}."""
+    violations: list[str] = []
+    for rel in PATTERN_DOC_FILES:
+        for inc in includes_of(os.path.join(repo_root, rel)):
+            if 'juce_gui_basics' in inc.replace('\\', '/'):
+                violations.append(f'{rel} includes {inc}')
+    return violations
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--strict", action="store_true",
@@ -97,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     inf_root = os.path.join(_REPO, 'src', 'inference')
     app_root = os.path.join(_REPO, 'src', 'app')
     violations = check_tree(core_root, inf_root, app_root)
+    violations += check_pattern_document(_REPO)
     if violations:
         print('LAYER VIOLATIONS:')
         for v in violations:
@@ -104,7 +127,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print('LAYER CHECK CLEAN: src/core has no JUCE includes; '
               'src/inference has no plugin/JUCE-GUI includes; '
-              'src/app is JUCE-free and unreferenced by core/inference.')
+              'src/app is JUCE-free and unreferenced by core/inference; '
+              'PatternDocument.{h,cpp} have no juce_gui_basics includes.')
     if args.strict:
         return 1 if violations else 0
     return 0
