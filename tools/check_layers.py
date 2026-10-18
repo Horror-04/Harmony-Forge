@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """S0 layer check: src/core must not include JUCE headers;
 src/inference must not include plugin/JUCE GUI headers.
+S6.1: src/app may include core/inference but must stay JUCE-free;
+src/core and src/inference must not include app/*; src/plugin may
+include app (no plugin-side restriction to enforce here).
 
 Usage:
   py -3 tools/check_layers.py           # report-only (exit 0 always)
@@ -59,18 +62,29 @@ def _display(path: str) -> str:
         return os.path.abspath(path)
 
 
-def check_tree(core_root: str, inf_root: str) -> list[str]:
-    """Return layer violations for the two roots (empty == clean)."""
+def check_tree(core_root: str, inf_root: str,
+               app_root: str | None = None) -> list[str]:
+    """Return layer violations for the roots (empty == clean)."""
     violations: list[str] = []
     for path in walk(core_root):
         for inc in includes_of(path):
+            rel = inc.replace('\\', '/')
             if is_juce(inc):
+                violations.append(f'{_display(path)} includes {inc}')
+            if 'app/' in rel or rel.startswith('app'):
                 violations.append(f'{_display(path)} includes {inc}')
     for path in walk(inf_root):
         for inc in includes_of(path):
             rel = inc.replace('\\', '/')
             if is_juce(inc) or 'plugin/' in rel or rel.startswith('plugin'):
                 violations.append(f'{_display(path)} includes {inc}')
+            if 'app/' in rel or rel.startswith('app'):
+                violations.append(f'{_display(path)} includes {inc}')
+    if app_root is not None:
+        for path in walk(app_root):
+            for inc in includes_of(path):
+                if is_juce(inc):
+                    violations.append(f'{_display(path)} includes {inc}')
     return violations
 
 
@@ -81,14 +95,16 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     core_root = os.path.join(_REPO, 'src', 'core')
     inf_root = os.path.join(_REPO, 'src', 'inference')
-    violations = check_tree(core_root, inf_root)
+    app_root = os.path.join(_REPO, 'src', 'app')
+    violations = check_tree(core_root, inf_root, app_root)
     if violations:
         print('LAYER VIOLATIONS:')
         for v in violations:
             print(f'  {v}')
     else:
         print('LAYER CHECK CLEAN: src/core has no JUCE includes; '
-              'src/inference has no plugin/JUCE-GUI includes.')
+              'src/inference has no plugin/JUCE-GUI includes; '
+              'src/app is JUCE-free and unreferenced by core/inference.')
     if args.strict:
         return 1 if violations else 0
     return 0

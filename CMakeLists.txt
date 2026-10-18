@@ -37,6 +37,7 @@ include(CTest)
 
 add_subdirectory(src/core)
 add_subdirectory(src/inference)
+add_subdirectory(src/app)
 add_subdirectory(tools)
 add_subdirectory(tests)
 

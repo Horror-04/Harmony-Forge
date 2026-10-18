@@ -16,6 +16,7 @@ You are an expert audio software engineer and ML researcher specializing in:
 
 ### 2. Architecture & Modularity
 - `src/core` must have ZERO dependencies on JUCE or GUI libraries. Pure standard C++20.
+- `src/app` may depend on `src/core`/`src/inference` but is JUCE-free; `src/core` and `src/inference` must NOT depend on `src/app`.
 - Decouple Model from View using `juce::ValueTree` for undo/redo state management.
 - Unit tests must be written BEFORE or IN TANDEM with feature code.
 
