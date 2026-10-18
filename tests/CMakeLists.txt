@@ -331,16 +331,44 @@ endif()
 # Phase 10 Task 2: PluginState useSampling (persisted flag) coverage. Links
 # the real PluginState.cpp (JUCE), so it only builds where the plugin is
 # configured. Headless-safe: ValueTree + UndoManager only, no components.
+# S7 slice 2: + PatternDocument.cpp + RtViolationCounter.cpp — PluginState.cpp
+# now defines paramsFromState by forwarding to
+# PatternDocument::makeParamsWithModel, so every linker of PluginState.obj
+# needs that definition (same TU set as test_vertical_slice; nothing here
+# constructs a PatternDocument).
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_plugin_state test_plugin_state.cpp
-    ../src/plugin/state/PluginState.cpp)
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_plugin_state PRIVATE
     harmony_forge_core harmony_forge_inference juce::juce_data_structures
+    juce::juce_gui_basics
     Catch2::Catch2WithMain)
   target_include_directories(test_plugin_state PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
   target_compile_features(test_plugin_state PRIVATE cxx_std_20)
   hf_copy_ort_runtime(test_plugin_state)
   catch_discover_tests(test_plugin_state)
+endif()
+
+# S7 slice 2: paramsFromState helper unit (TDD red-proven first: test-only
+# registration failed on the undeclared hf::plugin::paramsFromState — see
+# the task report). Links the real PluginState.cpp + PatternDocument.cpp
+# (JUCE), so it only builds where the plugin is configured. Headless-safe:
+# ValueTree + UndoManager only, no components (PatternDocument.cpp comes
+# along for the makeParamsWithModel definition the helper forwards to).
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_params_from_state test_params_from_state.cpp
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
+  target_link_libraries(test_params_from_state PRIVATE
+    harmony_forge_core harmony_forge_inference juce::juce_gui_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_params_from_state PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_params_from_state PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_params_from_state)
+  catch_discover_tests(test_params_from_state)
 endif()
 
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).

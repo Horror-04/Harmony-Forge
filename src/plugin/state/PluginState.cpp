@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "PluginState.h"
 
+#include "../ui/PatternDocument.h"
 #include "model_path.h"
 
 namespace hf::plugin {
@@ -160,6 +161,12 @@ bool useSampling(const juce::ValueTree& tree) {
 
 void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kUseSampling, v, undo);
+}
+
+hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars) {
+  return PatternDocument::makeParamsWithModel(
+      seed, bars, rootKey(state), scaleName(state).toLowerCase().toStdString(),
+      modelPath(state).toStdString(), useSampling(state));
 }
 
 }  // namespace hf::plugin

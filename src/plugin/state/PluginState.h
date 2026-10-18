@@ -4,6 +4,8 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
+#include "detail/candidate_params.h"
+
 // Sprint 4: canonical ValueTree state for Harmony Forge.
 //
 // Tree type "HarmonyForge" with properties:
@@ -89,5 +91,11 @@ void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager
 // always canonical bool. Undoable like every other setter.
 bool useSampling(const juce::ValueTree& tree);
 void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo);
+
+// S7: shared GenParams builder over the four editor call sites
+// (doRegenerate, doRegenerateSelection, submitPreviewExport,
+// doBuildArrangement). Bundles the four state reads above with explicit
+// seed/bars args — pure forward, no new semantics.
+hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars);
 
 }  // namespace hf::plugin
