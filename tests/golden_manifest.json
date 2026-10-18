@@ -2,6 +2,18 @@
   "doc": "Registry for in-test golden values (S4b). These literals live in test sources (NOT under tests/golden/) and are exempt from the S4b.0 off-golden-literal lint via this registry (allowlist with reason, same mechanism as score_sheet.md). The frozen slot bitmap (tests/golden/, d66faabf) is a different domain owned by update_goldens.py + lint_golden_pin.py and is untouched by every entry here.",
   "in_test": [
     {
+      "test": "s6.3 reference-import happy-path bytes->report (tests/test_s6_3_reference_import.cpp, [s6_3][reference])",
+      "pins": "tests/golden/s6_3_reference_report.txt exact AnalysisReport for tests/fixtures/ref_happy_c_major.mid (tonic 60/major/conf 1.0, chords 60:maj + 65:maj, density 4.0, drums 2, bars 2, tpb 480) — GOLDEN class (run-captured on the clean tree; Release+Debug identical). Fixture generator tools/gen_s6_3_fixtures.py.",
+      "how": "ctest -R 's6.3' (build-full Release or build-off Debug); values read from the INFO dump on the clean tree per the test-header capture procedure",
+      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)"
+    },
+    {
+      "test": "s6.3 reference-import error paths + adopt gates (tests/test_s6_3_reference_import.cpp, [s6_3][reference])",
+      "pins": "exact SmfError per corrupt fixture (Truncated/BadHeader/UnsupportedType/BadEvent) + verbatim Editor hint/status TEXT (unreadable / file-is-truncated / not-a-supported-MIDI-header / format-not-supported / corrupt-MIDI-events / too-little) + adopt-gate truth table — pinned as in-test string literals mirroring PluginEditor.cpp:1016/1025-1026/1034-1035/1080. JUCE->std adaptation: TEXT is the observable; RAW compare impossible by design.",
+      "how": "ctest -R 's6.3' (build-full Release or build-off Debug)",
+      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)"
+    },
+    {
       "test": "s4b Creative arm adds weak-beat chromatic passing tones (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
       "pins": "G1 exact passing-tone (tick,pitch) list kTones (4 pairs) — GOLDEN class (run-captured; arm is rng-free deterministic, values captured from a run). Structural CHECKs in the same case (counts, 16th-grid, duration 120, velocity 70, semitone approach, selectivity skips) are NOT goldens.",
       "how": "ctest -R 's4b Creative' (build-off Debug or build-full Release, identical — no sampler/model in path); values read from INFO 'tones (tick,pitch)' dump on the clean tree",

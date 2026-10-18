@@ -1,0 +1,25 @@
+# S6.3 reference-import golden: exact bytes->report values for
+# tests/fixtures/ref_happy_c_major.mid (97 bytes).
+#
+# Run-captured on the clean tree (Release; Debug re-ran green unchanged):
+# build the test, run it once (it INFO-dumps every value, see the test
+# header capture procedure), write the dump here, re-run green.
+# Registered in tests/golden_manifest.json in_test (S6.3 entries). This is
+# a NEW golden file: the frozen three (slot_bitmap.txt + 2 seed .mid) are
+# untouched (lint_golden_pin.py still passes).
+fixture=ref_happy_c_major.mid
+bytes=97
+error=Ok
+tonic=60
+scale=major
+confidence=1
+chord_count=2
+chord0_root=60
+chord0_type=maj
+chord1_root=65
+chord1_type=maj
+density=4
+drums=2
+enough=1
+bars=2
+ticks_per_beat=480

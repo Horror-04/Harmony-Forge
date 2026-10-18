@@ -222,7 +222,13 @@ target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
-
+# S6.3 commit 1: reference-import flow characterization (JUCE-free fixture
+# test, builds in BOTH configs incl. plugin-off). Golden: golden file path
+# below; fixtures: tests/fixtures/ (see README there + test header).
+hf_add_test(test_s6_3_reference_import test_s6_3_reference_import.cpp)
+target_compile_definitions(test_s6_3_reference_import PRIVATE
+  HARMONY_FORGE_S6_3_FIXTURES="${CMAKE_SOURCE_DIR}/tests/fixtures"
+  HARMONY_FORGE_S6_3_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/s6_3_reference_report.txt")
 # S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
 # PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
 # for the createEditor link; the editor is never constructed — headless).
