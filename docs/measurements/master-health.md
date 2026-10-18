@@ -36,3 +36,17 @@ battery below. Binaries match HEAD (no src/ deltas pending).
 - Facade lines: 221 (must not grow). New TUs ≤250.
 - `cube-baseline-v2` superseded (see above); frozen bitmap + manifest
   NEVER regenerate; `update_goldens.py` sole path for golden updates.
+
+## S7 addendum (2026-10-19, HEAD past S7 merge)
+
+- ctest Release **249/249** + Debug **219/219** fresh (S7 slices:
+  PreviewController + unit, params helper + test, 4 call-site
+  migrations, controller wiring + getter test, scheduler + unit,
+  scheduler wiring, patternForState unification).
+- pluginval strictness-5 VST3: SUCCESS, process EXITCODE=0, on a
+  freshly-built HEAD binary (rebuilt after merge; a prior run had hit
+  a stale pre-merge VST3 and was re-run — record carries the fresh run).
+- pytest unchanged 105+68 (no Python paths touched in S7).
+- Sampler/Python ratchets stand without re-run (S7 range touches
+  `src/plugin` + `tests` only — zero `src/core`/`src/inference`/
+  audio-path deltas; render paths share no changed code).
