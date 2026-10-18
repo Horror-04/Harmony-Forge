@@ -897,5 +897,34 @@
    "sha256": "d45b2a6d6974f98cdc67f59cd66291363f5a6b1fc20f09c8df7604f5477abaf9",
    "n_ids": 55
   }
- ]
+ ],
+ "boundary": {
+  "item": "S4b-T1: slot-5 boundary cell (answers s2b-step5-chain-proof S5 item 3). The 128 rows above are FROZEN and untouched (128 rows, byte-identical); this section is additive only.",
+  "cell": {
+   "prefix": [4, 0, 0, 1, 60, 4, 4, 0, 0, 1, 60, 4, 4, 0, 0, 1, 60, 4, 4, 0, 0, 1, 60, 4, 4],
+   "prefix_provenance": "tests/test_sampler.cpp greedy-recitation / tiny-T / memo-block fixtures ([4] + [0,0,1,60,4,4] x4) + training/tests/test_decode.py memo/temperature fixtures + training/sampler_parity.py memo fixture (same 25 ids)",
+   "seed": 1,
+   "T": 1.0,
+   "fsm": "ON",
+   "mode": "Strict",
+   "tonic": 60,
+   "scale": "major",
+   "chords": "48:maj",
+   "memo": "-",
+   "n_ids": 73,
+   "track5_hits_in_continuation": 2,
+   "tool_argv": "build-full/tools/Release/dump_worker_ids.exe --model training/model.logits.onnx --memo - --tonic 60 --scale major --chords 48:maj --prefix-file <cell_prefix.txt> --seed 1 --T 1.0 --fsm ON --strict ON --out <out>"
+  },
+  "search": "1024 worker cells over EXISTING fixture prefixes (P1 Gate-4 [1,0,0,1,60,4,4]; P2 recitation above; P3 [1,0,0,1]; P4 [1]) x seeds 0-63 x T {1.0, 2.0} x fsm {ON} x strict {ON, OFF} (TEMP-only sweep_summary.csv). Gate-4 at T=1.0: 0 id-5 in 1024 track draws (both strict, seeds 0-63), replicating the 1152-draw zero proof. P2 at T=1.0/fsm-ON/Strict: 30/64 seeds hit (37 id-5 draws); seed 1 banked (2 hits). Full sweep record in docs/measurements/s4b-boundary-cell.md.",
+  "sha256_bound6": "8466a0d631f565bece4d3706a7a6507f96665020236ff4ac728255e9a1f8175f",
+  "sha256_bound5_scratch": "c822c4b020bcaf472c72add58621f847dcf7fd1695c151dd3ec1ef6f2d0b6e15",
+  "firing_verdict": "DIFFER (the 6->5 bound change is observable on this cell: first track draw resamples 5->1, cascade diverges)",
+  "control": {
+   "cell": "Gate-4 seed 7 fsm-ON Strict (banked row 4f369c10)",
+   "sha256_bound5_scratch": "4f369c1050ef9623b34c3fc4e83c48d5e3e7b9a74fec3dcf7911574166e2d1ea",
+   "verdict": "IDENTICAL (shift is surgical: only the boundary-hitting cell moves)"
+  },
+  "shift_procedure": "scratch-only (S3.0-C2 style): training/vocab_spec.py slot-2 hi 6->5 (the committed generator refuses the incoherent write by design: STOP vs frozen pin d66faabd, so the mirror edit went to the generated header track-hi line 6->5 + comment, exactly the step-5 Phase-B shape); rebuilt build-full Release dump_worker_ids (Release sampler.obj newer than shifted gen.h proves the shifted bounds linked in); ran cell + control; reverted both files via git checkout; --check MATCH; rebuilt pristine; re-ran cell -> sha == banked bound-6.",
+  "revert_proof": "post-revert: vocab_spec ee59ab64/56b613a, gen.h f1533f04/370d343, manifest fb1d56d5/30f49ca67 (all identical to pre-shift); git diff empty; cell re-run sha == sha256_bound6."
+ }
 }
