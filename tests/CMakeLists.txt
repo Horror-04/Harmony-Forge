@@ -257,6 +257,19 @@ target_compile_definitions(test_s6_4_export_controller PRIVATE
   HARMONY_FORGE_S6_4_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden")
 hf_copy_ort_runtime(test_s6_4_export_controller)
 catch_discover_tests(test_s6_4_export_controller)
+# S7 slice 1 (GREEN): PreviewController submit/poll/cancel standalone unit, no
+# Editor wiring. JUCE-free controller under src/plugin/controllers, compiled
+# directly into the test so it builds in BOTH configs (plugin-ON/OFF).
+# TDD: red-proven first (test-only registration failed C1083 on the missing
+# controllers/PreviewController.h — see task report), then this minimal
+# implementation turned it green.
+add_executable(test_preview_controller test_preview_controller.cpp
+  ../src/plugin/controllers/PreviewController.cpp)
+target_link_libraries(test_preview_controller PRIVATE harmony_forge_core harmony_forge_inference Catch2::Catch2WithMain)
+target_include_directories(test_preview_controller PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+target_compile_features(test_preview_controller PRIVATE cxx_std_20)
+hf_copy_ort_runtime(test_preview_controller)
+catch_discover_tests(test_preview_controller)
 # S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
 # PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
 # for the createEditor link; the editor is never constructed — headless).
