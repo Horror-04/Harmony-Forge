@@ -5,10 +5,10 @@
 // Re-exported through `candidates.h`; declarations stay valid.
 #pragma once
 
-#include <random>
 #include <vector>
 
 #include "core/model/note.h"
+#include "pcg.h"
 
 namespace hf::infer {
 
@@ -23,6 +23,6 @@ struct GenParams;
 // unchanged from the pre-cut definition (rng arrives by reference; no
 // `noexcept` was present, none added).
 void apply_mode(core::Pattern& pat, const GenParams& p, const core::ChordProgression& prog,
-                const std::vector<int>& iv, std::mt19937& rng);
+                const std::vector<int>& iv, Pcg32& rng);
 
 }  // namespace hf::infer

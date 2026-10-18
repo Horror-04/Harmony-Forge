@@ -22,6 +22,7 @@ add_library(harmony_forge_inference STATIC
   model_path.cpp
   async_generate.cpp
   sampler.cpp
+  model_manifest.cpp
   ort_logits.cpp
   keynorm.cpp
   # Arrangement Builder lives under src/core/arrangement (JUCE-free, pure

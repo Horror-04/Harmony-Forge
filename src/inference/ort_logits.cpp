@@ -8,14 +8,18 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <mutex>
 #include <system_error>
 #include <utility>
 #include <vector>
+
+#include "model_manifest.h"
 
 #ifdef HARMONY_FORGE_WITH_ONNX
 #include <onnxruntime_cxx_api.h>
@@ -82,7 +86,19 @@ OrtLogitsProvider::OrtLogitsProvider(const std::string& model_path) noexcept
   try {
     auto impl = std::make_unique<Impl>();
     const std::string sidecar = resolve_impl(model_path);
-    if (!sidecar.empty()) {
+    // Task 2 manifest gate (strict): an incompatible sidecar is NEVER
+    // loaded — the provider stays unavailable and the sampler path falls
+    // back to greedy bytes (theory-only). Empty/unresolvable path keeps the
+    // historical unavailable stub (check is vacuous for empty input).
+    bool loadable = !sidecar.empty();
+    if (loadable) {
+      if (const auto reason = check_model_compatible(sidecar);
+          reason.has_value()) {
+        note_manifest_refusal(sidecar, *reason);
+        loadable = false;
+      }
+    }
+    if (loadable) {
       Ort::SessionOptions opts;
       opts.SetIntraOpNumThreads(1);
       opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);

@@ -9,9 +9,11 @@
     },
     {
       "test": "s4b Experimental arm flips weak-beat color tones at ~25pc (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
-      "pins": "G2 exact flip list kFlips (tick:old->new, rng seed 7 pinned in-test) — GOLDEN class (run-captured, seed-dependent). Per-flip properties (weak beat, color degree, -1, Melody-only) + selectivity controls are NOT goldens.",
+      "pins": "G2 exact flip list kFlips (tick:old->new, rng seed 9 pinned in-test (re-pinned under task-2; seed 7 is vacuous under Pcg32)) — GOLDEN class (run-captured, seed-dependent). Per-flip properties (weak beat, color degree, -1, Melody-only) + selectivity controls are NOT goldens.",
       "how": "ctest -R 's4b Experimental arm flips' ; values read from INFO 'flips (tick:old->new)' dump on the clean tree",
-      "commit": "1746ae0"
+      "commit": "1746ae0",
+      "recaptured_in": "task-2 (see task-2-report.md)",
+      "recapture_reason": "candidates RNG mt19937->Pcg32 moved the stream; seed re-pinned 7->9 (nearest seed >= 7 with a non-vacuous flip set; seed 7 is empty under Pcg32). New kFlips {(720,69,68),(1080,71,70)} run-captured + threshold-flip (25->75) red-proof; G1/G3 values unchanged (rng-free)."
     },
     {
       "test": "s4b Experimental arm keeps parallel-union pitches (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
@@ -23,7 +25,35 @@
       "test": "s4b sampler index-seed binding is pinned per candidate (tests/test_s4b_seed_binding.cpp, [sampler][s4b])",
       "pins": "kPinned[3][4] per-index FNV-1a hashes (64-hex digests) for seeds 0/10/11 — GOLDEN class (run-captured; recaptured clean at seed-0 fix-forward, seeds 10/11 banked after per-seed swap-sensitivity proof). Determinism/engagement/sensitivity preconditions are NOT goldens.",
       "how": "ctest -R 's4b sampler index-seed' (build-full Release, engaged path); values read from failure-diff / INFO dump on the clean tree, double-confirmed; swap red-proof per seed in task reports",
-      "commit": "6519803"
+      "commit": "6519803",
+      "recaptured_in": "task-2 (see task-2-report.md)",
+      "recapture_reason": "candidates RNG mt19937->Pcg32 moved every stream; all 12 hashes re-banked. Swap (sseed index->(index+1)%4) red-proof on the new streams: 11/12 redden, survivor seed-0 row-3 (same swap-invariance character as A1). New coincidence pattern: seed-10 rows 0+2 reuse seed-0 row-0 bytes."
+    }
+  ],
+  "golden_midi": [
+    {
+      "seed": 7,
+      "bars": 4,
+      "mode": "Strict",
+      "tonic": 60,
+      "scale": "major",
+      "file": "tests/golden/seeds/seed_7.mid",
+      "sha256": "ea7650b3e13c96f1de346425f6547891dfc843e64b830bfbf08a5853b749d386",
+      "bytes": 170,
+      "how": "tools/render_midi --seed 7 --bars 4 --out tests/golden/seeds/seed_7.mid (melody-only SMF0, 480 PPQ); pinned by tests/test_golden_midi.cpp; regen only via tools/update_golden_midi.py --write --reason ...",
+      "banked_in": "task-2 (see task-2-report.md)"
+    },
+    {
+      "seed": 42,
+      "bars": 4,
+      "mode": "Strict",
+      "tonic": 60,
+      "scale": "major",
+      "file": "tests/golden/seeds/seed_42.mid",
+      "sha256": "8e3550526157c93b47e81bdfd57c150b2305ec324bce36b9829289802f0927df",
+      "bytes": 170,
+      "how": "tools/render_midi --seed 42 --bars 4 --out tests/golden/seeds/seed_42.mid (melody-only SMF0, 480 PPQ); pinned by tests/test_golden_midi.cpp; regen only via tools/update_golden_midi.py --write --reason ...",
+      "banked_in": "task-2 (see task-2-report.md)"
     }
   ]
 }

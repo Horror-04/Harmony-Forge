@@ -4,10 +4,10 @@
 // helpers. Re-exported through `candidates.h`; declarations stay valid.
 #pragma once
 
-#include <random>
 #include <vector>
 
 #include "core/model/note.h"
+#include "pcg.h"
 
 namespace hf::infer {
 
@@ -18,6 +18,6 @@ struct GenParams;
 // Deterministic quarter-note base: scale-walk melody with chord-tone bias,
 // roots-and-fifths bass, sustained triads. All starts on the 16th grid.
 core::Pattern compose_base(const GenParams& p, const core::ChordProgression& prog,
-                           const std::vector<int>& iv, std::mt19937& rng);
+                           const std::vector<int>& iv, Pcg32& rng);
 
 }  // namespace hf::infer

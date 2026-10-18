@@ -186,6 +186,14 @@ target_compile_definitions(test_sampler PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx")
 # S3.0 Phase 2 (C4) characterization: ENTER-path seed sensitivity (new test, no existing test modified).
 hf_add_test(test_s30_sampler_seed test_s30_sampler_seed.cpp)
+# Task 2 (determinism hardening): golden MIDI file pin + model-manifest gate
+# (new tests, no existing test modified).
+hf_add_test(test_golden_midi test_golden_midi.cpp)
+target_compile_definitions(test_golden_midi PRIVATE
+  HARMONY_FORGE_GOLDEN_SEEDS="${CMAKE_SOURCE_DIR}/tests/golden/seeds")
+hf_add_test(test_model_manifest test_model_manifest.cpp)
+target_compile_definitions(test_model_manifest PRIVATE
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 # S4b slice 1 (T3): index->seed binding pin (new test, no existing test modified).
 hf_add_test(test_s4b_seed_binding test_s4b_seed_binding.cpp)
 # S4b slice 2 (I2): Creative/Experimental mode-arm shape goldens (new test, no existing test modified).

@@ -9,7 +9,6 @@
 #include "candidate_transforms.h"
 
 #include <algorithm>
-#include <random>
 #include <vector>
 
 #include "core/model/note.h"
@@ -17,6 +16,7 @@
 #include "core/music/scale.h"
 #include "detail/candidate_helpers.h"
 #include "detail/candidate_params.h"
+#include "pcg.h"
 
 namespace hf::infer {
 namespace {
@@ -26,7 +26,7 @@ using namespace detail;
 }  // namespace
 
 void apply_candidate_transform(core::Pattern& pat, const GenParams& p, int index,
-                               const std::vector<int>& iv, std::mt19937& rng) {
+                               const std::vector<int>& iv, Pcg32& rng) {
   const int n = static_cast<int>(iv.size());
   core::Track* melody = nullptr;
   for (auto& t : pat.tracks)
@@ -84,8 +84,8 @@ void apply_candidate_transform(core::Pattern& pat, const GenParams& p, int index
   } else if (index == 3) {
     // Unexpected: seeded octave jumps + 8th-offbeat syncopation (in-bar).
     for (auto& m : melody->notes) {
-      if (rng() % 3 == 0) {
-        const int up = (rng() % 2) == 0;
+      if (rng.uniform(3) == 0) {
+        const int up = rng.uniform(2) == 0;
         int cand = m.pitch + (up ? 12 : -12);
         if (!hf::music::in_register(core::TrackType::Melody, cand) ||
             cand < 0 || cand > 127)
@@ -94,7 +94,7 @@ void apply_candidate_transform(core::Pattern& pat, const GenParams& p, int index
             cand <= 127)
           m.pitch = cand;
       }
-      if (rng() % 4 == 0) {
+      if (rng.uniform(4) == 0) {
         const int pos = m.start_tick % kBarTicks;
         if (pos + 240 < kBarTicks) {
           m.start_tick += 240;  // stays on the 16th grid, stays in-bar
