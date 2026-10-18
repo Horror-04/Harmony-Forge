@@ -5,6 +5,7 @@
 add_library(harmony_forge_app STATIC
   app_scaffold.cpp
   reference_importer.cpp
+  midi_exporter.cpp
 )
 
 target_include_directories(harmony_forge_app PUBLIC

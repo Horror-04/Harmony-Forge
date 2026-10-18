@@ -247,6 +247,16 @@ catch_discover_tests(test_s6_3_reference_controller)
 hf_add_test(test_s6_4_export test_s6_4_export.cpp)
 target_compile_definitions(test_s6_4_export PRIVATE
   HARMONY_FORGE_S6_4_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden")
+# S6.4 commit 2: MidiExporter controller tests (parallel suite; the
+# commit-1 file above is byte-identical across the move). Links the app
+# lib; JUCE-free, both configs.
+add_executable(test_s6_4_export_controller test_s6_4_export_controller.cpp)
+target_link_libraries(test_s6_4_export_controller PRIVATE harmony_forge_app harmony_forge_core harmony_forge_inference Catch2::Catch2WithMain)
+target_compile_features(test_s6_4_export_controller PRIVATE cxx_std_20)
+target_compile_definitions(test_s6_4_export_controller PRIVATE
+  HARMONY_FORGE_S6_4_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden")
+hf_copy_ort_runtime(test_s6_4_export_controller)
+catch_discover_tests(test_s6_4_export_controller)
 # S5a slice RT: Debug-only RT-violation (allocation) counter. Links the real
 # PluginProcessor.cpp (guard lines in processBlock) + the editor TU (only
 # for the createEditor link; the editor is never constructed — headless).

@@ -7,10 +7,10 @@
 #include <vector>
 
 #include "app/reference_importer.h"
+#include "app/midi_exporter.h"
 #include "candidates.h"
 #include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
-#include "core/serialization/midi_file.h"
 #include "model_path.h"
 #include "PluginProcessor.h"
 
@@ -807,9 +807,9 @@ void HarmonyForgeEditor::startMidiDrag() {
 }
 
 void HarmonyForgeEditor::finishDrag(const hf::core::Pattern& pat) {
-  hf::core::Pattern copy = pat;
-  hf::ser::assign_default_channels(copy);
-  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(copy, 480);
+  // The Pattern->bytes encode lives in the JUCE-free app controller; this
+  // shell keeps the temp file + the OS-drag gesture.
+  const std::vector<std::uint8_t> bytes = hf::app::export_pattern_bytes(pat);
   juce::File mid =
       juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("HarmonyForge-drag.mid");
   if (!mid.replaceWithData(bytes.data(), bytes.size())) return;
@@ -836,9 +836,9 @@ void HarmonyForgeEditor::exportMultitrack() {
 }
 
 void HarmonyForgeEditor::finishExport(const hf::core::Pattern& pat) {
-  hf::core::Pattern copy = pat;
-  hf::ser::assign_default_channels(copy);
-  const std::vector<std::uint8_t> bytes = hf::ser::write_smf1(copy, 480);
+  // Same controller as finishDrag (byte-identical by characterization);
+  // this shell keeps the save chooser.
+  const std::vector<std::uint8_t> bytes = hf::app::export_pattern_bytes(pat);
   auto chooser = std::make_shared<juce::FileChooser>("Export multitrack MIDI",
                                                      juce::File::getSpecialLocation(
                                                          juce::File::userDocumentsDirectory),
