@@ -81,9 +81,12 @@ class AsyncGenerateQueue {
 
   std::size_t pending() const;
 
-  // Blocking teardown, idempotent; the destructor calls it. Same semantics
-  // as InferenceJobQueue::shutdown: in-flight jobs run to completion
-  // (bounded), queued jobs drain, threads join. Never call from a worker
+  // Blocking teardown, idempotent; the destructor calls it. The in-flight
+  // job, if any, runs to completion (bounded); queued-but-unstarted jobs
+  // are dropped (no completion is ever posted for them), so the join is
+  // bounded by one job — the S5a-R2 close-path bound. (This differs from
+  // InferenceJobQueue::shutdown, which drains queued jobs; that queue is
+  // never used on the plugin close path.) Never call from a worker
   // thread, and never from the real-time audio thread.
   void shutdown();
 

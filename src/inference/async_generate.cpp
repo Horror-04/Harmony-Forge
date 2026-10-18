@@ -118,6 +118,15 @@ void AsyncGenerateQueue::shutdown() {
   {
     std::lock_guard<std::mutex> lock(impl_->tasks_mutex);
     impl_->stop = true;
+    // S5a-R2 close-path bound: drop queued-but-unstarted jobs so the join
+    // below waits for at most the one in-flight job. The worker pops and
+    // marks active under this same lock, so a job is either dropped here
+    // (never runs, no completion is ever posted) or already running (runs
+    // to completion, bounded); it cannot be both or neither. Submits after
+    // this point behave as before (picked up only if a worker has not yet
+    // exited, else orphaned until destruction — teardown submits nothing:
+    // the editor timer is stopped before queue members are destroyed).
+    impl_->tasks = std::queue<GenTask>{};
   }
   impl_->tasks_cv.notify_all();
   for (auto& t : impl_->workers)
