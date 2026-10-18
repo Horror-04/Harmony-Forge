@@ -65,6 +65,23 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   catch_discover_tests(test_chordtrack_pin)
 endif()
 
+# Task 4 vertical slice (fix round 1): doc-level Generate -> commit ->
+# snapshot -> MIDI bytes, headless (message thread, no widgets). Links the
+# real PatternDocument.cpp (JUCE), so plugin-ON only, like the pins above.
+# Task 1: + RtViolationCounter.cpp for the ThreadRole assert in commit.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_vertical_slice test_vertical_slice.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp)
+  target_link_libraries(test_vertical_slice PRIVATE
+    harmony_forge_core harmony_forge_inference juce::juce_gui_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_vertical_slice PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_vertical_slice PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_vertical_slice)
+  catch_discover_tests(test_vertical_slice)
+endif()
+
 # Phase 6 Task 1: keyboard-alternative coverage. Links the real
 # PianoRoll.cpp + ChordTrack.cpp + PatternDocument.cpp (JUCE), so it only
 # builds where the plugin is configured. Headless: synthetic KeyPresses are

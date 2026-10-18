@@ -202,6 +202,9 @@ TEST_CASE("frozen track survives regenerate byte-identical", "[candidates][task4
 }
 
 TEST_CASE("8-bar end-to-end generation carries Chord+Bass+Melody in budget", "[candidates][task4]") {
+  // Inference-level half of the vertical slice; the doc-level half
+  // (Generate -> ValueTree commit -> snapshot -> MIDI bytes) is pinned in
+  // tests/test_vertical_slice.cpp ("[slice][task4]").
   // SPEC §16.1 vertical-slice pin: full Generate -> 4 candidates at 8 bars
   // (Chord+Bass+Melody vertical slice) completes far under the 30 s budget.
   hf::infer::GenParams params = strict_params();
