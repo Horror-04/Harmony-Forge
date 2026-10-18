@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -71,6 +72,22 @@ class FakeLatencyRunner : public hf::infer::IInferenceRunner {
   std::vector<int> predict(const std::vector<int>& /*input*/,
                            const hf::infer::InferenceConfig& /*cfg*/) override {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    return {};
+  }
+};
+
+// S5a-R2: gate runner pins the worker inside job 1's predict until released,
+// so jobs 2/3 are still queued when shutdown runs. Lets the test prove
+// shutdown waits for the in-flight job but drops queued-but-unstarted jobs.
+class GateRunner : public hf::infer::IInferenceRunner {
+ public:
+  std::atomic<bool> started{false};
+  std::atomic<bool> release{false};
+  std::vector<int> predict(const std::vector<int>& /*input*/,
+                           const hf::infer::InferenceConfig& /*cfg*/) override {
+    started.store(true, std::memory_order_release);
+    while (!release.load(std::memory_order_acquire))
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     return {};
   }
 };
@@ -169,4 +186,34 @@ TEST_CASE("model path threads into generation deterministically", "[async]") {
   auto got = poll_until([&] { return q.try_take_latest(id); });
   REQUIRE(got.has_value());
   CHECK(encoded(got->candidates) == encoded(a));  // async == sync with model
+}
+
+TEST_CASE("shutdown waits for the in-flight job, drops queued jobs", "[async]") {
+  auto runner = std::make_shared<GateRunner>();
+  hf::infer::AsyncGenerateQueue q(runner, 1);
+  const auto params = seed7_params();
+  const hf::infer::GenJobId id1 = q.generate_async(params);
+  (void)q.generate_async(params);
+  (void)q.generate_async(params);
+
+  // Wait until the worker is blocked inside job 1's predict, so jobs 2/3
+  // are still queued when shutdown runs.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+  while (!runner->started.load(std::memory_order_acquire)) {
+    REQUIRE(std::chrono::steady_clock::now() < deadline);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  std::thread releaser([&] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    runner->release.store(true, std::memory_order_release);
+  });
+  q.shutdown();  // must return once job 1 finishes; jobs 2/3 never run
+  releaser.join();
+
+  auto got = q.try_take_completed();
+  REQUIRE(got.has_value());
+  CHECK(got->id == id1);
+  CHECK_FALSE(q.try_take_completed().has_value());  // dropped jobs complete never
+  CHECK(q.pending() == 0);
 }
