@@ -60,3 +60,23 @@ subset filters are not evidence of silence.
 `candidates.cpp` = 221 (`wc -l`). Was 235 post-4a; include cleanup shaved
 14. Per option-(b): stands as measured without further work (S10 `>500 = 0`
 holds with margin). Must not grow. Comments untouched for numbers.
+
+## 6. Text-guard liveness on `p.seed+i` (gate 1.1 + double control, S4b)
+
+The `sseed` lines (`p.seed + index`, `candidate_model.cpp:191-192`) live
+in `material_via_sampler_or_greedy`, pinned in `check_bodies_s3.json`.
+Behavioral tests are silent on the seed VALUE (named hole, §4) — the text
+guard is the only pre-S4b страж, shown alive twice, scratch, reverted:
+- 1.1 (pre-4b): `p.seed+i` → `p.seed+i+1` ⇒ `check_bodies` exactly
+  `1 FAIL` (`material_via_sampler_or_greedy: normalized bodies differ`).
+- Double control (S4b): same mutation ⇒ `check_bodies` 1 FAIL **and**
+  the new pin `s4b sampler index-seed binding` RED (only it; the 3 mode
+  goldens stay green) ⇒ revert ⇒ 4/4 green. Both guards proven on the
+  same scratch mutation.
+- Scratch-form note: single-expression `+1` variants of the line trip an
+  unrelated MSVC C2059 at the closing parens (cause unestablished);
+  the proven form splits the `+1u` into a second statement. The guard
+  fires on any text delta either way.
+Rule to the pin (Sonnet condition 2): any commit touching
+`candidate_model.cpp` or the call-site passes only with `check_bodies`
+sans allowlist; seed-value changes go in a separate PR with the pin.

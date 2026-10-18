@@ -47,3 +47,24 @@ Notes:
 - ONNX/stub split: no `#if` in any old/new candidate TU; the 4 gating
   mentions each live in `onnx_runner.cpp` / `ort_logits.cpp`, which move
   with the code (i.e. are never compiled conditionally out from here).
+
+## Inverted view: directives per new TU (post-4b tree)
+
+Zero `#if`/`#ifdef`/`#ifndef`/`#endif` in every file below (grep-verified;
+only `#include` + `#pragma once` exist).
+
+| TU | directives held |
+|---|---|
+| `candidate_base.cpp` | own header; `<algorithm> <cstdint> <string> <vector>`; `core/music/chord.h`; `detail/candidate_helpers.h` + `detail/candidate_params.h` |
+| `candidate_base.h` | `<random> <vector>`; `core/model/note.h` |
+| `candidate_transforms.cpp` | own header; `<algorithm> <random> <vector>`; `core/model/note.h`; `core/music/ranges.h` + `core/music/scale.h`; both `detail/` |
+| `candidate_modes.cpp` | own header; `<algorithm> <cstdlib> <random> <string> <vector>`; `constraints.h`; `core/model/note.h` + `core/model/pattern_ops.h`; `core/music/ranges.h` + `core/music/scale.h`; both `detail/` |
+| `candidate_model.cpp` | own header; `<array> <atomic> <cstdint> <cstdio> <memory> <mutex> <string> <vector>`; `core/serialization/tokenizer.h` + `vocab_layout.gen.h`; `detail/candidate_params.h`; `inference_runner.h` + `keynorm.h` + `onnx_runner.h` + `ort_logits.h` + `sampler.h` |
+| `candidate_model.h` | `<string>`; `core/model/note.h`; `inference_runner.h` |
+| `detail/candidate_helpers.h` | `<string> <vector>` |
+| `detail/candidate_params.h` | `<string>` |
+| `candidates.cpp` (facade, post-cleanup) | own header; `<random> <vector>`; `core/music/chord.h` + `core/music/scale.h`; `core/serialization/vocab_layout.gen.h`; `detail/candidate_helpers.h`; `inference_runner.h` + `keynorm.h` + `memo_filter.h` |
+
+No new TU includes `candidates.h` (re-export flows facade→modules only).
+Union over all TUs ⊇ the 23 old directives (every old line appears in ≥1
+holder above); nothing conditional exists to lose.
