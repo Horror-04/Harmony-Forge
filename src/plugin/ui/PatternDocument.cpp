@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 
+#include "../audio/ThreadRole.h"
 #include "constraints.h"
 #include "core/model/pattern_ops.h"
 #include "core/model/track_pattern.h"
@@ -109,6 +110,10 @@ hf::infer::GenParams PatternDocument::makeParams(int seed, int bars, int tonic,
 void PatternDocument::commit(const hf::core::Pattern& next,
                              const hf::core::ChordProgression& nextChords,
                              const hf::core::FreezeState& nextFreeze, const juce::String& name) {
+  // Message thread only: the ValueTree/UndoManager state touched here must
+  // never be entered from the audio thread (processBlock sees only the
+  // lock-free snapshot). Assert, never lock.
+  HF_ASSERT_MESSAGE_THREAD();
   if (undo_ == nullptr) {
     pattern_ = next;
     chords_ = nextChords;
@@ -451,5 +456,21 @@ bool PatternDocument::adoptReferenceChords(
   const hf::core::ChordMergeResult merged = hf::core::merge_reference_chords(chords_, perBar);
   if (!merged.changed) return false;
   commit(pattern_, merged.merged, freeze_, "Adopt reference chords");
+  return true;
+}
+
+bool PatternDocument::regenerateSelection(const hf::infer::GenParams& params) {
+  if (params.bars < 1) return false;
+  // Message thread: same background-queue flow as regenerate(), but the
+  // submit-time mask also freezes everything outside the current selection,
+  // so only the selected bars/tracks/notes change. poll_regenerate() merges
+  // pending_freeze_ unchanged. Empty selection -> complement is empty ->
+  // identical to regenerate().
+  pending_pattern_ = pattern_;
+  pending_freeze_ = hf::core::union_freeze(
+      freeze_, hf::core::freeze_complement_of_selection(pattern_, selection_));
+  pending_gen_ = gen_queue_->generate_async(params);
+  gen_pending_ = true;
+  sendChangeMessage();
   return true;
 }

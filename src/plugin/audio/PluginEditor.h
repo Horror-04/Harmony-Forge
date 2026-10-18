@@ -140,6 +140,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void startMidiDrag();
   void exportMultitrack();
   void doRegenerate();
+  void doRegenerateSelection();  // Task 4: selection-scoped (ADD-only).
   void doKeep(int i);
   void doBuildArrangement(const std::vector<hf::arr::Section>& sections);
   void applyZoom();

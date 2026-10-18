@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 
+#include "model_manifest.h"
+
 #ifdef HARMONY_FORGE_WITH_ONNX
 #include <onnxruntime_cxx_api.h>
 #ifdef _WIN32
@@ -43,7 +45,19 @@ OnnxRunner::OnnxRunner(const InferenceConfig& cfg) noexcept : impl_(nullptr) {
   // generation falls back to the deterministic composer. Never throws.
   try {
     auto impl = std::make_unique<Impl>();
-    if (!cfg.model_path.empty()) {
+    // Task 2 manifest gate (strict): an incompatible model is NEVER loaded —
+    // the runner stays unloaded and generation falls back to the
+    // deterministic composer (theory-only). Empty path keeps the historical
+    // unloaded fallback (check is vacuous there).
+    bool loadable = !cfg.model_path.empty();
+    if (loadable) {
+      if (const auto reason = check_model_compatible(cfg.model_path);
+          reason.has_value()) {
+        note_manifest_refusal(cfg.model_path, *reason);
+        loadable = false;
+      }
+    }
+    if (loadable) {
       Ort::SessionOptions opts;
       opts.SetIntraOpNumThreads(1);
       opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_BASIC);

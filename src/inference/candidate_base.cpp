@@ -15,6 +15,7 @@
 #include "core/music/chord.h"
 #include "detail/candidate_helpers.h"
 #include "detail/candidate_params.h"
+#include "pcg.h"
 
 namespace hf::infer {
 namespace {
@@ -35,7 +36,7 @@ std::vector<int> tone_pcs(const core::ChordSymbol& c) {
 // Deterministic quarter-note base: scale-walk melody with chord-tone bias,
 // roots-and-fifths bass, sustained triads. All starts on the 16th grid.
 core::Pattern compose_base(const GenParams& p, const core::ChordProgression& prog,
-                           const std::vector<int>& iv, std::mt19937& rng) {
+                           const std::vector<int>& iv, Pcg32& rng) {
   core::Pattern pat;
   pat.ticks_per_beat = 480;
   pat.beats_per_bar = kBeatsPerBar;
@@ -51,20 +52,20 @@ core::Pattern compose_base(const GenParams& p, const core::ChordProgression& pro
   bass.type = core::TrackType::Bass;
   chords.type = core::TrackType::Chords;
 
-  int deg = static_cast<int>(rng() % static_cast<uint32_t>(2 * n));
+  int deg = static_cast<int>(rng.uniform(static_cast<std::uint32_t>(2 * n)));
   for (int b = 0; b < p.bars; ++b) {
     const core::ChordSymbol& ch = prog[static_cast<size_t>(b)];
     const std::vector<int> pcs = tone_pcs(ch);
     for (int q = 0; q < kBeatsPerBar; ++q) {
       int pitch;
-      if (!pcs.empty() && (rng() % 100) < 70) {
+      if (!pcs.empty() && rng.uniform(100) < 70) {
         // Chord-tone bias: nearest pitch to center with a chord-tone class.
-        const int want = pcs[rng() % pcs.size()];
+        const int want = pcs[rng.uniform(static_cast<std::uint32_t>(pcs.size()))];
         const int delta = mod12(want - mod12(center));
         const int signed_delta = (delta <= 6) ? delta : delta - 12;
         pitch = octave_pull(center + signed_delta, kMelodyLo, kMelodyHi);
       } else {
-        deg = std::clamp(deg + static_cast<int>(rng() % 5) - 2, 0, 2 * n - 1);
+        deg = std::clamp(deg + static_cast<int>(rng.uniform(5)) - 2, 0, 2 * n - 1);
         pitch = center + (iv[deg % n] - iv[0]) + 12 * (deg / n);
         pitch = octave_pull(pitch, kMelodyLo, kMelodyHi);
       }

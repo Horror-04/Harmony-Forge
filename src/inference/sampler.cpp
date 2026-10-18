@@ -12,6 +12,7 @@
 #include "core/model/note.h"
 #include "core/music/chord.h"
 #include "core/music/scale.h"
+#include "pcg.h"
 
 namespace hf::infer {
 namespace {
@@ -36,31 +37,11 @@ bool valid_cfg(const SamplerCfg& c) noexcept {
   }
 }
 
-// Integer PCG32 (XSH-RR) + 53-bit unit draw. Same seed -> identical stream
-// (exact token-identity with python's random.Random is NOT required — the
-// RNGs differ by design — but same-seed determinism is pinned by test).
-struct Pcg32 {
-  std::uint64_t state;
-  std::uint64_t inc;
-  explicit Pcg32(std::uint64_t seed) noexcept
-      : state(0), inc((seed << 1u) | 1u) {
-    next();
-    state += seed + 0x9e3779b97f4a7c15ULL;
-    next();
-  }
-  std::uint32_t next() noexcept {
-    const std::uint64_t old = state;
-    state = old * 6364136223846793005ULL + inc;
-    const std::uint32_t xs = static_cast<std::uint32_t>(((old >> 18u) ^ old) >> 27u);
-    const std::uint32_t rot = static_cast<std::uint32_t>(old >> 59u);
-    return (xs >> rot) | (xs << ((32u - rot) & 31u));
-  }
-  double unit() noexcept {  // [0, 1)
-    const std::uint64_t x =
-        (static_cast<std::uint64_t>(next()) << 32) | static_cast<std::uint64_t>(next());
-    return static_cast<double>(x >> 11) * (1.0 / 9007199254740992.0);
-  }
-};
+// Integer PCG32 (XSH-RR) + 53-bit unit draw: the single generation RNG now
+// lives in `pcg.h` (Task 2 determinism hardening; moved verbatim from
+// below). Same seed -> identical stream (exact token-identity with python's
+// random.Random is NOT required — the RNGs differ by design — but same-seed
+// determinism is pinned by test).
 
 // Setup-time rule resolution (ONCE per call, background thread): scale pcs
 // via ScaleDatabase::intervals, per-bar chord tone pcs via chord_intervals —

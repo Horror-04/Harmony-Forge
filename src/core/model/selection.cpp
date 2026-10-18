@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include "core/model/track_pattern.h"
 #include "core/music/chord.h"
 #include "core/music/scale.h"
 
@@ -293,5 +294,62 @@ const HistoryEntry& SeedHistory::at(std::size_t i) const { return entries_.at(i)
 const HistoryEntry& SeedHistory::latest() const { return entries_.back(); }
 
 void SeedHistory::clear() { entries_.clear(); }
+
+FreezeState freeze_complement_of_selection(const Pattern& base, const Selection& sel) {
+  FreezeState out;
+  if (sel.empty()) return out;
+  const int ntracks = static_cast<int>(base.tracks.size());
+  if (ntracks <= 0) return out;
+  const int nbars = pattern_num_bars(base);
+  if (nbars <= 0) return out;
+  const bool has_track_sel = !sel.tracks.empty();
+  const bool has_note_sel = !sel.notes.empty();
+
+  auto track_selected = [&](int t) { return !has_track_sel || contains(sel.tracks, t); };
+  auto bar_selected = [&](int b) {
+    return !sel.has_bars || (b >= sel.bar_first && b < sel.bar_first + sel.bar_count);
+  };
+
+  for (int t = 0; t < ntracks; ++t) {
+    if (!track_selected(t)) {
+      set_track_frozen(out, t, true);
+      continue;
+    }
+    // Bar cells narrow the region when the selection narrows by bars; with
+    // a pure note selection every bar stays open and the note loop below
+    // does the narrowing instead.
+    if (sel.has_bars || !has_note_sel) {
+      for (int b = 0; b < nbars; ++b)
+        if (!bar_selected(b)) set_bar_frozen(out, t, b, true);
+    }
+  }
+
+  if (has_note_sel) {
+    for (int t = 0; t < ntracks; ++t) {
+      if (!track_selected(t)) continue;
+      const auto& notes = base.tracks[static_cast<size_t>(t)].notes;
+      for (int i = 0; i < static_cast<int>(notes.size()); ++i) {
+        // Only inside selected bars: note cells must never overlap the bar
+        // cells above (merge applies bar replacement first, then index
+        // pairing — overlapping cells would corrupt the pairing).
+        if (!bar_selected(bar_of_tick(base, notes[static_cast<size_t>(i)].start_tick)))
+          continue;
+        if (contains(sel.notes, NoteRef{t, i})) continue;
+        set_note_frozen(out, NoteRef{t, i}, true);
+      }
+    }
+  }
+  return out;
+}
+
+FreezeState union_freeze(const FreezeState& a, const FreezeState& b) {
+  FreezeState out = a;
+  for (int t : b.tracks) set_track_frozen(out, t, true);
+  for (const auto& cell : b.bars) set_bar_frozen(out, cell.track, cell.bar, true);
+  for (const auto& ref : b.notes) set_note_frozen(out, ref, true);
+  for (const auto& [t, ax] : b.axis)
+    if (out.axis.find(t) == out.axis.end()) out.axis[t] = ax;  // `a` wins
+  return out;
+}
 
 }  // namespace hf::core

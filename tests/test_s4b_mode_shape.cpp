@@ -20,7 +20,8 @@
 // hashes. Exactness is justified per golden: `apply_mode` is a pure
 // deterministic function of (pattern, params, prog, iv, rng state); the
 // Creative arm consumes NO rng, so G1/G3 outputs are pure functions of the
-// input pattern, and G2's rng seed is pinned in-test. Each golden reddens
+// input pattern, and G2's rng seed is pinned in-test (9; re-pinned under
+// Task 2 — seed 7 is vacuous under Pcg32). Each golden reddens
 // under its own live single-decision mode corruption (see task report):
 //   G1: strong-beat predicate flip (`mid % 480 == 0` -> `!= 0`, :103).
 //   G2: color-rate threshold flip (`>= 25` -> `>= 75`, :81).
@@ -35,7 +36,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdlib>
-#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -43,6 +43,7 @@
 #include "candidates.h"
 #include "core/model/note.h"
 #include "core/music/scale.h"
+#include "pcg.h"
 
 namespace {
 
@@ -111,7 +112,7 @@ TEST_CASE("s4b Creative arm adds weak-beat chromatic passing tones",
   auto ps = p;
   ps.mode = hf::infer::GenMode::Strict;
   hf::core::Pattern s = in;
-  std::mt19937 rng_s(777);
+  hf::infer::Pcg32 rng_s(777);
   hf::infer::apply_mode(s, ps, prog, iv, rng_s);
   const auto& sm = s4b_melody_of(s);
   REQUIRE(sm.notes.size() == 7);
@@ -121,7 +122,7 @@ TEST_CASE("s4b Creative arm adds weak-beat chromatic passing tones",
   }
 
   hf::core::Pattern c = in;
-  std::mt19937 rng(777);
+  hf::infer::Pcg32 rng(777);
   hf::infer::apply_mode(c, p, prog, iv, rng);
   const auto& cm = s4b_melody_of(c);
   REQUIRE(cm.notes.size() == 11);
@@ -198,11 +199,15 @@ TEST_CASE("s4b Experimental arm flips weak-beat color tones at ~25pc",
   in.tracks.push_back(bass);
 
   hf::core::Pattern out = in;
-  std::mt19937 rng(7);
+  // Task-2 re-pin: Pcg32 streams differ from mt19937, so the seed is
+  // re-pinned to 9 — the nearest seed >= 7 whose flip set is non-vacuous
+  // (seed 7 yields an empty set under Pcg32, which could not distinguish a
+  // correct run from deleted flip logic). Two flips expected (see kFlips).
+  hf::infer::Pcg32 rng(9);
   hf::infer::apply_mode(out, p, prog, iv, rng);
   const auto& om = s4b_melody_of(out);
   REQUIRE(om.notes.size() == 20);
-  // Flip set: (tick, old, new). G2 golden (rng seed 7 pinned above).
+  // Flip set: (tick, old, new). G2 golden (rng seed 9 pinned above).
   std::vector<std::tuple<int, int, int>> flips;
   for (size_t i = 0; i < om.notes.size(); ++i) {
     if (om.notes[i].pitch != in.tracks[0].notes[i].pitch)
@@ -215,7 +220,7 @@ TEST_CASE("s4b Experimental arm flips weak-beat color tones at ~25pc",
             std::to_string(n) + ") ";
   INFO("flips (tick:old->new): " << dump);
   const std::vector<std::tuple<int, int, int>> kFlips = {
-      {120, 64, 63}, {360, 71, 70}};
+      {720, 69, 68}, {1080, 71, 70}};
   CHECK(flips == kFlips);
   // Shape properties of every flip: weak beat, color degree, flat by 1
   // (major family), Melody register kept.
@@ -265,7 +270,7 @@ TEST_CASE("s4b Experimental arm keeps parallel-union pitches", "[modes][s4b]") {
   }));
 
   hf::core::Pattern out = in;
-  std::mt19937 rng(7);
+  hf::infer::Pcg32 rng(7);
   hf::infer::apply_mode(out, p, prog, iv, rng);
   const auto& om = s4b_melody_of(out);
   REQUIRE(om.notes.size() == 6);
@@ -294,7 +299,7 @@ TEST_CASE("s4b Experimental arm keeps parallel-union pitches", "[modes][s4b]") {
   auto ps = p;
   ps.mode = hf::infer::GenMode::Strict;
   hf::core::Pattern st = in;
-  std::mt19937 rng_s(7);
+  hf::infer::Pcg32 rng_s(7);
   hf::infer::apply_mode(st, ps, prog, iv, rng_s);
   for (const auto& n : s4b_melody_of(st).notes) {
     if (n.start_tick == 120) CHECK(n.pitch != 63);

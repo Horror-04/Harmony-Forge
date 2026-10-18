@@ -89,6 +89,27 @@ int bar_of_tick(const Pattern& p, int tick);
 // All note refs of one track inside one bar (ordered by note index).
 std::vector<NoteRef> notes_in_bar(const Pattern& p, int track, int bar);
 
+// Selection-scoped regenerate support (Task 4 vertical slice, ADD-only):
+// complement of `sel` over `base` — the freeze mask that keeps everything
+// OUTSIDE the selection, so a whole-pattern regenerate merged under
+// (user freeze UNION this complement) changes only the selected region:
+// - unselected tracks -> whole-track freeze cells;
+// - unselected bars of selected tracks -> (track, bar) freeze cells
+//   (only when the selection narrows by bars, or when no individual notes
+//   are selected);
+// - every note outside an explicit note selection (within selected
+//   tracks AND selected bars, so note cells never overlap bar cells) ->
+//   individual note freezes.
+// Empty selection -> empty mask (whole-pattern regenerate, identical to the
+// legacy path). Out-of-range selections freeze everything (empty region
+// regenerates nothing). Never throws.
+FreezeState freeze_complement_of_selection(const Pattern& base, const Selection& sel);
+
+// Union of two freeze masks (deduped; `a` wins on axis conflicts — in the
+// regenerateSelection composition the user mask is `a`, so explicit axis
+// choices survive). Never throws.
+FreezeState union_freeze(const FreezeState& a, const FreezeState& b);
+
 // Merge regenerated material under a freeze mask (SPEC: "frozen regions
 // survive Regenerate"). Result starts as `regen`, then:
 // - frozen track (Full): whole note list copied from base;

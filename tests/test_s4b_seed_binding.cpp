@@ -23,6 +23,13 @@
 // mutations (`->i`, `+1`, `-i`, `^i`) are proven live per seed in the A1
 // report (red) with reverts (green).
 //
+// RECAPTURE (Task 2, pcg-everywhere): the candidates RNG moved from
+// std::mt19937 to hf::infer::Pcg32, so every stream moved and all 12 hashes
+// below were re-banked (capture + swap-sensitivity re-proof in the Task 2
+// report). Coincidence pattern of the new streams: seed-10 rows 0 and 2 both
+// reuse the seed-0 row-0 bytes (harmless sampler-draw collisions, not
+// aliasing — the pin holds via the rows that move).
+//
 // WHY GOLDEN (not relational): a relational pin (material with a test-owned
 // provider vs direct `sample_continue` with seed `p.seed+i`) is unobservable
 // on the required old revs — PROVEN BY READING, not assumed:
@@ -173,33 +180,30 @@ TEST_CASE("s4b sampler index-seed binding is pinned per candidate",
   // the sampler with p.seed+i). The sseed-swap corruption reddens rows 0-2
   // at seed 0 and all four rows at seeds 10/11; per-mutation reddened rows
   // for the full battery are recorded in the A1 report.
-  // Captured from the clean tree (see task reports for the values + proofs).
-  // NOTE: all four rows are distinct at seed 0; row 3 is swap-invariant at
-  // that point (its draws don't move under the sseed permutation), so the
-  // seed-0 pin holds per index via rows 0-2 (proven by the swap run in the
-  // report). Seeds 10/11 move all four rows under the swap. Two observed
-  // coincidences are harmless sampler-draw collisions, not aliasing: seed-10
-  // row 0 reuses the seed-0 row-0 bytes, and seed-10 row 2 reuses the
-  // swapped-seed-0 row-2 bytes — the pins still hold via the rows that move
-  // (exact per-mutation reddened rows are recorded in the A1 report).
+  // Captured from the clean tree (see task reports for the values + proofs;
+  // re-banked under Task 2 for the Pcg32 streams, same capture discipline).
+  // NOTE: all four rows are distinct at seed 0. Two observed coincidences
+  // are harmless sampler-draw collisions, not aliasing: seed-10 rows 0 and 2
+  // both reuse the seed-0 row-0 bytes — the pins still hold via the rows
+  // that move (per-seed swap-sensitivity re-proven in the Task 2 report).
   static const char* kPinned[3][4] = {
       {
-          "90b4f4ca574fb78a",
-          "65929b4fa690ee2c",
-          "dc2d5cde23041fcf",
-          "2eefc7f5b81708b1",
+          "c87ba3aeae61f312",
+          "6e25f9e4f7e3e36c",
+          "3b63bac600ce3f3f",
+          "286b6fc5cd108dfa",
       },
       {
-          "90b4f4ca574fb78a",
-          "b6110c63d00a781a",
-          "d526dc1c6f511221",
-          "be1b30264e0c6157",
+          "c87ba3aeae61f312",
+          "a385f2973eec37c4",
+          "c87ba3aeae61f312",
+          "ea26fa8357db4762",
       },
       {
-          "e6783270c193c0a8",
-          "6f0142ddf934b202",
-          "85360914d0925088",
-          "c404fe98418f506a",
+          "7b223659f8c51e39",
+          "ef76724370f0cbe2",
+          "96375b90509048df",
+          "0b79d46f4eb098b2",
       },
   };
   for (int s = 0; s < 3; ++s) {

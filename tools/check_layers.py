@@ -1,13 +1,16 @@
 # Copyright (C) 2026 Horror-04
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""S0 layer check (report-only): src/core must not include JUCE headers;
+"""S0 layer check: src/core must not include JUCE headers;
 src/inference must not include plugin/JUCE GUI headers.
 
-Usage: py -3 tools/check_layers.py
-Exit 0 always (report-only in S0); prints violations or clean.
+Usage:
+  py -3 tools/check_layers.py           # report-only (exit 0 always)
+  py -3 tools/check_layers.py --strict  # enforce mode: exit 1 on any
+                                        # violation, else 0 (Task 3 gate)
 """
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
@@ -47,19 +50,29 @@ def walk(root: str):
                 yield os.path.join(dp, fn)
 
 
-def main() -> int:
+def check_tree(core_root: str, inf_root: str) -> list[str]:
+    """Return layer violations for the two roots (empty == clean)."""
     violations: list[str] = []
-    core_root = os.path.join(_REPO, 'src', 'core')
     for path in walk(core_root):
         for inc in includes_of(path):
             if is_juce(inc):
                 violations.append(f'{os.path.relpath(path, _REPO)} includes {inc}')
-    inf_root = os.path.join(_REPO, 'src', 'inference')
     for path in walk(inf_root):
         for inc in includes_of(path):
             rel = inc.replace('\\', '/')
             if is_juce(inc) or 'plugin/' in rel or rel.startswith('plugin'):
                 violations.append(f'{os.path.relpath(path, _REPO)} includes {inc}')
+    return violations
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--strict", action="store_true",
+                    help="enforce mode: exit 1 on any violation")
+    args = ap.parse_args(argv)
+    core_root = os.path.join(_REPO, 'src', 'core')
+    inf_root = os.path.join(_REPO, 'src', 'inference')
+    violations = check_tree(core_root, inf_root)
     if violations:
         print('LAYER VIOLATIONS:')
         for v in violations:
@@ -67,6 +80,8 @@ def main() -> int:
     else:
         print('LAYER CHECK CLEAN: src/core has no JUCE includes; '
               'src/inference has no plugin/JUCE-GUI includes.')
+    if args.strict:
+        return 1 if violations else 0
     return 0
 
 

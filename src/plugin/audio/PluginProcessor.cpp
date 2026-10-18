@@ -4,6 +4,17 @@
 
 #include "PluginEditor.h"
 #include "RtViolationCounter.h"
+#include "ThreadRole.h"
+
+namespace {
+// Host-owned output buffer sizing: a full MidiOutbox drain of short
+// messages costs at most 2048 * (4 time + 2 size + 3 data) = 18432 bytes;
+// 24 KiB keeps any single block allocation-free after the first growth.
+// The buffer belongs to the host (only visible inside processBlock), so it
+// CANNOT be grown on the message thread — ensureSize() below amortizes to a
+// no-op branch once grown (MemoryBlock::clearQuick never frees).
+constexpr size_t kOutMidiPreallocBytes = 24576;
+}  // namespace
 
 HarmonyForgeProcessor::HarmonyForgeProcessor()
     : AudioProcessor(BusesProperties()
@@ -34,16 +45,18 @@ void HarmonyForgeProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                          juce::MidiBuffer& midiMessages) {
   // S5a-RT: Debug-only alloc-counter flag (empty type, zero cost in Release).
   const hf::rt::ScopedFlag rtAudioScope;
+  HF_ASSERT_AUDIO_THREAD();
   juce::ScopedNoDenormals noDenormals;
   // 1. Clear audio (we are a MIDI effect + preview synth; no audio input use).
   buffer.clear();
 
   // 2. Pop pre-rendered MIDI from the lock-free outbox into the output.
+  // Pre-grown above (see kOutMidiPreallocBytes): the first block may grow
+  // via malloc (invisible to the operator-new counter by design), every
+  // later block only appends into retained storage.
+  midiMessages.ensureSize(kOutMidiPreallocBytes);
   juce::MidiMessage msg;
   while (outbox.pop(msg)) {
-    // NOTE: MidiBuffer::addEvent may grow storage on first use; the outbox
-    // pattern keeps per-block work bounded. Full preallocation of the MIDI
-    // buffer is a Sprint-4 hardening item (see THREADING_MODEL.md).
     midiMessages.addEvent(msg, 0);
   }
 
@@ -56,6 +69,7 @@ void HarmonyForgeProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
 // RT-SAFETY: plain optional reads + relaxed atomic stores only.
 void HarmonyForgeProcessor::publishTransport() noexcept {
+  HF_ASSERT_AUDIO_THREAD();
   auto* ph = getPlayHead();
   if (ph == nullptr) {
     transportPlaying.store(false, std::memory_order_relaxed);

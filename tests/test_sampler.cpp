@@ -680,13 +680,18 @@ std::vector<std::vector<int>> encoded(
 }  // namespace
 
 TEST_CASE("wiring flag OFF keeps pre-phase history bytes", "[sampler][wiring]") {
-  // Pinned pre-phase hashes: captured 2026-10-15 from the untouched greedy
-  // path (empty model path, flag OFF). Any single-bit drift in the OFF path
-  // fails here — that is the blocker-grade property.
+  // Pinned history hashes. BASELINE (2026-10-15): captured from the untouched
+  // greedy path (empty model path, flag OFF). RE-BASELINED under Task 2
+  // (determinism hardening): the candidates RNG moved std::mt19937 ->
+  // hf::infer::Pcg32, so every stream moved and all 12 hashes were re-banked
+  // (values below; determinism halves still hold; single-decision mutation
+  // red-proof in the Task-2 report). The test keeps guarding the property it
+  // was built for — any single-bit drift in the OFF path fails here —
+  // against the new baseline.
   static const char* kPinned[3][4] = {
-      {"5429e4ce08459cb9", "b9ec31b30aab6551", "7b49e78121455d55", "27b45ea030db93b8"},
-      {"d556b000ba3e5d92", "e982b3a16fbf75ba", "f21387b7ffaadd59", "fc0fb10355f0e03c"},
-      {"f4c431dff63e935d", "c3493403ad23219b", "25790ec17e58f269", "4bd8094a872fc746"},
+      {"6394e5c6be200543", "90a9c545514d0586", "e76b47e0251d3b3c", "2c6020bcb31fca2f"},
+      {"a21658f36823a870", "2cf1714db87ffa5a", "5c25438e4ed7059f", "8dd1abcf575fd304"},
+      {"e28b231b6f1aa82a", "2301a70a31417714", "5b71abe9a9ee4d40", "0a0cbef957453031"},
   };
   const auto fixtures = wiring_fixtures();
   for (size_t f = 0; f < fixtures.size(); ++f) {

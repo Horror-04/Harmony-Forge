@@ -4,7 +4,7 @@
 // mode post-processing. See candidates.h. Never throws; pure C++20, no JUCE.
 #include "candidates.h"
 
-#include <random>
+#include <algorithm>
 #include <vector>
 
 #include "core/music/chord.h"
@@ -14,6 +14,7 @@
 #include "inference_runner.h"
 #include "keynorm.h"
 #include "memo_filter.h"
+#include "pcg.h"
 
 namespace hf::infer {
 namespace {
@@ -117,7 +118,7 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
 
   std::array<core::Pattern, 4> out;
   for (int i = 0; i < 4; ++i) {
-    std::mt19937 rng(stream_seed(p, i));
+    Pcg32 rng(stream_seed(p, i));
     core::Pattern base = compose_base(p, prog, iv, rng);
     // Phase 9 Task 5b: key-normalized inference (flag-gated, default OFF).
     // When enabled, the runner feed is transposed to the canonical key

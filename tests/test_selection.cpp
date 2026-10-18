@@ -10,6 +10,7 @@
 #include "core/model/selection.h"
 #include "core/model/track_pattern.h"
 #include "core/serialization/midi_file.h"
+#include "core/serialization/tokenizer.h"
 #include "ranking.h"
 
 namespace {
@@ -458,4 +459,168 @@ TEST_CASE("strict compliance stays above the 90 percent gate", "[selection][spri
         CHECK(hf::infer::strict_compliance(c, prog, tonic, scale) >= 0.90f);
     }
   }
+}
+
+namespace {
+
+// All-fields note equality: the byte-identity proxy for Task 4 freeze pins
+// (Note has no operator==; encode_pattern covers pitch/start/duration while
+// this loop also pins velocity).
+bool notes_identical(const std::vector<hf::core::Note>& a,
+                     const std::vector<hf::core::Note>& b) {
+  if (a.size() != b.size()) return false;
+  for (size_t i = 0; i < a.size(); ++i) {
+    if (a[i].pitch != b[i].pitch || a[i].start_tick != b[i].start_tick ||
+        a[i].duration_ticks != b[i].duration_ticks || a[i].velocity != b[i].velocity)
+      return false;
+  }
+  return true;
+}
+
+}  // namespace
+
+TEST_CASE("selection complement freezes everything outside the selection", "[selection][task4]") {
+  // Task 4 vertical slice: selection-scoped regenerate = whole-pattern
+  // regenerate merged under (user freeze UNION complement-of-selection), so
+  // only the selected region changes. The complement builder lives in core
+  // (JUCE-free); PatternDocument::regenerateSelection consumes it.
+  const auto base = two_bar_melody();
+
+  // Empty selection: whole-pattern regenerate, complement is empty.
+  hf::core::Selection none;
+  CHECK(hf::core::freeze_complement_of_selection(base, none).empty());
+
+  // Bar-scoped: regenerate bar 1 only -> complement freezes bar 0.
+  hf::core::Selection bars;
+  hf::core::select_bars(bars, 1, 1);
+  const auto comp = hf::core::freeze_complement_of_selection(base, bars);
+  CHECK(hf::core::is_bar_frozen(comp, 0, 0));
+  CHECK_FALSE(hf::core::is_bar_frozen(comp, 0, 1));
+  CHECK_FALSE(hf::core::is_track_frozen(comp, 0));
+
+  // End-to-end through the existing merge: bar 0 byte-identical to base,
+  // bar 1 takes the regenerated material.
+  auto regen = base;
+  for (auto& n : regen.tracks[0].notes) n.pitch = std::clamp(n.pitch + 5, 0, 127);
+  const auto merged = hf::core::merge_with_frozen(base, regen, comp);
+  REQUIRE(merged.tracks.size() == 1);
+  REQUIRE(merged.tracks[0].notes.size() == 8);
+  std::vector<hf::core::Note> base_bar0(base.tracks[0].notes.begin(),
+                                        base.tracks[0].notes.begin() + 4);
+  std::vector<hf::core::Note> merged_bar0(merged.tracks[0].notes.begin(),
+                                          merged.tracks[0].notes.begin() + 4);
+  std::vector<hf::core::Note> regen_bar1(regen.tracks[0].notes.begin() + 4,
+                                         regen.tracks[0].notes.end());
+  std::vector<hf::core::Note> merged_bar1(merged.tracks[0].notes.begin() + 4,
+                                          merged.tracks[0].notes.end());
+  CHECK(notes_identical(merged_bar0, base_bar0));
+  CHECK(notes_identical(merged_bar1, regen_bar1));
+}
+
+TEST_CASE("selection complement covers tracks and single notes", "[selection][task4]") {
+  // Two-track base: selecting track 1 freezes track 0 wholesale.
+  hf::core::Pattern p;
+  p.ticks_per_beat = 480;
+  p.beats_per_bar = 4;
+  p.tracks.push_back(melody_track({{60, 0, 480, 100}, {62, 1920, 480, 100}}));
+  p.tracks.push_back(melody_track({{48, 0, 480, 100}, {50, 1920, 480, 100}}));
+  hf::core::Selection s;
+  hf::core::select_track(s, 1);
+  const auto comp = hf::core::freeze_complement_of_selection(p, s);
+  CHECK(hf::core::is_track_frozen(comp, 0));
+  CHECK_FALSE(hf::core::is_track_frozen(comp, 1));
+  auto regen = p;
+  for (auto& t : regen.tracks)
+    for (auto& n : t.notes) n.pitch = std::clamp(n.pitch + 5, 0, 127);
+  const auto merged = hf::core::merge_with_frozen(p, regen, comp);
+  REQUIRE(merged.tracks.size() == 2);
+  CHECK(notes_identical(merged.tracks[0].notes, p.tracks[0].notes));
+  CHECK(notes_identical(merged.tracks[1].notes, regen.tracks[1].notes));
+
+  // Note-scoped: freezing everything but note {0,1} keeps the rest identical.
+  hf::core::Selection one;
+  hf::core::select_note(one, {0, 1});
+  const auto ncomp = hf::core::freeze_complement_of_selection(two_bar_melody(), one);
+  CHECK(hf::core::is_note_frozen(ncomp, {0, 0}));
+  CHECK_FALSE(hf::core::is_note_frozen(ncomp, {0, 1}));
+}
+
+TEST_CASE("union_freeze merges masks without loss", "[selection][task4]") {
+  hf::core::FreezeState a;
+  hf::core::set_track_frozen(a, 0, true);
+  hf::core::FreezeState b;
+  hf::core::set_bar_frozen(b, 1, 2, true);
+  hf::core::set_note_frozen(b, {1, 3}, true);
+  const auto u = hf::core::union_freeze(a, b);
+  CHECK(hf::core::is_track_frozen(u, 0));
+  CHECK(hf::core::is_bar_frozen(u, 1, 2));
+  CHECK(hf::core::is_note_frozen(u, {1, 3}));
+  // Idempotent: union with itself changes nothing.
+  const auto uu = hf::core::union_freeze(u, u);
+  CHECK(uu.tracks.size() == u.tracks.size());
+  CHECK(uu.bars.size() == u.bars.size());
+  CHECK(uu.notes.size() == u.notes.size());
+}
+
+TEST_CASE("union_freeze merged effect is byte-identical", "[selection][task4]") {
+  // Fix round 1 (finding 2): membership (previous pin) is necessary but not
+  // sufficient — prove the union mask drives merge_with_frozen to frozen
+  // regions that are byte-identical (all note fields) to the submit-time
+  // material while open regions take the regen.
+  hf::core::Pattern base;
+  base.ticks_per_beat = 480;
+  base.beats_per_bar = 4;
+  base.tracks.push_back(melody_track({{60, 0, 480, 100}, {62, 1920, 480, 100}}));
+  base.tracks.push_back(melody_track({{48, 0, 480, 100}, {50, 1920, 480, 100}}));
+  auto regen = base;
+  for (auto& t : regen.tracks)
+    for (auto& n : t.notes) {
+      n.pitch = std::clamp(n.pitch + 5, 0, 127);
+      n.velocity = std::clamp(n.velocity + 7, 1, 127);
+    }
+  hf::core::FreezeState a;
+  hf::core::set_track_frozen(a, 0, true);  // whole track 0 (Full axis)
+  hf::core::FreezeState b;
+  hf::core::set_bar_frozen(b, 1, 1, true);  // track 1, bar 1 only
+  const auto merged = hf::core::merge_with_frozen(base, regen, hf::core::union_freeze(a, b));
+  REQUIRE(merged.tracks.size() == 2);
+  // Track 0: verbatim base copy (count + all fields).
+  CHECK(notes_identical(merged.tracks[0].notes, base.tracks[0].notes));
+  // Track 1: bar 0 takes regen, bar 1 keeps base (1 note per bar here, so
+  // the stable-sorted merge pairs them exactly).
+  REQUIRE(merged.tracks[1].notes.size() == 2);
+  std::vector<hf::core::Note> m_bar0(merged.tracks[1].notes.begin(),
+                                     merged.tracks[1].notes.begin() + 1);
+  std::vector<hf::core::Note> m_bar1(merged.tracks[1].notes.begin() + 1,
+                                     merged.tracks[1].notes.end());
+  std::vector<hf::core::Note> r_bar0(regen.tracks[1].notes.begin(),
+                                     regen.tracks[1].notes.begin() + 1);
+  std::vector<hf::core::Note> e_bar1(base.tracks[1].notes.begin() + 1,
+                                     base.tracks[1].notes.end());
+  CHECK(notes_identical(m_bar0, r_bar0));
+  CHECK(notes_identical(m_bar1, e_bar1));
+}
+
+TEST_CASE("empty selection regenerates the whole pattern", "[selection][task4]") {
+  // Fix round 1 (finding 3): regenerateSelection with an empty selection must
+  // take exactly the legacy whole-pattern path — the complement is empty, so
+  // the union with the user freeze is the user freeze itself and the merged
+  // result is byte-identical (token encoding) to regenerate()'s merge.
+  const auto base = two_bar_melody();
+  auto regen = base;
+  for (auto& n : regen.tracks[0].notes) n.pitch = std::clamp(n.pitch + 5, 0, 127);
+  hf::core::Selection none;  // empty
+  const auto comp = hf::core::freeze_complement_of_selection(base, none);
+  CHECK(comp.empty());
+  hf::core::FreezeState user;
+  hf::core::set_bar_frozen(user, 0, 1, true);
+  const auto via_selection = hf::core::merge_with_frozen(base, regen,
+                                                         hf::core::union_freeze(user, comp));
+  const auto via_legacy = hf::core::merge_with_frozen(base, regen, user);
+  CHECK(hf::ser::encode_pattern(via_selection) == hf::ser::encode_pattern(via_legacy));
+  // And the user freeze still holds: bar 1 keeps base pitches.
+  REQUIRE(via_selection.tracks[0].notes.size() == 8);
+  for (int i = 4; i < 8; ++i)
+    CHECK(via_selection.tracks[0].notes[static_cast<size_t>(i)].pitch ==
+          base.tracks[0].notes[static_cast<size_t>(i)].pitch);
 }

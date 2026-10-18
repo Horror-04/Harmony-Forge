@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -22,6 +21,7 @@
 #include "core/music/scale.h"
 #include "detail/candidate_helpers.h"
 #include "detail/candidate_params.h"
+#include "pcg.h"
 
 namespace hf::infer {
 namespace {
@@ -57,7 +57,7 @@ bool is_minor_family(const std::string& scale) {
 }  // namespace
 
 void apply_mode(core::Pattern& pat, const GenParams& p, const core::ChordProgression& prog,
-                const std::vector<int>& iv, std::mt19937& rng) {
+                const std::vector<int>& iv, Pcg32& rng) {
   if (p.mode == GenMode::Experimental) {
     const std::vector<int> parallel = is_minor_family(p.scale)
                                           ? hf::music::ScaleDatabase::intervals("major")
@@ -78,7 +78,7 @@ void apply_mode(core::Pattern& pat, const GenParams& p, const core::ChordProgres
         const int rel = mod12(m.pitch - p.tonic);
         const bool color = minor ? (rel == 3 || rel == 8 || rel == 10)
                                  : (rel == 4 || rel == 9 || rel == 11);
-        if (!color || (rng() % 100) >= 25) continue;
+        if (!color || rng.uniform(100) >= 25) continue;
         const int cand = m.pitch + (minor ? 1 : -1);
         if (cand >= 0 && cand <= 127 &&
             hf::music::in_register(core::TrackType::Melody, cand))

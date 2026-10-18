@@ -20,6 +20,9 @@
 class CandidateBar : public juce::Component, private juce::ChangeListener {
  public:
   std::function<void()> onRegenerate;
+  // Task 4 vertical slice: selection-scoped regenerate (empty selection ==
+  // whole-pattern regenerate, same as onRegenerate).
+  std::function<void()> onRegenerateSelection;
   std::function<void(int)> onAudition;  // 0..3
   std::function<void(int)> onKeep;      // 0..3
   std::function<void(const hf::core::HistoryEntry&)> onRecallHistory;
@@ -39,10 +42,14 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     regenButton_.onClick = [this] {
       if (onRegenerate) onRegenerate();
     };
+    regenSelButton_.onClick = [this] {
+      if (onRegenerateSelection) onRegenerateSelection();
+    };
     // Phase 7 Task 2: primary CTA tags (paint only — callbacks untouched).
     regenButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
     keepButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
     addAndMakeVisible(regenButton_);
+    addAndMakeVisible(regenSelButton_);  // Task 4 (layout + paint only)
     keepButton_.onClick = [this] {
       if (onKeep) onKeep(audition_);
     };
@@ -107,15 +114,21 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
     // 40+60+6+36+44+6+52 (tail labels/boxes) = 462 px. At the 960 px editor
     // minimum (928 px bar inner): free 466, history 142, candidates
     // (466-142)/4 = 83 px each ("A - Safe" needs ~65).
+    // Task 4: the Regen-sel button (90+6) extends the prefix 202 -> 298 and
+    // fixed 462 -> 558; the worked example above predates it (candidates
+    // narrow slightly at the 960 px editor minimum, history clamps at 120).
     auto r = getLocalBounds().reduced(4);
     regenButton_.setBounds(r.removeFromLeft(110));
     r.removeFromLeft(6);
+    regenSelButton_.setBounds(r.removeFromLeft(90));  // Task 4: selection regen
+    r.removeFromLeft(6);
     keepButton_.setBounds(r.removeFromLeft(80));
     r.removeFromLeft(6);
-    const int fixed = 110 + 6 + 80 + 6 + 4 * 4 + 40 + 60 + 6 + 36 + 44 + 6 + 52;
-    // r is the inner width minus the 202 px regen/keep prefix, so free
-    // (candidates + gaps + history) = r + 202 - fixed.
-    const int free = juce::jmax(0, r.getWidth() + 202 - fixed);
+    // Task 4: +90+6 for the Regen-sel button (fixed 462 -> 558).
+    const int fixed = 110 + 6 + 90 + 6 + 80 + 6 + 4 * 4 + 40 + 60 + 6 + 36 + 44 + 6 + 52;
+    // r is the inner width minus the 298 px regen/regensel/keep prefix,
+    // so free (candidates + gaps + history) = r + 298 - fixed.
+    const int free = juce::jmax(0, r.getWidth() + 298 - fixed);
     const int histW = juce::jmin(220, juce::jmax(120, free * 30 / 100));
     const int each = juce::jmax(0, (free - histW) / 4);
     for (int i = 0; i < 4; ++i) {
@@ -174,6 +187,7 @@ class CandidateBar : public juce::Component, private juce::ChangeListener {
   int audition_ = -1;
   std::unique_ptr<juce::TextButton> candButtons_[4];
   juce::TextButton regenButton_{"Regenerate"};
+  juce::TextButton regenSelButton_{"Regen sel"};  // Task 4: selection-scoped
   juce::TextButton keepButton_{"Keep"};
   juce::Label seedLabel_, barsLabel_, historyLabel_;
   juce::TextEditor seedBox_, barsBox_;

@@ -1,0 +1,6 @@
+# Agent deny-list (Cursor + opencode): never read, write, or gate on these.
+JUCE/
+external/
+*.onnx
+training/corpus/sealed_test.jsonl
+build*/

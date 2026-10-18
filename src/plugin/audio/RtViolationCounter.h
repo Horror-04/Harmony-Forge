@@ -22,14 +22,19 @@
 // Boundaries (stated, not chased):
 // - Only throwing/nothrow `operator new`/`new[]` are hooked. Code that
 //   allocates via malloc/realloc (juce::MemoryBlock -> MidiBuffer growth,
-//   large MidiMessage payloads) is NOT counted. Consequence: the known
-//   `MidiBuffer::addEvent` first-use growth (the R4 note in
-//   PluginProcessor.cpp) is invisible to this counter — it becomes a
-//   documented demo of the boundary, never a fix here.
+//   large MidiMessage payloads) is NOT counted. Consequence: the
+//   `MidiBuffer::addEvent` first-use growth is invisible to this counter —
+//   processBlock neutralises it with ensureSize(kOutMidiPreallocBytes) (see
+//   PluginProcessor.cpp), so steady-state blocks never grow; the one-time
+//   warmup growth stays a documented boundary, never a fix here.
 // - Locks cannot be hooked (JUCE exposes no lock hook point); lock
-//   violations stay a code-review matter (AGENTS.md RT rules).
+//   violations stay a matter of static scan (tools/rt_scan.py --strict) plus
+//   code review (AGENTS.md RT rules).
 // - Over-aligned `operator new` (align_val_t) is NOT overridden; such
 //   allocations route to the CRT default and are not counted.
+// - Thread roles reuse this flag: HF_ASSERT_AUDIO_THREAD /
+//   HF_ASSERT_MESSAGE_THREAD (src/plugin/audio/ThreadRole.h) assert on
+//   insideProcessBlock() in Debug and compile out in Release.
 
 #include <cstddef>
 #include <cstdint>

@@ -68,8 +68,12 @@ MANUAL_PARITY = [
      "ChordTrack statics pre-edit capture (28 string rows)", "golden",
      "UNREGISTERED string-literal pin (outside the 4 numeric categories: uncounted class)"),
     ("tests/test_s30_sampler_seed.cpp",
-     "ENTER seed-sensitivity (property, seeds 42/7/8)", "relational",
-     "determinism + sensitivity inequalities only; LCG constants mirror the stub"),
+     "ENTER seed-sensitivity (property, seeds 42/7/8) + Task-2 Pcg32 pin "
+     "(two-instance stream determinism, r7/r42 reference draws, unit [0,1))",
+     "relational",
+     "determinism + sensitivity inequalities only; reference draws are pure "
+     "uint64 arithmetic (stdlib-independent by construction, not run-captured "
+     "pins); 1000/100/200 are draw-count parameters, 0.0/1.0 unit-range bounds"),
     # training/tests/*.py
     ("training/tests/test_parity.py",
      "tokenizer parity vs parity_vectors.json", "parity-file",
@@ -126,6 +130,15 @@ ALLOWLIST = [
      "parameter", "frozen bitmap pin reference (lint_golden_pin.py domain)"),
     ("test_tokenizer_spec_read.py", r"d66faabf.*7854f58",
      "parameter", "frozen bitmap pin reference (lint_golden_pin.py domain)"),
+    ("test_model_manifest.cpp", r"e3b0c44298fc1c14|ba7816bf8f01cfea",
+     "parameter", "FIPS 180-4 standard vectors (empty and abc): spec-published "
+     "self-test of the sha256 implementation, not run-captured pins"),
+    ("test_s30_sampler_seed.cpp", r"a\.next\(\) == b\.next\(\)",
+     "parameter", "Pcg32 stream determinism property: two live instances "
+     "compared (relational); 1000 is the draw-count parameter, not a pin"),
+    ("test_s30_sampler_seed.cpp", r"v >= 0\.0|v < 1\.0",
+     "parameter", "unit() range property bounds [0,1): definitional, not "
+     "captured pins"),
 ]
 
 ASSERT_RE = re.compile(r"REQUIRE|CHECK|assert|check\s*\(")
@@ -218,9 +231,10 @@ def census_file(path):
             big = [t for t in INT_RE.findall(ln)
                    if t.lower().startswith("0x") or int(t.replace("_", "")) >= 1000]
             big = [t for t in big if not re.fullmatch(r"[0-9a-fA-F]{16,}", t)]
-            if big:
+            if big and not allowed(path, ln, "parameter"):
                 out["assert_num"].append((i, ln.strip()[:100]))
-            if TOL_RE.search(ln) or FLOAT_RE.search(ln):
+            if (TOL_RE.search(ln) or FLOAT_RE.search(ln)) \
+                    and not allowed(path, ln, "parameter"):
                 out["toler"].append((i, ln.strip()[:100]))
     # Vector blocks: initializer-like balanced {} (cpp) / [] (py) regions
     # with >= 4 numeric literals. A region is initializer-like when the char
