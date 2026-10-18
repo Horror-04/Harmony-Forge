@@ -31,12 +31,6 @@ hf::core::Pattern patternForState(const juce::ValueTree& tree) {
   return cands[0];
 }
 
-const hf::core::Track* melodyOf(const hf::core::Pattern& pat) {
-  for (const auto& t : pat.tracks)
-    if (t.type == hf::core::TrackType::Melody) return &t;
-  return pat.tracks.empty() ? nullptr : &pat.tracks.front();
-}
-
 juce::String trackName(hf::core::TrackType t) {
   switch (t) {
     case hf::core::TrackType::Chords:
@@ -549,18 +543,14 @@ void HarmonyForgeEditor::timerCallback() {
   const int w = std::max(viewport.getWidth(), roll.getWidth());
   chordTrack.setSize(w, 64);
   rollStack.setSize(w, 68 + roll.getHeight());
-  // Preview scheduler (every tick) — message thread enqueue into the
-  // lock-free preview queue consumed by processBlock.
-  if (previewNext < previewQueue.size()) {
-    const auto now = juce::Time::getMillisecondCounter() - previewT0;
-    while (previewNext < previewQueue.size() && previewQueue[previewNext].timeMs <= (int)now) {
-      const auto& e = previewQueue[previewNext++];
-      if (e.on)
-        proc.previewNoteOn(e.pitch, e.velocity / 127.0f);
-      else
-        proc.previewNoteOff(e.pitch);
-    }
-    if (previewNext >= previewQueue.size()) previewQueue.clear();
+  // Preview scheduler (every tick) — message thread drain of the
+  // PreviewScheduler into the lock-free preview queue consumed by
+  // processBlock. The wall clock stays editorial (passed as nowMs).
+  for (const auto& e : previewSched_.tick(static_cast<int>(juce::Time::getMillisecondCounter()))) {
+    if (e.on)
+      proc.previewNoteOn(e.pitch, e.velocity / 127.0f);
+    else
+      proc.previewNoteOff(e.pitch);
   }
   // Transport poll at ~10 Hz.
   if (++tick % 4 != 0) return;
@@ -653,26 +643,14 @@ bool HarmonyForgeEditor::DragSpaceKey::keyPressed(const juce::KeyPress& key,
 }
 
 int HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int preferTrack) {
+  // S7 slice 6: delegation — stopPreview keeps the AllNotesOff editorial
+  // (the scheduler owns no processor handle); event math, track pick,
+  // sort, cursor reset and T0 anchor live in PreviewScheduler::schedule.
+  // bpm and the wall clock stay editorial reads passed as values.
   stopPreview();
-  const hf::core::Track* mel = nullptr;
-  if (preferTrack >= 0 && preferTrack < static_cast<int>(pat.tracks.size()))
-    mel = &pat.tracks[static_cast<size_t>(preferTrack)];
-  if (mel == nullptr || mel->notes.empty()) mel = melodyOf(pat);
-  if (mel == nullptr) return 0;
   const double bpm = hf::plugin::bpm(proc.state());
-  const double msPerTick = 60000.0 / (480.0 * bpm);
-  previewQueue.clear();
-  for (const auto& n : mel->notes) {
-    const int onMs = static_cast<int>(n.start_tick * msPerTick);
-    const int offMs = onMs + juce::jmax(1, static_cast<int>(n.duration_ticks * msPerTick));
-    previewQueue.push_back({onMs, true, n.pitch, n.velocity});
-    previewQueue.push_back({offMs, false, n.pitch, 0});
-  }
-  std::sort(previewQueue.begin(), previewQueue.end(),
-            [](const PreviewEvent& a, const PreviewEvent& b) { return a.timeMs < b.timeMs; });
-  previewNext = 0;
-  previewT0 = juce::Time::getMillisecondCounter();
-  return static_cast<int>(mel->notes.size());
+  return previewSched_.schedule(pat, preferTrack, bpm,
+                                static_cast<int>(juce::Time::getMillisecondCounter()));
 }
 
 void HarmonyForgeEditor::startPreview() {
@@ -772,8 +750,9 @@ void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>&
 }
 
 void HarmonyForgeEditor::stopPreview() {
-  previewQueue.clear();
-  previewNext = 0;
+  // S7 slice 6: queue reset delegates to the scheduler; the AllNotesOff
+  // stays editorial (processor handle lives here, not in the unit).
+  previewSched_.stop();
   proc.previewAllNotesOff();
 }
 

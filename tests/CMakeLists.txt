@@ -282,6 +282,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/audio/PreviewSynth.cpp
     ../src/plugin/audio/RtViolationCounter.cpp
     ../src/plugin/controllers/PreviewController.cpp
+    ../src/plugin/controllers/PreviewScheduler.cpp
     ../src/plugin/state/PluginState.cpp
     ../src/plugin/ui/PatternDocument.cpp
     ../src/plugin/ui/PianoRoll.cpp
@@ -313,6 +314,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/audio/PreviewSynth.cpp
     ../src/plugin/audio/RtViolationCounter.cpp
     ../src/plugin/controllers/PreviewController.cpp
+    ../src/plugin/controllers/PreviewScheduler.cpp
     ../src/plugin/state/PluginState.cpp
     ../src/plugin/ui/PatternDocument.cpp
     ../src/plugin/ui/PianoRoll.cpp

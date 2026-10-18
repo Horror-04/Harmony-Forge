@@ -27,6 +27,8 @@ target_sources(HarmonyForge PRIVATE
   audio/RtViolationCounter.h
   controllers/PreviewController.h
   controllers/PreviewController.cpp
+  controllers/PreviewScheduler.h
+  controllers/PreviewScheduler.cpp
   state/PluginState.cpp
   state/PluginState.h
   ui/PatternDocument.h

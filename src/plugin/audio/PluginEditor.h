@@ -9,6 +9,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include "../controllers/PreviewController.h"
+#include "../controllers/PreviewScheduler.h"
 #include "../state/PluginState.h"
 #include "../ui/ArrangeBar.h"
 #include "../ui/CandidateBar.h"
@@ -175,12 +176,9 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   // via the same valueTreePropertyChanged feed as ChordTrack.
   void showExplainTab(bool show);  // swap roll viewport <-> ExplainView
 
-  struct PreviewEvent {
-    int timeMs = 0;
-    bool on = true;
-    int pitch = 60;
-    int velocity = 90;
-  };
+  // S7 slice 6: audition event math/cursor/T0 live in PreviewScheduler;
+  // the Editor keeps only the bpm/clock reads (passed as values), the
+  // drained-event playback (previewNoteOn/Off) and the status text.
   // Returns the number of notes scheduled (0 when the pattern has no
   // playable notes on the preferred/melody track). Callers report the
   // count in the status line so empty schedules are never silent.
@@ -300,9 +298,11 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   juce::Viewport explainViewport;
   bool showExplain_ = false;
 
-  std::vector<PreviewEvent> previewQueue;
-  size_t previewNext = 0;
-  juce::uint32 previewT0 = 0;
+  // S7 slice 6: audition schedule lives in PreviewScheduler (event math,
+  // cursor and T0 anchor). Trivial dtor (vector + cursor + int, no threads
+  // or joins, no references to sibling members), so destruction order is
+  // irrelevant — declared in place of the queue members it replaces.
+  hf::plugin::PreviewScheduler previewSched_;
   int tick = 0;
 
   // Phase 3 Task 4 item B: dedicated worker for preview/export generations
