@@ -637,6 +637,25 @@ a guard that encodes an unexplained compiler behaviour is fragile. The
 cycle only carried the *constraint* forward in prose; a permanent mechanism
 was not built.
 
+> **RESOLVED 2026-10-19 (phase-B tranche A, branch `refactor/phase-b-a`).**
+> The cause IS established: a paren census over the record's own repro block
+> (`docs/measurements/s3-quirks.md:51` balanced = 2 `(`/2 `)`; `:54-:57` = 2 `(`/3 `)`,
+> 2 `(`/3 `)`, 2 `(`/3 `)`, 2 `(`/4 `)`) shows every scratch mutation carried
+> one extra closing paren — a plain C++ syntax error that any compiler rejects,
+> NOT an MSVC quirk; the `/EP` third-party-macro hypothesis is retired (a
+> macro cannot explain why the balanced counterparts of the same mutations
+> compile). The record's Status is now **CAUSE ESTABLISHED** and the binding
+> constraint retires **as a compiler workaround** (the two-statement form
+> remains the RECOMMENDED form — typo-avoidance). The guard landed as the
+> D-B7 **compiler probe** `tools/c2059_probe/probe_c2059.py` (CI step
+> "sseed probe (real-TU compile witness)"), which compiles the REAL
+> `src/inference/candidate_model.cpp` four ways (as-is / one line joined /
+> one-line inner-expression mutation / two-statement) and asserts the four
+> malformed forms fail as C++ syntax errors — no diagnostic string is pinned,
+> and RETIRE now means "a well-formed one-line form stopped compiling".
+> Acceptance criteria 1-3 are met; criterion 4 (status change) was met by
+> this resolution.
+
 **Acceptance criteria (observable).**
 - The rule is enforced by something that runs automatically, not by prose
   alone. Acceptable shapes (any one is enough):
