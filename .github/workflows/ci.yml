@@ -10,12 +10,16 @@ on:
 
 jobs:
   gates:
-    # Task 3 enforce gates (stdlib only, seconds, no build): fail fast
-    # before configure/build/test. Enforce ONLY banned tokens + layer
-    # includes + golden pin + sealed-split isolation — no style gates.
-    # S10.1 adds the four ratcheted counters (file size, UTF-8, CCN,
-    # off-golden literals): they are static, fast and blocking; the
-    # counts and their exceptions live in docs/measurements/ratchet.md.
+    # The enforce gates (stdlib only, seconds, no build): fail fast before
+    # configure/build/test. Two families, both blocking:
+    #  * architecture/isolation — banned tokens on the audio path, the
+    #    layer includes, the golden pin, the golden-manifest registry, the
+    #    invariant tags, the sealed-split isolation;
+    #  * quality/size ratchets (S10.1) — file size, UTF-8 encoding, the
+    #    CCN ratchet and the off-golden literal census. These ARE style/
+    #    quality gates: they are static, fast and blocking, and every
+    #    counter, exception and reason behind them is recorded in
+    #    docs/measurements/ratchet.md.
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4

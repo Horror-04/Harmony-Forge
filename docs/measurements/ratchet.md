@@ -58,7 +58,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G7 | golden pin | `python tools/lint_golden_pin.py` | `tests/golden/slot_bitmap.txt` + `tests/golden/manifest.json` | HARD | PASS, canonical sha `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` | yes (both jobs) |
 | G8 | invariant tags | `python tools/lint_inv_tags.py` | the `[inv1]`..`[inv5]`-tagged TEST_CASEs | HARD | PASS, 29 bindings / 5 invariants | yes (both jobs) |
 | G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 20 records (capture=14, gen=5, mixed=1) | yes |
-| G10 | ctest | `ctest --test-dir build -C Release` / `build-off` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **251** | yes (the test job) |
+| G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **251** | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 
 ---
@@ -252,27 +252,62 @@ Both are RATCHET counters: the count may not drop. `build-off` is the
 plugin-OFF Debug tree; `build-full` is the plugin-ON Release tree (the
 ONNX-backed tests exist only there).
 
+**The build directories.** Locally the two trees are `build-off` (Debug)
+and `build-full` (Release) — the commands in the G10 row are the local
+ones. CI uses a different directory name: `.github/workflows/ci.yml`
+configures `build` and runs `ctest --test-dir build -C Release`, i.e. the
+build-full semantics under the name `build`. The counter is the same
+quantity (the plugin-ON Release suite); only the directory differs.
+
 **Where the numbers come from (documentary, not re-measured in S10.1 —
-S10.1 runs no builds and no ctest).** The latest recorded full run in the
-repository is the S9 close: `docs/measurements/s9-0.md:159` — "Config C
-proven blocking-green at close (251/251)", and
-`docs/INVARIANTS.md:146` — "the full registered set itself is the rest of
-this gate: `ctest` 251/251 full + 221/221 off". The mapping
-(`build-full` = Release = 251, `build-off` = Debug = 221) is the
+S10.1 runs no builds and no ctest).** The counters above are the S9-close
+run: `docs/measurements/s9-0.md:159` — "Config C proven blocking-green at
+close (251/251)", and `docs/INVARIANTS.md:146` — "the full registered set
+itself is the rest of this gate: `ctest` 251/251 full + 221/221 off". The
+mapping (`build-full` = Release = 251, `build-off` = Debug = 221) is the
 repository's own convention (`docs/measurements/s4b-ratchet.md:8-9`,
 `docs/measurements/master-health.md:9-10` and its S7 addendum
 "Release 249/249 + Debug 219/219").
 
-**Static cross-check (no build).** The tree registers 261 `TEST_CASE`
-macros; 11 of them live in the three binaries that are deliberately NOT
-registered with `catch_discover_tests` (`test_note_cues` 3,
-`test_preview_scheduler` 7, `test_memo_e2e` 1 — the headless-DirectWrite
-teardown family), leaving ~250 registered cases, and the plugin-only
-families (the 30 cases between 221 and 251) are the ones the
-`HARMONY_FORGE_BUILD_PLUGIN=ON` tree adds. The static count is consistent
-with 251 (full) / 221 (off) but is NOT a substitute for a ctest run: the
-counters above are the recorded values, and the final measurement pass
-(the later S10 task) re-runs ctest and re-pins them.
+**The history of the pair (so the numbers cannot be mixed up).** Every
+recorded full-config/off-config pair, oldest first:
+
+| record | build-full (Release) | build-off (Debug) | where |
+|---|---|---|---|
+| S4b package | 204/204 | 181/181 | `docs/measurements/s4b-ratchet.md:8-9` |
+| guardrails | 222/222 | 194/194 | `docs/measurements/master-health.md:9-10, 39` |
+| vertical-slice fix round 1 (2026-10-18) | **221/221** | **195/195** | `docs/FL_SMOKE.md:21`, `docs/MVP_GAP.md:18, 69` |
+| S7 (2026-10-19) | 249/249 | 219/219 | `docs/measurements/master-health.md:52` (S7 addendum) |
+| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159`, `docs/INVARIANTS.md:146` |
+
+**Read the two "221"s apart.** The 2026-10-18 run had 221 tests in the
+FULL (build-full) configuration and 195 in the off configuration
+(`docs/FL_SMOKE.md:21` — "ctest, 221/221 full + 195/195 off"). The pinned
+pair is 251 in the full configuration and 221 in the OFF one. The numbers
+coincide on the digit string, so the configuration name is part of the
+value: **221 is the build-OFF (Debug) count; the build-FULL (Release)
+count is 251.**
+
+**Static cross-check (no build).** Verified against `tests/CMakeLists.txt`
+at HEAD: the tree holds **261 `TEST_CASE` macros** in 43 test binaries.
+**40 binaries are registered** with `catch_discover_tests` (directly, or
+through the `hf_add_test` helper); **3 are deliberately NOT registered**:
+`test_visual_polish` (5 cases), `test_note_cues` (3) and `test_memo_e2e`
+(1) — 9 unregistered cases in total. The one hidden (`[.]`) case in the
+tree lives in `test_memo_e2e`, i.e. inside the unregistered group, so it
+never reaches `ctest` either. That leaves **252 registered cases**:
+224 in the binaries that build in BOTH configurations and 28 in the
+plugin-ON-only families (`test_chordtrack_pin` 2, `test_vertical_slice` 1,
+`test_keyboard_moves` 9, `test_focus_resize` 4, `test_preview_synth` 2,
+`test_rt_violation_counter` 3, `test_rt_soak` 1, `test_plugin_state` 4,
+`test_params_from_state` 2). The static proxy at HEAD therefore reads
+**252 (build-full) / 224 (build-off)** — one and three cases ABOVE the
+pinned 251/221, because the tree has grown since the S9 close. The static
+count is a PROXY, not a measurement: S10.1 runs no builds, so the pinned
+counters stay at the recorded 251/221, and the final measurement pass (the
+later S10 task) must re-run ctest in both configurations and re-pin the
+numbers if they moved (they may only grow — the ratchet is "must not
+drop").
 
 ---
 
