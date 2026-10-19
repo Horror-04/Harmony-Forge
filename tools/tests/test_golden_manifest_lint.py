@@ -7,7 +7,7 @@ registry into a CHECKED registry: every record carries kind/commit/
 produced_by/files, every registered file's sha256 is re-checked against the
 file on disk (LF-canonical for text, raw for binary), every produced_by must
 use one of the two honest forms (`gen: ` = a real in-repo writer, `capture: `
-= no in-repo writer, with the capture source/commit/pointer), every
+= no in-repo writer, with the capture source/commit/pointer+anchor), every
 golden/fixture file must be registered by some record (except the tool's
 explicit, reasoned exclusion list), and every commit must name a commit that
 resolves in this repository.
@@ -35,11 +35,13 @@ GOLDEN_TXT = b"# synthetic golden\nvalue 42\n"
 GOLDEN_CRLF = b"# synthetic golden\r\nvalue 42\r\n"
 FIXTURE_JSON = b'{"fixture": true}\n'
 MID_BYTES = b"MThd\x00\x00\x00\x06\x00\x00\x00\x01\x00\x60"
+SEED7_BYTES = b"MThd\x00\x00\x00\x06\x00\x00\x00\x01\x00\x60"
 TEST_SRC = (
     '// synthetic test source\n'
     '#include <catch2/catch_test_macros.hpp>\n'
     'TEST_CASE("synthetic case name", "[x]") { CHECK(true); }\n')
 BOGUS_SHA = "0123456789abcdef0123456789abcdef01234567"
+ANCHOR = "synthetic case name"
 
 
 def _sha(blob: bytes) -> str:
@@ -68,25 +70,39 @@ def _git(root: str, *args: str) -> str:
     return proc.stdout.strip()
 
 
-def _build_tree(root: str) -> str:
+def _build_tree(root: str, git: bool = True) -> str:
     """Minimal synthetic repo tree: golden + fixture + test + tool.
 
-    It is a real git repo (one commit) so the lint's commit-resolution
-    check actually runs instead of being skipped.
+    With git=True it is a real git repo (one commit), so the lint's
+    commit-resolution check actually runs instead of being skipped.
     """
     _write(os.path.join(root, "tests", "golden", "g.txt"), GOLDEN_TXT)
     _write(os.path.join(root, "tests", "golden", "seeds", "s1.mid"), MID_BYTES)
     _write(os.path.join(root, "tests", "fixtures", "f.json"), FIXTURE_JSON)
     _write(os.path.join(root, "tests", "test_x.cpp"), TEST_SRC.encode("utf8"))
     _write(os.path.join(root, "tools", "gen_x.py"), b"print('gen')\n")
+    # stubs of the tools the lint's WRITER registry binds (the rule only
+    # checks that the tool PATH exists, never what it does)
+    _write(os.path.join(root, "tools", "update_golden_midi.py"),
+           b"# stub writer\n")
+    _write(os.path.join(root, "tools", "gen_s6_3_fixtures.py"),
+           b"# stub writer\n")
+    _write(os.path.join(root, "tools", "rt_scan.py"), b"# stub gate\n")
     _write(os.path.join(root, "tests", "CMakeLists.txt"),
            b"hf_add_test(test_x test_x.cpp)\n")
+    if not git:
+        return ""
     _git(root, "init", "-q", "-b", "main")
     _git(root, "config", "user.name", "lint")
     _git(root, "config", "user.email", "lint@example.invalid")
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "synthetic tree")
     return _git(root, "rev-parse", "HEAD")
+
+
+def _capture(commit: str) -> str:
+    return ("capture: synthetic capture source@%s (no in-repo writer) - "
+            'tests/test_x.cpp "%s"' % (commit, ANCHOR))
 
 
 def _clean_manifest(commit: str) -> dict:
@@ -97,8 +113,7 @@ def _clean_manifest(commit: str) -> dict:
                         "'synthetic case name')",
                 "kind": "in_test",
                 "commit": commit + " synthetic tree",
-                "produced_by": "capture: synthetic capture source@%s "
-                               "(no in-repo writer) - tests/test_x.cpp" % commit,
+                "produced_by": _capture(commit),
                 "files": {"tests/golden/g.txt": _canonical_sha(GOLDEN_TXT)},
             },
         ],
@@ -110,8 +125,7 @@ def _clean_manifest(commit: str) -> dict:
                 "bytes": len(MID_BYTES),
                 "kind": "golden",
                 "commit": commit + " synthetic tree",
-                "produced_by": "gen: python tools/gen_x.py "
-                               "--out tests/golden/seeds/s1.mid",
+                "produced_by": _capture(commit),
                 "files": {"tests/golden/seeds/s1.mid": _sha(MID_BYTES)},
             },
         ],
@@ -120,8 +134,7 @@ def _clean_manifest(commit: str) -> dict:
                 "test": "synthetic fixture case (tests/test_x.cpp)",
                 "kind": "fixture",
                 "commit": commit + " synthetic tree",
-                "produced_by": "gen: python tools/gen_x.py "
-                               "--out tests/fixtures/f.json",
+                "produced_by": _capture(commit),
                 "files": {"tests/fixtures/f.json": _canonical_sha(FIXTURE_JSON)},
             },
         ],
@@ -135,10 +148,10 @@ def _run_lint(root: str, manifest: str):
 
 
 class GoldenManifestLintTest(unittest.TestCase):
-    def _lint_scratch(self, mutate=None, tree=None) -> subprocess.CompletedProcess:
+    def _lint_scratch(self, mutate=None, tree=None, git: bool = True):
         """Build a synthetic tree + manifest, optionally mutate, then lint."""
         with tempfile.TemporaryDirectory() as tmp:
-            commit = _build_tree(tmp)
+            commit = _build_tree(tmp, git=git)
             if tree is not None:
                 tree(tmp)
             man = _clean_manifest(commit)
@@ -231,7 +244,7 @@ class GoldenManifestLintTest(unittest.TestCase):
     # -- M8: the commit must resolve -------------------------------------
     def test_commit_without_resolvable_sha_fails(self):
         def mutate(man):
-            man["in_test"][0]["commit"] = ("S4b-main T1 phase-1 (no sha here)")
+            man["in_test"][0]["commit"] = "S4b-main T1 phase-1 (no sha here)"
         proc = self._lint_scratch(mutate)
         self.assertNotEqual(
             proc.returncode, 0,
@@ -246,6 +259,51 @@ class GoldenManifestLintTest(unittest.TestCase):
             proc.returncode, 0,
             "a commit whose sha does not resolve must fail")
         self._assert_rule(proc, "rule1")
+
+    # -- NB-1: an UNAVAILABLE resolution is skipped, never a violation ----
+    def test_no_git_tree_skips_the_commit_checks(self):
+        def mutate(man):
+            for section in ("in_test", "golden_midi", "fixtures"):
+                for rec in man[section]:
+                    rec["commit"] = BOGUS_SHA + " (no git here)"
+                    rec["produced_by"] = (
+                        "capture: synthetic source@%s (no in-repo writer) - "
+                        'tests/test_x.cpp "%s"' % (BOGUS_SHA, ANCHOR))
+        proc = self._lint_scratch(mutate, git=False)
+        self.assertEqual(
+            proc.returncode, 0,
+            "without git the commit resolution is unavailable and must be "
+            f"skipped, not reported: {proc.stdout[-2000:]}")
+        self.assertIn("NOTE", proc.stdout)
+        self.assertIn("skipped", proc.stdout)
+        self.assertNotIn("rule1:", proc.stdout)
+        self.assertNotIn("rule3:", proc.stdout)
+
+    def test_shallow_clone_skips_the_commit_checks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            commit = _build_tree(tmp)
+            # make git believe the clone is shallow (the .git/shallow file
+            # is what git checks)
+            with open(os.path.join(tmp, ".git", "shallow"), "w",
+                      encoding="utf8") as f:
+                f.write(commit + "\n")
+            man = _clean_manifest(commit)
+            man["in_test"][0]["commit"] = BOGUS_SHA + " (shallow)"
+            man["in_test"][0]["produced_by"] = (
+                "capture: synthetic source@%s (no in-repo writer) - "
+                'tests/test_x.cpp "%s"' % (BOGUS_SHA, ANCHOR))
+            man_path = os.path.join(tmp, "tests", "golden_manifest.json")
+            with open(man_path, "w", encoding="utf8") as f:
+                json.dump(man, f, indent=2)
+            proc = _run_lint(tmp, man_path)
+            self.assertEqual(
+                proc.returncode, 0,
+                "on a shallow clone the commit resolution is unavailable and "
+                f"must be skipped: {proc.stdout[-2000:]}")
+            self.assertIn("NOTE", proc.stdout)
+            self.assertIn("shallow", proc.stdout)
+            self.assertNotIn("rule1:", proc.stdout)
+            self.assertNotIn("rule3:", proc.stdout)
 
     # -- rule 2: sha ------------------------------------------------------
     def test_wrong_sha_fails(self):
@@ -312,31 +370,91 @@ class GoldenManifestLintTest(unittest.TestCase):
                             "a placeholder produced_by must fail")
         self._assert_rule(proc, "rule3")
 
-    def test_gen_with_unknown_tool_fails(self):
+    def test_unregistered_tool_cannot_satisfy_gen(self):
         def mutate(man):
             man["fixtures"][0]["produced_by"] = (
-                "gen: python tools/does_not_exist.py "
-                "--out tests/fixtures/f.json")
-        proc = self._lint_scratch(mutate)
-        self.assertNotEqual(proc.returncode, 0,
-                            "a gen: command naming no real tool must fail")
-        self._assert_rule(proc, "rule3")
-
-    def test_gen_without_artifact_named_fails(self):
-        def mutate(man):
-            man["fixtures"][0]["produced_by"] = "gen: python tools/gen_x.py"
+                "gen: python tools/gen_x.py --out tests/fixtures/f.json")
         proc = self._lint_scratch(mutate)
         self.assertNotEqual(
             proc.returncode, 0,
-            "a gen: command that neither names the artifact nor uses a "
-            "writer tool must fail")
+            "a gen: command that uses a tool outside the WRITER registry "
+            "must fail")
         self._assert_rule(proc, "rule3")
 
+    # -- NB-2: a ctest invocation can never satisfy `gen:` ----------------
+    def test_ctest_cannot_satisfy_gen(self):
+        def mutate(man):
+            man["fixtures"][0]["produced_by"] = (
+                "gen: ctest --test-dir build-full -R 'golden MIDI seeds "
+                "reproduce committed bytes' --output-on-failure ; artifact "
+                "tests/fixtures/f.json")
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a ctest invocation must never satisfy the gen: form")
+        self._assert_rule(proc, "rule3")
+
+    def test_lint_script_cannot_satisfy_gen(self):
+        def mutate(man):
+            man["fixtures"][0]["produced_by"] = (
+                "gen: python tools/rt_scan.py --out tests/fixtures/f.json")
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a lint/gate script must never satisfy the gen: form")
+        self._assert_rule(proc, "rule3")
+
+    # -- NB-3: the WRITER registry fails CLOSED ---------------------------
+    def test_fabricated_artifact_with_writer_tool_fails(self):
+        def tree(root):
+            _write(os.path.join(root, "tests", "fixtures",
+                                 "ref_never_written.mid"), MID_BYTES)
+        def mutate(man):
+            man["in_test"].append({
+                "test": "synthetic fabricated case (tests/test_x.cpp, [x] "
+                        "'synthetic case name')",
+                "kind": "in_test",
+                "commit": man["in_test"][0]["commit"],
+                "produced_by": "gen: python tools/gen_s6_3_fixtures.py",
+                "files": {"tests/fixtures/ref_never_written.mid":
+                          _sha(MID_BYTES)},
+            })
+        proc = self._lint_scratch(mutate, tree=tree)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a registered writer that does not write the artifact must fail "
+            "(the rule must fail CLOSED)")
+        self.assertIn("ref_never_written.mid", proc.stdout)
+        self._assert_rule(proc, "rule3")
+
+    def test_registered_writer_satisfies_gen(self):
+        def tree(root):
+            _write(os.path.join(root, "tests", "golden", "seeds",
+                                 "seed_7.mid"), SEED7_BYTES)
+        def mutate(man):
+            man["in_test"].append({
+                "test": "synthetic gen case (tests/test_x.cpp, [x] "
+                        "'synthetic case name')",
+                "kind": "in_test",
+                "commit": man["in_test"][0]["commit"],
+                "produced_by":
+                    "gen: python tools/update_golden_midi.py --write --reason "
+                    '"regenerate tests/golden/seeds/seed_7.mid"',
+                "files": {"tests/golden/seeds/seed_7.mid": _sha(SEED7_BYTES)},
+            })
+        proc = self._lint_scratch(mutate, tree=tree)
+        self.assertEqual(
+            proc.returncode, 0,
+            f"a registered writer that writes the artifact must pass: "
+            f"{proc.stdout[-2000:]}")
+
+    # -- rule 3: capture: obligations ------------------------------------
     def test_capture_with_missing_pointer_fails(self):
         def mutate(man):
+            commit = man["in_test"][0]["commit"].split()[0]
             man["in_test"][0]["produced_by"] = (
                 "capture: synthetic source@%s (no in-repo writer) - "
-                "tests/no_such_file.cpp" % man["in_test"][0]["commit"].split()[0])
+                'tests/no_such_file.cpp "%s"' % (commit, ANCHOR))
         proc = self._lint_scratch(mutate)
         self.assertNotEqual(proc.returncode, 0,
                             "a capture: pointer file that does not exist "
@@ -347,7 +465,7 @@ class GoldenManifestLintTest(unittest.TestCase):
         def mutate(man):
             man["in_test"][0]["produced_by"] = (
                 "capture: synthetic source@%s (no in-repo writer) - "
-                "tests/test_x.cpp" % BOGUS_SHA)
+                'tests/test_x.cpp "%s"' % (BOGUS_SHA, ANCHOR))
         proc = self._lint_scratch(mutate)
         self.assertNotEqual(proc.returncode, 0,
                             "a capture: commit that does not resolve must "
@@ -359,12 +477,78 @@ class GoldenManifestLintTest(unittest.TestCase):
             commit = man["in_test"][0]["commit"].split()[0]
             man["in_test"][0]["produced_by"] = (
                 "capture: synthetic source@%s (has a writer) - "
-                "tests/test_x.cpp" % commit)
+                'tests/test_x.cpp "%s"' % (commit, ANCHOR))
         proc = self._lint_scratch(mutate)
         self.assertNotEqual(
             proc.returncode, 0,
             "a capture: form must state 'no in-repo writer'")
         self._assert_rule(proc, "rule3")
+
+    # -- NB-6(a): the capture: pointer must carry a verbatim anchor ------
+    def test_capture_pointer_without_anchor_fails(self):
+        def mutate(man):
+            commit = man["in_test"][0]["commit"].split()[0]
+            man["in_test"][0]["produced_by"] = (
+                "capture: synthetic source@%s (no in-repo writer) - "
+                "tests/test_x.cpp" % commit)
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a capture: pointer without a quoted anchor must fail")
+        self._assert_rule(proc, "rule3")
+
+    def test_capture_pointer_anchor_must_be_verbatim(self):
+        def mutate(man):
+            commit = man["in_test"][0]["commit"].split()[0]
+            man["in_test"][0]["produced_by"] = (
+                "capture: synthetic source@%s (no in-repo writer) - "
+                'tests/test_x.cpp "an anchor that is not in the file"' % commit)
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a capture: anchor that is not verbatim in the pointer file must "
+            "fail")
+        self._assert_rule(proc, "rule3")
+
+    # -- NB-6(b) / E4: the per-file OBJECT form ---------------------------
+    def test_produced_by_object_must_cover_the_file_set(self):
+        def mutate(man):
+            commit = man["in_test"][0]["commit"].split()[0]
+            man["in_test"][0]["produced_by"] = {
+                "tests/fixtures/f.json": _capture(commit),
+            }
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a produced_by object that does not cover exactly the record's "
+            "file set must fail")
+        self._assert_rule(proc, "rule3")
+
+    def test_mixed_record_object_form_passes(self):
+        def tree(root):
+            _write(os.path.join(root, "tests", "golden", "seeds",
+                                 "seed_7.mid"), SEED7_BYTES)
+        def mutate(man):
+            commit = man["in_test"][0]["commit"].split()[0]
+            man["in_test"].append({
+                "test": "synthetic mixed case (tests/test_x.cpp, [x] "
+                        "'synthetic case name')",
+                "kind": "in_test",
+                "commit": man["in_test"][0]["commit"],
+                "produced_by": {
+                    "tests/golden/g.txt": _capture(commit),
+                    "tests/golden/seeds/seed_7.mid":
+                        "gen: python tools/update_golden_midi.py --write "
+                        '--reason "regenerate tests/golden/seeds/seed_7.mid"',
+                },
+                "files": {"tests/golden/g.txt": _canonical_sha(GOLDEN_TXT),
+                          "tests/golden/seeds/seed_7.mid": _sha(SEED7_BYTES)},
+            })
+        proc = self._lint_scratch(mutate, tree=tree)
+        self.assertEqual(
+            proc.returncode, 0,
+            f"a mixed record with a per-file object must pass: "
+            f"{proc.stdout[-2000:]}")
 
     # -- rule 4: file without a record -----------------------------------
     def test_unregistered_file_fails(self):

@@ -17,22 +17,30 @@ Rules
                 pins literals in-test only and says so (`"relational": true`);
                 `commit` must name at least one commit that RESOLVES in this
                 repository's history (a prose pointer alone is a violation).
+                When the resolution cannot be performed at all (no git, or a
+                shallow clone) the check is SKIPPED with a printed NOTE - it
+                is never reported as a violation.
   2 sha match   every path in every `files` map exists in the repo and its
                 recorded sha256 equals the file's canonical sha256 (see the
                 newline note below).
   3 produced_by present, real and HONESTLY LABELLED. Two explicit forms,
-                prefix required:
+                prefix required. `produced_by` is either a STRING (it then
+                applies to every file of the record) or an OBJECT mapping
+                file -> producer (for MIXED records); an object must cover
+                EXACTLY the record's file set.
                   gen: <command>
-                      a real generator: the command must reference an
-                      existing repo tool (script or ctest) and must either
-                      name the artifact path or use a tool whose documented
-                      write path produces that artifact (see WRITERS).
+                      a real generator: the command must invoke a tool that is
+                      listed in the WRITER registry below, and the artifact
+                      must be bound to that writer's EXPLICIT artifact list.
+                      A ctest invocation, a lint/gate script or any tool that
+                      is not in the registry can NEVER satisfy `gen:`.
                   capture: <source>@<commit> (no in-repo writer) - <pointer>
                       for artifacts with no in-repo writer: where the bytes
-                      came from, the commit they were captured at, and a
-                      pointer to the capture record (a file that must exist
-                      in the repo). The commit must resolve in this
-                      repository's history.
+                      came from, the commit they were captured at (must
+                      resolve, or the check is skipped when resolution is
+                      unavailable), and a pointer to the capture record: a
+                      file that must exist in the repo PLUS a quoted anchor
+                      string that must appear VERBATIM in that file.
                 A bare verification command without a prefix is a violation -
                 a check is not a producer.
   4 coverage    every file under tests/golden/** and tests/fixtures/**
@@ -46,6 +54,29 @@ Rules
   6 golden_midi consistency: the scalar `sha256`/`bytes` of a golden_midi
                 record must match the actual file AND agree with the
                 record's `files` map.
+
+WRITER registry (rule 3)
+------------------------
+A `gen:` command may only use a tool listed here, and only for the artifact
+paths bound to it. The bindings are EXPLICIT (no globs): a writer that does
+not write an artifact can never satisfy `gen:` for it (the rule fails
+CLOSED - a fabricated artifact is a violation, not a pass).
+
+To add a writer: add the tool's repo-relative path as a key and EVERY
+artifact path it writes as an explicit entry of its tuple. Keep the list
+exhaustive and exact: the registry is the only thing that makes a `gen:`
+command acceptable, so a missing binding is a false rejection and an extra
+binding is a false acceptance.
+
+  tools/update_golden_midi.py   the Task-2 golden MIDI files (--write)
+  tools/gen_s6_3_fixtures.py    the S6.3 reference-import fixtures
+  training/tests/test_ingest.py the S4b-main T2 ingest-fixture derivation:
+                                the `python -c` block documented in
+                                tests/fixtures/README.md, which materialises
+                                the four tests/fixtures/ingest/* files from
+                                the literals that lived in that module at
+                                commit 906f623 (the `gen:` command checks
+                                that commit out first).
 
 Newline note (same convention as tools/lint_golden_pin.py): the recorded
 sha256 is the CANONICAL sha256 of the artifact - for a TEXT artifact the
@@ -61,7 +92,6 @@ Exit 0 = PASS, 1 = FAIL. Read-only; never writes the manifest or a golden.
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import hashlib
 import json
 import os
@@ -82,13 +112,28 @@ SECTIONS = (
 GEN_PREFIX = "gen: "
 CAPTURE_PREFIX = "capture: "
 
-# Tools whose DOCUMENTED write path produces the listed artifacts. A `gen:`
-# command that uses one of these tools does not have to name the artifact
-# path itself (the tool writes the whole family); every other artifact must
-# be named in the command.
+# WRITER registry: the ONLY tools that can satisfy a `gen:` produced_by, each
+# bound to the EXPLICIT artifact paths it writes (no globs - fail closed).
 WRITERS = {
-    "tools/update_golden_midi.py": ["tests/golden/seeds/seed_*.mid"],
-    "tools/gen_s6_3_fixtures.py": ["tests/fixtures/ref_*.mid"],
+    "tools/update_golden_midi.py": (
+        "tests/golden/seeds/seed_7.mid",
+        "tests/golden/seeds/seed_42.mid",
+    ),
+    "tools/gen_s6_3_fixtures.py": (
+        "tests/fixtures/ref_happy_c_major.mid",
+        "tests/fixtures/ref_too_little.mid",
+        "tests/fixtures/ref_empty.mid",
+        "tests/fixtures/ref_truncated.mid",
+        "tests/fixtures/ref_bad_header.mid",
+        "tests/fixtures/ref_unsupported_type.mid",
+        "tests/fixtures/ref_bad_event.mid",
+    ),
+    "training/tests/test_ingest.py": (
+        "tests/fixtures/ingest/mini_satb.json",
+        "tests/fixtures/ingest/openscore_v3_mini.mscx",
+        "tests/fixtures/ingest/openscore_v2_mini.mscx",
+        "tests/fixtures/ingest/openscore_ticks.json",
+    ),
 }
 
 # Rule-4 exclusion list: files that live under tests/golden/** or
@@ -143,7 +188,7 @@ _TEST_CASE_RE = re.compile(r"TEST_CASE\(\s*\"([^\"]+)\"")
 _CAPTURE_RE = re.compile(
     r"^(?P<source>[^@]+)@(?P<commit>[0-9a-fA-F]{7,40})"
     r"\s*\((?P<qual>[^)]*)\)\s*-\s*(?P<pointer>.+)$")
-_TOOL_SUFFIXES = (".py", ".sh", ".ps1", ".bat", ".cmd", ".psm1")
+_ANCHOR_RE = re.compile(r"\"([^\"]+)\"|'([^']+)'")
 
 _GIT_STATE = {}
 
@@ -210,7 +255,12 @@ def _git_state(root: str):
 
 
 def _git_resolves(root: str, sha: str):
-    """True/False when the sha can be checked, None when it cannot."""
+    """True/False when the sha can be checked, None when it cannot.
+
+    None = the repository cannot answer at all (no git, or a shallow clone
+    where old commits are not present). The caller must SKIP the check in
+    that case - an unavailable check is never a violation.
+    """
     available, shallow = _git_state(root)
     if not available or shallow:
         return None
@@ -309,17 +359,6 @@ def _path_refs(command: str, repo_paths) -> list:
     return out
 
 
-def _is_tool(path: str) -> bool:
-    return path.lower().endswith(_TOOL_SUFFIXES)
-
-
-def _writer_covers(tool: str, artifact: str) -> bool:
-    for pattern in WRITERS.get(tool, ()):
-        if fnmatch.fnmatchcase(artifact, pattern):
-            return True
-    return False
-
-
 def _record_id(rec) -> str:
     if not isinstance(rec, dict):
         return "<not-a-record>"
@@ -365,32 +404,47 @@ def _artifact_files(root: str) -> list:
     return sorted(out)
 
 
-def _check_gen(tag: str, rec, command: str, repo_paths, ctest_names) -> list:
-    """Rule 3, `gen:` form: a real generator that produces the artifacts."""
+def _check_gen(tag: str, rec, command: str, artifacts, repo_paths) -> list:
+    """Rule 3, `gen:` form: a registered writer must produce the artifacts.
+
+    Only a tool listed in WRITERS can satisfy `gen:` - a ctest invocation,
+    a lint/gate script or any unregistered tool can never do it. The writer's
+    bindings are explicit, so an artifact it does not write is a violation
+    (the rule fails CLOSED).
+    """
     failures = []
-    tools = [t for t in _path_refs(command, repo_paths) if _is_tool(t)]
-    if not tools and not _ctest_refs(command, ctest_names):
+    writers = [t for t in _path_refs(command, repo_paths) if t in WRITERS]
+    if not writers:
         failures.append(
-            f"{tag} rule3: gen: command references no existing repo tool "
-            f"(script) and no registered ctest name: {command!r} "
-            f"(file: {_concern(rec)})")
-    files = rec.get("files")
-    if isinstance(files, dict):
-        for artifact in files:
-            if artifact in command:
-                continue
-            if any(_writer_covers(tool, artifact) for tool in tools):
-                continue
+            f"{tag} rule3: gen: command uses no registered writer tool "
+            f"(the WRITER registry lists: {', '.join(sorted(WRITERS))}); a "
+            f"ctest invocation or an unregistered tool can never satisfy "
+            f"gen: : {command!r} (file: {_concern(rec)})")
+        return failures
+    bound = set()
+    for writer in writers:
+        bound.update(WRITERS[writer])
+    for artifact in artifacts:
+        if artifact not in bound:
             failures.append(
-                f"{tag} rule3: gen: command neither names the artifact "
-                f"{artifact} nor uses a tool whose documented write path "
-                f"produces it: {command!r}")
+                f"{tag} rule3: gen: the registered writer "
+                f"{', '.join(writers)} does not write the artifact "
+                f"{artifact} (it writes: {', '.join(sorted(bound))}) "
+                f"(file: {artifact})")
+    for token in _path_refs(command, repo_paths):
+        if not (token.startswith("tests/golden/")
+                or token.startswith("tests/fixtures/")):
+            continue
+        if token not in bound:
+            failures.append(
+                f"{tag} rule3: gen: the command names {token} but no "
+                f"registered writer writes it (file: {token})")
     return failures
 
 
 def _check_capture(tag: str, rec, rest: str, root: str) -> list:
     """Rule 3, `capture:` form: no in-repo writer, named source + commit +
-    pointer to the capture record."""
+    pointer to the capture record (file + verbatim anchor)."""
     failures = []
     match = _CAPTURE_RE.match(rest)
     if not match:
@@ -411,20 +465,89 @@ def _check_capture(tag: str, rec, rest: str, root: str) -> list:
             f"{tag} rule3: capture: commit {commit} does not resolve in this "
             f"repository's history (file: {_concern(rec)})")
     pointer = match.group("pointer").strip()
-    path = pointer.split()[0] if pointer.split() else ""
+    parts = pointer.split()
+    path = parts[0] if parts else ""
     path = path.split(":")[0].split("#")[0]
-    if not path or not os.path.isfile(os.path.join(root, *path.split("/"))):
+    full = os.path.join(root, *path.split("/")) if path else ""
+    if not path or not os.path.isfile(full):
         failures.append(
             f"{tag} rule3: capture: pointer file {path!r} does not exist in "
             f"the repo (file: {_concern(rec)})")
+        return failures
+    anchor_match = _ANCHOR_RE.search(pointer)
+    if not anchor_match:
+        failures.append(
+            f"{tag} rule3: capture: pointer must quote an anchor string that "
+            f"appears verbatim in {path} (file: {_concern(rec)})")
+        return failures
+    anchor = next(g for g in anchor_match.groups() if g is not None)
+    try:
+        with open(full, encoding="utf8", errors="replace") as f:
+            body = f.read()
+    except OSError:
+        body = ""
+    if anchor not in body:
+        failures.append(
+            f"{tag} rule3: capture: anchor {anchor!r} does not appear "
+            f"verbatim in the pointer file {path} (file: {_concern(rec)})")
     return failures
+
+
+def _check_form(tag: str, rec, body: str, artifacts, root: str,
+                repo_paths) -> list:
+    """Check ONE produced_by value (string) against the E1 forms."""
+    if _PLACEHOLDER_RE.search(body):
+        return [f"{tag} rule3: produced_by carries a placeholder token: "
+                f"{body!r} (file: {_concern(rec)})"]
+    if body.startswith(GEN_PREFIX):
+        return _check_gen(tag, rec, body[len(GEN_PREFIX):].strip(),
+                          artifacts, repo_paths)
+    if body.startswith(CAPTURE_PREFIX):
+        return _check_capture(tag, rec, body[len(CAPTURE_PREFIX):].strip(),
+                               root)
+    return [f"{tag} rule3: produced_by must use the 'gen: ' or 'capture: ' "
+            f"form - a bare verification command is not a producer: {body!r} "
+            f"(file: {_concern(rec)})"]
+
+
+def _check_produced_by(tag: str, rec, produced_by, root: str,
+                       repo_paths) -> list:
+    """Rule 3 entry point: `produced_by` is a string (applies to every file
+    of the record) or an object mapping file -> producer (mixed records)."""
+    files = rec.get("files")
+    file_set = set(files) if isinstance(files, dict) else set()
+    if isinstance(produced_by, str):
+        if not produced_by.strip():
+            return []          # rule 1 already reported the empty value
+        return _check_form(tag, rec, produced_by.strip(), sorted(file_set),
+                           root, repo_paths)
+    if isinstance(produced_by, dict):
+        if set(produced_by) != file_set:
+            missing = sorted(file_set - set(produced_by))
+            extra = sorted(set(produced_by) - file_set)
+            return [f"{tag} rule3: produced_by object must cover EXACTLY the "
+                    f"record's file set (missing: {missing or 'none'}; "
+                    f"extra: {extra or 'none'}) (file: {_concern(rec)})"]
+        failures = []
+        for path in sorted(produced_by):
+            value = produced_by[path]
+            if not isinstance(value, str) or not value.strip():
+                failures.append(
+                    f"{tag} rule3: produced_by[{path!r}] is empty "
+                    f"(file: {path})")
+                continue
+            failures.extend(_check_form(tag, rec, value.strip(), [path],
+                                        root, repo_paths))
+        return failures
+    return [f"{tag} rule3: produced_by must be a string or an object mapping "
+            f"file -> producer (file: {_concern(rec)})"]
 
 
 def lint(root: str, manifest_path: str) -> tuple:
     """Return (failures, forms) - failures empty == PASS.
 
     `forms` maps "section#index" to the accepted produced_by form
-    ("gen", "capture" or "rejected").
+    ("gen", "capture", "mixed" or "rejected").
     """
     failures = []
     forms = {}
@@ -473,26 +596,44 @@ def lint(root: str, manifest_path: str) -> tuple:
                     f"{tag} rule1: commit is empty (file: {_concern(rec)})")
             elif isinstance(rec.get("commit"), str) and rec["commit"].strip():
                 # M8: the commit must name a commit that resolves in this
-                # repository - a prose pointer alone is not enough.
+                # repository - a prose pointer alone is not enough. When the
+                # resolution is UNAVAILABLE (no git / shallow clone) the
+                # check is skipped, never reported as a violation.
                 candidates = _SHA_TOKEN_RE.findall(rec["commit"])
-                if candidates:
-                    resolved = [s for s in candidates
-                                if _git_resolves(root, s) is True]
-                    if not resolved:
+                if not candidates:
+                    failures.append(
+                        f"{tag} rule1: commit names no commit sha at all: "
+                        f"{rec['commit']!r} (file: {_concern(rec)})")
+                else:
+                    statuses = [_git_resolves(root, s) for s in candidates]
+                    if any(s is True for s in statuses):
+                        pass                    # resolvable -> fine
+                    elif all(s is None for s in statuses):
+                        pass                    # unavailable -> skipped
+                    else:
                         failures.append(
                             f"{tag} rule1: commit names no commit that "
                             f"resolves in this repository's history: "
                             f"{rec['commit']!r} (file: {_concern(rec)})")
-                else:
+            produced_by = rec.get("produced_by")
+            if "produced_by" in rec:
+                if isinstance(produced_by, str):
+                    if not produced_by.strip():
+                        failures.append(
+                            f"{tag} rule1: produced_by is empty "
+                            f"(file: {_concern(rec)})")
+                elif not isinstance(produced_by, dict):
                     failures.append(
-                        f"{tag} rule1: commit names no commit sha at all: "
-                        f"{rec['commit']!r} (file: {_concern(rec)})")
-            if "produced_by" in rec and not (
-                    isinstance(rec["produced_by"], str)
-                    and rec["produced_by"].strip()):
-                failures.append(
-                    f"{tag} rule1: produced_by is empty "
-                    f"(file: {_concern(rec)})")
+                        f"{tag} rule1: produced_by must be a string or an "
+                        f"object mapping file -> producer "
+                        f"(file: {_concern(rec)})")
+                elif not produced_by and not _files_of(rec):
+                    pass                    # an empty object for a record
+                                            # without files covers its set
+                elif not produced_by:
+                    failures.append(
+                        f"{tag} rule1: produced_by is empty "
+                        f"(file: {_concern(rec)})")
             files = rec.get("files")
             if files is not None and not isinstance(files, dict):
                 failures.append(
@@ -550,28 +691,30 @@ def lint(root: str, manifest_path: str) -> tuple:
                     registered.add(path)
 
             # ---- rule 3: produced_by present, real, honestly labelled
-            produced_by = rec.get("produced_by")
             form = "rejected"
-            if isinstance(produced_by, str) and produced_by.strip():
-                body = produced_by.strip()
-                if _PLACEHOLDER_RE.search(body):
-                    failures.append(
-                        f"{tag} rule3: produced_by carries a placeholder "
-                        f"token: {body!r} (file: {_concern(rec)})")
-                elif body.startswith(GEN_PREFIX):
-                    form = "gen"
-                    failures.extend(_check_gen(
-                        tag, rec, body[len(GEN_PREFIX):].strip(),
-                        repo_paths, ctest_names))
-                elif body.startswith(CAPTURE_PREFIX):
-                    form = "capture"
-                    failures.extend(_check_capture(
-                        tag, rec, body[len(CAPTURE_PREFIX):].strip(), root))
-                else:
-                    failures.append(
-                        f"{tag} rule3: produced_by must use the 'gen: ' or "
-                        f"'capture: ' form - a bare verification command is "
-                        f"not a producer: {body!r} (file: {_concern(rec)})")
+            if "produced_by" in rec:
+                if isinstance(produced_by, str) and produced_by.strip():
+                    if produced_by.strip().startswith(GEN_PREFIX):
+                        form = "gen"
+                    elif produced_by.strip().startswith(CAPTURE_PREFIX):
+                        form = "capture"
+                    failures.extend(_check_produced_by(
+                        tag, rec, produced_by, root, repo_paths))
+                elif isinstance(produced_by, dict):
+                    kinds = set()
+                    for value in produced_by.values():
+                        if not isinstance(value, str):
+                            continue
+                        if value.strip().startswith(GEN_PREFIX):
+                            kinds.add("gen")
+                        elif value.strip().startswith(CAPTURE_PREFIX):
+                            kinds.add("capture")
+                    if len(kinds) == 1:
+                        form = kinds.pop()
+                    elif len(kinds) > 1:
+                        form = "mixed"
+                    failures.extend(_check_produced_by(
+                        tag, rec, produced_by, root, repo_paths))
             forms[key] = form
 
             # ---- rule 5: in_test / fixtures registry rot ------------
@@ -649,6 +792,11 @@ def lint(root: str, manifest_path: str) -> tuple:
             f"record (add it to a record's files map or to EXCLUSIONS)")
 
     return failures, forms
+
+
+def _files_of(rec) -> set:
+    files = rec.get("files")
+    return set(files) if isinstance(files, dict) else set()
 
 
 def main() -> int:

@@ -1,5 +1,5 @@
 {
-  "doc": "Checked registry for the golden/fixture artifacts of the test suite (S4b-main registry; pre-S10 slice E made it a CHECKED registry). Every record in `in_test`, `golden_midi` and `fixtures` carries: `kind` (the section-implied class: in_test / golden / fixture), `commit` (LEADING a commit sha that resolves in this repository; the prose after it gives the task context), `produced_by` (the producer, in ONE of two honest prefix-required forms - `gen: <command>` when an in-repo writer exists (the command names the artifact path, or uses a tool whose documented write path produces it); `capture: <source>@<commit> (no in-repo writer) - <pointer>` when the bytes were captured from a run (where the bytes came from, the commit they were captured at, and a pointer to the capture record)) and `files` (repo-relative path -> sha256 of that file: the LF-CANONICAL sha256 for text artifacts, the raw sha256 for binary ones). tools/lint_golden_manifest.py checks all of it (schema, sha256, produced_by form, artifact coverage, test/case rot, golden_midi consistency) and is a blocking CI gate. DOMAIN SPLIT: the FROZEN S2-entry slot bitmap (tests/golden/slot_bitmap.txt + its companion tests/golden/manifest.json, canonical sha d66faabf) is a DIFFERENT domain owned by tools/update_goldens.py + tools/lint_golden_pin.py and is deliberately NOT registered here; tests/golden/s2entry_gate.json is one-shot gate evidence and tests/fixtures/README.md is documentation - all three exclusions carry their reasons in the lint script. `in_test` records that pin literals in the test source only carry an empty `files` map plus \"relational\": true.",
+  "doc": "Checked registry for the golden/fixture artifacts of the test suite (S4b-main registry; pre-S10 slice E made it a CHECKED registry). Every record in `in_test`, `golden_midi` and `fixtures` carries: `kind` (the section-implied class: in_test / golden / fixture), `commit` (LEADING a commit sha that resolves in this repository; the prose after it gives the task context), `produced_by` (the producer, in ONE of two honest prefix-required forms - `gen: <command>` when an in-repo writer exists (the command must run a tool of the WRITER registry and the artifact must be bound to that writer's explicit artifact list); `capture: <source>@<commit> (no in-repo writer) - <pointer>` when the bytes were captured from a run (where the bytes came from, the commit they were captured at, and a pointer to the capture record: a file that must exist plus a quoted anchor that must appear verbatim in it)). A `gen:` command may only use a tool listed in the WRITER registry of tools/lint_golden_manifest.py, bound to the explicit artifacts it writes. `produced_by` is a string (it then applies to every file of the record) or, for a MIXED record, an object mapping file -> producer that covers exactly the record's file set) and `files` (repo-relative path -> sha256 of that file: the LF-CANONICAL sha256 for text artifacts, the raw sha256 for binary ones). tools/lint_golden_manifest.py checks all of it (schema, sha256, produced_by form, artifact coverage, test/case rot, golden_midi consistency) and is a blocking CI gate. DOMAIN SPLIT: the FROZEN S2-entry slot bitmap (tests/golden/slot_bitmap.txt + its companion tests/golden/manifest.json, canonical sha d66faabf) is a DIFFERENT domain owned by tools/update_goldens.py + tools/lint_golden_pin.py and is deliberately NOT registered here; tests/golden/s2entry_gate.json is one-shot gate evidence and tests/fixtures/README.md is documentation - all three exclusions carry their reasons in the lint script. `in_test` records that pin literals in the test source only carry an empty `files` map plus \"relational\": true.",
   "in_test": [
     {
       "test": "s4b keynorm note parity vectors byte-identical (tests/test_keynorm.cpp, [keynorm] 'python parity vectors are byte-identical' + training/tests/test_keynorm.py check_golden_parity_vectors)",
@@ -7,7 +7,7 @@
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; values verified against the training/keynorm.py producer call in provenance before banking",
       "commit": "164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
-      "produced_by": "capture: training/keynorm.py to_canonical note-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 1-2, T1-A/T1-B)",
+      "produced_by": "capture: training/keynorm.py to_canonical note-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"python parity vectors are byte-identical\"",
       "files": {
         "tests/golden/keynorm_vectors.json": "7df7976c3b80d58bf51a0925d06499193ced71cdd09e457c3645c423f8ec8afb"
       }
@@ -18,7 +18,7 @@
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; corruption-proof per set in the task report",
       "commit": "164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
-      "produced_by": "capture: training/keynorm.py shift_chords chord-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 1-2, T1-A/T1-B)",
+      "produced_by": "capture: training/keynorm.py shift_chords chord-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"chord roots shift identically with python parity\"",
       "files": {
         "tests/golden/keynorm_vectors.json": "7df7976c3b80d58bf51a0925d06499193ced71cdd09e457c3645c423f8ec8afb"
       }
@@ -29,7 +29,7 @@
       "how": "ctest -R 's6.4' (build-full Release or build-off Debug); bytes read from the INFO dump on the clean tree per the test-header capture procedure",
       "commit": "b572caa S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)",
       "kind": "in_test",
-      "produced_by": "capture: test_s6_4_export INFO dump (size + hex of the encoded SMF)@b572caa (no in-repo writer) - tests/test_s6_4_export.cpp (header: Capture procedure)",
+      "produced_by": "capture: test_s6_4_export INFO dump (size + hex of the encoded SMF)@b572caa (no in-repo writer) - tests/test_s6_4_export.cpp \"Capture procedure\"",
       "files": {
         "tests/golden/s6_4_export_bytes.txt": "92222ac283e11bebf8d4018708f113254155c5f74300e5357579dd4473e64b20"
       }
@@ -40,7 +40,7 @@
       "how": "ctest -R 's6.4' (build-full Release or build-off Debug)",
       "commit": "b572caa S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)",
       "kind": "in_test",
-      "produced_by": "capture: test_s6_4_export INFO dump (empty-pattern SMF)@b572caa (no in-repo writer) - tests/test_s6_4_export.cpp (header: Capture procedure)",
+      "produced_by": "capture: test_s6_4_export INFO dump (empty-pattern SMF)@b572caa (no in-repo writer) - tests/test_s6_4_export.cpp \"Capture procedure\"",
       "files": {
         "tests/golden/s6_4_export_empty.txt": "169287a07fb8b55d5b7a2f0f6eb15d82fc28570ff4f356642a52df1f56bca87a"
       }
@@ -51,7 +51,10 @@
       "how": "ctest -R 's6.3' (build-full Release or build-off Debug); values read from the INFO dump on the clean tree per the test-header capture procedure",
       "commit": "96a73ca S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)",
       "kind": "in_test",
-      "produced_by": "capture: test_s6_3_reference_import INFO dump (golden report) + tools/gen_s6_3_fixtures.py (fixture)@96a73ca (no in-repo writer for the golden report) - tests/test_s6_3_reference_import.cpp (header: Capture procedure)",
+      "produced_by": {
+        "tests/golden/s6_3_reference_report.txt": "capture: test_s6_3_reference_import INFO dump (golden report)@96a73ca (no in-repo writer) - tests/test_s6_3_reference_import.cpp \"Capture procedure\"",
+        "tests/fixtures/ref_happy_c_major.mid": "gen: python tools/gen_s6_3_fixtures.py"
+      },
       "files": {
         "tests/golden/s6_3_reference_report.txt": "3d8e373727ee93bb068e9fd8adf1766cb6fb229c375b370097c903ea7e74a99e",
         "tests/fixtures/ref_happy_c_major.mid": "dfda597b0128e1fc158ec46c549fb7ffe69b6123d1065ffcad4a6a6c759f15e0"
@@ -79,7 +82,7 @@
       "how": "ctest -R 's4b Creative' (build-off Debug or build-full Release, identical — no sampler/model in path); values read from INFO 'tones (tick,pitch)' dump on the clean tree",
       "commit": "1746ae0 test(s4b-i2): shape goldens for Creative/Experimental apply_mode arms (G1 Creative)",
       "kind": "in_test",
-      "produced_by": "capture: test_s4b_mode_shape INFO dump (tones tick,pitch)@1746ae0 (no in-repo writer) - tests/test_s4b_mode_shape.cpp (header: G1 Creative shape golden)",
+      "produced_by": "capture: test_s4b_mode_shape INFO dump (tones tick,pitch)@1746ae0 (no in-repo writer) - tests/test_s4b_mode_shape.cpp \"G1 Creative\"",
       "files": {},
       "relational": true
     },
@@ -91,7 +94,7 @@
       "recaptured_in": "task-2 (see task-2-report.md)",
       "recapture_reason": "candidates RNG mt19937->Pcg32 moved the stream; seed re-pinned 7->9 (nearest seed >= 7 with a non-vacuous flip set; seed 7 is empty under Pcg32). New kFlips {(720,69,68),(1080,71,70)} run-captured + threshold-flip (25->75) red-proof; G1/G3 values unchanged (rng-free).",
       "kind": "in_test",
-      "produced_by": "capture: test_s4b_mode_shape INFO dump (flips tick:old->new)@3589205 (no in-repo writer) - tests/test_s4b_mode_shape.cpp (header: G2, Pcg32 seed 9 re-pin)",
+      "produced_by": "capture: test_s4b_mode_shape INFO dump (flips tick:old->new)@3589205 (no in-repo writer) - tests/test_s4b_mode_shape.cpp \"G2 Experimental color-flip set\"",
       "files": {},
       "relational": true
     },
@@ -101,7 +104,7 @@
       "how": "ctest -R 's4b Experimental arm keeps' ; values read from INFO 'probes (tick,pitch)' dump on the clean tree",
       "commit": "1746ae0 test(s4b-i2): shape goldens for Creative/Experimental apply_mode arms (G3 parallel-union snap)",
       "kind": "in_test",
-      "produced_by": "capture: test_s4b_mode_shape INFO dump (probes tick,pitch)@1746ae0 (no in-repo writer) - tests/test_s4b_mode_shape.cpp (header: G3 parallel-union snap)",
+      "produced_by": "capture: test_s4b_mode_shape INFO dump (probes tick,pitch)@1746ae0 (no in-repo writer) - tests/test_s4b_mode_shape.cpp \"G3 Experimental parallel-union snap\"",
       "files": {},
       "relational": true
     },
@@ -113,7 +116,7 @@
       "recaptured_in": "task-2 (see task-2-report.md)",
       "recapture_reason": "candidates RNG mt19937->Pcg32 moved every stream; all 12 hashes re-banked. Swap (sseed index->(index+1)%4) red-proof on the new streams: 11/12 redden, survivor seed-0 row-3 (same swap-invariance character as A1). New coincidence pattern: seed-10 rows 0+2 reuse seed-0 row-0 bytes.",
       "kind": "in_test",
-      "produced_by": "capture: test_s4b_seed_binding INFO dump (per-index FNV-1a digests)@3589205 (no in-repo writer) - tests/test_s4b_seed_binding.cpp (header: RECAPTURE Task 2)",
+      "produced_by": "capture: test_s4b_seed_binding INFO dump (per-index FNV-1a digests)@3589205 (no in-repo writer) - tests/test_s4b_seed_binding.cpp \"RECAPTURE (Task 2, pcg-everywhere)\"",
       "files": {},
       "relational": true
     }
@@ -187,7 +190,7 @@
       "how": "test_tokenizer binary (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_parity.py; corruption-proof per vector class in the task report (reference corrupt -> exactly its case reds, scratch-reverted)",
       "commit": "72b4bc7 feat(inference): parity tokenizer, onnx runner, worker pool (training/parity_vectors.json origin; S4b-main T3 phase-1 4a3bd76 made the C++ side read it by reference)",
       "kind": "fixture",
-      "produced_by": "capture: training/tokenizer.py encode_pattern parity vectors@72b4bc7 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 5-6, T3-A/T3-B)",
+      "produced_by": "capture: training/tokenizer.py encode_pattern parity vectors@72b4bc7 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"golden: single melody note\"",
       "files": {
         "training/parity_vectors.json": "80c4d517dd80c2fbd28c771fcbb6cc2c39bef6356863b27729443ce6efdc097e"
       }
@@ -198,7 +201,7 @@
       "how": "test_sampler binary (build-full Release + build-off Debug); corruption-proof per set in the task report (digest corrupt -> exactly the wiring case reds; range corrupt -> exactly the slot-ranges case reds; scratch-reverted; proven in build-full with the REAL provider engaged)",
       "commit": "4850d95 S4b-main T4 phase-1 (golden file + dual-reader checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-4-report.md)",
       "kind": "fixture",
-      "produced_by": "capture: test_sampler wiring digests + FSM slot ranges@4850d95 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 7-8, T4-A/T4-B)",
+      "produced_by": "capture: test_sampler wiring digests + FSM slot ranges@4850d95 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"wiring flag OFF keeps pre-phase history bytes\"",
       "files": {
         "tests/golden/sampler_wiring.json": "377e8b86039f1329ace0ed466c37387b23dd4a195bec5394d93330c8a9118298"
       }
@@ -209,7 +212,7 @@
       "how": "training/.venv/Scripts/python training/tests/test_procedural_gen.py ALL GREEN (file-only reads from phase 2); file==literal fidelity proven in phase 1 by alongside checks; corruption-proof per set in the task report (want corrupt -> exactly check_motivic_identity reds; old_n corrupt -> exactly check_coverage_one_rule_vs_fifteen reds; scratch-reverted)",
       "commit": "78ce06e S4b-main T5 phase-1 (fixtures + fidelity checks GREEN, literals kept) + phase-2 24654a2 (literal removal)",
       "kind": "fixture",
-      "produced_by": "capture: training procedural_gen seeded device outputs@78ce06e (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 9-10, T5-1/T5-2)",
+      "produced_by": "capture: training procedural_gen seeded device outputs@78ce06e (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"check_motivic_identity\"",
       "files": {
         "tests/fixtures/procedural/device_outputs.json": "cd140ce47203d11b19e77b43757b9db309287f640c685919527113464ae31db3"
       }
@@ -220,7 +223,7 @@
       "how": "training/.venv/Scripts/python training/tests/test_eval.py ALL GREEN (file-only read from phase 2); file==literal fidelity proven in phase 1; corruption-proof in the task report (3558144->3558145 reddens exactly check_load_v2_arch_ckpt, scratch-reverted)",
       "commit": "78ce06e S4b-main T5 phase-1 (fixture + fidelity check GREEN, literal kept) + phase-2 24654a2 (literal removal)",
       "kind": "fixture",
-      "produced_by": "capture: tinilm.build_model(arch=large) param count@78ce06e (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (row 11, T5-3)",
+      "produced_by": "capture: tinilm.build_model(arch=large) param count@78ce06e (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"check_load_v2_arch_ckpt\"",
       "files": {
         "tests/fixtures/eval/arch.json": "bb21f1a10ec0096aed69b81f318b68fd80847175882c82f669ffbc58a88ad33a"
       }
@@ -231,7 +234,7 @@
       "how": "test_note_cues binary explicit (build-full Release, 343 assertions) + ctest -R focus (build-full Release); corruption-proof per set in the task report (one-digit ARGB corrupts redden exactly their case; pair corrupts need gate-crossing since gates are threshold-only, documented; scratch-reverted)",
       "commit": "3e6710d S4b-main T5 phase-1 (golden file + readers + fidelity checks GREEN, literals kept) + phase-2 25044bb (literal removal)",
       "kind": "fixture",
-      "produced_by": "capture: test_note_cues + test_focus_resize palette capture@3e6710d (no in-repo writer) - docs/measurements/s4b-corruption-pins.md (rows 12-14, T5-4/T5-5/T5-6)",
+      "produced_by": "capture: test_note_cues + test_focus_resize palette capture@3e6710d (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"note fill colours are byte-identical per class\"",
       "files": {
         "tests/golden/ui_palette.json": "024aad4a9364f6c6f908735801cbe7652434b851ca4c538318eb15411cfb4193"
       }
@@ -243,7 +246,7 @@
       "how": "test_chordtrack_pin binary explicit + ctest -R 'ChordTrack|chordtrack' (build-full Release, plugin-ON-only); corruption-proof in the task report (row-1 function Tonic->Tonix reddens exactly 'ChordTrack statics match the pre-edit capture', full-suite FAILED list = that test only, scratch-reverted)",
       "commit": "766fc21 S4b-main T6 phase-1 (golden file + strict reader + file==literal fidelity checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-6-report.md)",
       "kind": "fixture",
-      "produced_by": "capture: ChordTrack pre-edit capture (27 rows, transcribed field-exact)@766fc21 (no in-repo writer) - tests/test_chordtrack_pin.cpp (header: pre-edit capture)",
+      "produced_by": "capture: ChordTrack pre-edit capture (27 rows, transcribed field-exact)@766fc21 (no in-repo writer) - tests/test_chordtrack_pin.cpp \"captured PRE-edit\"",
       "files": {
         "tests/golden/chordtrack_pin.txt": "57bfa38186cb428ad0c04879625f152dc2f313f9b2635bdb76bbd64f6f41ab5a"
       }

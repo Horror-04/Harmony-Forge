@@ -34,11 +34,22 @@ jobs:
 
       - name: Golden manifest lint (checked registry: schema + sha + coverage)
         # Stdlib only, seconds, no build: tests/golden_manifest.json must
-        # stay a CHECKED registry - every record carries kind/commit/
-        # produced_by/files, every recorded sha256 equals the file's actual
-        # sha256, every produced_by is a real executable command, and every
-        # file under tests/golden/** + tests/fixtures/** is registered by
-        # some record (except the tool's reasoned exclusion list).
+        # stay a CHECKED registry. What the lint enforces:
+        #  - every record carries kind/commit/produced_by/files, the kind
+        #    matches its section, and the commit names a commit that
+        #    RESOLVES in this repository (skipped, with a NOTE, when the
+        #    resolution is unavailable - shallow clone / no git);
+        #  - every recorded sha256 equals the file's canonical sha256
+        #    (LF-normalized for text artifacts, raw for binary ones);
+        #  - every produced_by uses one of two honest, prefix-required
+        #    forms: `gen: <command>` (a tool of the lint's WRITER registry,
+        #    bound to that exact artifact) or
+        #    `capture: <source>@<commit> (no in-repo writer) - <pointer>`
+        #    (pointer file + a quoted anchor that appears verbatim in it);
+        #  - every file under tests/golden/** + tests/fixtures/** is
+        #    registered by some record (except the tool's reasoned exclusion
+        #    list), the named test files/cases still exist, and the
+        #    golden_midi scalars match their file.
         # Blocking: non-zero fails the job, same shape as the pin lint.
         run: python tools/lint_golden_manifest.py
 
