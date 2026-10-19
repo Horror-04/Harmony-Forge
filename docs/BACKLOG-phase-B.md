@@ -63,6 +63,17 @@ src/plugin/ui/PatternDocument.cpp,37,374,13,3.84,1,0
 src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
 ```
 
+> **S10.2/S10.3 delta note (HEAD `06f6fa6`; authority for NOW values:
+> `docs/measurements/s10-final.md` §1).** The table above was measured at
+> base `4704631`, where `src/inference` held **3899** physical lines over
+> the same 36 `.h`/`.cpp` files (blob count at `4704631`, same
+> python-newline method). At HEAD it holds **3903** (`s10-final.md` §1
+> row 4). The +4 is the S10.2 include rewrite (`4ece820`, net +1 across
+> the candidate TUs) plus the S10.3 stale-comment sweep (`b582875`, +3
+> across `candidate_model.cpp`, `candidate_modes.cpp`,
+> `candidate_transforms.cpp`); both are behaviour-neutral and touch no
+> function body, so the per-file lizard rows above are unchanged.
+
 ---
 
 ## Summary
@@ -672,14 +683,21 @@ C++ and valid on other compilers.
   `_IN_FL = False` outside FL Studio) and the `if not _IN_FL: return plan`
   bail-out at `:93-94`.
 - **No CI coverage.** `git grep -n "fl_dispatcher" -- .github/` returns
-  nothing: `.github/workflows/ci.yml` (the only workflow, 140 lines) has no
-  step that touches `src/companion/`. The steps it runs are: layer gate
-  (`:27`), RT gate (`:30`), golden pin lint (`:33`), golden manifest lint
-  (`:54`), invariant tag lint (`:60`), sealed-test grep (`:68-71`), vocab
-  layout check (`:83`), golden pin lint again (`:90`), invariant tag lint
-  again (`:94`), configure (`:99`), build (`:102`), ctest (`:105`), the
-  advisory S3 body check (`:112`), the advisory off-golden census (`:123`),
-  the determinism proof (`:126-129`) and pluginval (`:137-140`).
+  nothing: `.github/workflows/ci.yml` (the only workflow, 184 lines) has no
+  step that touches `src/companion/`. The `gates` job runs: layer gate
+  (`:33-34`), RT gate (`:36-37`), golden pin lint (`:39-40`), golden manifest
+  lint (`:42-61`), invariant tag lint (`:63-67`), sealed-test grep
+  (`:69-78`) — plus the four S10.1 ratchet gates: file-size (`:80-90`),
+  UTF-8 (`:92-100`), the CCN ratchet (`:109-115`, after the pinned lizard
+  install at `:102-107`) and the off-golden census (`:117-126`, blocking
+  since S10.1). The `build-test-validate` job runs: vocab layout check
+  (`:134-138`), golden pin lint (`:140-145`), invariant tag lint
+  (`:147-151`), configure (`:153-154`), build (`:156-157`), ctest
+  (`:159-160`), the advisory S3 body check (`:162-167`), the determinism
+  proof (`:169-173`) and pluginval download + validate (`:175-184`).
+  (This enumeration is current at HEAD; if the workflow later gains steps,
+  the only claim that needs re-verifying is "no step touches
+  `src/companion/`".)
 - **No test file.** `git grep -n "fl_dispatcher" -- tests tools` returns
   nothing; there is no `tests/test_fl_dispatcher*` and no
   `tools/tests/test_fl_dispatcher*`.
@@ -765,7 +783,7 @@ advisory in CI …)". Verified in the current tree:
   and "normalized bodies differ"; `apply_candidate_transform` and
   `apply_mode` report "normalized bodies differ" (the `std::mt19937&` →
   `Pcg32&` parameter change).
-- The CI step is explicitly advisory: `.github/workflows/ci.yml:107-112`,
+- The CI step is explicitly advisory: `.github/workflows/ci.yml:162-167`,
   "S3 body-identity check (advisory) … `continue-on-error: true`".
 
 So there is **no automated guard** on these three functions' shape or CCN
@@ -1140,7 +1158,7 @@ nobody re-checks them.
 
 4. **The S3 text guard as a live gate — RETIRED.** `tools/check_bodies.py`
    is RED on this base (`check_bodies: 13 FAIL`, measured) and its CI step
-   is advisory (`.github/workflows/ci.yml:107-112`). The retirement is
+   is advisory (`.github/workflows/ci.yml:162-167`). The retirement is
    recorded in `docs/measurements/s3-4b-note.md:84-90`. B9 states this; it
    is not a separate deferred item because the guard's own re-baselining is
    explicitly named as part of B9's owner decision.

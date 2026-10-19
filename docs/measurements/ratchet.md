@@ -262,7 +262,7 @@ quantity (the plugin-ON Release suite); only the directory differs.
 **Where the numbers come from (documentary, not re-measured in S10.1 —
 S10.1 runs no builds and no ctest).** The counters above are the S9-close
 run: `docs/measurements/s9-0.md:159` — "Config C proven blocking-green at
-close (251/251)", and `docs/INVARIANTS.md:146` — "the full registered set
+close (251/251)", and `docs/INVARIANTS.md:63-66,166` — "the full registered set
 itself is the rest of this gate: `ctest` 251/251 full + 221/221 off". The
 mapping (`build-full` = Release = 251, `build-off` = Debug = 221) is the
 repository's own convention (`docs/measurements/s4b-ratchet.md:8-9`,
@@ -278,7 +278,7 @@ recorded full-config/off-config pair, oldest first:
 | guardrails | 222/222 | 194/194 | `docs/measurements/master-health.md:9-10, 39` |
 | vertical-slice fix round 1 (2026-10-18) | **221/221** | **195/195** | `docs/FL_SMOKE.md:21`, `docs/MVP_GAP.md:18, 69` |
 | S7 (2026-10-19) | 249/249 | 219/219 | `docs/measurements/master-health.md:52` (S7 addendum) |
-| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159`, `docs/INVARIANTS.md:146` |
+| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159`, `docs/INVARIANTS.md:63-66,166` |
 
 **Read the two "221"s apart.** The 2026-10-18 run had 221 tests in the
 FULL (build-full) configuration and 195 in the off configuration
@@ -319,7 +319,7 @@ drop").
 | T1 firing proof (the shifted scratch) | the same cell with the 6->5 bound shifted — the "DIFFER vs bound-6" witness | `c822c4b020bcaf472c72add58621f847dcf7fd1695c151dd3ec1ef6f2d0b6e15` |
 | T1 control (Gate-4, seed 7, fsm-ON Strict) | the control that must stay IDENTICAL under the shift | `4f369c1050ef9623b34c3fc4e83c48d5e3e7b9a74fec3dcf7911574166e2d1ea` |
 | the 128-sha set | the frozen Gate-4 output-sha set (128 rows) in `docs/measurements/s2b-sampler-output-shas.json` (`rows`) — the file's own sha256 | file `3933dc5dc7c02bc333c988863423d10136dce0679f79256f6fa23d4e854cc8ed` (128 rows, byte-frozen) |
-| T2 shape goldens G1/G2/G3 | the s4b Creative/Experimental shape goldens, registered in `tests/golden_manifest.json` as `in_test` records 6/7/8 (tonics / flips / probes; `tests/test_s4b_mode_shape.cpp`) | registered values, not a file sha: the manifest is the registry, the commits are `1746ae0` (G1, G3) and `3589205` (G2) |
+| T2 shape goldens G1/G2/G3 | the s4b Creative/Experimental shape goldens, registered in `tests/golden_manifest.json` as `in_test` records 6/7/8 — 0-based indices (1-based #7/#8/#9, the form `docs/measurements/s10-final.md:112` uses) (tonics / flips / probes; `tests/test_s4b_mode_shape.cpp`) | registered values, not a file sha: the manifest is the registry, the commits are `1746ae0` (G1, G3) and `3589205` (G2) |
 | the frozen slot bitmap | `tests/golden/slot_bitmap.txt` — the frozen pin of G7 | `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` |
 
 ---

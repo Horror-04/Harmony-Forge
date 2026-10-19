@@ -49,7 +49,7 @@ outputs backing a claim), **historical** (phase records; read-only context).
 | file | role |
 |---|---|
 | [measurements/ratchet.md](measurements/ratchet.md) | The ONE place every gate counter lives (G1-G11): the command, the scope, the rule (HARD / RATCHET / PINNED), the current value, the exception list with its reasons, and how a future executor updates a number |
-| [BACKLOG-phase-B.md](BACKLOG-phase-B.md) | Phase-B deferred-work record (B1-B11): what the cycle deliberately did NOT do, where it lives (a verified `file:line`), why it was deferred, the observable acceptance criteria and the owner decision each item needs. A record, NOT a plan — an agent must not treat an entry as authorisation to start |
+| [BACKLOG-phase-B.md](BACKLOG-phase-B.md) | Phase-B deferred-work record (B1-B12): what the cycle deliberately did NOT do, where it lives (a verified `file:line`), why it was deferred, the observable acceptance criteria and the owner decision each item needs. A record, NOT a plan — an agent must not treat an entry as authorisation to start |
 | [measurements/s10-final.md](measurements/s10-final.md) | The cycle's final table: every metric against the S0 baseline (the banked S0 value + `file:line`, the value measured now, the delta), the T1/T2 cells after S9, the known-open ORT invariant gap, and the superseded-baselines list |
 
 ## Superseded / retired baselines (history, not live)
