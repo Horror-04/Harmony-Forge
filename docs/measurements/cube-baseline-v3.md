@@ -235,12 +235,14 @@ Owner signature: ______________________________   Date: ____________
 ```
 
 **Tag command** — the controller runs this verbatim from the repository root
-*after* the owner signs. It creates the annotated tag on the commit that banks
-`docs/measurements/s0-sha-matrix-v3.csv` (this document's commit); the
-resolved target sha is reported with the slice-F completion.
+*after* the owner signs. It creates the annotated tag on the commit that carries
+this record **and** the banked artifact (the latest commit touching this
+document; the artifact blob is byte-identical in that commit and in the commit
+that introduced it, so the pinned sha256 holds either way). The resolved target
+sha is reported with the slice-F completion.
 
 ```powershell
-git tag -a refactor/cube-baseline-v3 -m "cube baseline v3: Pcg32 @ 3589205; 936 rows (576 render_midi + 360 render_model); sha256 219EAB5EA59871158E7B381A7396DA6A94E3B875BCF2ACBF0D0429F81C4175F9" $(git log -1 --format=%H -- docs/measurements/s0-sha-matrix-v3.csv)
+git tag -a refactor/cube-baseline-v3 -m "cube baseline v3: Pcg32 @ 3589205; 936 rows (576 render_midi + 360 render_model); sha256 219EAB5EA59871158E7B381A7396DA6A94E3B875BCF2ACBF0D0429F81C4175F9" $(git log -1 --format=%H -- docs/measurements/cube-baseline-v3.md)
 ```
 
 (Lightweight parity with the v2 tag, which is a plain `git tag`: drop the
