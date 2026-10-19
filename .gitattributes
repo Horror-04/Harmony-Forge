@@ -1,2 +1,3 @@
 *.gen.h text eol=lf
 docs/MAP.md text eol=lf
+tests/fixtures/ingest/* text eol=lf

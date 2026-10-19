@@ -91,5 +91,19 @@
       "how": "tools/render_midi --seed 42 --bars 4 --out tests/golden/seeds/seed_42.mid (melody-only SMF0, 480 PPQ); pinned by tests/test_golden_midi.cpp; regen only via tools/update_golden_midi.py --write --reason ...",
       "banked_in": "task-2 (see task-2-report.md)"
     }
+  ],
+  "fixtures": [
+    {
+      "test": "ingest SATB pitch fixtures file-backed (training/tests/test_ingest.py _mini_satb + reduction/dedupe/homophonic/parity checks)",
+      "pins": "tests/fixtures/ingest/mini_satb.json: _mini_satb(0) as TEXT JSON (4x16 absolute MIDI pitches + bars 4 / tonic 60 / scale major) - hand-composed C-major quarter-note SATB per the test header (no music21); transposed variants (+2/-2/+5) derive by shift at call time. Zero .mid: no MIDI bytes asserted, symbolic pitches only.",
+      "how": "training/.venv/Scripts/python training/tests/test_ingest.py ALL GREEN (reduction/dedupe/homophonic/parity checks consume _mini_satb); file==literal fidelity proven in phase 1 by check_ingest_fixtures_match_literals, file-only reads from phase 2",
+      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)"
+    },
+    {
+      "test": "ingest openscore .mscx minis + tick golden (training/tests/test_ingest.py check_openscore_mscx_parse_minimal)",
+      "pins": "tests/fixtures/ingest/openscore_v3_mini.mscx + openscore_v2_mini.mscx (byte-exact v3/v2 minis) + openscore_ticks.json (v3 bars 2 / measure_ticks [1920,1920] / 4 events incl. dotted-8th dyad dur 360 + triplet 160s + grace-skip; v2 [1440] / half-note dur 960) - GOLDEN class (run-captured via training/ingest/openscore.py parse_mscx on the clean tree). TEXT throughout (XML stays XML); zero .mid justified as above.",
+      "how": "training/.venv/Scripts/python training/tests/test_ingest.py; corruption-proof per entry in the task report (fixture-byte 60->61 + tick-assert 1920->1921 each redden exactly check_openscore_mscx_parse_minimal, neighbors green, scratch-reverted)",
+      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)"
+    }
   ]
 }
