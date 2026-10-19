@@ -92,7 +92,6 @@ _PIN_TABLE = [
     ("hf::infer::compose_base", "src/inference/candidate_base.cpp", 38, 94, 16),
     ("hf::infer::check_model_compatible", "src/inference/model_manifest.cpp", 288, 339, 16),
     ("hf::infer::strict_core", "src/inference/sampler.cpp", 78, 114, 16),
-    ("HarmonyForgeEditor::HarmonyForgeEditor", "src/plugin/audio/PluginEditor.cpp", 67, 345, 16),
 ]
 
 # The three S3 candidate functions carry the owner's reason verbatim.

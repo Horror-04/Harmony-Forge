@@ -84,7 +84,7 @@ trailing partial line). NEVER `Measure-Object -Line`.
 | file | lines | reason for the exception |
 |---|---|---|
 | `tools/step1_table.py` | 1120 | step-1 table generator: one data table per row family — splitting it scatters a single table across modules |
-| `src/plugin/audio/PluginEditor.cpp` | 1046 | editor facade: the S9.3 split verdict is pending (`docs/measurements/s9-0.md` "S9.3 status: BACKLOG"), so the facade stays as measured |
+| `src/plugin/audio/PluginEditor.cpp` | 807 | editor facade after the S9.3 layout extraction (layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`) — re-pinned at the post-extraction count |
 | `tests/test_sampler.cpp` | 919 | sampler test file: the wiring-flag history bytes, the kPinned table and the seed cases live in one file — split deferred |
 | `tools/lint_golden_manifest.py` | 842 | golden-manifest lint: schema + sha + coverage + writer registry are ONE rule set — splitting scatters it; 837->842 WRITER binding probe_b12_bounds (B12 guard, fix round 2) |
 | `tools/tests/test_golden_manifest_lint.py` | 649 | lint test file: one test per manifest rule family — split deferred |
@@ -140,7 +140,7 @@ The tests, the tools and the training tree are out of scope.
 lizard is missing the tool prints a SKIP line and exits 0; with `--strict`
 (the CI mode) it exits 1. CI installs the pinned version first.
 
-**Current value.** 26 functions with CCN > 15, all pinned, none grown.
+**Current value.** 25 functions with CCN > 15, all pinned, none grown.
 Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
@@ -170,7 +170,6 @@ Table (qualified name | file:lines | CCN | reason class):
 | `hf::infer::compose_base` | `src/inference/candidate_base.cpp:38-94` | 16 | **S3 candidate** |
 | `hf::infer::check_model_compatible` | `src/inference/model_manifest.cpp:288-339` | 16 | S0 baseline |
 | `hf::infer::strict_core` | `src/inference/sampler.cpp:78-114` | 16 | S0 baseline |
-| `HarmonyForgeEditor::HarmonyForgeEditor` | `src/plugin/audio/PluginEditor.cpp:67-345` | 16 | S0 baseline |
 
 **Exception reasons (verbatim, as the owner stated them).**
 
@@ -180,8 +179,12 @@ Table (qualified name | file:lines | CCN | reason class):
   `docs/BACKLOG-phase-B.md` item B9 (the S3 text guard
   `tools/check_bodies.py` was retired as a gate after the Pcg32 change,
   so these three functions have no automated shape guard today).
-* The other 23 entries carry the reason: "pre-existing at the S0 baseline
+* The other 22 entries carry the reason: "pre-existing at the S0 baseline
   (`docs/measurements/s0-lizard.csv`) — outside the S3 scope".
+* Pruned 2026-10-19 (S9.3 fix round 1): `HarmonyForgeEditor::
+  HarmonyForgeEditor` — the S9.3 layout extraction dropped the constructor
+  to CCN 13 (no longer > 15, so no pin is needed); the D-B12 ≤9 ceiling is
+  separately ACCEPTED at 13, see `docs/BACKLOG-phase-B.md` D-B12.
 
 ---
 

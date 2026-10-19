@@ -1287,3 +1287,8 @@ ruling cites a standing rule, the rule is quoted, not extended.
     instead of churn; the .cpp alone is 1046 today so the ceiling bites only as a total); ownership = a
     **dedicated layout unit** beside the editor (cross-panel layout belongs in no single panel
     header; panel headers stay untouched).
+  - 2026-10-19 S93-1 (fix round 1): `.cpp` max-CCN **13 ACCEPTED** with recorded reason
+    (pure-move floor proven: the 12 remaining branches are stay-listed callback wiring — preview 1,
+    drag 2, trackBox 1, chordReplace 6, inv 2 — and forcing ≤9 would cut into the wiring = new scope
+    with behavior risk). No CCN pin needed (13 ≤ 15 is clean); options (ii) wiring-helper split and
+    (iii) fallback-to-(c) REJECTED.

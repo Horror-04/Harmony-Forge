@@ -56,10 +56,10 @@ PINNED: dict[str, tuple[int, str]] = {
         "step-1 table generator: one data table per row family — splitting "
         "it scatters a single table across modules"),
     "src/plugin/audio/PluginEditor.cpp": (
-        1046,
-        "editor facade: the S9.3 split verdict is pending "
-        "(docs/measurements/s9-0.md 'S9.3 status: BACKLOG'), so the facade "
-        "stays as measured"),
+        807,
+        "editor facade after the S9.3 layout extraction (layout lives in "
+        "src/plugin/ui/EditorLayout.{h,cpp}) — re-pinned at the "
+        "post-extraction count"),
     "tests/test_sampler.cpp": (
         919,
         "sampler test file: the wiring-flag history bytes, the kPinned "
