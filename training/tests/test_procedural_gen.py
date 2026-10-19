@@ -28,9 +28,9 @@ import tokenizer as tok
 
 import procedural_gen as PG
 
-# S4b-main T5 phase 1: seeded device-output goldens live in
-# tests/fixtures/procedural/device_outputs.json (fidelity checks alongside
-# the literals below; literals removed in phase 2).
+# S4b-main T5 phase 2: seeded device-output goldens live in
+# tests/fixtures/procedural/device_outputs.json (file-only reads; the
+# crafted INPUT motives below stay in-test as parameter fixtures).
 _GOLD = json.load(open(os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__)))),
@@ -122,7 +122,6 @@ def check_motivic_identity() -> None:
     inv_motive = [(60, 4), (64, 4), (67, 4)]
     inv = PG.apply_device(list(inv_motive), "inversion", random.Random(0),
                           48, "major")
-    assert inv == [(67, 4), (64, 4), (60, 4)], (inv, inv_motive)
     assert inv == [tuple(p) for p in _GOLD["inversion_want"]], (inv, inv_motive)
     assert [d for _, d in inv] == [d for _, d in inv_motive]
     steps_in = [b - a for (a, _), (b, _) in zip(inv_motive, inv_motive[1:])]
@@ -135,9 +134,6 @@ def check_motivic_identity() -> None:
     nb_motive = [(64, 4), (66, 2), (67, 4)]
     nb = PG.apply_device(list(nb_motive), "neighbour", random.Random(7),
                          48, "major")
-    exp_nb_up = [(65, 2), (64, 2), (66, 2), (69, 2), (67, 2)]
-    exp_nb_dn = [(62, 2), (64, 2), (66, 2), (65, 2), (67, 2)]
-    assert nb == exp_nb_up or nb == exp_nb_dn, (nb, exp_nb_up, exp_nb_dn)
     assert nb == [tuple(p) for p in _GOLD["neighbour_want_up"]] or \
         nb == [tuple(p) for p in _GOLD["neighbour_want_dn"]], (nb, nb_motive)
     assert sum(d for _, d in nb) == sum(d for _, d in nb_motive), nb
@@ -215,7 +211,6 @@ def check_coverage_one_rule_vs_fifteen() -> None:
     old_cov = PG.progression_coverage(old)
     assert new_cov["n"] == 15, new_cov
     assert new_cov["n"] > old_cov["n"], (new_cov, old_cov)
-    assert old_cov["n"] == 12, old_cov  # 1 rule, 12 signatures
     assert old_cov["n"] == _GOLD["coverage_old_n"], old_cov
 
 
