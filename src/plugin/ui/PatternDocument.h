@@ -140,7 +140,9 @@ class PatternDocument : public juce::ChangeBroadcaster {
   // True between regenerate() and the poll_regenerate() that applies it.
   bool regenerate_pending() const { return gen_pending_; }
   // Commit candidate i as the working pattern (undoable). Marks the history
-  // entry kept. Returns false for a bad index / no candidates.
+  // entry kept - the history is an append-only audit log, so the mark is
+  // NOT rewound by an undo of that keep (see SeedHistory, D-B6). Returns
+  // false for a bad index / no candidates.
   bool keepCandidate(int i);
   // Arrangement build (Phase 2 Task 5): adopt a build_arrangement result as
   // the working pattern in one undo step (freeze kept as-is; candidates
@@ -166,7 +168,7 @@ class PatternDocument : public juce::ChangeBroadcaster {
   hf::core::ChordProgression chords_;
   hf::core::Selection selection_;
   hf::core::FreezeState freeze_;
-  hf::core::SeedHistory history_;
+  hf::core::SeedHistory history_;  // append-only audit log; NOT rewound by undo
   std::array<hf::core::Pattern, 4> candidates_;
   bool hasCandidates_ = false;
   hf::core::ChordProgression lastProg_;  // progression behind the candidates

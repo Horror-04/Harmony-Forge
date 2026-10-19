@@ -44,6 +44,10 @@ CandidateBar::CandidateBar(PatternDocument& doc) : doc_(doc) {
 
   historyLabel_.setText("History", juce::dontSendNotification);
   addAndMakeVisible(historyLabel_);
+  // D-B6: the history box is an append-only AUDIT log of the generations -
+  // undo does NOT rewind it, so a "kept" tag can outlive the candidate it
+  // names (the two histories may disagree about the current state).
+  historyBox_.setTooltip("History log - append-only: undo does not rewind it");
   historyBox_.onChange = [this] {
     const int id = historyBox_.getSelectedId();
     if (id > 0 && static_cast<size_t>(id) <= doc_.history().size() && onRecallHistory)
@@ -147,6 +151,9 @@ void CandidateBar::refreshFromDoc() {
   }
   keepButton_.setEnabled(doc_.hasCandidates() && audition_ >= 0);
   historyBox_.clear(juce::dontSendNotification);
+  // D-B6: the "kept" tag is a per-generation AUDIT fact of that entry
+  // (which candidate that generation kept), NOT a claim about the current
+  // pattern: the log is never rewound, so an undo of a keep leaves it.
   for (size_t i = 0; i < doc_.history().size(); ++i) {
     const auto& e = doc_.history().at(i);
     juce::String kept = e.kept_index >= 0 ? " kept " + juce::String("ABCD"[e.kept_index]) : "";

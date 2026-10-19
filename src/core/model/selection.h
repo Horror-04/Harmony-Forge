@@ -202,6 +202,13 @@ struct HistoryEntry {
 
 // Bounded append-only log of generations (SPEC §13: history of generations,
 // seed kept for full reproducibility). Cap 64, oldest dropped first.
+//
+// CONTRACT (owner decision D-B6, phase-B B6): this is an append-only
+// AUDIT log of the kept candidates, deliberately NOT rewound by undo - an
+// undo of a "Keep" leaves the entry standing. It exists for RECALL (the
+// seed + bars reproduce a generation exactly), so rewinding it would
+// destroy recall information; the undo stack and this log may therefore
+// disagree about the current state BY DESIGN.
 class SeedHistory {
  public:
   static constexpr std::size_t kMaxEntries = 64;
