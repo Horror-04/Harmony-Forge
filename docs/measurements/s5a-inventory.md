@@ -455,3 +455,32 @@ AsyncGenerateQueue ×2 (`PatternDocument.cpp:84`,
 Later slices measure against **81** (static) — e.g. a teardown-logging
 pass in config C should account 81 constructions/destructions (76
 editor-lifetime + 4 loop buttons + FileChooser sites as they occur).
+
+## Addendum 2026-10-19 — U2/U3 runtime-probe outcomes (branch `refactor/probes-u2u3-b12`)
+
+Append-only note; no existing text above was rewritten. Probes were scratch
+binaries (since removed); only the B12 bounds guard was kept as
+`tests/probe_b12_bounds.cpp`. Numbers below are transcribed from the probe
+report (`.superpowers/sdd-tmp/probe-u2u3-b12-report.md`, stdout quoted
+verbatim at measurement time).
+
+(a) U2 outcome (§UNTRACED U2, lines 379-381): the R1 SafePointer guard was
+exercised headless 5/5 PASS (live-host cancel path, destroyed-host late
+completion dropped with no crash, SafePointer null-after-destroy) with NO
+native dialog driven (`launchAsync` never called). Proven: the guarded
+completion path drops post-destruction completions. The native
+`launchAsync` lifetime residual stays OPEN (whether JUCE retains a path
+that outlives the editor on the three plugin formats is still unmeasured);
+the UNPINNABLE marks stand (`tests/test_s6_4_export.cpp:33`,
+`tests/golden_manifest.json:39`).
+
+(b) U3 outcome (§UNTRACED U3, lines 382-383): editor-close latency with the
+real `training/model.logits.onnx` (3146116 bytes, distinct from the mock
+`model.onnx` 3146034) in Debug/`build-plugdbg` (config C): method =
+production `AsyncGenerateQueue(1)` ctor + bars=16 (clamped max), 5 pairs of
+sequential destructor joins (R2's two joins), all pairs caught in-flight;
+pair-mean 845.2 ms / pair-max 850.4 ms per two-join close (≈2× one ~820 ms
+real-model job; fallback reference 1.0 ms). The build-off leg was STUB by
+construction (`HARMONY_FORGE_WITH_ONNX=OFF` ⇒ `OnnxRunner::loaded()==false`,
+probe exit 2), so the numbers above are Debug/`build-plugdbg`, not
+build-off.

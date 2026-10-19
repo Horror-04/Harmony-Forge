@@ -157,6 +157,11 @@ WRITERS = {
         "tests/fixtures/ingest/openscore_v2_mini.mscx",
         "tests/fixtures/ingest/openscore_ticks.json",
     ),
+    # B12 guard: the probe binary built from this source regenerates the
+    # bounds golden in --write mode (no other artifact).
+    "tests/probe_b12_bounds.cpp": (
+        "tests/golden/b12_editor_bounds.json",
+    ),
 }
 
 # Rule-4 exclusion list: files that live under tests/golden/** or

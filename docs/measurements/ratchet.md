@@ -86,7 +86,7 @@ trailing partial line). NEVER `Measure-Object -Line`.
 | `tools/step1_table.py` | 1120 | step-1 table generator: one data table per row family — splitting it scatters a single table across modules |
 | `src/plugin/audio/PluginEditor.cpp` | 1046 | editor facade: the S9.3 split verdict is pending (`docs/measurements/s9-0.md` "S9.3 status: BACKLOG"), so the facade stays as measured |
 | `tests/test_sampler.cpp` | 919 | sampler test file: the wiring-flag history bytes, the kPinned table and the seed cases live in one file — split deferred |
-| `tools/lint_golden_manifest.py` | 837 | golden-manifest lint: schema + sha + coverage + writer registry are ONE rule set — splitting scatters it |
+| `tools/lint_golden_manifest.py` | 842 | golden-manifest lint: schema + sha + coverage + writer registry are ONE rule set — splitting scatters it; 837->842 WRITER binding probe_b12_bounds (B12 guard, fix round 2) |
 | `tools/tests/test_golden_manifest_lint.py` | 649 | lint test file: one test per manifest rule family — split deferred |
 | `tests/test_selection.cpp` | 626 | selection test file: SMF1 round-trip + selection + export families — split deferred |
 | `tests/test_memo_filter.cpp` | 509 | memo-filter test file: filter + invocation-tag families — split deferred |

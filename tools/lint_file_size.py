@@ -65,9 +65,10 @@ PINNED: dict[str, tuple[int, str]] = {
         "sampler test file: the wiring-flag history bytes, the kPinned "
         "table and the seed cases live in one file — split deferred"),
     "tools/lint_golden_manifest.py": (
-        837,
+        842,
         "golden-manifest lint: schema + sha + coverage + writer registry "
-        "are ONE rule set — splitting scatters it"),
+        "are ONE rule set — splitting scatters it; 837->842 WRITER binding "
+        "probe_b12_bounds (B12 guard, fix round 2)"),
     "tools/tests/test_golden_manifest_lint.py": (
         649,
         "lint test file: one test per manifest rule family — split deferred"),

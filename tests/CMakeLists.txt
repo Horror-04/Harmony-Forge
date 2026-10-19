@@ -407,6 +407,36 @@ target_include_directories(test_preview_scheduler PRIVATE ${CMAKE_SOURCE_DIR}/sr
 target_compile_features(test_preview_scheduler PRIVATE cxx_std_20)
 hf_copy_ort_runtime(test_preview_scheduler)
 catch_discover_tests(test_preview_scheduler)
+# Probe B12 (branch refactor/probes-u2u3-b12, bounded runtime probe).
+# Deliberately NOT registered with catch_discover_tests: the binary never
+# appears in `ctest -N` (counters stay 221/251). Plain main() guard with
+# pinned bounds expectations, run explicitly. No existing target touched.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(probe_b12_bounds probe_b12_bounds.cpp
+    ../src/plugin/audio/PluginProcessor.cpp
+    ../src/plugin/audio/PluginEditor.cpp
+    ../src/plugin/audio/PreviewSynth.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp
+    ../src/plugin/controllers/PreviewController.cpp
+    ../src/plugin/controllers/PreviewScheduler.cpp
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/ui/PianoRoll.cpp
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/CandidateBar.cpp
+    ../src/plugin/ui/ArrangeBar.cpp
+    ../src/plugin/ui/ExplainView.cpp
+    ../src/plugin/ui/HFLookAndFeel.cpp)
+  target_link_libraries(probe_b12_bounds PRIVATE
+    harmony_forge_core harmony_forge_inference harmony_forge_app
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
+    juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures)
+  target_include_directories(probe_b12_bounds PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(probe_b12_bounds PRIVATE cxx_std_20)
+  target_compile_definitions(probe_b12_bounds PRIVATE
+    HARMONY_FORGE_B12_BOUNDS="${CMAKE_SOURCE_DIR}/tests/golden/b12_editor_bounds.json")
+  hf_copy_ort_runtime(probe_b12_bounds)
+endif()
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).
 # Deliberately NOT registered with catch_discover_tests: the binary never
 # appears in `ctest -N`, so the default fast suite keeps its count and

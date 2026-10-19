@@ -1,0 +1,9 @@
+{
+  "doc": "B12 editor-layout bounds pins (probe_b12_bounds guard, D-B12 entry condition). Per window size: expected descendant-component count, canonical dump byte count, and SHA256 of the canonical bounds-dump text (LF bytes). Captured 2026-10-19 headless (no peer, no paint) on the refactor/probes-u2u3-b12 tree. Regenerate only via the probe --write mode; any byte change here must move the same bytes the guard asserts.",
+  "sizes": {
+    "960x600": {"components": 136, "bytes": 3826, "sha256": "7f138f4bf506a3168cf7334970503435647839cdb37321ec255a299b84fffb5a"},
+    "1024x876": {"components": 136, "bytes": 3843, "sha256": "c0442dc99a4941a956b5948518562075411010781096c7bfeb4d4dce532e2d76"},
+    "1280x800": {"components": 136, "bytes": 3850, "sha256": "aa06bdb5f578f315ffe35c7573a8a732fc456c1f47c07a2c7e84b4769c6b2a49"},
+    "2048x1752": {"components": 136, "bytes": 3880, "sha256": "8e29a70294c9c3ef30263b34cc20636d310a65ead4ab7e2d4b3d1a02c8101c44"}
+  }
+}

@@ -119,6 +119,17 @@
       "produced_by": "capture: test_s4b_seed_binding INFO dump (per-index FNV-1a digests)@3589205 (no in-repo writer) - tests/test_s4b_seed_binding.cpp \"RECAPTURE (Task 2, pcg-everywhere)\"",
       "files": {},
       "relational": true
+    },
+    {
+      "test": "b12 editor-layout bounds guard headless (tests/probe_b12_bounds.cpp, explicit probe binary run from the repo root; NOT ctest-registered)",
+      "pins": "tests/golden/b12_editor_bounds.json: per window size (960x600, 1024x876, 1280x800, 2048x1752) expected descendant-component count 136 + canonical dump byte count + SHA256 of the canonical bounds-dump text — GOLDEN class (run-captured headless: no peer, no paint; Debug build-plugdbg). D-B12 entry-condition guard for the S9.3 Editor extraction.",
+      "how": "build-plugdbg/tests/Debug/probe_b12_bounds.exe run from the repo root (exit 0 means all pins hold); regenerate only via --write into a temp copy byte-compared with this file",
+      "commit": "617a5bb refactor/probes-u2u3-b12 BASE (dumps measured on this tree; probe sources uncommitted scratch at measurement time)",
+      "kind": "in_test",
+      "produced_by": "gen: cmake --build build-plugdbg --config Debug --target probe_b12_bounds && build-plugdbg/tests/Debug/probe_b12_bounds.exe --write tests/golden/b12_editor_bounds.json (writer source: tests/probe_b12_bounds.cpp)",
+      "files": {
+        "tests/golden/b12_editor_bounds.json": "f9248c2ed3827028fe42feb90ad11b568a832034f498475eed7ca4c7821c549a"
+      }
     }
   ],
   "golden_midi": [

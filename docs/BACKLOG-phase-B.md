@@ -1269,7 +1269,7 @@ ruling cites a standing rule, the rule is quoted, not extended.
   every shifted chord and change what the strict mask sees — destructive;
   Python-side preservation is additive. Corpus agrees either way today, so
   no byte moves now.
-- **D-B12 (S9.3 verdict).** **(a) CONDITIONAL** — attempt the entry
+- **D-B12 (S9.3 verdict).** **(a) CONFIRMED** — attempt the entry
   condition first (headless bounds-dump guard at 3–4 window sizes, 4h
   time-box, no new controllers, per Sonnet's rule). Sonnet's ≥150-line
   block condition holds (layout 355 NLOC, `resized()` 125 lines at CCN 1);
@@ -1277,3 +1277,7 @@ ruling cites a standing rule, the rule is quoted, not extended.
   with the extraction under B12's acceptance criteria; else **(c)** — the
   value stays ratchet-pinned (the file-size gate already pins 1046) with
   the reason recorded here.
+  - 2026-10-19 CONFIRMED (fix round 3): guard landed (`tests/probe_b12_bounds.cpp` +
+    `tests/golden/b12_editor_bounds.json` + the manifest record "b12 editor-layout bounds
+    guard headless (tests/probe_b12_bounds.cpp, explicit probe binary run from the repo root;
+    NOT ctest-registered)"); extraction is the next tracked task under B12's acceptance criteria.
