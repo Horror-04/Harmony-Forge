@@ -23,8 +23,11 @@ Rules (mirrored EXACTLY by ``src/inference/keynorm.h``):
 - Melody(1)/Bass(2) get ``octave_pull`` into 60..84 / 24..60 (mirrors
   ``src/inference/candidates.cpp``); Chords(0)/Arpeggio(3)/
   CounterMelody(4) only shift + clamp to 0..127.
-- Chord roots shift identically (``shift_chords``); chord types and the
-  ``scale`` name NEVER change.
+- Chord roots shift identically (``shift_chords``): ONLY ``root`` moves
+  (clamped 0..127) and EVERY other key of the chord dict (``type``,
+  ``inversion``, ``tension``, ``name``, ...) is preserved as-is - the C++
+  ``shift_chords_to/from_canonical`` shape is authoritative (phase-B B11,
+  owner decision D-B11). The ``scale`` name NEVER changes.
 
 Wrap caveat (documented, tested): the minimal-signed shift wraps at +-6,
 so two exact transpositions a fourth/fifth apart can normalize an octave
@@ -116,9 +119,21 @@ def from_canonical(ids_n: list[int], shift: int,
 
 
 def shift_chords(chords: list[dict], shift: int) -> list[dict]:
-    """Shift chord roots identically; types (and names) unchanged."""
-    return [{"root": _clamp(c["root"] + shift, 0, 127), "type": c["type"]}
-            for c in chords]
+    """Shift chord roots identically; every other key is preserved as-is.
+
+    Exact mirror of the C++ ``shift_chords_to/from_canonical``
+    (``src/inference/keynorm.cpp``): only ``root`` moves (clamped to
+    0..127), while ``type`` / ``inversion`` / ``tension`` / ``name`` - and
+    any other key of the input chord dict - survive the shift unchanged
+    (phase-B B11, owner decision D-B11: the C++ shape is authoritative;
+    narrowing the C++ side would silently drop inversion/tension).
+    """
+    out = []
+    for c in chords:
+        shifted = dict(c)
+        shifted["root"] = _clamp(c["root"] + shift, 0, 127)
+        out.append(shifted)
+    return out
 
 
 def normalized_view(rec: dict) -> dict:

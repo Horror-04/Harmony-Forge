@@ -13,7 +13,20 @@
     "shift": 5,
     "roots": [55, 62],
     "types": ["maj", "min"],
-    "want_roots": [60, 67]
+    "want_roots": [60, 67],
+    "enriched": {
+      "provenance": "training/keynorm.py shift_chords([{'root': 55, 'type': 'maj', 'inversion': 1, 'tension': [7], 'name': 'Gmaj7#11'}, {'root': 62, 'type': 'min', 'inversion': 0, 'tension': [], 'name': 'Amin'}], 5)",
+      "note": "ENRICHED chord (inversion/tension/name carried): only `root` may move, every other key of the input chord dict must survive the shift unchanged - the C++ shape is authoritative (phase-B B11, decision D-B11). The C++ reader is ints-only, so the per-chord tension list is flattened to one int per chord (-1 = no tension); the type/name names stay in-test spec constants on the C++ side.",
+      "shift": 5,
+      "roots": [55, 62],
+      "types": ["maj", "min"],
+      "inversions": [1, 0],
+      "tensions": [7, -1],
+      "names": ["Gmaj7#11", "Amin"],
+      "want_roots": [60, 67],
+      "want_inversions": [1, 0],
+      "want_tensions": [7, -1]
+    }
   },
-  "known_divergence": "C++ shift_chords_to/from_canonical preserve type/inversion/tension in place; python shift_chords rebuilds {root, type} dicts only and DROPS inversion/tension/name keys. Corpus chords carry {root, type} only, so both sides agree on corpus data; enriched chords diverge. Phase-B fix — do NOT unify either side in a migration (touching chord-shift semantics fails review)."
+  "known_divergence": "NONE - healed in phase-B tranche E B11 (owner decision D-B11): the C++ shift_chords_to/from_canonical and the python shift_chords now agree on the chord SHAPE - only `root` moves (clamped 0..127) and every other key of the input chord dict (type/inversion/tension/name) is preserved as-is. Pinned from BOTH sides over the enriched vector in #chord_parity.enriched; the corpus-level parity on {root, type} chords is unchanged."
 }

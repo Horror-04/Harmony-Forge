@@ -241,17 +241,39 @@ def check_golden_parity_vectors() -> None:
         "shift_chords roots must match the golden want_roots"
     assert [c["type"] for c in moved] == chord["types"], \
         "chord types must never change"
-    # KNOWN DIVERGENCE (phase-B fix; NOT healed here): python shift_chords
-    # rebuilds {root, type} only, DROPPING inversion/tension, while the C++
-    # mirror preserves them (pinned in tests/test_keynorm.cpp clamp/shape
-    # case). This assert pins the divergence LOUD: if it ever stops
-    # dropping, phase-B owns the reunion, not a silent migration.
-    enriched = [dict(c, inversion=1, tension=[7]) for c in start]
-    redone = K.shift_chords(enriched, chord["shift"])
-    assert all(set(c) == {"root", "type"} for c in redone), \
-        "chord-shape divergence moved without a phase-B ruling"
+    # ENRICHED chord parity (phase-B B11, owner decision D-B11): the
+    # chord-shape divergence is HEALED - the python side now preserves
+    # EVERY key of the input chord dict (only `root` moves, same 0..127
+    # clamp as the C++ mirror), so the C++ shape is authoritative. The
+    # vector is read from the golden file and pinned from BOTH sides
+    # (here + tests/test_keynorm.cpp 'chord roots shift identically with
+    # python parity' - the ENRICHED half of that case).
+    rich_spec = chord["enriched"]
+    rich = []
+    for r, t, inv, ten, nm in zip(rich_spec["roots"], rich_spec["types"],
+                                   rich_spec["inversions"],
+                                   rich_spec["tensions"],
+                                   rich_spec["names"]):
+        rich.append({"root": r, "type": t, "inversion": inv,
+                     "tension": [] if ten < 0 else [ten], "name": nm})
+    rich_moved = K.shift_chords(rich, rich_spec["shift"])
+    assert [c["root"] for c in rich_moved] == rich_spec["want_roots"], \
+        "enriched chord roots must match the golden want_roots"
+    assert [c["inversion"] for c in rich_moved] == \
+        rich_spec["want_inversions"], \
+        "enriched chord inversions must be preserved"
+    assert [c["type"] for c in rich_moved] == rich_spec["types"], \
+        "enriched chord types must never change"
+    assert [c["name"] for c in rich_moved] == rich_spec["names"], \
+        "enriched chord names must be preserved"
+    assert [c["tension"] for c in rich_moved] == \
+        [[t] if t >= 0 else [] for t in rich_spec["tensions"]], \
+        "enriched chord tensions must be preserved"
+    for src, dst in zip(rich, rich_moved):
+        assert set(dst) == set(src), \
+            "shift_chords must preserve every key of the input chord"
     print("PASS golden parity vectors reproduce keynorm.py "
-          "(chord-shape divergence still named)")
+          "(enriched chord shape preserved on both sides)")
 
 
 def main() -> int:

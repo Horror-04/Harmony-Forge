@@ -294,12 +294,46 @@ TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]
   CHECK(prog[1].root == groots[1]);
   CHECK(prog[0].type == "maj");
   CHECK(prog[1].type == "min");
-  // KNOWN DIVERGENCE (phase-B fix; NOT healed by this migration — touching
-  // chord-shift semantics fails review): training/keynorm.py shift_chords
-  // rebuilds {root, type} dicts only and DROPS inversion/tension/name keys,
-  // while shift_chords_to/from_canonical preserve them in place (pinned in
-  // the clamp/shape case below). Corpus chords carry {root, type} only, so
-  // both sides agree on corpus data; enriched chords diverge.
+  // CHORD-SHAPE PARITY (healed in phase-B B11, owner decision D-B11): the
+  // C++ shape is authoritative - only `root` moves (clamped 0..127) and
+  // every other field survives; the python mirror (training/keynorm.py
+  // shift_chords) now preserves EVERY key of the input chord dict too. The
+  // ENRICHED vector (#chord_parity.enriched) pins that from BOTH sides.
+  // Capture procedure: the output of training/keynorm.py shift_chords.
+  size_t esec = 0;
+  REQUIRE(kn_section(gtext, "enriched", esec));
+  std::vector<int> eroots, einv, eten, ewroot, ewinv, ewten;
+  int eshift = 0;
+  REQUIRE(kn_ints_after(gtext, esec, "roots", eroots));
+  REQUIRE(kn_ints_after(gtext, esec, "inversions", einv));
+  REQUIRE(kn_ints_after(gtext, esec, "tensions", eten));
+  REQUIRE(kn_ints_after(gtext, esec, "want_roots", ewroot));
+  REQUIRE(kn_ints_after(gtext, esec, "want_inversions", ewinv));
+  REQUIRE(kn_ints_after(gtext, esec, "want_tensions", ewten));
+  REQUIRE(kn_int_after(gtext, esec, "shift", eshift));
+  REQUIRE(eroots.size() == 2);
+  // Type names stay in-test spec constants (the golden holds them for the
+  // python side only); the tension list is flattened to one int per chord
+  // (-1 = no tension).
+  const std::string etypes[2] = {"maj", "min"};
+  std::vector<int> ewant_ten[2];
+  hf::core::ChordProgression eprog;
+  for (int i = 0; i < 2; ++i) {
+    hf::core::ChordSymbol c;
+    c.root = eroots[size_t(i)];
+    c.type = etypes[i];
+    c.inversion = einv[size_t(i)];
+    if (eten[size_t(i)] >= 0) c.tension.push_back(eten[size_t(i)]);
+    if (ewten[size_t(i)] >= 0) ewant_ten[i].push_back(ewten[size_t(i)]);
+    eprog.push_back(c);
+  }
+  hf::infer::shift_chords_to_canonical(eprog, eshift);
+  for (int i = 0; i < 2; ++i) {
+    CHECK(eprog[size_t(i)].root == ewroot[size_t(i)]);
+    CHECK(eprog[size_t(i)].type == etypes[i]);
+    CHECK(eprog[size_t(i)].inversion == ewinv[size_t(i)]);
+    CHECK(eprog[size_t(i)].tension == ewant_ten[i]);
+  }
 }
 
 TEST_CASE("keynorm chord shift clamps and preserves shape", "[keynorm]") {

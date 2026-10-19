@@ -78,10 +78,12 @@ sides (`tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`).
   EXACTLY its case reddens, then revert. Never regenerate by hand-editing
   expectations to fit an implementation change — the file pins the
   PRODUCER; implementation drift must redden, not rewrite.
-- **Known divergence (phase-B fix; not healed here)**: C++
-  `shift_chords_to/from_canonical` preserve type/inversion/tension in
-  place, while Python `shift_chords` rebuilds `{root, type}` dicts only and
-  DROPS inversion/tension/name keys. Corpus chords carry `{root, type}`
-  only, so both sides agree on corpus data; enriched chords diverge. Both
-  test sides pin their half LOUD (C++ clamp/shape case, Python golden
-  check); unifying either side belongs to phase-B, never to a migration.
+- **Chord shape (phase-B B11, healed)**: C++
+  `shift_chords_to/from_canonical` and Python `shift_chords` agree on the
+  chord SHAPE: ONLY `root` moves (clamped 0..127) and every other key of
+  the input chord dict (`type`, `inversion`, `tension`, `name`, ...) is
+  preserved as-is. The C++ shape is authoritative (owner decision D-B11 —
+  narrowing it would silently drop inversion/tension). The agreement over
+  an ENRICHED chord (one carrying `inversion`/`tension`/`name`) is pinned
+  from BOTH sides over `#chord_parity.enriched` of the vectors file; the
+  corpus-level parity on `{root, type}` chords is unchanged.

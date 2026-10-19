@@ -3,24 +3,26 @@
   "in_test": [
     {
       "test": "s4b keynorm note parity vectors byte-identical (tests/test_keynorm.cpp, [keynorm] 'python parity vectors are byte-identical' + training/tests/test_keynorm.py check_golden_parity_vectors)",
-      "pins": "tests/golden/keynorm_vectors.json#note_parity ids (19 words: 3 notes incl. drums pitch 38) + want (72/53 transposed) + tonic 55 / scale major / shift 5 — GOLDEN class (script-generated: captured from training/keynorm.py to_canonical on the clean tree; Release+Debug identical). Scale/type names stay in-test spec constants on the C++ side (no JSON lib in C++; ints-only reader, contract docs/TOKENIZATION.md). Round-trip/c-g/abs-ids/reject fixtures stay in-test (parameter/relational inputs, not pins).",
+      "pins": "tests/golden/keynorm_vectors.json#note_parity ids (19 words: 3 notes incl. drums pitch 38) + want (72/53 transposed) + tonic 55 / scale major / shift 5 — GOLDEN class (script-generated: captured from training/keynorm.py to_canonical on the clean tree; Release+Debug identical). Scale/type names stay in-test spec constants on the C++ side (no JSON lib in C++; ints-only reader, contract docs/TOKENIZATION.md). Round-trip/c-g/abs-ids/reject fixtures stay in-test (parameter/relational inputs, not pins). The golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched) — the note-parity values above are unchanged; the file sha is re-banked for the extension (see recapture_reason).",
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; values verified against the training/keynorm.py producer call in provenance before banking",
-      "commit": "164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
+      "commit": "30178ab phase-B tranche E B11 BASE (the golden file is EXTENDED and its sha re-banked in this tranche's B11 commit; the note-parity values are unchanged - they were captured at 164bba4) + 164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
       "produced_by": "capture: training/keynorm.py to_canonical note-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"python parity vectors are byte-identical\"",
+      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section), so the recorded file sha is re-banked; the note-parity values themselves are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
       "files": {
-        "tests/golden/keynorm_vectors.json": "7df7976c3b80d58bf51a0925d06499193ced71cdd09e457c3645c423f8ec8afb"
+        "tests/golden/keynorm_vectors.json": "c3e556e8de951febb90456ef7d8b5ffaa24654e7f6380105417d565cbd77a53b"
       }
     },
     {
       "test": "s4b keynorm chord-root parity (tests/test_keynorm.cpp, [keynorm] 'chord roots shift identically with python parity' + training/tests/test_keynorm.py check_golden_parity_vectors)",
-      "pins": "tests/golden/keynorm_vectors.json#chord_parity roots [55, 62] + types [maj, min] + shift 5 + want_roots [60, 67] — GOLDEN class (script-generated: captured from training/keynorm.py shift_chords on the clean tree). KNOWN DIVERGENCE kept loud, not healed (phase-B fix): python shift_chords rebuilds {root, type} only (drops inversion/tension), C++ preserves them in place (pinned by the clamp/shape case); corpus chords carry {root, type} only so both sides agree there.",
+      "pins": "tests/golden/keynorm_vectors.json#chord_parity roots [55, 62] + types [maj, min] + shift 5 + want_roots [60, 67] — GOLDEN class (script-generated: captured from training/keynorm.py shift_chords on the clean tree). The chord-shape divergence is HEALED in phase-B tranche E B11 (owner decision D-B11): python shift_chords now preserves EVERY key of the input chord dict (only `root` moves, same 0..127 clamp as the C++ side), so the C++ shape is authoritative; the enriched-chord vector (#chord_parity.enriched) pins the agreement over an inversion/tension/name-carrying chord from BOTH sides. Corpus chords carry {root, type} only, so the corpus-level parity is unchanged.",
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; corruption-proof per set in the task report",
-      "commit": "164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
+      "commit": "30178ab phase-B tranche E B11 BASE (the golden file is EXTENDED and its sha re-banked in this tranche's B11 commit; the {root, type} values above are unchanged - they were captured at 164bba4) + 164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
       "produced_by": "capture: training/keynorm.py shift_chords chord-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"chord roots shift identically with python parity\"",
+      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section), so the recorded file sha is re-banked; the {root, type} values above are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
       "files": {
-        "tests/golden/keynorm_vectors.json": "7df7976c3b80d58bf51a0925d06499193ced71cdd09e457c3645c423f8ec8afb"
+        "tests/golden/keynorm_vectors.json": "c3e556e8de951febb90456ef7d8b5ffaa24654e7f6380105417d565cbd77a53b"
       }
     },
     {
@@ -129,6 +131,17 @@
       "produced_by": "gen: cmake --build build-plugdbg --config Debug --target probe_b12_bounds && build-plugdbg/tests/Debug/probe_b12_bounds.exe --write tests/golden/b12_editor_bounds.json (writer source: tests/probe_b12_bounds.cpp)",
       "files": {
         "tests/golden/b12_editor_bounds.json": "f9248c2ed3827028fe42feb90ad11b568a832034f498475eed7ca4c7821c549a"
+      }
+    },
+    {
+      "test": "s4b keynorm enriched chord-shape parity (tests/test_keynorm.cpp, [keynorm] 'chord roots shift identically with python parity' (the ENRICHED half of that case) + training/tests/test_keynorm.py check_golden_parity_vectors)",
+      "pins": "tests/golden/keynorm_vectors.json#chord_parity.enriched roots [55, 62] + types [maj, min] + inversions [1, 0] + tensions [7, -1] (the per-chord tension list flattened to one int per chord; -1 = no tension) + names [Gmaj7#11, Amin] + shift 5 + want_roots [60, 67] + want_inversions [1, 0] + want_tensions [7, -1] — GOLDEN class (script-generated: captured from training/keynorm.py shift_chords on the phase-B B11 tree; the producer call is recorded in #chord_parity.enriched.provenance). The ENRICHED chord (inversion/tension/name carried) is exactly the vector the old python side dropped: the chord-shape divergence is HEALED (phase-B tranche E B11, owner decision D-B11 — python preserves every key of the input chord dict, only `root` moves with the same 0..127 clamp, the C++ shape is authoritative) and both sides now agree on it byte-for-byte. The C++ side reads the ints only (no JSON lib in C++); the type/name names stay in-test spec constants there.",
+      "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; the C++ case and the python mirror read the same vector",
+      "commit": "30178ab phase-B tranche E B11 BASE (the enriched-chord vector was captured on this tranche's B11 tree — the B11 commit is the capture commit and does not resolve yet while this record is written, so the tranche base is named here)",
+      "kind": "in_test",
+      "produced_by": "capture: training/keynorm.py shift_chords enriched-chord-parity vectors@30178ab (no in-repo writer) - tests/test_keynorm.cpp \"Capture procedure\"",
+      "files": {
+        "tests/golden/keynorm_vectors.json": "c3e556e8de951febb90456ef7d8b5ffaa24654e7f6380105417d565cbd77a53b"
       }
     }
   ],
