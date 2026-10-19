@@ -566,20 +566,17 @@ TEST_CASE("sampler FSM slot ranges match the shipped codec", "[sampler]") {
   REQUIRE(hf::infer::fsm_allowed_range(-1, lo, hi));
   CHECK(lo == 0);
   CHECK(hi == 170);
-  const int want[6][2] = {{0, 15}, {0, 15}, {0, 5}, {0, 127}, {1, 64}, {0, 7}};
+  // S4b-main T4: body-slot ranges live in tests/golden/sampler_wiring.json
+  // (shipped-codec pin, independent of the gen.h headers the S2b-4b and
+  // vocab_layout I1 cases reference).
+  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
+  REQUIRE(!sw_text.empty());
+  int want[6][2];
+  REQUIRE(sw_ranges(sw_text, want));
   for (int s = 0; s < 6; ++s) {
     REQUIRE(hf::infer::fsm_allowed_range(s, lo, hi));
     CHECK(lo == want[s][0]);
     CHECK(hi == want[s][1]);
-  }
-  // S4b-main T4 phase 1: file==literal fidelity (literals kept until green).
-  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
-  REQUIRE(!sw_text.empty());
-  int gsw[6][2];
-  REQUIRE(sw_ranges(sw_text, gsw));
-  for (int s = 0; s < 6; ++s) {
-    CHECK(gsw[s][0] == want[s][0]);
-    CHECK(gsw[s][1] == want[s][1]);
   }
   CHECK_FALSE(hf::infer::fsm_allowed_range(6, lo, hi));
   CHECK(hf::infer::fsm_slot_for_pos(0) == -1);
@@ -803,19 +800,19 @@ std::vector<std::vector<int>> encoded(
 }  // namespace
 
 TEST_CASE("wiring flag OFF keeps pre-phase history bytes", "[sampler][wiring]") {
-  // Pinned history hashes. BASELINE (2026-10-15): captured from the untouched
-  // greedy path (empty model path, flag OFF). RE-BASELINED under Task 2
-  // (determinism hardening): the candidates RNG moved std::mt19937 ->
-  // hf::infer::Pcg32, so every stream moved and all 12 hashes were re-banked
-  // (values below; determinism halves still hold; single-decision mutation
-  // red-proof in the Task-2 report). The test keeps guarding the property it
-  // was built for — any single-bit drift in the OFF path fails here —
-  // against the new baseline.
-  static const char* kPinned[3][4] = {
-      {"6394e5c6be200543", "90a9c545514d0586", "e76b47e0251d3b3c", "2c6020bcb31fca2f"},
-      {"a21658f36823a870", "2cf1714db87ffa5a", "5c25438e4ed7059f", "8dd1abcf575fd304"},
-      {"e28b231b6f1aa82a", "2301a70a31417714", "5b71abe9a9ee4d40", "0a0cbef957453031"},
-  };
+  // Pinned history hashes live in tests/golden/sampler_wiring.json#wiring
+  // (S4b-main T4; every consumer reads the file). BASELINE (2026-10-15):
+  // captured from the untouched greedy path (empty model path, flag OFF).
+  // RE-BASELINED under Task 2 (determinism hardening): the candidates RNG
+  // moved std::mt19937 -> hf::infer::Pcg32, so every stream moved and all 12
+  // hashes were re-banked (determinism halves still hold; single-decision
+  // mutation red-proof in the Task-2 report). The test keeps guarding the
+  // property it was built for — any single-bit drift in the OFF path fails
+  // here — against the new baseline.
+  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
+  REQUIRE(!sw_text.empty());
+  std::string kPinned[3][4];
+  REQUIRE(sw_digests(sw_text, kPinned));
   const auto fixtures = wiring_fixtures();
   for (size_t f = 0; f < fixtures.size(); ++f) {
     hf::infer::GenParams p = fixtures[f];
@@ -827,13 +824,6 @@ TEST_CASE("wiring flag OFF keeps pre-phase history bytes", "[sampler][wiring]") 
       CHECK(hex64(fnv1a_ids(a[static_cast<size_t>(i)])) == kPinned[f][i]);
     }
   }
-  // S4b-main T4 phase 1: file==literal fidelity (literals kept until green).
-  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
-  REQUIRE(!sw_text.empty());
-  std::string gsw[3][4];
-  REQUIRE(sw_digests(sw_text, gsw));
-  for (size_t f = 0; f < 3; ++f)
-    for (int i = 0; i < 4; ++i) CHECK(gsw[f][i] == kPinned[f][i]);
 }
 
 TEST_CASE("wiring unavailable provider falls back to greedy bytes", "[sampler][wiring]") {
