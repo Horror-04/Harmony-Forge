@@ -25,10 +25,12 @@ Rule:
     violation (the owner prunes the list).
 
 The pinned list below is the census MEASURED at S10.1 with lizard 1.24.1
-(``lizard -C 15 src``): 23 functions with CCN > 15 (the S10.1 census was 26;
+(``lizard -C 15 src``): 22 functions with CCN > 15 (the S10.1 census was 26;
 two rows were pruned on 2026-10-19 after the B9 dissection of
 ``apply_mode``/``apply_candidate_transform`` — both dropped below the
-target, so no pin is needed). Every entry records
+target, so no pin is needed; a third row was pruned on 2026-10-19 after
+the B5 dissection of ``sample_continue`` — it dropped below the target
+too, so no pin is needed). Every entry records
 the qualified name, the file, the line range, the measured CCN and a
 reason.
 """
@@ -70,7 +72,6 @@ _BASE_REASON = ("pre-existing at the S0 baseline "
 
 # (qualified name, file, start line, end line, measured CCN)
 _PIN_TABLE = [
-    ("hf::infer::sample_continue", "src/inference/sampler.cpp", 170, 352, 68),
     ("hf::music::validate_voice_leading", "src/core/music/voice_leading.cpp", 27, 102, 36),
     ("hf::ser::parse_track", "src/core/serialization/midi_read.cpp", 58, 142, 34),
     ("hf::core::merge_with_frozen", "src/core/model/selection.cpp", 159, 254, 30),

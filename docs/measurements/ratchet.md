@@ -51,7 +51,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 |---|---|---|---|---|---|---|
 | G1 | file size | `python tools/lint_file_size.py` | tracked `.h/.cpp/.py` under `src/ tests/ tools/` | RATCHET (pinned counts) + HARD (the set may not grow) | 8 files over 500 lines, all pinned | yes (`gates` job) |
 | G2 | UTF-8 | `python tools/lint_utf8.py` | every tracked file except `JUCE/` `external/` (NUL-bearing = binary, skipped) | HARD | 0 violations, 2 allowlisted paths, 12 binary files skipped | yes (`gates` job) |
-| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 23 functions over CCN 15, all pinned | yes (`gates` job, after `pip install lizard==1.24.1`) |
+| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 22 functions over CCN 15, all pinned | yes (`gates` job, after `pip install lizard==1.24.1`) |
 | G4 | off-golden literals | `python tools/lint_off_golden.py` | `tests/*.cpp` + `training/tests/*.py` | HARD (`digest64`, `hex16+` = 0) + RATCHET (per-file + TOTAL) | `digest64=0 hex16+=0 vectors=258(elems=1956) strings=61(elems=306) assert>=1000=16 toler=80` | yes (`gates` job) |
 | G5 | layers | `python tools/check_layers.py --strict` | `src/core` / `src/inference` / `src/app` | HARD | CLEAN (0 JUCE includes in `src/core`, 0 plugin/GUI includes in `src/inference`) | yes |
 | G6 | RT | `python tools/rt_scan.py --strict` | the audio-path scope of `src/plugin/audio/` | HARD | CLEAN (0 banned tokens; scope = 46 + 58 + 39 + 127 = 270 lines) | yes |
@@ -140,12 +140,11 @@ The tests, the tools and the training tree are out of scope.
 lizard is missing the tool prints a SKIP line and exits 0; with `--strict`
 (the CI mode) it exits 1. CI installs the pinned version first.
 
-**Current value.** 23 functions with CCN > 15, all pinned, none grown.
+**Current value.** 22 functions with CCN > 15, all pinned, none grown.
 Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
 |---|---|---|---|
-| `hf::infer::sample_continue` | `src/inference/sampler.cpp:170-352` | 68 | S0 baseline |
 | `hf::music::validate_voice_leading` | `src/core/music/voice_leading.cpp:27-102` | 36 | S0 baseline |
 | `hf::ser::parse_track` | `src/core/serialization/midi_read.cpp:58-142` | 34 | S0 baseline |
 | `hf::core::merge_with_frozen` | `src/core/model/selection.cpp:159-254` | 30 | S0 baseline |
@@ -179,7 +178,7 @@ Table (qualified name | file:lines | CCN | reason class):
   so these three functions have no automated shape guard today).
   (`apply_mode` and `apply_candidate_transform` left the set on
   2026-10-19 — see the prune record below.)
-* The other 22 entries carry the reason: "pre-existing at the S0 baseline
+* The other 21 entries carry the reason: "pre-existing at the S0 baseline
   (`docs/measurements/s0-lizard.csv`) — outside the S3 scope".
 * Pruned 2026-10-19 (S9.3 fix round 1): `HarmonyForgeEditor::
   HarmonyForgeEditor` — the S9.3 layout extraction dropped the constructor
@@ -197,6 +196,17 @@ Table (qualified name | file:lines | CCN | reason class):
   both 30s now under the target 15, the existing gate (a new function over
   15 must be pinned and may not grow) is the ratchet that keeps them from
   growing back. `compose_base` (16) stays pinned — D-B9 does NOT split it.
+* Pruned 2026-10-19 (phase-B tranche D, item B5): `hf::infer::sample_continue`
+  (68 -> 12) — the D-B5 dissection into named stages (`prepare_continuation`,
+  `greedy_pick`, `apply_theory_prior`, `build_allowed_set`, `apply_strict_mask`,
+  `memo_run_armed`, `apply_anti_memo`, `softmax_allowed`, `nucleus_pick`)
+  dropped it below the target 15, so no pin is needed; the dissection is a
+  PURE MOVE and the sampled bytes stay byte-identical (the gate printed the
+  prune NOTE before the row was removed). The D-B5 ceiling for
+  `src/inference/sampler.cpp` is 20; with the hotspot now at 12 the existing
+  gate (a new function over 15 must be pinned and may not grow) is the
+  ratchet that keeps it from growing back. `strict_core` (16) stays pinned —
+  D-B5 does NOT split it (that is item B4).
 
 ---
 
