@@ -71,7 +71,7 @@ hf::core::Pattern quarter_melody() {
 
 }  // namespace
 
-TEST_CASE("read_smf round-trips type-0 writer output", "[midi_read]") {
+TEST_CASE("read_smf round-trips type-0 writer output", "[midi_read][inv5]") {
   const auto bytes = hf::ser::write_smf0(quarter_melody());
   const auto r = hf::ser::read_smf(bytes);
   CHECK(r.error == hf::ser::SmfError::Ok);
@@ -89,7 +89,7 @@ TEST_CASE("read_smf round-trips type-0 writer output", "[midi_read]") {
   CHECK(notes[1].duration_ticks == 480);
 }
 
-TEST_CASE("read_smf round-trips type-1 multitrack with drums", "[midi_read]") {
+TEST_CASE("read_smf round-trips type-1 multitrack with drums", "[midi_read][inv5]") {
   hf::core::Pattern p = quarter_melody();
   hf::core::Track drums;
   drums.type = hf::core::TrackType::Drums;

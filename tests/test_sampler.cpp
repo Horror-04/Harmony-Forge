@@ -378,7 +378,7 @@ TEST_CASE("sampler tiny temperature pins the stub argmax", "[sampler]") {
   }
 }
 
-TEST_CASE("sampler memo block run=2 turns away from recitation", "[sampler]") {
+TEST_CASE("sampler memo block run=2 turns away from recitation", "[sampler][inv4]") {
   const int kNote[6] = {0, 0, 1, 60, 4, 4};
   std::vector<int> prefix = {4};
   for (int k = 0; k < 4; ++k)
@@ -650,7 +650,7 @@ TEST_CASE("sampler provider failure surfaces false, never throws", "[sampler]") 
                                          scratch));
 }
 
-TEST_CASE("sampler reuses the shipped memo index loader", "[sampler]") {
+TEST_CASE("sampler reuses the shipped memo index loader", "[sampler][inv4]") {
   auto loaded = hf::infer::load_memo_index(HARMONY_FORGE_MEMO_INDEX);
   REQUIRE(loaded.has_value());
   REQUIRE(!loaded->empty());

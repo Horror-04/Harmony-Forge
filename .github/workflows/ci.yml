@@ -26,6 +26,12 @@ jobs:
       - name: Golden pin lint (frozen bitmap pin, NEVER-REGENERATE)
         run: python tools/lint_golden_pin.py
 
+      - name: Invariant tag lint (named [inv1]-[inv5] bindings)
+        # Stdlib only, seconds: every INVARIANTS.md-bound TEST_CASE carries
+        # its [invN] tag (tools/lint_inv_tags.py, in-script map). Blocking:
+        # non-zero fails the job, same shape as the golden pin lint.
+        run: python tools/lint_inv_tags.py
+
       - name: Sealed-test isolation grep
         # No training/eval code may reference the sealed split. The only
         # legitimate references are the one-time producer
@@ -55,6 +61,12 @@ jobs:
         # Runs AFTER the vocab check (same gate family) and BEFORE build so
         # a tampered frozen golden fails fast. Blocking: non-zero fails job.
         run: python tools/lint_golden_pin.py
+
+      - name: Invariant tag lint (named [inv1]-[inv5] bindings)
+        # Stdlib only, seconds: every INVARIANTS.md-bound TEST_CASE carries
+        # its [invN] tag (tools/lint_inv_tags.py). Runs AFTER the golden pin
+        # (same gate family) and BEFORE build. Blocking: non-zero fails job.
+        run: python tools/lint_inv_tags.py
 
       - name: Configure
         run: cmake -S . -B build -DHARMONY_FORGE_BUILD_PLUGIN=ON

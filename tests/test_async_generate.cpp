@@ -124,7 +124,7 @@ TEST_CASE("model path sanitise keeps only existing .onnx files", "[async]") {
   std::filesystem::remove(upper_ext, ec);
 }
 
-TEST_CASE("async completion is bit-identical to the sync path", "[async]") {
+TEST_CASE("async completion is bit-identical to the sync path", "[async][inv1]") {
   const auto params = seed7_params();  // empty model path == fallback
   const auto expected = hf::infer::generate_candidates(params);
   const auto expected_prog = hf::infer::progression_for_params(params);
@@ -155,7 +155,7 @@ TEST_CASE("rapid regenerates supersede: latest wins, no crash", "[async]") {
   CHECK(encoded(got->candidates) == encoded(hf::infer::generate_candidates(latest)));
 }
 
-TEST_CASE("fake-latency runner proves the flow is non-blocking", "[async]") {
+TEST_CASE("fake-latency runner proves the flow is non-blocking", "[async][inv1]") {
   auto runner = std::make_shared<FakeLatencyRunner>();
   hf::infer::AsyncGenerateQueue q(runner, 1);
 
@@ -173,7 +173,7 @@ TEST_CASE("fake-latency runner proves the flow is non-blocking", "[async]") {
   CHECK(encoded(got->candidates) == encoded(expected));
 }
 
-TEST_CASE("model path threads into generation deterministically", "[async]") {
+TEST_CASE("model path threads into generation deterministically", "[async][inv2]") {
   auto params = seed7_params();
   params.model_path = HARMONY_FORGE_MOCK_MODEL;
 

@@ -321,7 +321,7 @@ TEST_CASE("seed history is bounded and ordered", "[selection][sprint5]") {
   CHECK(h.empty());
 }
 
-TEST_CASE("smf1 round-trips sequential starts and durations", "[selection][sprint5][fix1]") {
+TEST_CASE("smf1 round-trips sequential starts and durations", "[selection][sprint5][fix1][inv5]") {
   // F1: the writer must accumulate absolute time across on AND off events.
   // Sequential quarters {60@0/480, 62@480/480} must parse back to starts
   // {0, 480} — the old cursor (never advanced past offs) emitted the second
@@ -341,7 +341,7 @@ TEST_CASE("smf1 round-trips sequential starts and durations", "[selection][sprin
   CHECK(notes[1].duration == 480);
 }
 
-TEST_CASE("smf1 round-trips overlapping chord notes", "[selection][sprint5][fix1]") {
+TEST_CASE("smf1 round-trips overlapping chord notes", "[selection][sprint5][fix1][inv5]") {
   // On/off interleave: {60@0/960, 64@0/960, 67@480/480} must parse back
   // exactly (offs-before-ons at shared ticks).
   hf::core::Pattern p;
@@ -384,7 +384,7 @@ TEST_CASE("frozen bar merge keeps start_tick order", "[selection][sprint5][fix1]
     CHECK(notes[static_cast<size_t>(i)].pitch == base.tracks[0].notes[i].pitch);
 }
 
-TEST_CASE("smf1 multitrack export carries channels", "[selection][sprint5]") {
+TEST_CASE("smf1 multitrack export carries channels", "[selection][sprint5][inv5]") {
   hf::infer::GenParams gp;
   gp.mode = hf::infer::GenMode::Strict;
   gp.seed = 7;
@@ -419,7 +419,7 @@ TEST_CASE("smf1 multitrack export carries channels", "[selection][sprint5]") {
   CHECK(saw_drums);
 }
 
-TEST_CASE("smf1 writer clamps hostile notes", "[selection][sprint5][phase2]") {
+TEST_CASE("smf1 writer clamps hostile notes", "[selection][sprint5][phase2][inv5]") {
   // Phase 2 Task 1 (B2): defensive clamps in write_smf1 (tick >= 0,
   // pitch 0..127, duration >= 1). Hostile input must round-trip clamped,
   // never emit negative-delta VLQs or masked pitches.

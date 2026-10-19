@@ -78,7 +78,7 @@ TEST_CASE("Strict compliance holds across keys and modes", "[candidates][sprint3
   }
 }
 
-TEST_CASE("same seed gives bit-identical candidates", "[candidates][sprint3]") {
+TEST_CASE("same seed gives bit-identical candidates", "[candidates][sprint3][inv2]") {
   const auto params = strict_params();  // pinned seed 7 (see below)
   const auto a = hf::infer::generate_candidates(params);
   const auto b = hf::infer::generate_candidates(params);

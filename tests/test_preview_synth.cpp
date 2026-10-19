@@ -24,7 +24,7 @@ float blockPeak(PreviewSynth& synth, int samples) {
   return peak;
 }
 
-TEST_CASE("preview synth renders audible tone while held", "[preview_synth]") {
+TEST_CASE("preview synth renders audible tone while held", "[preview_synth][inv1]") {
   PreviewSynth synth;
   synth.prepare(44100.0);
   // Silence before any note.
@@ -34,7 +34,7 @@ TEST_CASE("preview synth renders audible tone while held", "[preview_synth]") {
   CHECK(peak > 0.01f);
 }
 
-TEST_CASE("preview synth decays after noteOff", "[preview_synth]") {
+TEST_CASE("preview synth decays after noteOff", "[preview_synth][inv1]") {
   PreviewSynth synth;
   synth.prepare(44100.0);
   synth.noteOn(64, 0.9f);

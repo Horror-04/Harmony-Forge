@@ -167,7 +167,7 @@ TEST_CASE("arrangement key continuity (strict energy fully in-scale)", "[arrange
   }
 }
 
-TEST_CASE("arrangement build is deterministic", "[arrangement]") {
+TEST_CASE("arrangement build is deterministic", "[arrangement][inv3]") {
   hf::arr::Arrangement arr;
   arr.sections.push_back({hf::arr::SectionType::Intro, 2, 0.5f, 0.3f, 7});
   arr.sections.push_back({hf::arr::SectionType::Chorus, 2, 0.8f, 0.2f, 9});

@@ -80,7 +80,7 @@ hf::infer::MemoIndex index_of_windows(const std::vector<int>& ids, size_t first,
 
 }  // namespace
 
-TEST_CASE("verbatim run is truncated at the offending window", "[memo]") {
+TEST_CASE("verbatim run is truncated at the offending window", "[memo][inv4]") {
   const auto pat = melody_pattern(8, 60);
   const auto ids = hf::ser::encode_pattern(pat);
   REQUIRE(ids.size() == 1 + 8 * 6);
@@ -99,7 +99,7 @@ TEST_CASE("verbatim run is truncated at the offending window", "[memo]") {
   CHECK(longest_run(out, idx) < kMinRun);  // the §10 guarantee
 }
 
-TEST_CASE("clean generation passes through byte-identical", "[memo]") {
+TEST_CASE("clean generation passes through byte-identical", "[memo][inv4]") {
   const auto pat = melody_pattern(8, 60);
   const auto ids = hf::ser::encode_pattern(pat);
   const auto other = melody_pattern(8, 90);  // disjoint pitch windows
@@ -111,7 +111,7 @@ TEST_CASE("clean generation passes through byte-identical", "[memo]") {
   CHECK(hf::ser::encode_pattern(filtered) == ids);
 }
 
-TEST_CASE("missing index file loads nullopt and never throws", "[memo]") {
+TEST_CASE("missing index file loads nullopt and never throws", "[memo][inv4]") {
   std::optional<hf::infer::MemoIndex> got;
   REQUIRE_NOTHROW(got = hf::infer::load_memo_index("no_such_memo_index.bin"));
   CHECK_FALSE(got.has_value());
@@ -126,7 +126,7 @@ TEST_CASE("missing index file loads nullopt and never throws", "[memo]") {
   CHECK(hf::ser::encode_pattern(filtered) == ids);
 }
 
-TEST_CASE("memo filter is deterministic", "[memo]") {
+TEST_CASE("memo filter is deterministic", "[memo][inv2][inv4]") {
   const auto pat = melody_pattern(8, 60);
   const auto ids = hf::ser::encode_pattern(pat);
   const auto idx = index_of_windows(ids, 0, 4);
@@ -136,7 +136,7 @@ TEST_CASE("memo filter is deterministic", "[memo]") {
   CHECK(hf::ser::encode_pattern(a) == hf::ser::encode_pattern(b));
 }
 
-TEST_CASE("drums are untouched by the memo filter", "[memo]") {
+TEST_CASE("drums are untouched by the memo filter", "[memo][inv4]") {
   auto pat = melody_pattern(8, 60);
   hf::core::Track drums;
   drums.type = hf::core::TrackType::Drums;
@@ -177,7 +177,7 @@ TEST_CASE("drums are untouched by the memo filter", "[memo]") {
   CHECK(melody_notes == 1);
 }
 
-TEST_CASE("loader round-trips the binary format and rejects garbage", "[memo]") {
+TEST_CASE("loader round-trips the binary format and rejects garbage", "[memo][inv4]") {
   // Minimal valid file written by hand: 2 windows.
   const std::string tmp =
       (std::filesystem::temp_directory_path() / "hf_memo_probe.bin").string();
@@ -214,7 +214,7 @@ TEST_CASE("loader round-trips the binary format and rejects garbage", "[memo]") 
   std::remove(bad.c_str());
 }
 
-TEST_CASE("committed training index loads (smoke)", "[memo]") {
+TEST_CASE("committed training index loads (smoke)", "[memo][inv4]") {
   auto idx = hf::infer::load_memo_index(HARMONY_FORGE_MEMO_INDEX);
   REQUIRE(idx.has_value());
   CHECK(idx->size() > 1000);  // exact count owned by the exporter
@@ -314,7 +314,7 @@ int longest_run_vs(const std::vector<int>& ids,
 }  // namespace
 
 TEST_CASE("index path resolves to sibling, bare names to the working dir",
-          "[memo]") {
+          "[memo][inv4]") {
   std::string got;
   REQUIRE_NOTHROW(got = hf::infer::memo_index_path_for_model(""));
   CHECK(got.empty());  // no model -> never filtered
@@ -332,7 +332,7 @@ TEST_CASE("index path resolves to sibling, bare names to the working dir",
 }
 
 TEST_CASE("wired path truncates reciting model output, stays deterministic",
-          "[memo]") {
+          "[memo][inv4]") {
   EchoRunner echo;
   // Reference: no model configured -> hook is a no-op.
   const auto ref = hf::infer::generate_candidates_with_runner(
@@ -385,7 +385,7 @@ TEST_CASE("wired path truncates reciting model output, stays deterministic",
   std::filesystem::remove_all(dir, ec);
 }
 
-TEST_CASE("wired path without sibling index is byte-identical", "[memo]") {
+TEST_CASE("wired path without sibling index is byte-identical", "[memo][inv4]") {
   EchoRunner echo;
   const auto ref = hf::infer::generate_candidates_with_runner(
       wired_params(""), echo);
@@ -404,7 +404,7 @@ TEST_CASE("wired path without sibling index is byte-identical", "[memo]") {
   std::filesystem::remove_all(dir, ec);
 }
 
-TEST_CASE("override with empty path filters via the working dir", "[memo]") {
+TEST_CASE("override with empty path filters via the working dir", "[memo][inv4]") {
   EchoRunner echo;
   // Precondition: no index next to the test working directory.
   CHECK_FALSE(
@@ -461,7 +461,7 @@ TEST_CASE("override with empty path filters via the working dir", "[memo]") {
   std::filesystem::remove_all(dir_miss, ec);
 }
 
-TEST_CASE("bare model filename resolves via the working dir", "[memo]") {
+TEST_CASE("bare model filename resolves via the working dir", "[memo][inv4]") {
   // Precondition: no index next to the test working directory.
   CHECK_FALSE(
       hf::infer::load_memo_index("memo_index.bin").has_value());

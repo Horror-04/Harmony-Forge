@@ -406,7 +406,7 @@ TEST_CASE("keynorm rejects bad buffers without throwing", "[keynorm]") {
 }
 
 TEST_CASE("keynorm flag-off generate path is bit-identical to pre-task output",
-          "[keynorm]") {
+          "[keynorm][inv3]") {
   // Default flag OFF: the hook is inert, so existing golden behavior cannot
   // drift (pinned here against the with_runner echo path too).
   hf::infer::GenParams off = gmajor_params();

@@ -121,3 +121,58 @@ hostile notes", "read_smf round-trips type-0 writer output",
 "read_smf round-trips type-1 multitrack with drums".
 
 CI: `build-test-validate`, step `Test`.
+
+## Case-level binding (S4b-main T7, Catch2 tags [inv1]–[inv5])
+
+The binary rows above remain authoritative for CI. Since S4b-main T7 each
+bound case ALSO carries a named `[invN]` tag (appended to its suite tag,
+never replacing it), so coverage is pinned to test names instead of binary
+granularity alone. Tag discipline: the tagged set is EXACTLY the
+spot-check + "Also covered" case strings named in this doc — no extras.
+Enforcement: `tools/lint_inv_tags.py` (in-script expected map, same
+blocking shape as `tools/lint_golden_pin.py`; missing tag FAILS) wired as
+a blocking step in the `gates` and `build-test-validate` CI jobs.
+
+| inv | TEST_CASE (why it pins the invariant) |
+|---|---|
+| inv1 | "fake-latency runner proves the flow is non-blocking" — 50 ms worker sleep is invisible to the submitter (submit returns without running inference on the caller thread) |
+| inv1 | "async completion is bit-identical to the sync path" — background-queue handoff preserves bytes (audio reads pre-generated MIDI, generation runs off-thread) |
+| inv1 | "preview synth renders audible tone while held" — preview voice lifecycle (prepare/noteOn/render) produces output without blocking (plugin-ON only; source-level tag, no off build by design) |
+| inv1 | "preview synth decays after noteOff" — note-off teardown releases cleanly (plugin-ON only; same portability note) |
+| inv2 | "same seed gives bit-identical candidates" — spot-check; fixed seed reproduces candidates exactly |
+| inv2 | "model path threads into generation deterministically" — configured model path still yields identical outputs incl. async == sync |
+| inv2 | "memo filter is deterministic" — same Pattern + same index gives identical results (shared with inv4) |
+| inv3 | "keynorm flag-off generate path is bit-identical to pre-task output" — spot-check; refactor left default-path bytes unchanged |
+| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 251/251 full + 221/221 off) |
+| inv4 | "verbatim run is truncated at the offending window" — spot-check; first >= 4-window run is cut before the completing token |
+| inv4 | "clean generation passes through byte-identical" — clean input untouched |
+| inv4 | "missing index file loads nullopt and never throws" — empty/missing index is a safe no-op, never throws |
+| inv4 | "drums are untouched by the memo filter" — drums excluded and reattached byte-identical |
+| inv4 | "loader round-trips the binary format and rejects garbage" — index loader totality |
+| inv4 | "committed training index loads (smoke)" — shipped index loads |
+| inv4 | "index path resolves to sibling, bare names to the working dir" — path resolution rule |
+| inv4 | "wired path truncates reciting model output, stays deterministic" — end-to-end SPEC section 10 guarantee on final candidates |
+| inv4 | "wired path without sibling index is byte-identical" — missing sibling index is a safe no-op |
+| inv4 | "override with empty path filters via the working dir" — override-path rule + byte-identical fallback |
+| inv4 | "bare model filename resolves via the working dir" — bare-name resolution rule |
+| inv4 | "sampler memo block run=2 turns away from recitation" — sampler-level memo-ban enforcement |
+| inv4 | "sampler reuses the shipped memo index loader" — sampler consumes the shipped loader (policy wiring) |
+| inv5 | "smf1 round-trips sequential starts and durations" — spot-check; writer output parses back exactly |
+| inv5 | "smf1 round-trips overlapping chord notes" — on/off interleave round-trips exactly |
+| inv5 | "smf1 multitrack export carries channels" — multitrack export carries per-track channels incl. drums |
+| inv5 | "smf1 writer clamps hostile notes" — hostile input clamped, never corrupt |
+| inv5 | "read_smf round-trips type-0 writer output" — type-0 writer output reads back exactly |
+| inv5 | "read_smf round-trips type-1 multitrack with drums" — type-1 multitrack with drums reads back exactly |
+
+Considered and NOT tagged (binding stays 1:1 with the case strings named
+above): "all modes are deterministic and capped" / "rank is deterministic"
+(inv2-flavoured but unnamed in INV-2); "rapid regenerates supersede" /
+"shutdown waits for the in-flight job" (inv1-flavoured but unnamed);
+"sampler runs only via the background worker" (inv1-flavoured, lives in
+test_sampler, unnamed in INV-1); extra read_smf edge cases (unnamed in
+INV-5); "arrangement build is deterministic" carries [inv3] only (its
+determinism is cited as the INV-3 behavior gate, not INV-2 generation
+determinism). Portability: test_preview_synth is plugin-ON gated (no off
+build, tests/CMakeLists.txt); tags are inert Catch2 metadata that travel
+with the case wherever it builds, and the lint is source-level, so no
+per-suite presence is required of full-only cases.
