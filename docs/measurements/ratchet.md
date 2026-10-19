@@ -57,7 +57,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G6 | RT | `python tools/rt_scan.py --strict` | the audio-path scope of `src/plugin/audio/` | HARD | CLEAN (0 banned tokens; scope = 46 + 58 + 39 + 127 = 270 lines) | yes |
 | G7 | golden pin | `python tools/lint_golden_pin.py` | `tests/golden/slot_bitmap.txt` + `tests/golden/manifest.json` | HARD | PASS, canonical sha `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` | yes (both jobs) |
 | G8 | invariant tags | `python tools/lint_inv_tags.py` | the `[inv1]`..`[inv5]`-tagged TEST_CASEs | HARD | PASS, 29 bindings / 5 invariants | yes (both jobs) |
-| G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 20 records (capture=14, gen=5, mixed=1) | yes |
+| G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 21 records (capture=14, gen=6, mixed=1) | yes |
 | G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **251** | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 
@@ -259,7 +259,7 @@ to be an advisory `continue-on-error` step in the build job).
 | G6 RT (`rt_scan.py --strict`) | HARD | `RT-SCAN CLEAN` (270 lines of audio-path scope) | none |
 | G7 golden pin (`lint_golden_pin.py`) | HARD | PASS, canonical sha `d66faabf…7854f58` | none — NEVER regenerate; the pin lives in the tool, so a manifest+bitmap co-edit cannot pass |
 | G8 invariant tags (`lint_inv_tags.py`) | HARD | PASS, 29 bindings / 5 invariants | none — the mapping lives in the tool |
-| G9 golden manifest (`lint_golden_manifest.py`) | HARD | PASS, 20 records (capture=14, gen=5, mixed=1) | the tool's own reasoned exclusion list (files under `tests/golden/**` + `tests/fixtures/**` that are deliberately unregistered) |
+| G9 golden manifest (`lint_golden_manifest.py`) | HARD | PASS, 21 records (capture=14, gen=6, mixed=1) | the tool's own reasoned exclusion list (files under `tests/golden/**` + `tests/fixtures/**` that are deliberately unregistered) |
 | G11 sealed isolation (the `sealed-grep` step) | HARD | CLEAN | only `training/ingest/carve_sealed.py` (the one-time producer) and `training/tests/test_sealed.py` (the verifier) may mention `sealed_test` |
 
 ---
