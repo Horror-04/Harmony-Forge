@@ -197,6 +197,8 @@ struct SampleCtx {
   SamplerScratch& scratch;   // the caller-owned working buffers
   long long floor;           // prefix_n - 7 (the memo window floor)
   bool do_memo;              // the anti-memo block is armed
+  float t;                   // the hoisted temperature
+  float lam;                 // the hoisted lambda_theory
   int acount;                // the size of the current allowed set
 };
 
@@ -231,7 +233,7 @@ int greedy_pick(const float* raw) {
 void apply_theory_prior(SampleCtx& ctx, size_t len) {
   float* adj = ctx.scratch.adj.data();
   for (int i = 0; i < kSamplerVocab; ++i) adj[i] = ctx.scratch.logits[i];
-  const float lam = ctx.cfg.lambda_theory;
+  const float lam = ctx.lam;
   if (lam > 0.0f) {
     const int sc = strict_core(ctx.out, len, ctx.meta.tonic, ctx.scratch,
                                 ctx.scratch.strict_buf.data());
@@ -340,7 +342,7 @@ void softmax_allowed(SampleCtx& ctx) {
   const float* adj = ctx.scratch.adj.data();
   const int* allowed = ctx.scratch.allowed.data();
   const int acount = ctx.acount;
-  const float t = ctx.cfg.temperature;
+  const float t = ctx.t;
   float mx = adj[allowed[0]];
   for (int i = 1; i < acount; ++i)
     if (adj[allowed[i]] > mx) mx = adj[allowed[i]];
@@ -413,7 +415,9 @@ bool sample_continue(ISamplerLogits& logits, const int* prefix, size_t prefix_n,
     Pcg32 rng(seed);
     const bool do_memo =
         cfg.memo_block_run >= 1 && meta.memo != nullptr && !meta.memo->empty();
-    SampleCtx ctx{meta, cfg, out, stats, scratch, floor, do_memo, 0};
+    const float t = cfg.temperature;
+    const float lam = cfg.lambda_theory;
+    SampleCtx ctx{meta, cfg, out, stats, scratch, floor, do_memo, t, lam, 0};
 
     for (int step = 0; step < kSamplerGenTokens; ++step) {
       if (len >= kMaxTotal) break;
