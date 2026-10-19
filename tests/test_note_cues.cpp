@@ -199,14 +199,18 @@ TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
   juce::UndoManager undo;
   // (note, expected ARGB): chord green, scale blue, chromatic purple — all
   // with the Cmaj bar-0 chord, tonic 60 / major (the roll defaults). Values
-  // are the Phase 7 palette (design 2.1).
+  // are the Phase 7 palette (design 2.1), read from
+  // tests/golden/ui_palette.json (S4b-main T5 phase 2: file-only reads).
+  const std::uint32_t f_chord = pal_require_argb("chord");
+  const std::uint32_t f_scale = pal_require_argb("scale");
+  const std::uint32_t f_chrom = pal_require_argb("chromatic");
   const struct {
     hf::core::Note note;
     std::uint32_t argb;
   } cases[] = {
-      {{60, 0, 480, 90}, 0xff57b15c},
-      {{62, 0, 480, 90}, 0xff4c8dff},
-      {{61, 240, 480, 90}, 0xffb07ce8},
+      {{60, 0, 480, 90}, f_chord},
+      {{62, 0, 480, 90}, f_scale},
+      {{61, 240, 480, 90}, f_chrom},
   };
   for (const auto& tc : cases) {
     auto doc = make_doc(undo, {tc.note}, {{60, "maj"}});
@@ -219,15 +223,10 @@ TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
     // Selected solid notes are opaque: the center pixel IS the literal.
     CHECK(img.getPixelAt(cx, cy) == juce::Colour(tc.argb));
   }
-  // S4b-main T5 phase 1 fidelity: file values match the literals above.
-  CHECK(pal_require_argb("chord") == cases[0].argb);
-  CHECK(pal_require_argb("scale") == cases[1].argb);
-  CHECK(pal_require_argb("chromatic") == cases[2].argb);
   // Drums stay neutral (never classified), also opaque when selected.
   {
-    const juce::Colour drums_pin(0xff8f97a6);  // literal kept (phase 2: file)
     const std::uint32_t f_drums = pal_require_argb("drums");
-    CHECK(juce::Colour(f_drums) == drums_pin);  // fidelity, literal-free
+    const juce::Colour drums_pin(f_drums);  // file-only (S4b-main T5)
     auto doc =
         make_doc(undo, {{36, 0, 120, 110}}, {{60, "maj"}}, hf::core::TrackType::Drums);
     select_all(*doc, 1);
@@ -246,6 +245,7 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
   // the treatment, not the classifier.
   CHECK(hf::core::classify_note(61, 1920, nullptr, 60, "major") ==
         hf::core::NoteClass::Tension);
+  const std::uint32_t f_lane = pal_require_argb("lane");  // file (T5)
   for (bool selected : {false, true}) {
     auto doc = make_doc(undo, {{61, 1920, 480, 90}}, {{60, "maj"}});
     if (selected) select_all(*doc, 1);
@@ -256,9 +256,8 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const int cy = static_cast<int>(r.getY() + r.getHeight() / 2.0f);
     // Interior shows the (black-key, 61 = C#) lane: nothing fills it, with or
     // without the selection frame (the frame never reaches the center).
-    const juce::Colour lane_pin(0xff101216);  // literal kept (phase 2: file)
+    const juce::Colour lane_pin(f_lane);  // file-only (S4b-main T5)
     CHECK(img.getPixelAt(cx, cy) == lane_pin);
-    CHECK(juce::Colour(pal_require_argb("lane")) == lane_pin);  // fidelity
   }
   // Unselected hollow edge: the class-colour outline is drawn (dimmed by the
   // standard 0.85 unselected alpha, so pinned as "drawn, not lane" rather
@@ -276,12 +275,10 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Colour edge =
         img.getPixelAt(static_cast<int>(r.getX() + r.getWidth() / 2.0f),
                        static_cast<int>(r.getY()));
-    const juce::Colour lane_pin(0xff101216);  // literal kept (phase 2: file)
-    const juce::Colour sel_pin(0xffffffff);  // literal kept (phase 2: file)
+    const juce::Colour lane_pin(f_edge_lane);  // file-only (S4b-main T5)
+    const juce::Colour sel_pin(f_edge_sel);  // file-only (S4b-main T5)
     CHECK(edge != lane_pin);
     CHECK(edge != sel_pin);
-    CHECK(juce::Colour(f_edge_lane) == lane_pin);  // fidelity
-    CHECK(juce::Colour(f_edge_sel) == sel_pin);  // fidelity
   }
   // Conflict: F on a strong beat against Cmaj — hatched red (opaque when
   // selected, so the base pixels are exact).
@@ -295,7 +292,7 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Rectangle<int> band(static_cast<int>(r.getX()) + 6,
                                     static_cast<int>(r.getY()) + 2,
                                     static_cast<int>(r.getWidth()) - 12, 2);
-    const juce::Colour conflict_pin(0xffe5484d);  // kept (phase 2: file)
+    const juce::Colour conflict_pin(pal_require_argb("conflict"));  // file
     const int base = count_matching(img, band, conflict_pin);
     int stripe = 0;
     for (int y = band.getY(); y < band.getBottom(); ++y)
@@ -303,7 +300,6 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
         if (img.getPixelAt(x, y) != conflict_pin) ++stripe;
     CHECK(base > 20);
     CHECK(stripe > 20);
-    CHECK(juce::Colour(pal_require_argb("conflict")) == conflict_pin);  // fid
   }
 }
 
@@ -335,8 +331,7 @@ TEST_CASE("selection is solid, frozen is dashed", "[cues][task3]") {  juce::Undo
   CHECK(dashes > 5);
   // Selected note: continuous solid white run (opaque 2 px stroke).
   {
-    const juce::Colour sel_pin(0xffffffff);  // literal kept (phase 2: file)
-    CHECK(juce::Colour(pal_require_argb("selected")) == sel_pin);  // fidelity
+    const juce::Colour sel_pin(pal_require_argb("selected"));  // file (T5)
     auto doc2 = make_doc(undo, {{60, 0, 480, 90}}, {{60, "maj"}});
     select_all(*doc2, 1);
     PianoRoll roll2(*doc2);

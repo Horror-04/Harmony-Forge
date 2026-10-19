@@ -135,20 +135,14 @@ int argmax256(const float* v) {
   return best;
 }
 
-// Frozen val-head prefixes (training/corpus/val.jsonl, midpoint cut per
-// training/validate_logits.py::_prefix), recorded in-test 2026-10-15.
+// Frozen val-head prefixes (tests/golden/ort_prefixes.json, S4b-main T5
+// phase 2: file-only reads; provenance in the file's doc field).
 std::vector<std::vector<int>> frozen_prefixes() {
-  return {
-      // composed-O-k0 (91 ids -> 43-id prefix).
-      {15, 0, 0, 1, 74, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 71, 4, 5, 0, 12, 1,
-       72, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 76, 4, 5, 1, 8, 1, 74, 8, 5},
-      // composed-O-k1 (91 ids -> 43-id prefix).
-      {15, 0, 0, 1, 79, 4, 5, 0, 4, 1, 77, 4, 5, 0, 8, 1, 76, 4, 5, 0, 12, 1,
-       77, 4, 5, 1, 0, 1, 79, 4, 5, 1, 4, 1, 81, 4, 5, 1, 8, 1, 79, 8, 5},
-      // composed-P-k0 (91 ids -> 43-id prefix).
-      {15, 0, 0, 1, 71, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 74, 4, 5, 0, 12, 1,
-       76, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 72, 4, 5, 1, 8, 1, 71, 8, 5},
-  };
+  std::vector<std::vector<int>> out;
+  out.push_back(op_require_prefix("composed-O-k0"));
+  out.push_back(op_require_prefix("composed-O-k1"));
+  out.push_back(op_require_prefix("composed-P-k0"));
+  return out;
 }
 
 // Procedural whole-note prefixes (valid slot ids throughout), recorded
@@ -246,10 +240,6 @@ TEST_CASE("ort logits argmax matches greedy model.onnx on frozen + procedural pr
   const auto procedural = procedural_prefixes();
   fixtures.insert(fixtures.end(), procedural.begin(), procedural.end());
   REQUIRE(fixtures.size() >= 5);
-  // S4b-main T5 phase 1 fidelity: file prefixes match the literals above.
-  CHECK(op_require_prefix("composed-O-k0") == fixtures[0]);
-  CHECK(op_require_prefix("composed-O-k1") == fixtures[1]);
-  CHECK(op_require_prefix("composed-P-k0") == fixtures[2]);
   for (const auto& pre : fixtures) {
     std::array<float, 256> lg{};
     REQUIRE(prov.get_logits(pre.data(), pre.size(), lg.data()));
