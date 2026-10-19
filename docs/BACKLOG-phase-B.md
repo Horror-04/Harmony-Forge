@@ -1281,3 +1281,9 @@ ruling cites a standing rule, the rule is quoted, not extended.
     `tests/golden/b12_editor_bounds.json` + the manifest record "b12 editor-layout bounds
     guard headless (tests/probe_b12_bounds.cpp, explicit probe binary run from the repo root;
     NOT ctest-registered)"); extraction is the next tracked task under B12's acceptance criteria.
+  - 2026-10-19 scope (b)/(c): ceiling = **re-scoped budget, Editor total (.h+.cpp) ≤1050
+    physical lines AND .cpp max-CCN ≤9** (S3 "≤300/≤120" were goals, not gates; layout is
+    ~355 NLOC so 1370−~350≈1020 — ceiling 1050 total with a +5% record-with-reason tolerance
+    instead of churn; the .cpp alone is 1046 today so the ceiling bites only as a total); ownership = a
+    **dedicated layout unit** beside the editor (cross-panel layout belongs in no single panel
+    header; panel headers stay untouched).
