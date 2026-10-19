@@ -440,6 +440,36 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     HARMONY_FORGE_B12_BOUNDS="${CMAKE_SOURCE_DIR}/tests/golden/b12_editor_bounds.json")
   hf_copy_ort_runtime(probe_b12_bounds)
 endif()
+# Probe S93 (fix round 2, ruling S93-3, tab-wiring probe for the S9.3
+# onClick incident). Deliberately NOT registered with catch_discover_tests:
+# the binary never appears in `ctest -N` (counters stay 221/251). Plain
+# main() wiring probe (public child APIs only, no product change), run
+# explicitly. CI integration is future work. No existing target touched.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(probe_s93_tab_wiring probe_s93_tab_wiring.cpp
+    ../src/plugin/audio/PluginProcessor.cpp
+    ../src/plugin/audio/PluginEditor.cpp
+    ../src/plugin/audio/PreviewSynth.cpp
+    ../src/plugin/audio/RtViolationCounter.cpp
+    ../src/plugin/controllers/PreviewController.cpp
+    ../src/plugin/controllers/PreviewScheduler.cpp
+    ../src/plugin/state/PluginState.cpp
+    ../src/plugin/ui/PatternDocument.cpp
+    ../src/plugin/ui/PianoRoll.cpp
+    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/CandidateBar.cpp
+    ../src/plugin/ui/ArrangeBar.cpp
+    ../src/plugin/ui/ExplainView.cpp
+    ../src/plugin/ui/HFLookAndFeel.cpp
+    ../src/plugin/ui/EditorLayout.cpp)
+  target_link_libraries(probe_s93_tab_wiring PRIVATE
+    harmony_forge_core harmony_forge_inference harmony_forge_app
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
+    juce::juce_gui_basics juce::juce_audio_basics juce::juce_data_structures)
+  target_include_directories(probe_s93_tab_wiring PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(probe_s93_tab_wiring PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(probe_s93_tab_wiring)
+endif()
 # Phase 4 Task 4: real-model + committed-index e2e (nightly-only material).
 # Deliberately NOT registered with catch_discover_tests: the binary never
 # appears in `ctest -N`, so the default fast suite keeps its count and
