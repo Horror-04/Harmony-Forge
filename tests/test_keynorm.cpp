@@ -12,8 +12,9 @@
 // equals the mask over absolute ids + absolute meta — pinned below.
 // (An earlier header revision claimed chord behavior before the API
 // existed; this header now describes the implemented + tested behavior.)
-// Cross-language parity vectors below were produced by
-// training/keynorm.py (see task report) and are pinned byte-identical.
+// Cross-language parity vectors live in tests/golden/keynorm_vectors.json
+// (provenance: training/keynorm.py; contract: docs/TOKENIZATION.md) and are
+// pinned byte-identical from both readers (here + training/tests/test_keynorm.py).
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
@@ -172,17 +173,26 @@ TEST_CASE("keynorm canonical shift matches python over all tonics", "[keynorm]")
 }
 
 TEST_CASE("keynorm python parity vectors are byte-identical", "[keynorm]") {
-  // Produced by training/keynorm.py to_canonical([3, 0,0,1,67,4,5,
-  // 0,4,5,38,1,3, 0,0,2,48,4,6], 55, 'major') -> shift 5.
-  const std::vector<int> ids = {3, 0, 0, 1, 67, 4, 5, 0, 4, 5, 38,
-                                1, 3, 0, 0, 2, 48, 4, 6};
-  const std::vector<int> want = {3, 0, 0, 1, 72, 4, 5, 0, 4, 5, 38,
-                                 1, 3, 0, 0, 2, 53, 4, 6};
+  // Vectors live in tests/golden/keynorm_vectors.json#note_parity
+  // (provenance: training/keynorm.py to_canonical(..., 55, 'major'));
+  // this case pins the C++ mirror against the file, not an inline literal.
+  // Scale/type names stay in-test spec constants (contract TOKENIZATION.md).
+  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  REQUIRE(!gtext.empty());
+  size_t gsec = 0;
+  REQUIRE(kn_section(gtext, "note_parity", gsec));
+  std::vector<int> ids, want;
+  int Hodgson = 0, gtonic = 0;
+  REQUIRE(kn_ints_after(gtext, gsec, "ids", ids));
+  REQUIRE(kn_ints_after(gtext, gsec, "want", want));
+  REQUIRE(kn_int_after(gtext, gsec, "shift", Hodgson));
+  REQUIRE(kn_int_after(gtext, gsec, "tonic", gtonic));
   std::vector<int> out(ids.size(), -1);
   int shift = 0;
-  REQUIRE(hf::infer::keynorm_to_canonical(ids.data(), ids.size(), 55, "major",
-                                          out.data(), out.size(), shift));
-  CHECK(shift == 5);
+  REQUIRE(hf::infer::keynorm_to_canonical(ids.data(), ids.size(), gtonic,
+                                          "major", out.data(), out.size(),
+                                          shift));
+  CHECK(shift == Hodgson);
   CHECK(out == want);
   // Drums (track 5) untouched: pitch 38 survived.
   CHECK(out[10] == 38);
@@ -198,30 +208,6 @@ TEST_CASE("keynorm python parity vectors are byte-identical", "[keynorm]") {
                                           same.data(), same.size(), shift0));
   CHECK(shift0 == 0);
   CHECK(same == ids);
-  // Phase-1 golden check (S4b-main T1): the same expectation from
-  // tests/golden/keynorm_vectors.json#note_parity — literal + file agree
-  // here; phase 2 removes the literal and keeps the file side.
-  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
-  REQUIRE(!gtext.empty());
-  size_t gsec = 0;
-  REQUIRE(kn_section(gtext, "note_parity", gsec));
-  std::vector<int> gids, gwant;
-  int gshift = 0, gtonic = 0;
-  REQUIRE(kn_ints_after(gtext, gsec, "ids", gids));
-  REQUIRE(kn_ints_after(gtext, gsec, "want", gwant));
-  REQUIRE(kn_int_after(gtext, gsec, "shift", gshift));
-  REQUIRE(kn_int_after(gtext, gsec, "tonic", gtonic));
-  CHECK(gids == ids);  // migration fidelity: the file captures the literal
-  CHECK(gwant == want);
-  CHECK(gshift == shift);
-  CHECK(gtonic == 55);
-  std::vector<int> gout(gids.size(), -1);
-  int gsh = 0;
-  REQUIRE(hf::infer::keynorm_to_canonical(gids.data(), gids.size(), gtonic,
-                                          "major", gout.data(), gout.size(),
-                                          gsh));
-  CHECK(gsh == gshift);
-  CHECK(gout == gwant);
 }
 
 TEST_CASE("keynorm round-trip keeps drums and structure, bounds registers",
@@ -273,37 +259,9 @@ TEST_CASE("keynorm C-vs-G invariance on identical normalized ids", "[keynorm]") 
 }
 
 TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]") {
-  // Produced by training/keynorm.py shift_chords(
-  // [{"root": 55, "type": "maj"}, {"root": 62, "type": "min"}], 5).
-  hf::core::ChordProgression prog;
-  hf::core::ChordSymbol a;
-  a.root = 55;
-  a.type = "maj";
-  hf::core::ChordSymbol b;
-  b.root = 62;
-  b.type = "min";
-  prog.push_back(a);
-  prog.push_back(b);
-  hf::infer::shift_chords_to_canonical(prog, 5);
-  CHECK(prog.size() == 2);
-  CHECK(prog[0].root == 60);
-  CHECK(prog[0].type == "maj");
-  CHECK(prog[1].root == 67);
-  CHECK(prog[1].type == "min");
-  // Inverse restores roots exactly; types never change.
-  hf::infer::shift_chords_from_canonical(prog, 5);
-  CHECK(prog[0].root == 55);
-  CHECK(prog[1].root == 62);
-  CHECK(prog[0].type == "maj");
-  CHECK(prog[1].type == "min");
-  // KNOWN DIVERGENCE (phase-B fix; NOT healed by this migration — touching
-  // chord-shift semantics fails review): training/keynorm.py shift_chords
-  // rebuilds {root, type} dicts only and DROPS inversion/tension/name keys,
-  // while shift_chords_to/from_canonical preserve them in place (pinned in
-  // the clamp/shape case below). Corpus chords carry {root, type} only, so
-  // both sides agree on corpus data; enriched chords diverge.
-  // Phase-1 golden check (S4b-main T1): the same expectation from
-  // tests/golden/keynorm_vectors.json#chord_parity.
+  // Roots live in tests/golden/keynorm_vectors.json#chord_parity
+  // (provenance: training/keynorm.py shift_chords(..., 5)); types stay
+  // in-test spec constants (contract: docs/TOKENIZATION.md).
   const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
   REQUIRE(!gtext.empty());
   size_t gsec = 0;
@@ -315,23 +273,33 @@ TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]
   REQUIRE(kn_int_after(gtext, gsec, "shift", gshift));
   REQUIRE(groots.size() == 2);
   REQUIRE(gwant.size() == 2);
-  CHECK(groots[0] == prog[0].root);  // fidelity: file captures the literal
-  CHECK(groots[1] == prog[1].root);  // (prog is back at its input roots)
-  CHECK(gshift == 5);
-  hf::core::ChordProgression gprog;
-  hf::core::ChordSymbol ga;
-  ga.root = groots[0];
-  ga.type = "maj";
-  hf::core::ChordSymbol gb;
-  gb.root = groots[1];
-  gb.type = "min";
-  gprog.push_back(ga);
-  gprog.push_back(gb);
-  hf::infer::shift_chords_to_canonical(gprog, gshift);
-  CHECK(gprog[0].root == gwant[0]);
-  CHECK(gprog[1].root == gwant[1]);
-  CHECK(gprog[0].root == 60);
-  CHECK(gprog[1].root == 67);
+  hf::core::ChordProgression prog;
+  hf::core::ChordSymbol a;
+  a.root = groots[0];
+  a.type = "maj";
+  hf::core::ChordSymbol b;
+  b.root = groots[1];
+  b.type = "min";
+  prog.push_back(a);
+  prog.push_back(b);
+  hf::infer::shift_chords_to_canonical(prog, gshift);
+  CHECK(prog.size() == 2);
+  CHECK(prog[0].root == gwant[0]);
+  CHECK(prog[0].type == "maj");
+  CHECK(prog[1].root == gwant[1]);
+  CHECK(prog[1].type == "min");
+  // Inverse restores roots exactly; types never change.
+  hf::infer::shift_chords_from_canonical(prog, gshift);
+  CHECK(prog[0].root == groots[0]);
+  CHECK(prog[1].root == groots[1]);
+  CHECK(prog[0].type == "maj");
+  CHECK(prog[1].type == "min");
+  // KNOWN DIVERGENCE (phase-B fix; NOT healed by this migration — touching
+  // chord-shift semantics fails review): training/keynorm.py shift_chords
+  // rebuilds {root, type} dicts only and DROPS inversion/tension/name keys,
+  // while shift_chords_to/from_canonical preserve them in place (pinned in
+  // the clamp/shape case below). Corpus chords carry {root, type} only, so
+  // both sides agree on corpus data; enriched chords diverge.
 }
 
 TEST_CASE("keynorm chord shift clamps and preserves shape", "[keynorm]") {

@@ -233,8 +233,9 @@ def check_golden_parity_vectors() -> None:
     assert out == note["want"], "keynorm.py must reproduce the golden want"
     assert shift == note["shift"], "golden shift must match canonical_shift"
     chord = gold["chord_parity"]
-    start = [{"root": r, "type": t}
-             for r, t in zip(chord["roots"], chord["types"])]
+    start = []
+    for r, t in zip(chord["roots"], chord["types"]):
+        start.append({"root": r, "type": t})
     moved = K.shift_chords(start, chord["shift"])
     assert [c["root"] for c in moved] == chord["want_roots"], \
         "shift_chords roots must match the golden want_roots"
