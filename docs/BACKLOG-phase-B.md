@@ -514,6 +514,31 @@ whole-function review of an 11-parameter, 183-line function whose output is
 pinned by six independent artifact families. The cost of a mistake is a
 re-bank, which historically costs more than the change itself.
 
+> **RESOLVED 2026-10-19 (phase-B tranche D, branch `refactor/phase-b-b5`,
+> commits `3c53d23` + `b51941b` + `c32e947` + `773b3b3`).** Against the
+> D-B5 ceiling of **20**: `sample_continue` **68 → 12** (NLOC 157 → 39) via
+> nine named stages (file max is now **16** = `strict_core`, untouched — it is
+> B4's item; the new stages run 3–13). `src/inference/sampler.h` is
+> byte-identical (public API unchanged). The split is a **pure move** (same
+> constants, same comparisons, same single `Pcg32` construction, same draw
+> order inside `nucleus_pick`, same `try/catch` scope; the original
+> `t`/`lam` hoist before the loop was restored literally).
+> Byte identity, honestly scoped: the **pinned cfg corner**
+> (T=1.0, top_p=1.0, λ=0, memo=null — the config the 129 banked cells were
+> produced with, `tools/dump_worker_ids.cpp:115-129`) was **re-run through the
+> real worker before and after the split: 129/129 cells equal to the banked
+> shas**, boundary sha `8466a0d6…8175f` unchanged. The three corners with NO
+> byte-level pin (λ>0, `top_p<1`, memo-armed) are covered **behaviourally
+> only** by `tests/test_sampler.cpp:533`, `:126`, `:381`. The wiring digests
+> are NOT sampler-leg (`tests/test_sampler.cpp:819` runs `use_sampling=false`
+> with an empty `model_path`, so `sample_continue` is never called); the
+> **seed-binding** digests are the sampler pin (WITH_ONNX=ON). The cube v3
+> rows and the golden MIDI seeds are not sampler-leg either.
+> One acceptance criterion is NOT met and is recorded as a residual: "each new
+> stage has a direct unit test" — the tranche's touch set excluded `tests/`.
+> The CCN pin row was pruned in `tools/lint_ccn.py` + `docs/measurements/ratchet.md`
+> in one commit (ratchet procedure step 2).
+
 ---
 
 ## B6 — Piano-roll undo logic and the second history stack
