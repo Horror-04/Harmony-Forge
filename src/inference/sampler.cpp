@@ -167,6 +167,237 @@ int strict_allowed_ids(const int* seq, size_t n, const SamplerMeta& meta, int* o
   }
 }
 
+namespace {
+
+// B5 (phase-B tranche D, 2026-10-19): the token loop of `sample_continue` is
+// DISSECTED into the named stages below, so that no function in this TU
+// exceeds the owner's D-B5 ceiling (CCN 20; the target is 15). The
+// dissection is a PURE MOVE: every block was lifted verbatim into a
+// file-local helper with its inputs passed in - no constant, no condition,
+// no side-effect order and no RNG-draw order changed, so the sampled bytes
+// stay byte-identical.
+//
+// The stages are deliberately NOT `noexcept`: before the split the whole
+// body sat inside the coordinator's single `try { ... } catch (...)`, and
+// that catch stays the ONLY exception handler, so an exception raised
+// inside a stage still unwinds to the same place and returns false exactly
+// as before. (A `noexcept` stage would call std::terminate instead - a
+// behaviour change.)
+
+// The per-call context of the sampling loop. The stages take this one
+// context instead of the 11-parameter list the coordinator used to carry;
+// every field is a reference to (or a pointer into) the caller's own
+// storage - nothing is copied, nothing is allocated, and the public API
+// of sampler.h is unchanged.
+struct SampleCtx {
+  const SamplerMeta& meta;   // tonic / scale / chords / memo index
+  const SamplerCfg& cfg;     // temperature / top_p / the mask flags
+  int* out;                  // the id buffer (prefix + continuation)
+  SamplerStats& stats;       // OUT: the strict diagnostics
+  SamplerScratch& scratch;   // the caller-owned working buffers
+  long long floor;           // prefix_n - 7 (the memo window floor)
+  bool do_memo;              // the anti-memo block is armed
+  int acount;                // the size of the current allowed set
+};
+
+// The id cap of the continuation: the greedy loop cap `kSamplerMaxTokens -
+// 1` (a local const in the pre-split body; the same value).
+constexpr size_t kMaxTotal = static_cast<size_t>(kSamplerMaxTokens - 1);
+
+// Stage 0 - the setup gate: the config / pointer / capacity checks and the
+// prefix copy. The moved block, verbatim.
+bool prepare_continuation(const SamplerCfg& cfg, const int* prefix, size_t prefix_n,
+                          int* out, size_t out_cap) {
+  if (!valid_cfg(cfg)) return false;
+  if (out == nullptr) return false;
+  if (prefix_n > 0 && prefix == nullptr) return false;
+  size_t cap_need = prefix_n + static_cast<size_t>(kSamplerGenTokens);
+  if (cap_need > kMaxTotal) cap_need = kMaxTotal;
+  if (out_cap < cap_need) return false;
+  for (size_t i = 0; i < prefix_n; ++i) out[i] = prefix[i];
+  return true;
+}
+
+// Stage 1 - the flag-off greedy pick: the pure argmax of the raw logits
+// (no masks, no temperature), bit-identical to the greedy reference.
+int greedy_pick(const float* raw) {
+  int best = 0;
+  for (int i = 1; i < kSamplerVocab; ++i)
+    if (raw[i] > raw[best]) best = i;
+  return best;
+}
+
+// Stage 2 - the theory PoE from the SAME safe set as the hard mask below.
+void apply_theory_prior(SampleCtx& ctx, size_t len) {
+  float* adj = ctx.scratch.adj.data();
+  for (int i = 0; i < kSamplerVocab; ++i) adj[i] = ctx.scratch.logits[i];
+  const float lam = ctx.cfg.lambda_theory;
+  if (lam > 0.0f) {
+    const int sc = strict_core(ctx.out, len, ctx.meta.tonic, ctx.scratch,
+                                ctx.scratch.strict_buf.data());
+    if (sc > 0) {
+      for (int v = 0; v < 128; ++v)
+        if (!in_set(ctx.scratch.strict_buf.data(), sc, v)) adj[v] += lam * kLogFloor;
+    }
+    // N/A (sc < 0) or empty (sc == 0): all-zero prior (mirrors python).
+  }
+}
+
+// Stage 3 - the FSM phase mask (only structurally legal next ids).
+bool build_allowed_set(SampleCtx& ctx, size_t len) {
+  int* allowed = ctx.scratch.allowed.data();
+  int acount = 0;
+  int flo = 0, fhi = -1;
+  if (ctx.cfg.fsm_mask) {
+    if (!fsm_allowed_range(fsm_slot_for_pos(len), flo, fhi)) return false;
+    for (int v = flo; v <= fhi; ++v) allowed[acount++] = v;
+  } else {
+    for (int v = 0; v < kSamplerVocab; ++v) allowed[acount++] = v;
+  }
+  ctx.acount = acount;
+  return true;
+}
+
+// Stage 4 - the online Strict mask (same context math as
+// compliance_penalty) and the two flip counters.
+void apply_strict_mask(SampleCtx& ctx, size_t len) {
+  if (!ctx.cfg.strict_mask) return;
+  const int sc = strict_core(ctx.out, len, ctx.meta.tonic, ctx.scratch,
+                              ctx.scratch.strict_buf.data());
+  if (sc < 0) return;
+  ctx.stats.strict_positions += 1;
+  const float* adj = ctx.scratch.adj.data();
+  int* allowed = ctx.scratch.allowed.data();
+  const int acount = ctx.acount;
+  // Flip diagnosis: argmax over the FSM pool vs the strict set.
+  int top1 = (acount > 0) ? allowed[0] : 0;
+  for (int i = 1; i < acount; ++i) {
+    const int a = allowed[i];
+    if (adj[a] > adj[top1] || (adj[a] == adj[top1] && a < top1)) top1 = a;
+  }
+  if (!in_set(ctx.scratch.strict_buf.data(), sc, top1)) ctx.stats.strict_flips += 1;
+  if (sc > 0) {
+    // Intersect hard masks (empty intersection keeps the FSM set,
+    // mirroring python's `or fsm_ids` fallback).
+    int kept = 0;
+    for (int i = 0; i < acount; ++i)
+      if (in_set(ctx.scratch.strict_buf.data(), sc, allowed[i]))
+        allowed[kept++] = allowed[i];
+    if (kept > 0) ctx.acount = kept;
+  }
+  // Empty safe set (sc == 0): skip the mask (never on corpus).
+}
+
+// Stage 5a - the anti-memo window check: is the tail run long enough (and
+// are all the older windows memorized) for the block to fire?
+bool memo_run_armed(const SampleCtx& ctx, size_t len) {
+  const long long m = static_cast<long long>(len) + 1;
+  const long long run = static_cast<long long>(ctx.cfg.memo_block_run);
+  if (m < 8 + run - 1) return false;
+  long long lo = m - 8 - run + 1;
+  if (lo < ctx.floor) lo = ctx.floor;
+  if (lo < 0) lo = 0;
+  const long long hi = m - 8;  // older windows k in [lo, hi)
+  bool all_old = true;
+  long long n_old = 0;
+  for (long long k = lo; k < hi; ++k) {
+    ++n_old;
+    if (!memo_contains(*ctx.meta.memo, ctx.out, static_cast<size_t>(k))) {
+      all_old = false;
+      break;
+    }
+  }
+  return n_old + 1 >= run && all_old && len >= 7;
+}
+
+// Stage 5b - the anti-memo block: forbid the token completing a memorized
+// 8-gram run >= memo_block_run (tail windows only; mirrors decode.py
+// exactly).
+void apply_anti_memo(SampleCtx& ctx, size_t len) {
+  if (!ctx.do_memo) return;
+  if (!memo_run_armed(ctx, len)) return;
+  int* allowed = ctx.scratch.allowed.data();
+  int acount = ctx.acount;
+  // Candidate 8-window = last 8 of (seq + candidate). Shorter
+  // than 8 (len < 7) can never match an 8-gram: never blocked
+  // (mirrors python's short-tuple `in memo` miss).
+  const int* tail7 = ctx.out + len - 7;
+  int kept = 0;
+  for (int i = 0; i < acount; ++i) {
+    std::array<int32_t, 8> w{};
+    for (int j = 0; j < 7; ++j)
+      w[static_cast<size_t>(j)] = static_cast<int32_t>(tail7[j]);
+    w[7] = static_cast<int32_t>(allowed[i]);
+    if (!ctx.meta.memo->contains(w)) allowed[kept++] = allowed[i];
+  }
+  // All forbidden: keep the step unblocked (documented).
+  if (kept > 0) ctx.acount = kept;
+}
+
+// Stage 6 - the temperature softmax over the allowed set (float).
+void softmax_allowed(SampleCtx& ctx) {
+  float* prob = ctx.scratch.prob.data();
+  const float* adj = ctx.scratch.adj.data();
+  const int* allowed = ctx.scratch.allowed.data();
+  const int acount = ctx.acount;
+  const float t = ctx.cfg.temperature;
+  float mx = adj[allowed[0]];
+  for (int i = 1; i < acount; ++i)
+    if (adj[allowed[i]] > mx) mx = adj[allowed[i]];
+  float tot = 0.0f;
+  for (int i = 0; i < acount; ++i) {
+    const float e = std::exp((adj[allowed[i]] - mx) / t);
+    prob[i] = e;
+    tot += e;
+  }
+  if (!std::isfinite(tot) || tot <= 0.0f) {
+    for (int i = 0; i < acount; ++i) prob[i] = 1.0f / static_cast<float>(acount);
+  } else {
+    for (int i = 0; i < acount; ++i) prob[i] /= tot;
+  }
+}
+
+// Stage 7 - the nucleus (top-p) sample over the allowed ids, ordered by
+// descending probability with ties to the smaller id (mirrors python). The
+// one RNG draw of the token happens here, in the same place in the stream
+// as before the split.
+int nucleus_pick(SampleCtx& ctx, Pcg32& rng) {
+  const float* prob = ctx.scratch.prob.data();
+  const int* allowed = ctx.scratch.allowed.data();
+  int* order = ctx.scratch.order.data();
+  const int acount = ctx.acount;
+  for (int i = 0; i < acount; ++i) order[i] = i;
+  std::sort(order, order + acount, [&](int a, int b) {
+    if (prob[a] != prob[b]) return prob[a] > prob[b];
+    return allowed[a] < allowed[b];
+  });
+  int kept = acount;
+  if (ctx.cfg.top_p < 1.0f) {
+    float cum = 0.0f;
+    kept = 0;
+    for (int i = 0; i < acount; ++i) {
+      ++kept;
+      cum += prob[order[i]];
+      if (cum >= ctx.cfg.top_p) break;
+    }
+  }
+  float total = 0.0f;
+  for (int i = 0; i < kept; ++i) total += prob[order[i]];
+  const double r = rng.unit() * static_cast<double>(total);
+  float cum = 0.0f;
+  int pick = allowed[order[kept - 1]];
+  for (int i = 0; i < kept; ++i) {
+    cum += prob[order[i]];
+    if (r < static_cast<double>(cum)) {
+      pick = allowed[order[i]];
+      break;
+    }
+  }
+  return pick;
+}
+
+}  // namespace
+
 bool sample_continue(ISamplerLogits& logits, const int* prefix, size_t prefix_n,
                      const SamplerMeta& meta, const SamplerCfg& cfg, std::uint64_t seed,
                      int* out, size_t out_cap, size_t& out_n, SamplerStats& stats,
@@ -175,174 +406,34 @@ bool sample_continue(ISamplerLogits& logits, const int* prefix, size_t prefix_n,
     stats.strict_positions = 0;
     stats.strict_flips = 0;
     out_n = 0;
-    if (!valid_cfg(cfg)) return false;
-    if (out == nullptr) return false;
-    if (prefix_n > 0 && prefix == nullptr) return false;
-    size_t cap_need = prefix_n + static_cast<size_t>(kSamplerGenTokens);
-    const size_t max_total = static_cast<size_t>(kSamplerMaxTokens - 1);
-    if (cap_need > max_total) cap_need = max_total;
-    if (out_cap < cap_need) return false;
-    for (size_t i = 0; i < prefix_n; ++i) out[i] = prefix[i];
+    if (!prepare_continuation(cfg, prefix, prefix_n, out, out_cap)) return false;
     size_t len = prefix_n;
     if (!resolve_theory(meta, scratch)) return false;
     const long long floor = static_cast<long long>(prefix_n) - 7;
     Pcg32 rng(seed);
     const bool do_memo =
         cfg.memo_block_run >= 1 && meta.memo != nullptr && !meta.memo->empty();
-    const float t = cfg.temperature;
-    const float lam = cfg.lambda_theory;
+    SampleCtx ctx{meta, cfg, out, stats, scratch, floor, do_memo, 0};
 
     for (int step = 0; step < kSamplerGenTokens; ++step) {
-      if (len >= max_total) break;
+      if (len >= kMaxTotal) break;
       if (!logits.get_logits(out, len, scratch.logits.data())) return false;
 
       if (!cfg.use_sampling) {
         // Flag-off greedy: pure argmax of the raw logits (no masks, no
         // temperature) — bit-identical to the greedy reference.
-        const float* raw = scratch.logits.data();
-        int best = 0;
-        for (int i = 1; i < kSamplerVocab; ++i)
-          if (raw[i] > raw[best]) best = i;
-        out[len++] = best;
+        out[len++] = greedy_pick(scratch.logits.data());
         continue;
       }
 
-      // Theory PoE from the SAME safe set as the hard mask below.
-      float* adj = scratch.adj.data();
-      for (int i = 0; i < kSamplerVocab; ++i) adj[i] = scratch.logits[i];
-      if (lam > 0.0f) {
-        const int sc =
-            strict_core(out, len, meta.tonic, scratch, scratch.strict_buf.data());
-        if (sc > 0) {
-          for (int v = 0; v < 128; ++v)
-            if (!in_set(scratch.strict_buf.data(), sc, v)) adj[v] += lam * kLogFloor;
-        }
-        // N/A (sc < 0) or empty (sc == 0): all-zero prior (mirrors python).
-      }
+      apply_theory_prior(ctx, len);
+      if (!build_allowed_set(ctx, len)) return false;
+      apply_strict_mask(ctx, len);
+      if (ctx.acount <= 0) return false;  // defensive: unreachable (see above)
 
-      // FSM phase mask (only structurally legal next ids).
-      int* allowed = scratch.allowed.data();
-      int acount = 0;
-      int flo = 0, fhi = -1;
-      if (cfg.fsm_mask) {
-        if (!fsm_allowed_range(fsm_slot_for_pos(len), flo, fhi)) return false;
-        for (int v = flo; v <= fhi; ++v) allowed[acount++] = v;
-      } else {
-        for (int v = 0; v < kSamplerVocab; ++v) allowed[acount++] = v;
-      }
-
-      // Online Strict mask (same context math as compliance_penalty).
-      if (cfg.strict_mask) {
-        const int sc =
-            strict_core(out, len, meta.tonic, scratch, scratch.strict_buf.data());
-        if (sc >= 0) {
-          stats.strict_positions += 1;
-          // Flip diagnosis: argmax over the FSM pool vs the strict set.
-          int top1 = (acount > 0) ? allowed[0] : 0;
-          for (int i = 1; i < acount; ++i) {
-            const int a = allowed[i];
-            if (adj[a] > adj[top1] || (adj[a] == adj[top1] && a < top1)) top1 = a;
-          }
-          if (!in_set(scratch.strict_buf.data(), sc, top1)) stats.strict_flips += 1;
-          if (sc > 0) {
-            // Intersect hard masks (empty intersection keeps the FSM set,
-            // mirroring python's `or fsm_ids` fallback).
-            int kept = 0;
-            for (int i = 0; i < acount; ++i)
-              if (in_set(scratch.strict_buf.data(), sc, allowed[i]))
-                allowed[kept++] = allowed[i];
-            if (kept > 0) acount = kept;
-          }
-          // Empty safe set (sc == 0): skip the mask (never on corpus).
-        }
-      }
-      if (acount <= 0) return false;  // defensive: unreachable (see above)
-
-      // Anti-memo block: forbid the token completing a memorized 8-gram run
-      // >= memo_block_run (tail windows only; mirrors decode.py exactly).
-      if (do_memo) {
-        const long long m = static_cast<long long>(len) + 1;
-        const long long run = static_cast<long long>(cfg.memo_block_run);
-        if (m >= 8 + run - 1) {
-          long long lo = m - 8 - run + 1;
-          if (lo < floor) lo = floor;
-          if (lo < 0) lo = 0;
-          const long long hi = m - 8;  // older windows k in [lo, hi)
-          bool all_old = true;
-          long long n_old = 0;
-          for (long long k = lo; k < hi; ++k) {
-            ++n_old;
-            if (!memo_contains(*meta.memo, out, static_cast<size_t>(k))) {
-              all_old = false;
-              break;
-            }
-          }
-          if (n_old + 1 >= run && all_old && len >= 7) {
-            // Candidate 8-window = last 8 of (seq + candidate). Shorter
-            // than 8 (len < 7) can never match an 8-gram: never blocked
-            // (mirrors python's short-tuple `in memo` miss).
-            const int* tail7 = out + len - 7;
-            int kept = 0;
-            for (int i = 0; i < acount; ++i) {
-              std::array<int32_t, 8> w{};
-              for (int j = 0; j < 7; ++j)
-                w[static_cast<size_t>(j)] = static_cast<int32_t>(tail7[j]);
-              w[7] = static_cast<int32_t>(allowed[i]);
-              if (!meta.memo->contains(w)) allowed[kept++] = allowed[i];
-            }
-            // All forbidden: keep the step unblocked (documented).
-            if (kept > 0) acount = kept;
-          }
-        }
-      }
-
-      // Temperature softmax over the allowed set (float).
-      float* prob = scratch.prob.data();
-      float mx = adj[allowed[0]];
-      for (int i = 1; i < acount; ++i)
-        if (adj[allowed[i]] > mx) mx = adj[allowed[i]];
-      float tot = 0.0f;
-      for (int i = 0; i < acount; ++i) {
-        const float e = std::exp((adj[allowed[i]] - mx) / t);
-        prob[i] = e;
-        tot += e;
-      }
-      if (!std::isfinite(tot) || tot <= 0.0f) {
-        for (int i = 0; i < acount; ++i) prob[i] = 1.0f / static_cast<float>(acount);
-      } else {
-        for (int i = 0; i < acount; ++i) prob[i] /= tot;
-      }
-      // Nucleus (top-p) sample over allowed ids, ordered by descending
-      // probability with ties to the smaller id (mirrors python).
-      int* order = scratch.order.data();
-      for (int i = 0; i < acount; ++i) order[i] = i;
-      std::sort(order, order + acount, [&](int a, int b) {
-        if (prob[a] != prob[b]) return prob[a] > prob[b];
-        return allowed[a] < allowed[b];
-      });
-      int kept = acount;
-      if (cfg.top_p < 1.0f) {
-        float cum = 0.0f;
-        kept = 0;
-        for (int i = 0; i < acount; ++i) {
-          ++kept;
-          cum += prob[order[i]];
-          if (cum >= cfg.top_p) break;
-        }
-      }
-      float total = 0.0f;
-      for (int i = 0; i < kept; ++i) total += prob[order[i]];
-      const double r = rng.unit() * static_cast<double>(total);
-      float cum = 0.0f;
-      int pick = allowed[order[kept - 1]];
-      for (int i = 0; i < kept; ++i) {
-        cum += prob[order[i]];
-        if (r < static_cast<double>(cum)) {
-          pick = allowed[order[i]];
-          break;
-        }
-      }
-      out[len++] = pick;
+      apply_anti_memo(ctx, len);
+      softmax_allowed(ctx);
+      out[len++] = nucleus_pick(ctx, rng);
     }
     out_n = len;
     return true;
