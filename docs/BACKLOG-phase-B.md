@@ -834,7 +834,8 @@ a dissection is a behaviour-preserving-but-re-bankable change.
 - No function in `src/inference/candidate_base.cpp`,
   `src/inference/candidate_transforms.cpp` or
   `src/inference/candidate_modes.cpp` has CCN above the ceiling the owner
-  picks (measured with the method in this document).- The split is a pure move: the cube baseline v3
+  picks (measured with the method in this document).
+- The split is a pure move: the cube baseline v3
   (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-cell sha set
   (`docs/measurements/s2b-sampler-output-shas.json`), the
   golden MIDI seeds (`tests/golden/seeds/seed_7.mid`, `seed_42.mid`) and the
