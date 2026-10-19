@@ -231,8 +231,7 @@ target_compile_definitions(test_s4b_seed_binding PRIVATE
 hf_add_test(test_ort_logits test_ort_logits.cpp)
 target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
-  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx"
-  HARMONY_FORGE_ORT_PREFIXES="${CMAKE_SOURCE_DIR}/tests/golden/ort_prefixes.json")
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
 target_compile_definitions(test_keynorm PRIVATE
   HARMONY_FORGE_KEYNORM_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/keynorm_vectors.json")

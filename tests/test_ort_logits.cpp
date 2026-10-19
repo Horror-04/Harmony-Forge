@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -32,101 +31,10 @@
 #ifndef HARMONY_FORGE_MOCK_MODEL
 #define HARMONY_FORGE_MOCK_MODEL "training/model.onnx"
 #endif
-#ifndef HARMONY_FORGE_ORT_PREFIXES
-#define HARMONY_FORGE_ORT_PREFIXES "tests/golden/ort_prefixes.json"
-#endif
 
 namespace {
 
 using hf::infer::OrtLogitsProvider;
-
-// Minimal strict reader for tests/golden/ort_prefixes.json (R3: no JSON
-// lib in C++; ints only; every shape deviation returns false / REQUIREs
-// loudly, never throws). Same shape as the keynorm_vectors reader.
-bool op_is_ws(char c) {
-  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-}
-
-std::string op_read_file(const char* path) {
-  std::ifstream f(path, std::ios::binary);
-  if (!f) return {};
-  std::ostringstream ss;
-  ss << f.rdbuf();
-  return ss.str();
-}
-
-bool op_key_colon(const std::string& text, size_t& pos, const char* key) {
-  const std::string q = std::string("\"") + key + "\"";
-  const size_t at = text.find(q, pos);
-  if (at == std::string::npos) return false;
-  pos = at + q.size();
-  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-  if (pos >= text.size() || text[pos] != ':') return false;
-  ++pos;
-  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-  return pos < text.size();
-}
-
-bool op_expect(const std::string& text, size_t& pos, char c) {
-  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-  if (pos >= text.size() || text[pos] != c) return false;
-  ++pos;
-  return true;
-}
-
-bool op_parse_int(const std::string& text, size_t& pos, int& out) {
-  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-  bool neg = false;
-  if (pos < text.size() && text[pos] == '-') {
-    neg = true;
-    ++pos;
-  }
-  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
-  int v = 0;
-  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
-    v = v * 10 + (text[pos] - '0');
-    ++pos;
-  }
-  out = neg ? -v : v;
-  return true;
-}
-
-bool op_int_array(const std::string& text, const char* key, std::vector<int>& out) {
-  size_t pos = 0;
-  if (!op_key_colon(text, pos, key)) return false;
-  if (!op_expect(text, pos, '[')) return false;
-  out.clear();
-  while (true) {
-    while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-    if (pos >= text.size()) return false;
-    if (text[pos] == ']') {
-      ++pos;
-      return true;
-    }
-    int v = 0;
-    if (!op_parse_int(text, pos, v)) return false;
-    out.push_back(v);
-    while (pos < text.size() && op_is_ws(text[pos])) ++pos;
-    if (pos < text.size() && text[pos] == ',') {
-      ++pos;
-      continue;
-    }
-    if (pos < text.size() && text[pos] == ']') {
-      ++pos;
-      return true;
-    }
-    return false;
-  }
-}
-
-std::vector<int> op_require_prefix(const char* key) {
-  const std::string t = op_read_file(HARMONY_FORGE_ORT_PREFIXES);
-  REQUIRE(!t.empty());
-  std::vector<int> v;
-  REQUIRE(op_int_array(t, key, v));
-  REQUIRE(!v.empty());
-  return v;
-}
 
 int argmax256(const float* v) {
   int best = 0;
@@ -135,14 +43,20 @@ int argmax256(const float* v) {
   return best;
 }
 
-// Frozen val-head prefixes (tests/golden/ort_prefixes.json, S4b-main T5
-// phase 2: file-only reads; provenance in the file's doc field).
+// Frozen val-head prefixes (training/corpus/val.jsonl, midpoint cut per
+// training/validate_logits.py::_prefix), recorded in-test 2026-10-15.
 std::vector<std::vector<int>> frozen_prefixes() {
-  std::vector<std::vector<int>> out;
-  out.push_back(op_require_prefix("composed-O-k0"));
-  out.push_back(op_require_prefix("composed-O-k1"));
-  out.push_back(op_require_prefix("composed-P-k0"));
-  return out;
+  return {
+      // composed-O-k0 (91 ids -> 43-id prefix).
+      {15, 0, 0, 1, 74, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 71, 4, 5, 0, 12, 1,
+       72, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 76, 4, 5, 1, 8, 1, 74, 8, 5},
+      // composed-O-k1 (91 ids -> 43-id prefix).
+      {15, 0, 0, 1, 79, 4, 5, 0, 4, 1, 77, 4, 5, 0, 8, 1, 76, 4, 5, 0, 12, 1,
+       77, 4, 5, 1, 0, 1, 79, 4, 5, 1, 4, 1, 81, 4, 5, 1, 8, 1, 79, 8, 5},
+      // composed-P-k0 (91 ids -> 43-id prefix).
+      {15, 0, 0, 1, 71, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 74, 4, 5, 0, 12, 1,
+       76, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 72, 4, 5, 1, 8, 1, 71, 8, 5},
+  };
 }
 
 // Procedural whole-note prefixes (valid slot ids throughout), recorded

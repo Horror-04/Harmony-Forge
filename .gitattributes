@@ -3,6 +3,5 @@ docs/MAP.md text eol=lf
 tests/fixtures/ingest/* text eol=lf
 tests/golden/sampler_wiring.json text eol=lf
 tests/golden/ui_palette.json text eol=lf
-tests/golden/ort_prefixes.json text eol=lf
 tests/fixtures/procedural/* text eol=lf
 tests/fixtures/eval/* text eol=lf
