@@ -33,7 +33,10 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
+#include <fstream>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include <juce_events/juce_events.h>
@@ -44,7 +47,96 @@
 #include "ui/PatternDocument.h"
 #include "ui/PianoRoll.h"
 
+#ifndef HARMONY_FORGE_UI_PALETTE
+#define HARMONY_FORGE_UI_PALETTE "tests/golden/ui_palette.json"
+#endif
+
 namespace {
+
+// Minimal strict reader for tests/golden/ui_palette.json (R3: no JSON lib
+// in C++; quoted hex-string values + key search; every shape deviation
+// returns false / REQUIREs loudly, never throws). Same shape as the
+// sampler_wiring reader (quote spelled 34, never '"').
+bool pal_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string pal_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool pal_key_colon(const std::string& text, size_t& pos, const char* key) {
+  const std::string q = std::string("\"") + key + "\"";
+  const size_t at = text.find(q, pos);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != ':') return false;
+  ++pos;
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  return pos < text.size();
+}
+
+bool pal_parse_quoted(const std::string& text, size_t& pos, std::string& out) {
+  // NOTE: double-quote is spelled 34, never '"': see the sampler_wiring
+  // reader for why (phantom multi-line strings for lint_off_golden.py).
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != 34) return false;
+  ++pos;
+  out.clear();
+  while (pos < text.size() && text[pos] != 34) {
+    const char c = text[pos];
+    if (c == '\\' || c < 0x20 || c > 0x7e) return false;
+    out.push_back(c);
+    ++pos;
+  }
+  if (pos >= text.size()) return false;
+  ++pos;
+  return !out.empty();
+}
+
+bool pal_hex_argb(const std::string& s, std::uint32_t& out) {
+  size_t pos = 0;
+  if (s.size() >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) pos = 2;
+  const size_t nd = s.size() - pos;
+  if (nd != 6 && nd != 8) return false;
+  std::uint32_t v = 0;
+  for (size_t i = pos; i < s.size(); ++i) {
+    const char c = s[i];
+    unsigned d = 0;
+    if (c >= '0' && c <= '9')
+      d = static_cast<unsigned>(c - '0');
+    else if (c >= 'a' && c <= 'f')
+      d = static_cast<unsigned>(c - 'a') + 10;
+    else if (c >= 'A' && c <= 'F')
+      d = static_cast<unsigned>(c - 'A') + 10;
+    else
+      return false;
+    v = v * 16 + d;
+  }
+  out = v;
+  return true;
+}
+
+bool pal_argb_for(const std::string& text, const char* key, std::uint32_t& out) {
+  size_t pos = 0;
+  if (!pal_key_colon(text, pos, key)) return false;
+  std::string s;
+  if (!pal_parse_quoted(text, pos, s)) return false;
+  return pal_hex_argb(s, out);
+}
+
+std::uint32_t pal_require_argb(const char* key) {
+  const std::string t = pal_read_file(HARMONY_FORGE_UI_PALETTE);
+  REQUIRE(!t.empty());
+  std::uint32_t v = 0;
+  REQUIRE(pal_argb_for(t, key, v));
+  return v;
+}
 
 // Function-local static: created on first use inside main(), never during
 // static init (same lazy-JUCE rule as test_keyboard_moves).
@@ -127,8 +219,15 @@ TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
     // Selected solid notes are opaque: the center pixel IS the literal.
     CHECK(img.getPixelAt(cx, cy) == juce::Colour(tc.argb));
   }
+  // S4b-main T5 phase 1 fidelity: file values match the literals above.
+  CHECK(pal_require_argb("chord") == cases[0].argb);
+  CHECK(pal_require_argb("scale") == cases[1].argb);
+  CHECK(pal_require_argb("chromatic") == cases[2].argb);
   // Drums stay neutral (never classified), also opaque when selected.
   {
+    const juce::Colour drums_pin(0xff8f97a6);  // literal kept (phase 2: file)
+    const std::uint32_t f_drums = pal_require_argb("drums");
+    CHECK(juce::Colour(f_drums) == drums_pin);  // fidelity, literal-free
     auto doc =
         make_doc(undo, {{36, 0, 120, 110}}, {{60, "maj"}}, hf::core::TrackType::Drums);
     select_all(*doc, 1);
@@ -136,8 +235,7 @@ TEST_CASE("note fill colours are byte-identical per class", "[cues][task3]") {
     juce::Image img = paint_roll(roll);
     const auto r = note_rect(36, 0, 120);
     CHECK(img.getPixelAt(static_cast<int>(r.getCentreX()),
-                         static_cast<int>(r.getCentreY())) ==
-          juce::Colour(0xff8f97a6));
+                         static_cast<int>(r.getCentreY())) == drums_pin);
   }
 }
 
@@ -158,12 +256,18 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const int cy = static_cast<int>(r.getY() + r.getHeight() / 2.0f);
     // Interior shows the (black-key, 61 = C#) lane: nothing fills it, with or
     // without the selection frame (the frame never reaches the center).
-    CHECK(img.getPixelAt(cx, cy) == juce::Colour(0xff101216));
+    const juce::Colour lane_pin(0xff101216);  // literal kept (phase 2: file)
+    CHECK(img.getPixelAt(cx, cy) == lane_pin);
+    CHECK(juce::Colour(pal_require_argb("lane")) == lane_pin);  // fidelity
   }
   // Unselected hollow edge: the class-colour outline is drawn (dimmed by the
   // standard 0.85 unselected alpha, so pinned as "drawn, not lane" rather
   // than an exact blend byte). x = center avoids the bar line at the left
   // edge; pitch 61 has no octave line.
+  // (Loads hoisted: the block below already holds "maj"; two more quoted
+  // keys inside it would trip the lint string-table floor.)
+  const std::uint32_t f_edge_lane = pal_require_argb("lane");
+  const std::uint32_t f_edge_sel = pal_require_argb("selected");
   {
     auto doc = make_doc(undo, {{61, 1920, 480, 90}}, {{60, "maj"}});
     PianoRoll roll(*doc);
@@ -172,8 +276,12 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Colour edge =
         img.getPixelAt(static_cast<int>(r.getX() + r.getWidth() / 2.0f),
                        static_cast<int>(r.getY()));
-    CHECK(edge != juce::Colour(0xff101216));
-    CHECK(edge != juce::Colour(0xffffffff));
+    const juce::Colour lane_pin(0xff101216);  // literal kept (phase 2: file)
+    const juce::Colour sel_pin(0xffffffff);  // literal kept (phase 2: file)
+    CHECK(edge != lane_pin);
+    CHECK(edge != sel_pin);
+    CHECK(juce::Colour(f_edge_lane) == lane_pin);  // fidelity
+    CHECK(juce::Colour(f_edge_sel) == sel_pin);  // fidelity
   }
   // Conflict: F on a strong beat against Cmaj — hatched red (opaque when
   // selected, so the base pixels are exact).
@@ -187,13 +295,15 @@ TEST_CASE("tension notes render hollow, conflict notes hatched", "[cues][task3]"
     const juce::Rectangle<int> band(static_cast<int>(r.getX()) + 6,
                                     static_cast<int>(r.getY()) + 2,
                                     static_cast<int>(r.getWidth()) - 12, 2);
-    const int base = count_matching(img, band, juce::Colour(0xffe5484d));
+    const juce::Colour conflict_pin(0xffe5484d);  // kept (phase 2: file)
+    const int base = count_matching(img, band, conflict_pin);
     int stripe = 0;
     for (int y = band.getY(); y < band.getBottom(); ++y)
       for (int x = band.getX(); x < band.getRight(); ++x)
-        if (img.getPixelAt(x, y) != juce::Colour(0xffe5484d)) ++stripe;
+        if (img.getPixelAt(x, y) != conflict_pin) ++stripe;
     CHECK(base > 20);
     CHECK(stripe > 20);
+    CHECK(juce::Colour(pal_require_argb("conflict")) == conflict_pin);  // fid
   }
 }
 
@@ -225,12 +335,14 @@ TEST_CASE("selection is solid, frozen is dashed", "[cues][task3]") {  juce::Undo
   CHECK(dashes > 5);
   // Selected note: continuous solid white run (opaque 2 px stroke).
   {
+    const juce::Colour sel_pin(0xffffffff);  // literal kept (phase 2: file)
+    CHECK(juce::Colour(pal_require_argb("selected")) == sel_pin);  // fidelity
     auto doc2 = make_doc(undo, {{60, 0, 480, 90}}, {{60, "maj"}});
     select_all(*doc2, 1);
     PianoRoll roll2(*doc2);
     juce::Image img2 = paint_roll(roll2);
     for (int x = static_cast<int>(r0.getX()) + 6;
          x < static_cast<int>(r0.getRight()) - 6; ++x)
-      CHECK(img2.getPixelAt(x, y) == juce::Colour(0xffffffff));
+      CHECK(img2.getPixelAt(x, y) == sel_pin);
   }
 }

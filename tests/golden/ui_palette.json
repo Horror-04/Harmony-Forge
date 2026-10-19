@@ -1,0 +1,39 @@
+{
+  "doc": "UI palette pins (S4b-main T5). GOLDEN-UI class: exact asserted colours/tokens, run-captured on the clean tree at BASE ffa2a2b (Phase 7 Task 1 dark-studio palette, design 2.1; values re-based there, pin contract unchanged). Consumers: tests/test_note_cues.cpp (byte-identical note-fill colours per class + conflict hatch base) and tests/test_focus_resize.cpp (kFocusRing token value + contrast palette-gate input pairs). Geometry (note_rect inputs, band rects, pixel-count gates), WCAG gate thresholds (3.0/4.5), computed ratio comments (hand-derived echo) and treatment inequalities stay in-test with reasons in the task report. kFocusRing duplicates the cues scale-blue token value by design (shared accent); stored once per consumer section for independent reads.",
+  "cues": {
+    "chord": "0xff57b15c",
+    "scale": "0xff4c8dff",
+    "chromatic": "0xffb07ce8",
+    "drums": "0xff8f97a6",
+    "lane": "0xff101216",
+    "conflict": "0xffe5484d",
+    "selected": "0xffffffff"
+  },
+  "focus": {
+    "ring": "0xff4c8dff",
+    "pair_fg": [
+      "0x5e6673",
+      "0x5e6673",
+      "0x8f97a6",
+      "0x8f97a6",
+      "0xf2f4f8",
+      "0xf2f4f8",
+      "0x8f97a6",
+      "0xc9ced8",
+      "0xf2f4f8",
+      "0xffffff"
+    ],
+    "pair_bg": [
+      "0x101216",
+      "0x171a20",
+      "0x1e222a",
+      "0x262b35",
+      "0x1e222a",
+      "0x262b35",
+      "0x101216",
+      "0x171a20",
+      "0x171a20",
+      "0x101216"
+    ]
+  }
+}

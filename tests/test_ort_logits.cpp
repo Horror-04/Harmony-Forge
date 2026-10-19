@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -31,10 +32,101 @@
 #ifndef HARMONY_FORGE_MOCK_MODEL
 #define HARMONY_FORGE_MOCK_MODEL "training/model.onnx"
 #endif
+#ifndef HARMONY_FORGE_ORT_PREFIXES
+#define HARMONY_FORGE_ORT_PREFIXES "tests/golden/ort_prefixes.json"
+#endif
 
 namespace {
 
 using hf::infer::OrtLogitsProvider;
+
+// Minimal strict reader for tests/golden/ort_prefixes.json (R3: no JSON
+// lib in C++; ints only; every shape deviation returns false / REQUIREs
+// loudly, never throws). Same shape as the keynorm_vectors reader.
+bool op_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string op_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool op_key_colon(const std::string& text, size_t& pos, const char* key) {
+  const std::string q = std::string("\"") + key + "\"";
+  const size_t at = text.find(q, pos);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != ':') return false;
+  ++pos;
+  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+  return pos < text.size();
+}
+
+bool op_expect(const std::string& text, size_t& pos, char c) {
+  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != c) return false;
+  ++pos;
+  return true;
+}
+
+bool op_parse_int(const std::string& text, size_t& pos, int& out) {
+  while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+  bool neg = false;
+  if (pos < text.size() && text[pos] == '-') {
+    neg = true;
+    ++pos;
+  }
+  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
+  int v = 0;
+  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
+    v = v * 10 + (text[pos] - '0');
+    ++pos;
+  }
+  out = neg ? -v : v;
+  return true;
+}
+
+bool op_int_array(const std::string& text, const char* key, std::vector<int>& out) {
+  size_t pos = 0;
+  if (!op_key_colon(text, pos, key)) return false;
+  if (!op_expect(text, pos, '[')) return false;
+  out.clear();
+  while (true) {
+    while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+    if (pos >= text.size()) return false;
+    if (text[pos] == ']') {
+      ++pos;
+      return true;
+    }
+    int v = 0;
+    if (!op_parse_int(text, pos, v)) return false;
+    out.push_back(v);
+    while (pos < text.size() && op_is_ws(text[pos])) ++pos;
+    if (pos < text.size() && text[pos] == ',') {
+      ++pos;
+      continue;
+    }
+    if (pos < text.size() && text[pos] == ']') {
+      ++pos;
+      return true;
+    }
+    return false;
+  }
+}
+
+std::vector<int> op_require_prefix(const char* key) {
+  const std::string t = op_read_file(HARMONY_FORGE_ORT_PREFIXES);
+  REQUIRE(!t.empty());
+  std::vector<int> v;
+  REQUIRE(op_int_array(t, key, v));
+  REQUIRE(!v.empty());
+  return v;
+}
 
 int argmax256(const float* v) {
   int best = 0;
@@ -154,6 +246,10 @@ TEST_CASE("ort logits argmax matches greedy model.onnx on frozen + procedural pr
   const auto procedural = procedural_prefixes();
   fixtures.insert(fixtures.end(), procedural.begin(), procedural.end());
   REQUIRE(fixtures.size() >= 5);
+  // S4b-main T5 phase 1 fidelity: file prefixes match the literals above.
+  CHECK(op_require_prefix("composed-O-k0") == fixtures[0]);
+  CHECK(op_require_prefix("composed-O-k1") == fixtures[1]);
+  CHECK(op_require_prefix("composed-P-k0") == fixtures[2]);
   for (const auto& pre : fixtures) {
     std::array<float, 256> lg{};
     REQUIRE(prov.get_logits(pre.data(), pre.size(), lg.data()));

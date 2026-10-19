@@ -1,0 +1,17 @@
+{
+  "doc": "ORT frozen val-head prefixes (S4b-main T5). Parity-file class: corpus-derived input prefixes mirroring the checked-in corpus via the generator training/validate_logits.py::_prefix (midpoint cut: cut = 1 + ((len(ids)-1)//2//TOKENS_PER_NOTE)*TOKENS_PER_NOTE, floor 1+TOKENS_PER_NOTE). Records composed-O-k0 / composed-O-k1 / composed-P-k0 (91 ids -> 43-id prefix each), recorded in-test 2026-10-15, banked here verbatim from the clean tree at BASE ffa2a2b. Consumer: tests/test_ort_logits.cpp (argmax-matches-greedy relational case; the assertion compares two live paths, the prefixes are the corpus-derived inputs). Procedural whole-note prefixes + per-case minimal prefixes ({1,0,0,1,60,4,4} family) are trivial hand-built fixtures and stay in-test with reasons in the task report.",
+  "prefixes": {
+    "composed-O-k0": [
+      15, 0, 0, 1, 74, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 71, 4, 5, 0, 12, 1,
+      72, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 76, 4, 5, 1, 8, 1, 74, 8, 5
+    ],
+    "composed-O-k1": [
+      15, 0, 0, 1, 79, 4, 5, 0, 4, 1, 77, 4, 5, 0, 8, 1, 76, 4, 5, 0, 12, 1,
+      77, 4, 5, 1, 0, 1, 79, 4, 5, 1, 4, 1, 81, 4, 5, 1, 8, 1, 79, 8, 5
+    ],
+    "composed-P-k0": [
+      15, 0, 0, 1, 71, 4, 5, 0, 4, 1, 72, 4, 5, 0, 8, 1, 74, 4, 5, 0, 12, 1,
+      76, 4, 5, 1, 0, 1, 74, 4, 5, 1, 4, 1, 72, 4, 5, 1, 8, 1, 71, 8, 5
+    ]
+  }
+}

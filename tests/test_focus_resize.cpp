@@ -27,7 +27,10 @@
 
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <memory>
+#include <sstream>
+#include <string>
 
 #include <juce_events/juce_events.h>
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -36,6 +39,10 @@
 #include "ui/PatternDocument.h"
 #include "ui/PianoRoll.h"
 #include "ui/UITokens.h"
+
+#ifndef HARMONY_FORGE_UI_PALETTE
+#define HARMONY_FORGE_UI_PALETTE "tests/golden/ui_palette.json"
+#endif
 
 namespace {
 
@@ -87,6 +94,115 @@ int count_pixels(const juce::Image& img, juce::Colour c) {
   return n;
 }
 
+// Minimal strict reader for tests/golden/ui_palette.json (R3: no JSON lib
+// in C++; quoted hex-string values + key search; every shape deviation
+// returns false / REQUIREs loudly, never throws). Same shape as the
+// sampler_wiring reader (quote spelled 34, never '"').
+bool pal_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string pal_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool pal_key_colon(const std::string& text, size_t& pos, const char* key) {
+  const std::string q = std::string("\"") + key + "\"";
+  const size_t at = text.find(q, pos);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != ':') return false;
+  ++pos;
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  return pos < text.size();
+}
+
+bool pal_expect(const std::string& text, size_t& pos, char c) {
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != c) return false;
+  ++pos;
+  return true;
+}
+
+bool pal_parse_quoted(const std::string& text, size_t& pos, std::string& out) {
+  // NOTE: double-quote is spelled 34, never '"': see the sampler_wiring
+  // reader for why (phantom multi-line strings for lint_off_golden.py).
+  while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != 34) return false;
+  ++pos;
+  out.clear();
+  while (pos < text.size() && text[pos] != 34) {
+    const char c = text[pos];
+    if (c == '\\' || c < 0x20 || c > 0x7e) return false;
+    out.push_back(c);
+    ++pos;
+  }
+  if (pos >= text.size()) return false;
+  ++pos;
+  return !out.empty();
+}
+
+bool pal_hex_argb(const std::string& s, std::uint32_t& out) {
+  size_t pos = 0;
+  if (s.size() >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) pos = 2;
+  const size_t nd = s.size() - pos;
+  if (nd != 6 && nd != 8) return false;
+  std::uint32_t v = 0;
+  for (size_t i = pos; i < s.size(); ++i) {
+    const char c = s[i];
+    unsigned d = 0;
+    if (c >= '0' && c <= '9')
+      d = static_cast<unsigned>(c - '0');
+    else if (c >= 'a' && c <= 'f')
+      d = static_cast<unsigned>(c - 'a') + 10;
+    else if (c >= 'A' && c <= 'F')
+      d = static_cast<unsigned>(c - 'A') + 10;
+    else
+      return false;
+    v = v * 16 + d;
+  }
+  out = v;
+  return true;
+}
+
+bool pal_argb_for(const std::string& text, const char* key, std::uint32_t& out) {
+  size_t pos = 0;
+  if (!pal_key_colon(text, pos, key)) return false;
+  std::string s;
+  if (!pal_parse_quoted(text, pos, s)) return false;
+  return pal_hex_argb(s, out);
+}
+
+bool pal_argb_array(const std::string& text, const char* key, std::uint32_t* out,
+                    int n) {
+  size_t pos = 0;
+  if (!pal_key_colon(text, pos, key)) return false;
+  if (!pal_expect(text, pos, '[')) return false;
+  for (int i = 0; i < n; ++i) {
+    std::string s;
+    if (!pal_parse_quoted(text, pos, s)) return false;
+    if (!pal_hex_argb(s, out[i])) return false;
+    while (pos < text.size() && pal_is_ws(text[pos])) ++pos;
+    if (i + 1 < n) {
+      if (!pal_expect(text, pos, ',')) return false;
+    }
+  }
+  return pal_expect(text, pos, ']');
+}
+
+std::uint32_t pal_require_argb(const char* key) {
+  const std::string t = pal_read_file(HARMONY_FORGE_UI_PALETTE);
+  REQUIRE(!t.empty());
+  std::uint32_t v = 0;
+  REQUIRE(pal_argb_for(t, key, v));
+  return v;
+}
+
 }  // namespace
 
 TEST_CASE("focus ring token value is the reserved accent", "[focus][task2]") {
@@ -95,6 +211,8 @@ TEST_CASE("focus ring token value is the reserved accent", "[focus][task2]") {
   static_assert(hf::ui::UITokens::kFocusRing == 0xff4c8dff,
                 "Phase 7 palette: focus ring = kAccent #4C8DFF — do not rename");
   CHECK(hf::ui::UITokens::kFocusRing == 0xff4c8dff);
+  // S4b-main T5 phase 1 fidelity: file ring matches the token (literals kept).
+  CHECK(pal_require_argb("ring") == hf::ui::UITokens::kFocusRing);
 }
 
 TEST_CASE("paintFocusRing emits 2px accent stroke pixels", "[focus][task2]") {
@@ -125,23 +243,61 @@ TEST_CASE("Task 2 contrast ratios meet their gates", "[contrast][task2]") {
   // the computed WCAG values (full table in the Phase 7 Task 1 report).
   // Octave note names (10 px, secondary, kTextDim) on both lane backgrounds
   // (kLaneBlackKey = kBgApp, kLaneWhiteKey = kBgPanel per design 2.5).
-  CHECK(contrast(0x5e6673, 0x101216) >= 3.0);  // 3.24:1
-  CHECK(contrast(0x5e6673, 0x171a20) >= 3.0);  // 3.01:1
+  // S4b-main T5 phase 1: palette-gate inputs captured as named consts
+  // (literals kept 1:1); file pairs checked against them below (fidelity).
+  const std::uint32_t fg0 = 0x5e6673, bg0 = 0x101216;
+  const std::uint32_t fg1 = 0x5e6673, bg1 = 0x171a20;
+  CHECK(contrast(fg0, bg0) >= 3.0);  // 3.24:1
+  CHECK(contrast(fg1, bg1) >= 3.0);  // 3.01:1
   // Chord degree/function + freeze hint (secondary, kTextMuted) on both cell
   // states (kCard = kBgCard, kCardSelected = kBgCardHover).
-  CHECK(contrast(0x8f97a6, 0x1e222a) >= 3.0);  // 5.42:1
-  CHECK(contrast(0x8f97a6, 0x262b35) >= 3.0);  // 4.83:1
+  const std::uint32_t fg2 = 0x8f97a6, bg2 = 0x1e222a;
+  const std::uint32_t fg3 = 0x8f97a6, bg3 = 0x262b35;
+  CHECK(contrast(fg2, bg2) >= 3.0);  // 5.42:1
+  CHECK(contrast(fg3, bg3) >= 3.0);  // 4.83:1
   // Chord bar names (body, kTextBright) on both cell states.
-  CHECK(contrast(0xf2f4f8, 0x1e222a) >= 4.5);  // 14.48:1
-  CHECK(contrast(0xf2f4f8, 0x262b35) >= 4.5);  // 12.89:1
+  const std::uint32_t fg4 = 0xf2f4f8, bg4 = 0x1e222a;
+  const std::uint32_t fg5 = 0xf2f4f8, bg5 = 0x262b35;
+  CHECK(contrast(fg4, bg4) >= 4.5);  // 14.48:1
+  CHECK(contrast(fg5, bg5) >= 4.5);  // 12.89:1
   // Empty-state "No pattern" (body-classified, kTextMuted) on kBgRoll.
-  CHECK(contrast(0x8f97a6, 0x101216) >= 4.5);  // 6.38:1
+  const std::uint32_t fg6 = 0x8f97a6, bg6 = 0x101216;
+  CHECK(contrast(fg6, bg6) >= 4.5);  // 6.38:1
   // Explain body + title on kBgPanel.
-  CHECK(contrast(0xc9ced8, 0x171a20) >= 4.5);  // 11.04:1
-  CHECK(contrast(0xf2f4f8, 0x171a20) >= 4.5);  // 15.83:1
+  const std::uint32_t fg7 = 0xc9ced8, bg7 = 0x171a20;
+  const std::uint32_t fg8 = 0xf2f4f8, bg8 = 0x171a20;
+  CHECK(contrast(fg7, bg7) >= 4.5);  // 11.04:1
+  CHECK(contrast(fg8, bg8) >= 4.5);  // 15.83:1
   // Model/status/hint labels: default look-and-feel label text is white on
   // the new kEditorBg window background.
-  CHECK(contrast(0xffffff, 0x101216) >= 4.5);  // 18.75:1
+  const std::uint32_t fg9 = 0xffffff, bg9 = 0x101216;
+  CHECK(contrast(fg9, bg9) >= 4.5);  // 18.75:1
+  // Fidelity: file pairs match the named inputs above (literal-free lines).
+  const std::string pal_text = pal_read_file(HARMONY_FORGE_UI_PALETTE);
+  REQUIRE(!pal_text.empty());
+  std::uint32_t pp_fg[10]{}, pp_bg[10]{};
+  REQUIRE(pal_argb_array(pal_text, "pair_fg", pp_fg, 10));
+  REQUIRE(pal_argb_array(pal_text, "pair_bg", pp_bg, 10));
+  CHECK(pp_fg[0] == fg0);
+  CHECK(pp_bg[0] == bg0);
+  CHECK(pp_fg[1] == fg1);
+  CHECK(pp_bg[1] == bg1);
+  CHECK(pp_fg[2] == fg2);
+  CHECK(pp_bg[2] == bg2);
+  CHECK(pp_fg[3] == fg3);
+  CHECK(pp_bg[3] == bg3);
+  CHECK(pp_fg[4] == fg4);
+  CHECK(pp_bg[4] == bg4);
+  CHECK(pp_fg[5] == fg5);
+  CHECK(pp_bg[5] == bg5);
+  CHECK(pp_fg[6] == fg6);
+  CHECK(pp_bg[6] == bg6);
+  CHECK(pp_fg[7] == fg7);
+  CHECK(pp_bg[7] == bg7);
+  CHECK(pp_fg[8] == fg8);
+  CHECK(pp_bg[8] == bg8);
+  CHECK(pp_fg[9] == fg9);
+  CHECK(pp_bg[9] == bg9);
 }
 
 // NOTE (headless-harness limitation, verified): instantiating real JUCE

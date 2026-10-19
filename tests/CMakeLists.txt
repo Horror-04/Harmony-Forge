@@ -126,6 +126,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     Catch2::Catch2WithMain)
   target_include_directories(test_focus_resize PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
   target_compile_features(test_focus_resize PRIVATE cxx_std_20)
+  target_compile_definitions(test_focus_resize PRIVATE
+    HARMONY_FORGE_UI_PALETTE="${CMAKE_SOURCE_DIR}/tests/golden/ui_palette.json")
   hf_copy_ort_runtime(test_focus_resize)
   catch_discover_tests(test_focus_resize)
 endif()
@@ -197,6 +199,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     Catch2::Catch2WithMain)
   target_include_directories(test_note_cues PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
   target_compile_features(test_note_cues PRIVATE cxx_std_20)
+  target_compile_definitions(test_note_cues PRIVATE
+    HARMONY_FORGE_UI_PALETTE="${CMAKE_SOURCE_DIR}/tests/golden/ui_palette.json")
   hf_copy_ort_runtime(test_note_cues)
 endif()
 hf_add_test(test_memo_filter test_memo_filter.cpp)
@@ -227,7 +231,8 @@ target_compile_definitions(test_s4b_seed_binding PRIVATE
 hf_add_test(test_ort_logits test_ort_logits.cpp)
 target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
-  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
+  HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx"
+  HARMONY_FORGE_ORT_PREFIXES="${CMAKE_SOURCE_DIR}/tests/golden/ort_prefixes.json")
 hf_add_test(test_keynorm test_keynorm.cpp)
 target_compile_definitions(test_keynorm PRIVATE
   HARMONY_FORGE_KEYNORM_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/keynorm_vectors.json")
