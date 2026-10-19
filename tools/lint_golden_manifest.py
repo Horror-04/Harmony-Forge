@@ -78,6 +78,29 @@ binding is a false acceptance.
                                 commit 906f623 (the `gen:` command checks
                                 that commit out first).
 
+What this lint does NOT prove (read this before trusting a PASS)
+----------------------------------------------------------------
+The registry is checked MECHANICALLY. A PASS means the registry is
+CONSISTENT with the rules above; it does NOT mean the artifacts are
+regenerable or the citations are meaningful. In particular:
+
+  * It NEVER EXECUTES the producer. A `gen:` command is accepted because it
+    invokes a tool of the WRITER registry and the artifact is bound to that
+    writer - the command is NOT run, and the tool is NOT executed. A writer
+    that stopped writing the artifact (or never wrote it) still passes.
+  * It TRUSTS the in-script WRITER registry. The bindings are a human
+    assertion; the lint checks the assertion against the record, it does not
+    verify that the tool really writes those bytes.
+  * A `capture:` anchor proves POINTER CONTENT, NOT RELEVANCE: the lint only
+    greps the pointer file for the quoted string. A semantically unrelated
+    fragment that happens to exist in that file satisfies the rule.
+  * The commit resolution proves that a sha EXISTS in this repository's
+    history, not that it is the commit that produced the artifact. It is
+    skipped (with a NOTE) when the resolution is unavailable.
+  * The sha256 comparison proves the FILE still hashes to the recorded
+    canonical value; it says nothing about whether the value is the right
+    value for the pinned behaviour.
+
 Newline note (same convention as tools/lint_golden_pin.py): the recorded
 sha256 is the CANONICAL sha256 of the artifact - for a TEXT artifact the
 sha256 of its LF-normalized bytes (a git checkout rewrites LF -> CRLF on
@@ -179,8 +202,6 @@ _TEST_FILE_RE = re.compile(r"[A-Za-z0-9_./\\-]+\.(?:cpp|py|h)")
 _QUOTED_RE = re.compile(r"'([^']+)'")
 _SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 _SHA_TOKEN_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{7,40}(?![0-9a-fA-F])")
-_CTEST_FILTER_RE = re.compile(
-    r"(?:-R|--tests-regex)\s+(?:\"([^\"]*)\"|'([^']*)'|(\S+))")
 _CMAKE_TEST_RE = re.compile(
     r"\b(?:add_test|hf_add_test)\s*\(\s*([A-Za-z0-9_\-]+)")
 _CTESTFILE_TEST_RE = re.compile(r"add_test\(\s*([^\s\)]+)")
@@ -333,22 +354,6 @@ def _ctest_names(root: str) -> set:
             except OSError:
                 pass
     return names
-
-
-def _pattern_matches(pattern: str, names) -> bool:
-    try:
-        rx = re.compile(pattern)
-    except re.error:
-        return any(pattern == name for name in names)
-    return any(rx.search(name) for name in names)
-
-
-def _ctest_refs(command: str, names) -> bool:
-    for match in _CTEST_FILTER_RE.finditer(command):
-        pattern = next(g for g in match.groups() if g is not None)
-        if pattern and _pattern_matches(pattern, names):
-            return True
-    return False
 
 
 def _path_refs(command: str, repo_paths) -> list:
@@ -620,19 +625,20 @@ def lint(root: str, manifest_path: str) -> tuple:
                 if isinstance(produced_by, str):
                     if not produced_by.strip():
                         failures.append(
-                            f"{tag} rule1: produced_by is empty "
+                            f"{tag} rule1: produced_by is empty - a record "
+                            f"must declare a non-empty producer (the string "
+                            f"form, or an object with at least one entry) "
                             f"(file: {_concern(rec)})")
                 elif not isinstance(produced_by, dict):
                     failures.append(
                         f"{tag} rule1: produced_by must be a string or an "
                         f"object mapping file -> producer "
                         f"(file: {_concern(rec)})")
-                elif not produced_by and not _files_of(rec):
-                    pass                    # an empty object for a record
-                                            # without files covers its set
                 elif not produced_by:
                     failures.append(
-                        f"{tag} rule1: produced_by is empty "
+                        f"{tag} rule1: produced_by is empty - a record must "
+                        f"declare a non-empty producer (the string form, or "
+                        f"an object with at least one entry) "
                         f"(file: {_concern(rec)})")
             files = rec.get("files")
             if files is not None and not isinstance(files, dict):
@@ -792,11 +798,6 @@ def lint(root: str, manifest_path: str) -> tuple:
             f"record (add it to a record's files map or to EXCLUSIONS)")
 
     return failures, forms
-
-
-def _files_of(rec) -> set:
-    files = rec.get("files")
-    return set(files) if isinstance(files, dict) else set()
 
 
 def main() -> int:

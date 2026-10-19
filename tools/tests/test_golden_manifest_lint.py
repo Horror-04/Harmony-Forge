@@ -241,6 +241,39 @@ class GoldenManifestLintTest(unittest.TestCase):
         self.assertIn("tests/golden/g.txt", proc.stdout,
                       "a rule1 violation must name the file it concerns")
 
+    # -- F1: a record must declare a NON-EMPTY producer -------------------
+    def test_empty_produced_by_object_fails(self):
+        def mutate(man):
+            man["in_test"][0]["produced_by"] = {}
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "an empty produced_by object must fail - a record must declare a "
+            "non-empty producer")
+        self._assert_rule(proc, "rule1")
+
+    def test_empty_produced_by_string_fails(self):
+        def mutate(man):
+            man["in_test"][0]["produced_by"] = "   "
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "an empty produced_by string must fail - a record must declare a "
+            "non-empty producer")
+        self._assert_rule(proc, "rule1")
+
+    def test_empty_produced_by_object_on_a_file_less_record_fails(self):
+        def mutate(man):
+            man["in_test"][0]["files"] = {}
+            man["in_test"][0]["relational"] = True
+            man["in_test"][0]["produced_by"] = {}
+        proc = self._lint_scratch(mutate)
+        self.assertNotEqual(
+            proc.returncode, 0,
+            "a file-less record with an empty produced_by object must fail "
+            "(no artifact and no producer is not a declaration)")
+        self._assert_rule(proc, "rule1")
+
     # -- M8: the commit must resolve -------------------------------------
     def test_commit_without_resolvable_sha_fails(self):
         def mutate(man):
