@@ -11,10 +11,12 @@ on:
 jobs:
   gates:
     # The enforce gates (stdlib only, seconds, no build): fail fast before
-    # configure/build/test. Two families, both blocking:
+    # configure/build/test. Three families, all blocking:
     #  * architecture/isolation — banned tokens on the audio path, the
     #    layer includes, the golden pin, the golden-manifest registry, the
     #    invariant tags, the sealed-split isolation;
+    #  * companion behaviour — the FL dispatcher's pure path (stdlib
+    #    unittest, seconds, no FL Studio on the runner);
     #  * quality/size ratchets (S10.1) — file size, UTF-8 encoding, the
     #    CCN ratchet and the off-golden literal census. These ARE style/
     #    quality gates: they are static, fast and blocking, and every
@@ -76,6 +78,17 @@ jobs:
           $hits = Get-ChildItem -Path training -Recurse -Filter *.py | Select-String -Pattern 'sealed_test' | Where-Object { $_.Path -notmatch 'carve_sealed\.py$' -and $_.Path -notmatch 'test_sealed\.py$' }
           if ($hits) { $hits | ForEach-Object { Write-Host $_ }; exit 1 }
           Write-Host 'sealed-grep CLEAN: only carve_sealed.py + test_sealed.py reference sealed_test'
+
+      - name: FL companion dispatcher test (pure path)
+        # Stdlib only, seconds, no venv, no FL Studio: the companion's pure
+        # surface (plan_layout + the dry-run path of
+        # src/companion/fl_dispatcher.py) is pinned by
+        # tools/tests/test_fl_dispatcher.py (stdlib unittest, the repo's
+        # tools/tests convention). DISPATCHER-ONLY by decision D-B8: the
+        # general python test step (tools/tests/ + training/tests/) needs a
+        # venv/torch on the runner and is separate later work - it is NOT
+        # smuggled in here. Blocking: a failing test fails the job.
+        run: python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v
 
       - name: File-size gate (no code file over 500 lines may appear/grow)
         # Stdlib only, seconds: tools/lint_file_size.py pins the 8 code

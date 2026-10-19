@@ -21,4 +21,6 @@ plugin; this script only organises the result. No invented API calls.
    edit, then `apply_layout(json.load(open('layout.json')))` in FL.
 
 Outside FL Studio: `python fl_dispatcher.py --dry-run [layout.json]`
-prints the action plan without executing (pure Python, CI-safe).
+prints the action plan without executing (pure Python, CI-safe — the
+dry-run path is pinned by `tools/tests/test_fl_dispatcher.py`, which CI
+runs).
