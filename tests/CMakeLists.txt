@@ -291,6 +291,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/PatternDocument.cpp
     ../src/plugin/ui/PianoRoll.cpp
     ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/CandidateBar.cpp
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_violation_counter PRIVATE
@@ -323,6 +324,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/PatternDocument.cpp
     ../src/plugin/ui/PianoRoll.cpp
     ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/CandidateBar.cpp
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_soak PRIVATE

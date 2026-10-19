@@ -40,6 +40,7 @@ target_sources(HarmonyForge PRIVATE
   ui/ExplainView.h
   ui/ExplainView.cpp
   ui/CandidateBar.h
+  ui/CandidateBar.cpp
   ui/ArrangeBar.h
   ui/UITokens.h
   ui/HFLookAndFeel.h
