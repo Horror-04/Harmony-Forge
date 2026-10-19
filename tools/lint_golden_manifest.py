@@ -14,15 +14,27 @@ Rules
                 matches the section it lives in; `files` values are 64-hex
                 sha256; `files` is non-empty for golden/fixture records; an
                 in_test record may only have an empty `files` map when it
-                pins literals in-test only and says so (`"relational": true`).
+                pins literals in-test only and says so (`"relational": true`);
+                `commit` must name at least one commit that RESOLVES in this
+                repository's history (a prose pointer alone is a violation).
   2 sha match   every path in every `files` map exists in the repo and its
-                recorded sha256 equals the file's actual sha256.
-  3 produced_by present and real: non-empty, no placeholder tokens
-                (TODO/FIXME/TBD/`<...>`/`...`), and it references at least
-                one existing repo path (tools/x.py, tests/x.cpp, ...) or a
-                registered ctest name (the CMake test registration, the
-                generated CTestTestfile.cmake, or the Catch2 TEST_CASE names
-                that ctest registers).
+                recorded sha256 equals the file's canonical sha256 (see the
+                newline note below).
+  3 produced_by present, real and HONESTLY LABELLED. Two explicit forms,
+                prefix required:
+                  gen: <command>
+                      a real generator: the command must reference an
+                      existing repo tool (script or ctest) and must either
+                      name the artifact path or use a tool whose documented
+                      write path produces that artifact (see WRITERS).
+                  capture: <source>@<commit> (no in-repo writer) - <pointer>
+                      for artifacts with no in-repo writer: where the bytes
+                      came from, the commit they were captured at, and a
+                      pointer to the capture record (a file that must exist
+                      in the repo). The commit must resolve in this
+                      repository's history.
+                A bare verification command without a prefix is a violation -
+                a check is not a producer.
   4 coverage    every file under tests/golden/** and tests/fixtures/**
                 (recursive) is registered by at least one record, EXCEPT the
                 explicit exclusion list below (each with a written reason).
@@ -36,10 +48,11 @@ Rules
                 record's `files` map.
 
 Newline note (same convention as tools/lint_golden_pin.py): the recorded
-sha256 is the file's actual sha256, but a git checkout rewrites LF -> CRLF
-on Windows (core.autocrlf=true), so the comparison accepts the recorded
-value against the raw bytes OR against the LF/CRLF-normalized bytes. Content
-rot (any byte that is not a line ending) still fails loudly.
+sha256 is the CANONICAL sha256 of the artifact - for a TEXT artifact the
+sha256 of its LF-normalized bytes (a git checkout rewrites LF -> CRLF on
+Windows, so the raw bytes hash differently per platform), for a BINARY
+artifact the sha256 of its raw bytes. The comparison therefore tolerates
+CRLF/LF checkouts while still failing loudly on any real content change.
 
 Usage: py -3 tools/lint_golden_manifest.py [--manifest PATH] [--root PATH]
 Exit 0 = PASS, 1 = FAIL. Read-only; never writes the manifest or a golden.
@@ -48,6 +61,7 @@ Exit 0 = PASS, 1 = FAIL. Read-only; never writes the manifest or a golden.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -64,6 +78,18 @@ SECTIONS = (
     ("golden_midi", "golden"),
     ("fixtures", "fixture"),
 )
+
+GEN_PREFIX = "gen: "
+CAPTURE_PREFIX = "capture: "
+
+# Tools whose DOCUMENTED write path produces the listed artifacts. A `gen:`
+# command that uses one of these tools does not have to name the artifact
+# path itself (the tool writes the whole family); every other artifact must
+# be named in the command.
+WRITERS = {
+    "tools/update_golden_midi.py": ["tests/golden/seeds/seed_*.mid"],
+    "tools/gen_s6_3_fixtures.py": ["tests/fixtures/ref_*.mid"],
+}
 
 # Rule-4 exclusion list: files that live under tests/golden/** or
 # tests/fixtures/** but are NOT registry records. Every entry carries a
@@ -107,30 +133,41 @@ _TOKEN_SPLIT_RE = re.compile(r"[\s;|&\"'(),]+")
 _TEST_FILE_RE = re.compile(r"[A-Za-z0-9_./\\-]+\.(?:cpp|py|h)")
 _QUOTED_RE = re.compile(r"'([^']+)'")
 _SHA_RE = re.compile(r"^[0-9a-f]{64}$")
+_SHA_TOKEN_RE = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{7,40}(?![0-9a-fA-F])")
 _CTEST_FILTER_RE = re.compile(
     r"(?:-R|--tests-regex)\s+(?:\"([^\"]*)\"|'([^']*)'|(\S+))")
 _CMAKE_TEST_RE = re.compile(
     r"\b(?:add_test|hf_add_test)\s*\(\s*([A-Za-z0-9_\-]+)")
 _CTESTFILE_TEST_RE = re.compile(r"add_test\(\s*([^\s\)]+)")
 _TEST_CASE_RE = re.compile(r"TEST_CASE\(\s*\"([^\"]+)\"")
+_CAPTURE_RE = re.compile(
+    r"^(?P<source>[^@]+)@(?P<commit>[0-9a-fA-F]{7,40})"
+    r"\s*\((?P<qual>[^)]*)\)\s*-\s*(?P<pointer>.+)$")
+_TOOL_SUFFIXES = (".py", ".sh", ".ps1", ".bat", ".cmd", ".psm1")
+
+_GIT_STATE = {}
 
 
 def _rel(path: str) -> str:
     return path.replace("\\", "/")
 
 
-def _sha_variants(raw: bytes) -> set:
-    """sha256 of the raw bytes plus the LF/CRLF-normalized forms.
+def _is_text(raw: bytes) -> bool:
+    if b"\x00" in raw:
+        return False
+    try:
+        raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    return True
 
-    A Windows checkout (core.autocrlf=true) rewrites LF -> CRLF, so the
-    same committed file hashes differently per platform. Accepting the
-    normalized forms keeps the registry platform-independent while still
-    failing on any real content change (same convention as
-    tools/lint_golden_pin.py).
-    """
-    lf = raw.replace(b"\r\n", b"\n")
-    crlf = lf.replace(b"\n", b"\r\n")
-    return {hashlib.sha256(blob).hexdigest() for blob in (raw, lf, crlf)}
+
+def _canonical_sha(raw: bytes) -> str:
+    """sha256 of the canonical content: LF-normalized for text, raw for
+    binary (a Windows checkout rewrites LF -> CRLF for text files)."""
+    if _is_text(raw):
+        raw = raw.replace(b"\r\n", b"\n")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _git_tracked_paths(root: str):
@@ -152,6 +189,38 @@ def _git_tracked_paths(root: str):
         return {p for p in out.stdout.split("\0") if p}
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
+
+
+def _git_state(root: str):
+    """(available, is_shallow) - cached per root."""
+    if root in _GIT_STATE:
+        return _GIT_STATE[root]
+    available, shallow = False, False
+    try:
+        probe = subprocess.run(
+            ["git", "rev-parse", "--is-shallow-repository"], cwd=root,
+            capture_output=True, text=True, timeout=60)
+        available = probe.returncode == 0
+        if available:
+            shallow = probe.stdout.strip().lower() == "true"
+    except (OSError, ValueError, subprocess.SubprocessError):
+        available = False
+    _GIT_STATE[root] = (available, shallow)
+    return available, shallow
+
+
+def _git_resolves(root: str, sha: str):
+    """True/False when the sha can be checked, None when it cannot."""
+    available, shallow = _git_state(root)
+    if not available or shallow:
+        return None
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", sha + "^{commit}"],
+            cwd=root, capture_output=True, text=True, timeout=60)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return res.returncode == 0
 
 
 def _walk_paths(root: str) -> set:
@@ -224,17 +293,29 @@ def _pattern_matches(pattern: str, names) -> bool:
     return any(rx.search(name) for name in names)
 
 
-def _ctest_refs(produced_by: str, names) -> bool:
-    for match in _CTEST_FILTER_RE.finditer(produced_by):
+def _ctest_refs(command: str, names) -> bool:
+    for match in _CTEST_FILTER_RE.finditer(command):
         pattern = next(g for g in match.groups() if g is not None)
         if pattern and _pattern_matches(pattern, names):
             return True
     return False
 
 
-def _path_refs(produced_by: str, repo_paths) -> bool:
-    for token in _TOKEN_SPLIT_RE.split(produced_by):
-        if token and token in repo_paths:
+def _path_refs(command: str, repo_paths) -> list:
+    out = []
+    for token in _TOKEN_SPLIT_RE.split(command):
+        if token and token in repo_paths and token not in out:
+            out.append(token)
+    return out
+
+
+def _is_tool(path: str) -> bool:
+    return path.lower().endswith(_TOOL_SUFFIXES)
+
+
+def _writer_covers(tool: str, artifact: str) -> bool:
+    for pattern in WRITERS.get(tool, ()):
+        if fnmatch.fnmatchcase(artifact, pattern):
             return True
     return False
 
@@ -255,6 +336,20 @@ def _record_id(rec) -> str:
     return "<no-id>"
 
 
+def _concern(rec) -> str:
+    """The file(s) a record-level violation is about (brief output wording:
+    every violation line names the record AND the file involved)."""
+    files = rec.get("files")
+    if isinstance(files, dict) and files:
+        return ", ".join(sorted(files))
+    test = rec.get("test")
+    if isinstance(test, str):
+        found = _TEST_FILE_RE.findall(test)
+        if found:
+            return found[0]
+    return "no file (in-test literals only)"
+
+
 def _artifact_files(root: str) -> list:
     """Every file under tests/golden/** and tests/fixtures/** (recursive)."""
     out = []
@@ -270,16 +365,76 @@ def _artifact_files(root: str) -> list:
     return sorted(out)
 
 
-def lint(root: str, manifest_path: str) -> list:
-    """Return a list of failure strings (empty == PASS)."""
+def _check_gen(tag: str, rec, command: str, repo_paths, ctest_names) -> list:
+    """Rule 3, `gen:` form: a real generator that produces the artifacts."""
     failures = []
+    tools = [t for t in _path_refs(command, repo_paths) if _is_tool(t)]
+    if not tools and not _ctest_refs(command, ctest_names):
+        failures.append(
+            f"{tag} rule3: gen: command references no existing repo tool "
+            f"(script) and no registered ctest name: {command!r} "
+            f"(file: {_concern(rec)})")
+    files = rec.get("files")
+    if isinstance(files, dict):
+        for artifact in files:
+            if artifact in command:
+                continue
+            if any(_writer_covers(tool, artifact) for tool in tools):
+                continue
+            failures.append(
+                f"{tag} rule3: gen: command neither names the artifact "
+                f"{artifact} nor uses a tool whose documented write path "
+                f"produces it: {command!r}")
+    return failures
+
+
+def _check_capture(tag: str, rec, rest: str, root: str) -> list:
+    """Rule 3, `capture:` form: no in-repo writer, named source + commit +
+    pointer to the capture record."""
+    failures = []
+    match = _CAPTURE_RE.match(rest)
+    if not match:
+        failures.append(
+            f"{tag} rule3: capture: must read "
+            f"'capture: <source>@<commit> (no in-repo writer) - <pointer>': "
+            f"{rest!r} (file: {_concern(rec)})")
+        return failures
+    qual = match.group("qual")
+    if "no in-repo writer" not in qual.lower():
+        failures.append(
+            f"{tag} rule3: capture: qualifier must state 'no in-repo "
+            f"writer': {qual!r}")
+    commit = match.group("commit")
+    resolved = _git_resolves(root, commit)
+    if resolved is False:
+        failures.append(
+            f"{tag} rule3: capture: commit {commit} does not resolve in this "
+            f"repository's history (file: {_concern(rec)})")
+    pointer = match.group("pointer").strip()
+    path = pointer.split()[0] if pointer.split() else ""
+    path = path.split(":")[0].split("#")[0]
+    if not path or not os.path.isfile(os.path.join(root, *path.split("/"))):
+        failures.append(
+            f"{tag} rule3: capture: pointer file {path!r} does not exist in "
+            f"the repo (file: {_concern(rec)})")
+    return failures
+
+
+def lint(root: str, manifest_path: str) -> tuple:
+    """Return (failures, forms) - failures empty == PASS.
+
+    `forms` maps "section#index" to the accepted produced_by form
+    ("gen", "capture" or "rejected").
+    """
+    failures = []
+    forms = {}
     try:
         with open(manifest_path, encoding="utf8") as f:
             man = json.load(f)
     except (OSError, ValueError) as e:
-        return [f"manifest unreadable/malformed: {e}"]
+        return [f"manifest unreadable/malformed: {e}"], forms
     if not isinstance(man, dict):
-        return ["manifest is not a JSON object"]
+        return ["manifest is not a JSON object"], forms
 
     repo_paths = _repo_paths(root)
     ctest_names = _ctest_names(root)
@@ -295,55 +450,82 @@ def lint(root: str, manifest_path: str) -> list:
         for idx, rec in enumerate(records):
             rid = _record_id(rec)
             tag = f"[{section}#{idx} {rid}]"
+            key = f"{section}#{idx}"
             if not isinstance(rec, dict):
                 failures.append(f"{tag} rule1: record is not a JSON object")
+                forms[key] = "rejected"
                 continue
 
             # ---- rule 1: schema -------------------------------------
             for field in ("kind", "commit", "produced_by", "files"):
                 if field not in rec:
                     failures.append(
-                        f"{tag} rule1: required field '{field}' is missing")
+                        f"{tag} rule1: required field '{field}' is missing "
+                        f"(file: {_concern(rec)})")
             if "kind" in rec and rec["kind"] != kind:
                 failures.append(
                     f"{tag} rule1: kind is {rec['kind']!r} but the "
-                    f"{section} section requires {kind!r}")
+                    f"{section} section requires {kind!r} "
+                    f"(file: {_concern(rec)})")
             if "commit" in rec and not (
                     isinstance(rec["commit"], str) and rec["commit"].strip()):
-                failures.append(f"{tag} rule1: commit is empty")
+                failures.append(
+                    f"{tag} rule1: commit is empty (file: {_concern(rec)})")
+            elif isinstance(rec.get("commit"), str) and rec["commit"].strip():
+                # M8: the commit must name a commit that resolves in this
+                # repository - a prose pointer alone is not enough.
+                candidates = _SHA_TOKEN_RE.findall(rec["commit"])
+                if candidates:
+                    resolved = [s for s in candidates
+                                if _git_resolves(root, s) is True]
+                    if not resolved:
+                        failures.append(
+                            f"{tag} rule1: commit names no commit that "
+                            f"resolves in this repository's history: "
+                            f"{rec['commit']!r} (file: {_concern(rec)})")
+                else:
+                    failures.append(
+                        f"{tag} rule1: commit names no commit sha at all: "
+                        f"{rec['commit']!r} (file: {_concern(rec)})")
             if "produced_by" in rec and not (
                     isinstance(rec["produced_by"], str)
                     and rec["produced_by"].strip()):
-                failures.append(f"{tag} rule1: produced_by is empty")
+                failures.append(
+                    f"{tag} rule1: produced_by is empty "
+                    f"(file: {_concern(rec)})")
             files = rec.get("files")
             if files is not None and not isinstance(files, dict):
-                failures.append(f"{tag} rule1: files is not an object")
+                failures.append(
+                    f"{tag} rule1: files is not an object "
+                    f"(file: {_concern(rec)})")
                 files = None
             if isinstance(files, dict):
                 for path, sha in files.items():
                     if not isinstance(path, str) or not path:
                         failures.append(
                             f"{tag} rule1: files key {path!r} is not a "
-                            f"repo-relative path")
+                            f"repo-relative path (file: {_concern(rec)})")
                         continue
                     if "\\" in path or path.startswith("/") or \
                             ".." in path.split("/"):
                         failures.append(
                             f"{tag} rule1: files key {path!r} is not a "
-                            f"forward-slash repo-relative path")
+                            f"forward-slash repo-relative path "
+                            f"(file: {_concern(rec)})")
                     if not isinstance(sha, str) or not _SHA_RE.match(sha):
                         failures.append(
                             f"{tag} rule1: files[{path!r}] is not a 64-hex "
-                            f"sha256")
+                            f"sha256 (file: {path})")
                 if kind in ("golden", "fixture") and not files:
                     failures.append(
                         f"{tag} rule1: files must be non-empty for a "
-                        f"{kind!r} record")
+                        f"{kind!r} record (file: {_concern(rec)})")
                 if section == "in_test" and not files and \
                         rec.get("relational") is not True:
                     failures.append(
                         f"{tag} rule1: an in_test record with an empty "
-                        f"files map must carry \"relational\": true")
+                        f"files map must carry \"relational\": true "
+                        f"(file: {_concern(rec)})")
 
             # ---- rule 2: sha match ----------------------------------
             if isinstance(files, dict):
@@ -358,26 +540,39 @@ def lint(root: str, manifest_path: str) -> list:
                         continue
                     with open(full, "rb") as f:
                         raw = f.read()
-                    if not isinstance(sha, str) or sha not in \
-                            _sha_variants(raw):
+                    canonical = _canonical_sha(raw)
+                    if not isinstance(sha, str) or sha != canonical:
                         failures.append(
-                            f"{tag} rule2: sha256 of {path} does not match "
-                            f"the recorded {sha}")
+                            f"{tag} rule2: canonical sha256 of {path} does "
+                            f"not match the recorded {sha} (expected "
+                            f"{canonical}; text artifacts are recorded "
+                            f"LF-canonical, binary artifacts raw)")
                     registered.add(path)
 
-            # ---- rule 3: produced_by present and real ---------------
+            # ---- rule 3: produced_by present, real, honestly labelled
             produced_by = rec.get("produced_by")
+            form = "rejected"
             if isinstance(produced_by, str) and produced_by.strip():
-                if _PLACEHOLDER_RE.search(produced_by):
+                body = produced_by.strip()
+                if _PLACEHOLDER_RE.search(body):
                     failures.append(
                         f"{tag} rule3: produced_by carries a placeholder "
-                        f"token: {produced_by.strip()!r}")
-                elif not (_path_refs(produced_by, repo_paths)
-                          or _ctest_refs(produced_by, ctest_names)):
+                        f"token: {body!r} (file: {_concern(rec)})")
+                elif body.startswith(GEN_PREFIX):
+                    form = "gen"
+                    failures.extend(_check_gen(
+                        tag, rec, body[len(GEN_PREFIX):].strip(),
+                        repo_paths, ctest_names))
+                elif body.startswith(CAPTURE_PREFIX):
+                    form = "capture"
+                    failures.extend(_check_capture(
+                        tag, rec, body[len(CAPTURE_PREFIX):].strip(), root))
+                else:
                     failures.append(
-                        f"{tag} rule3: produced_by references no existing "
-                        f"repo path and no registered ctest name: "
-                        f"{produced_by.strip()!r}")
+                        f"{tag} rule3: produced_by must use the 'gen: ' or "
+                        f"'capture: ' form - a bare verification command is "
+                        f"not a producer: {body!r} (file: {_concern(rec)})")
+            forms[key] = form
 
             # ---- rule 5: in_test / fixtures registry rot ------------
             if section in ("in_test", "fixtures") and \
@@ -425,11 +620,11 @@ def lint(root: str, manifest_path: str) -> list:
                     else:
                         with open(full, "rb") as f:
                             raw = f.read()
-                        variants = _sha_variants(raw)
-                        if rec.get("sha256") not in variants:
+                        canonical = _canonical_sha(raw)
+                        if rec.get("sha256") != canonical:
                             failures.append(
                                 f"{tag} rule6: golden_midi sha256 does not "
-                                f"match {path}")
+                                f"match {path} (expected {canonical})")
                         if rec.get("bytes") != len(raw):
                             failures.append(
                                 f"{tag} rule6: golden_midi bytes does not "
@@ -440,7 +635,7 @@ def lint(root: str, manifest_path: str) -> list:
                             failures.append(
                                 f"{tag} rule6: golden_midi files map does "
                                 f"not list {path}")
-                        elif files_map[path] not in variants:
+                        elif files_map[path] != canonical:
                             failures.append(
                                 f"{tag} rule6: golden_midi files map sha "
                                 f"disagrees with the file {path}")
@@ -453,7 +648,7 @@ def lint(root: str, manifest_path: str) -> list:
             f"[file {path}] rule4: artifact file is not registered by any "
             f"record (add it to a record's files map or to EXCLUSIONS)")
 
-    return failures
+    return failures, forms
 
 
 def main() -> int:
@@ -463,7 +658,22 @@ def main() -> int:
     ap.add_argument("--root", default=_REPO,
                     help="repository root the registry paths resolve against")
     args = ap.parse_args()
-    failures = lint(args.root, args.manifest)
+    failures, forms = lint(args.root, args.manifest)
+    for key in sorted(forms):
+        print(f"lint_golden_manifest: record {key}: form={forms[key]}")
+    counts = {}
+    for form in forms.values():
+        counts[form] = counts.get(form, 0) + 1
+    summary = ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))
+    print(f"lint_golden_manifest: forms accepted: {summary} "
+          f"({len(forms)} records)")
+    available, shallow = _git_state(args.root)
+    if not available:
+        print("lint_golden_manifest: NOTE: git unavailable - commit "
+              "resolution checks skipped")
+    elif shallow:
+        print("lint_golden_manifest: NOTE: shallow clone - commit "
+              "resolution checks skipped (fetch-depth: 0 enables them)")
     if failures:
         for msg in failures:
             print(f"lint_golden_manifest: FAIL: {msg}")

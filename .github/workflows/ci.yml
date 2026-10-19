@@ -16,6 +16,12 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the golden-manifest lint checks that every
+          # record's `commit` names a commit that RESOLVES in this
+          # repository. A shallow clone (default fetch-depth: 1) cannot
+          # resolve it, so the check would be skipped in CI.
+          fetch-depth: 0
 
       - name: Layer gate (src/core JUCE-free, inference plugin-free)
         run: python tools/check_layers.py --strict
