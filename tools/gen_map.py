@@ -6,6 +6,13 @@ Scans src/ (.h/.hpp/.cpp), tools/ + tests/ + training/ (.py, .cpp under
 tests/) and writes docs/MAP.md. Deny-paths (JUCE/, external/, *.onnx,
 training/corpus/sealed_test.jsonl, build*/) are never scanned.
 
+Environment/package trees are pruned from the walk as well: a directory whose
+name starts with `.venv` (or that is named `venv`, `__pycache__`,
+`.pytest_cache`, `node_modules`, `.git`) is never descended into. The venv
+trees under training/ hold tens of thousands of site-packages `.py` files
+that are not repo code, and scanning them made the map both enormous and
+machine-specific.
+
 Symbol rule (best-effort, deterministic, single-line only):
 - C++: `namespace` / `class` / `struct` / `enum [class]` names +
   TEST_CASE("name") suite names.
@@ -30,6 +37,16 @@ MAX_SYMS = 30
 
 _CPP_EXTS = (".h", ".hpp", ".cpp")
 _PY_EXTS = (".py",)
+
+# Directory names that are never descended into (environment / package
+# noise, not repo code). `.venv*` is matched by prefix so every venv
+# flavour (.venv, .venv-cuda, ...) is covered.
+_SKIP_DIRS = ("venv", "__pycache__", ".pytest_cache", "node_modules", ".git")
+
+
+def _skip_dir(name: str) -> bool:
+    """True for directories the map never walks into."""
+    return name in _SKIP_DIRS or name.startswith(".venv")
 
 _NS_RE = re.compile(r"^\s*namespace\s+(\w+)")
 _CLASS_RE = re.compile(r"^\s*(?:class|struct)\s+(\w+)")
@@ -80,7 +97,10 @@ def iter_files() -> list[str]:
     out: list[str] = []
     for root in roots:
         base = os.path.join(_REPO, *root.split("/"))
-        for dp, _, fns in os.walk(base):
+        for dp, dns, fns in os.walk(base):
+            # Prune environment/package trees in place (os.walk honours the
+            # in-place edit of `dirs`): they hold no repo code.
+            dns[:] = [d for d in dns if not _skip_dir(d)]
             for fn in sorted(fns):
                 if fn.endswith(_CPP_EXTS) or fn.endswith(_PY_EXTS):
                     full = os.path.join(dp, fn)

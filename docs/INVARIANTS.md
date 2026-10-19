@@ -6,10 +6,16 @@ cited only after verifying its `.exe` exists AND its cases register:
 build-full/tests/Release holds all 9 cited binaries;
 build-off/tests/Debug holds 8 of 9 (test_preview_synth is plugin-ON
 gated and has no off build -- stated, not fudged). Suite totals
-re-verified via `ctest -N`: 193 tests (build-full/Release), 170 tests
-(build-off/Debug). Per invariant, one "Spot-check" line names 1-2 exact
-Catch2 case strings personally verified present in BOTH suites'
-`ctest -N` (numbers are the observed full/off test numbers).
+re-verified via `ctest -N` at the S10 close (2026-10-19): **251 tests
+(build-full/Release), 221 tests (build-off/Debug)**
+(docs/measurements/s10-final.md, section 1, rows 1-2). The **S0
+baseline** for the same two configurations was **193 tests
+(build-full/Release), 170 tests (build-off/Debug)**
+(docs/measurements/s0-test-matrix.md:10-11) -- the S0 numbers are the
+baseline, the current numbers are the gate. Per invariant, one
+"Spot-check" line names 1-2 exact Catch2 case strings personally
+verified present in BOTH suites' `ctest -N` (numbers are the observed
+full/off test numbers, re-derived at the S10 close).
 
 CI job for all five: `build-test-validate` (`.github/workflows/ci.yml`).
 Relevant steps: `Test` (`ctest --test-dir build -C Release
@@ -29,7 +35,7 @@ Sources: SPEC section 11, THREADING_MODEL.md.
 | test_preview_synth | full only (plugin-ON; no off build) |
 
 Spot-check: "fake-latency runner proves the flow is non-blocking"
-(full #88 / off #88). Also covered: "async completion is bit-identical
+(full #100 / off #100). Also covered: "async completion is bit-identical
 to the sync path", "preview synth renders audible tone while held",
 "preview synth decays after noteOff".
 
@@ -45,8 +51,8 @@ Fixed seeds and parameters reproduce outputs exactly, end to end.
 | test_async_generate | full + off |
 | test_memo_filter | full + off |
 
-Spot-check: "same seed gives bit-identical candidates" (full #67 /
-off #67). Also covered: "model path threads into generation
+Spot-check: "same seed gives bit-identical candidates" (full #77 /
+off #77). Also covered: "model path threads into generation
 deterministically", "memo filter is deterministic".
 
 CI: `build-test-validate`, step `Determinism proof (render_midi
@@ -54,13 +60,27 @@ byte-identity)` (render_midi seed-7 twice + binary compare).
 
 ## INV-3: Both suites stay fully green (refactor behavior gate)
 
-`ctest` passes 193/193 in build-full/Release and 170/170 in
-build-off/Debug. The 23-test delta is option-gated only (plugin-ON adds
-21, ONNX-ON adds a net 2 in test_ort_logits); Release-vs-Debug
-contributes zero. Evidence: docs/measurements/s0-test-matrix.md.
+`ctest` passes **251/251 in build-full/Release** and **221/221 in
+build-off/Debug** (measured 2026-10-19 at the S10 close --
+docs/measurements/s10-final.md, section 1, rows 1-2). The 30-test delta
+is option-gated only: the plugin-ON families contribute 28
+(test_chordtrack_pin 2, test_keyboard_moves 9, test_focus_resize 4,
+test_preview_synth 2, test_plugin_state 4, test_params_from_state 2,
+test_vertical_slice 1, test_rt_violation_counter 3, test_rt_soak 1) and
+the ONNX option a net 2 (3 real cases in test_ort_logits vs the 1
+offline-stub case). Release-vs-Debug contributes zero: the only
+`#ifndef NDEBUG` blocks in the test tree (4 sites, in
+tests/test_rt_violation_counter.cpp and tests/test_rt_soak.cpp) sit in
+plugin-ON-only binaries whose `#else` branches assert the same things,
+so no case is registered or unregistered by the configuration.
+The **S0 baseline** for the same pair was 193/193 in build-full/Release
+and 170/170 in build-off/Debug, with a 23-test delta (plugin-ON adds
+21, ONNX-ON adds a net 2 in test_ort_logits) -- Evidence:
+docs/measurements/s0-test-matrix.md:10-11,18-34.
 Deliberately unregistered binaries are NOT part of this gate:
 test_note_cues and test_visual_polish (headless drawText teardown crash,
-see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag).
+see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag)
+-- re-verified at the S10 close: 3 / 5 / 1 cases in source, 0 registered.
 
 | binary (binding) | suites |
 |---|---|
@@ -69,7 +89,7 @@ see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag).
 | test_arrangement | full + off |
 
 Spot-check: "keynorm flag-off generate path is bit-identical to
-pre-task output" (full #187 / off #168). Also covered: "arrangement
+pre-task output" (full #214 / off #194). Also covered: "arrangement
 build is deterministic".
 
 CI: `build-test-validate`, step `Test`.
@@ -89,7 +109,7 @@ restricts it to background threads.
 | test_sampler (memo cases) | full + off |
 
 Spot-check: "verbatim run is truncated at the offending window"
-(full #145 / off #128). Also covered: "clean generation passes through
+(full #161 / off #143). Also covered: "clean generation passes through
 byte-identical", "missing index file loads nullopt and never throws",
 "memo filter is deterministic", "drums are untouched by the memo
 filter", "loader round-trips the binary format and rejects garbage",

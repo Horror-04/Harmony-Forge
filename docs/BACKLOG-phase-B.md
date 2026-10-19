@@ -80,6 +80,7 @@ src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
 | B9 | Three CCN 16/30/30 functions were never split | inference | the highest-complexity functions in the composer keep their pre-S3 shape, and the retired text guard no longer covers them |
 | B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | an out-of-range prefix id is only rejected downstream, and the real sidecar output is not pinned anywhere |
 | B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | the C++ and Python chord-shift semantics differ on enriched chords; the divergence is pinned "loud" on both sides instead of fixed |
+| B12 | The Editor extraction (S9.3) was never done | plugin/ui | the Editor stays the largest file in `src/plugin` (1046 lines, a file-size exception) and its constructor stays the layout + complexity hotspot (CCN 16) |
 
 ---
 
@@ -1001,6 +1002,98 @@ a corpus that starts carrying enriched chords will silently diverge
 between the training view and the product view — with both sides pinned to
 their own behaviour, the pins will *confirm* the divergence rather than
 catch it.
+
+---
+
+## B12 — The Editor extraction (S9.3) was never done
+
+> **Added by the S10.3 close-out (fix round 1).** The S10.3 cycle-closure
+> document points at this record for the deferred S9.3 work, and the record
+> had no such item: the deferral was stated only in
+> `docs/measurements/s9-0.md:157-159` ("S9.3 status: BACKLOG (verdict
+> pending)"). This entry closes that gap. All locations below were opened and
+> checked in the tree this entry applies to (the S10 close, commit `b582875`
+> plus the S10.3 fix round).
+
+**Where it lives.**
+
+- `src/plugin/audio/PluginEditor.h` — **324** physical lines;
+  `src/plugin/audio/PluginEditor.cpp` — **1046** physical lines; **1370**
+  total (python newline count over the working-tree bytes, measured at the
+  S10 close; the `.cpp` figure is independently confirmed by the file-size
+  gate's pin, `docs/measurements/ratchet.md:87`). The `.cpp` is the largest
+  file under `src/plugin` and is one of the 8 pinned files over 500 lines.
+- **45 functions** (44 in the `.cpp` + 1 in the `.h`), **total CCN 137**,
+  **max CCN 16** — `HarmonyForgeEditor::HarmonyForgeEditor` at
+  `src/plugin/audio/PluginEditor.cpp:67-345` (NLOC 208, length 279), the
+  single complexity outlier of the file. The next-highest are
+  `importReferenceMidi` (CCN 9, `:958-1003`) and `timerCallback` (CCN 8,
+  `:521-561`).
+- The layout responsibility is fused into two members:
+  - the **constructor** `src/plugin/audio/PluginEditor.cpp:67-345` — 45
+    `addAndMakeVisible` calls, the LookAndFeel attach, the listener
+    registrations and the timer start, all in one body;
+  - **`resized()`** `src/plugin/audio/PluginEditor.cpp:395-519` (125 lines,
+    CCN 1) — the layout pass that positions the editor's own rows and drives
+    the roll viewport.
+- The measurement that was written to inform the decision: the S9-ENTRY
+  baseline and its corrected line counts in `docs/measurements/s9-0.md`
+  (Item 1 `:19-28`, Item 4 `:139-155`, Appendix B `:272-369` — Appendix B
+  retracts Item 1's 298 + 975 = 1273 and replaces it with 324 + 1046 =
+  1370), and the CCN-16 provenance in Appendix B §B-4 (`:351-362`).
+- The decision input: the S3 goals "≤300 lines / ≤120 CCN", which
+  `docs/measurements/s9-0.md:141-142` records as **goals, not gates** — the
+  Editor misses them by ~4x on lines (`:159`).
+
+**What exactly is deferred.** The S9.3 slice — the extraction of the
+Editor's layout/construction responsibility into its own unit (the
+"resized-layout extraction from Editor" named at
+`docs/measurements/s9-0.md:159`) — **and** any re-scoped Editor budget
+recorded in its place.
+
+**Why it was deferred.** S9.0-S9.2 closed as measurement plus pure panel
+moves, so no committed slice changed the Editor's numbers, and the S9.3
+verdict was explicitly left to the owner ("S9.3 (resized-layout extraction
+from Editor) or a re-scoped budget is Sonnet's call on these numbers;
+recorded here, not executed" — `docs/measurements/s9-0.md:159`). The cycle
+that closes at S10 spent its budget on measurement and on the gates, and an
+Editor extraction is a behaviour-sensitive change on the message-thread UI
+path (the constructor wires ~45 widgets, the resize path drives the
+viewport, the timer polls the document) — not a measurement slice. It was
+also never a *bounded* piece of work: the S9.0 page exists precisely because
+the verdict needs an owner decision that no measurement can supply.
+
+**Acceptance criteria (observable).**
+
+- Either the Editor's own line count drops to the ceiling the owner picks,
+  or a re-scoped budget is recorded in writing (the S3 "≤300/≤120" numbers
+  were goals, not gates — `docs/measurements/s9-0.md:140-141`).
+- The extraction is behaviour-preserving: no ctest case changes, no golden
+  moves, and the counters do not drop — currently **251/251 in
+  build-full/Release** and **221/221 in build-off/Debug**
+  (`docs/measurements/s10-final.md` §1, rows 1-2).
+- The max-CCN function of the Editor is no longer the constructor at CCN 16,
+  **or** the constructor is pinned as an explicit exception in the CCN
+  ratchet with a stated reason (`docs/measurements/ratchet.md` §4).
+- The file-size gate keeps `src/plugin/audio/PluginEditor.cpp` pinned at its
+  measured line count, or the pin is pruned when the file drops under 500
+  lines (`docs/measurements/ratchet.md` §2, the pin-prune rule at `:36-38`).
+- The S9.3 numbers are updated in place at the S9.0 page (or a successor
+  page) with the post-extraction measurement, so the decision input and its
+  answer live together.
+
+**Owner decision required:** (a) is the S9.3 extraction still wanted, (b)
+against which ceiling — the S3 "≤300/≤120" goals, a re-scoped budget, or
+"no extraction"; and (c) if it is split, which unit owns the layout
+( a dedicated layout/panel unit beside the editor, or the existing panel
+headers extended).
+
+**Risk / impact of leaving it deferred.** The Editor stays the largest file
+under `src/plugin` and a pinned file-size exception, and its constructor
+stays the file's complexity outlier. Every future change to the Editor is a
+whole-file review, the layout responsibility stays fused with the callback
+wiring, and the S9.3 decision stays open against a number set that was
+measured in S9 and has not been re-measured since.
 
 ---
 
