@@ -5,6 +5,11 @@
 // only shared `detail/` names + core music libs — see
 // docs/measurements/s3-helpers-transforms.md). Included directly by its
 // consumers; declarations stay valid.
+//
+// B9 (phase-B tranche C, 2026-10-19): the body was dissected into named,
+// file-local stages (`find_melody_track`, `apply_catchy_transform`,
+// `apply_complex_transform`, `apply_unexpected_transform`); the public
+// signature below is UNCHANGED.
 #pragma once
 
 #include <vector>

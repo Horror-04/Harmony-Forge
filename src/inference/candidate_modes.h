@@ -3,6 +3,11 @@
 // Candidate mode post-processing TU (S3 slice 3): `apply_mode` + its
 // modes-only helpers (`snap_to_pcs`, `is_minor_family`, `kGrid`).
 // Included directly by its consumers; declarations stay valid.
+//
+// B9 (phase-B tranche C, 2026-10-19): the body was dissected into named,
+// file-local stages (`is_modal_color`, `snap_to_parallel_union`,
+// `apply_modal_color`, `insert_chromatic_passing_tones`); the public
+// signature below is UNCHANGED.
 #pragma once
 
 #include <vector>
