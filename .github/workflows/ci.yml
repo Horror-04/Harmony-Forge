@@ -131,6 +131,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: C2059 quirk probe (self-retiring compiler witness)
+        # B7 guard for the MSVC C2059 quirk (docs/measurements/s3-quirks.md,
+        # status CAUSE UNESTABLISHED). The probe compiles the `sseed`
+        # statement shapes and pins the OUTCOME: the record's one-line repro
+        # form must fail with `error C2059`, the balanced one-line, the
+        # balanced-mutation and the two-statement forms must compile.
+        # It runs HERE, not in the `gates` job: it needs the MSVC toolchain
+        # (which this job already requires for the build), while the gates
+        # job stays stdlib-only. No build tree, no project headers, no venv.
+        # Both verdicts fail the job on purpose: RETIRE (MSVC stopped
+        # emitting C2059 - the constraint can be dropped) and FAIL (an
+        # outcome change) must be noticed, never ignored.
+        run: python tools/c2059_probe/probe_c2059.py --require-msvc
+
       - name: Vocab layout check (spec -> gen.h freshness + frozen pin)
         # Stdlib only, seconds: spec-bitmap == frozen d66faabf pin AND
         # committed vocab_layout.gen.h == generator output. Must run BEFORE
