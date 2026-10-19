@@ -6,7 +6,8 @@
 // (`snap_to_pcs`, `is_minor_family`, `kGrid`). Shared names
 // resolve to `detail/` via the using-directive below, so the moved bodies
 // carry zero edits; `GenParams`/`GenMode` arrive via the narrow
-// `detail/candidate_params.h` (never the candidates.h re-export header).
+// `detail/candidate_params.h` (directly included; the candidates.h
+// re-export shim was removed in S10.2).
 #include "candidate_modes.h"
 
 #include <algorithm>

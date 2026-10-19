@@ -4,7 +4,8 @@
 // sampler-adjacent model group moved byte-identically from
 // `src/inference/candidates.cpp` (pre-cut 186-225 + 404-515; see
 // tools/check_bodies_s3.json). `GenParams` arrives via the narrow
-// `detail/candidate_params.h` (never the candidates.h re-export header).
+// `detail/candidate_params.h` (directly included; the candidates.h
+// re-export shim was removed in S10.2).
 // Same ONNX-gating as before: none of these bodies carries a conditional
 // directive (the file-level guard set is empty — the ONNX/stub split lives
 // in onnx_runner.cpp/ort_logits.cpp behind these includes), so there is

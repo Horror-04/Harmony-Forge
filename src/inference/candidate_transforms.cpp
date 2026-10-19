@@ -5,7 +5,8 @@
 // `src/inference/candidates.cpp` (pre-cut 228-306; see tools/check_bodies_s3.json).
 // Shared names resolve to `detail/` via the using-directive below, so the
 // moved body carries zero edits; `GenParams`/`GenMode` arrive via the narrow
-// `detail/candidate_params.h` (never the candidates.h re-export header).
+// `detail/candidate_params.h` (directly included; the candidates.h
+// re-export shim was removed in S10.2).
 #include "candidate_transforms.h"
 
 #include <algorithm>

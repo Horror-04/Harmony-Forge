@@ -289,3 +289,63 @@ rule file-absence-safe via `includes_of` OSError tolerance).
 \\
 \- Layers-rule red-proof: planted #include <juce_gui_basics/juce_gui_basics.h> in PatternDocument.h (scratch) -> --strict exit nonzero naming the file; reverted -> CLEAN. Ratchet proven live, not just green.\
 \- Item-3 #5 exact patterns (re-runnable): launchAsync -> 3 sites (:812 export bytes-only safe, :826 + :947 SafePointer-guarded); \[this\] in PluginEditor.cpp -> 35, all sync UI callbacks (zero callAsync/std::thread/std::async in file); outbox.push -> 1 site, definition-only (PluginProcessor.h:95 in enqueueMidi); previewNoteOn|Off -> 2 sites, tick-drain only (:549/:551). Zero claim holds with patterns attached.\
+
+## S10.3 close-out append (2026-10-19): the SKIP basis and the lifecycle coverage
+
+**This section is an APPEND.** Everything above it is the S8-SKIP record as
+the S8 slice wrote it and is left byte-untouched.
+
+### The SKIP basis, in one paragraph
+
+S8 (extract a close-path owner) is skipped because there is nothing left to
+extract: the close path is already two member-destruction joins with no
+explicit shutdown, no callbacks and no second undo stack. The editor's
+`previewGen_` and the document's `gen_queue_` both die through the implicit
+`~AsyncGenerateQueue -> shutdown() -> join` path
+(`src/inference/async_generate.cpp:113-134`); nobody in `src/plugin` calls
+`shutdown()` explicitly (zero grep hits); and the ownership answers trace
+statically to file:line (the Item-2 map above, re-verified with the S7
+delegation folded in). The three safety properties an extraction would have
+provided — no close-with-inflight use-after-free, no bare-`this` async
+callbacks, clear worker/UndoManager ownership — are therefore proven with
+tests and numbers instead of an extraction.
+
+### The lifecycle tests that cover it
+
+`tests/test_s8_close_lifecycle.cpp` (JUCE-free, so it rides `hf_add_test` in
+BOTH configurations), two TEST_CASEs:
+
+1. `"queue destructor joins the in-flight job (close-path bound)"`
+   (`tests/test_s8_close_lifecycle.cpp:102`) — the **Document-destroy /
+   editor-close with a job in flight** case. The worker is pinned inside
+   `predict` (GateRunner), the queue is destroyed with NO explicit
+   `shutdown()`, and the case asserts that the in-flight job ran to completion
+   INSIDE the destructor join (exactly one job's worth of predicts) and that
+   the join was bounded (< the 30 s watchdog scale). This is the case that
+   exercises the implicit `~AsyncGenerateQueue -> shutdown() -> join` path
+   every close actually uses.
+2. `"queue destructor drops queued-but-unstarted jobs"`
+   (`tests/test_s8_close_lifecycle.cpp:140`) — the companion case: three jobs
+   are submitted, the first is pinned, the queue is destroyed, and exactly one
+   job's worth ran (the queued two are dropped, never started).
+
+### ctest evidence that they run in BOTH configurations
+
+Measured in the S10.3 close-out task (2026-10-19, branch `refactor/s10-final`):
+
+| configuration | `ctest -N` registration | targeted run |
+|---|---|---|
+| `build-off` (Debug, plugin-OFF) | **#103** "queue destructor joins the in-flight job (close-path bound)", **#104** "queue destructor drops queued-but-unstarted jobs" | `ctest --test-dir build-off -C Debug -R "queue destructor"` -> **2/2 passed** (0.31 s) |
+| `build-full` (Release, plugin-ON) | **#103** and **#104**, the same two names | `ctest --test-dir build-full -C Release -R "queue destructor"` -> **2/2 passed** (0.30 s) |
+
+Both cases are therefore registered AND green in both configurations on this
+tree. The full suites behind them were also run in the same task: **221/221**
+in `build-off`/Debug and **251/251** in `build-full`/Release (see
+`docs/measurements/s10-final.md` §1, rows 1-2).
+
+### What this append does NOT claim
+
+Unchanged from the record above: editor-close under a real host/message loop
+is NOT covered (U-host), the host-side deletion thread/timing is not traced
+(U-close), and no ASan/PageHeap run was performed in this task. The SKIP
+stands as a SKIP; this append only states its basis and its coverage.\

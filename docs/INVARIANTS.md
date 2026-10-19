@@ -176,3 +176,56 @@ determinism). Portability: test_preview_synth is plugin-ON gated (no off
 build, tests/CMakeLists.txt); tags are inert Catch2 metadata that travel
 with the case wherever it builds, and the lint is source-level, so no
 per-suite presence is required of full-only cases.
+
+## DECLARED GAPS (NOT invariants — open, owned, tracked in the phase-B record)
+
+**What this section is, and what it is not.** The five sections above
+(INV-1..INV-5) are the repo's invariants: each binds to named ctest binaries
+and to named Catch2 cases, and breaking one is a failure. **The entries below
+are NOT invariants.** They are **declared GAPS** — properties the code does
+*not* have today, recorded here so that each gap is visible, named and owned
+instead of being silently assumed. Nothing in this section is bound to a test
+or to a gate: the `[inv1]`-`[inv5]` tag set above is unchanged (29 bindings
+over 5 invariants, `tools/lint_inv_tags.py`) and no CI step enforces a gap.
+A gap is closed by the work item named in its entry, and the entry is deleted
+when that work lands.
+
+### GAP-1 — the ORT logits provider has NO slot-range guard
+
+**The gap.** The slot-range guard for the ORT logits provider is **ABSENT**.
+`src/inference/ort_logits.cpp:42` sets
+`constexpr size_t kMaxIds = hf::ser::kVocabMaxTokens;` and
+`OrtLogitsProvider::get_logits` (`src/inference/ort_logits.cpp:150-193`)
+validates **only** against that token count (`n == 0 || n > kMaxIds`,
+`src/inference/ort_logits.cpp:154`), plus the output element type, the output
+shape `{1, n, kSamplerVocab}` and the finiteness of every produced float. It
+**never** consults the slot ranges `kVocabSlotLo` / `kVocabSlotHi`
+(`src/core/serialization/vocab_layout.gen.h:30-31`), so a prefix id outside
+the slot-legal range is not rejected at the ORT boundary: the provider
+reports success and returns logits for the full 256-wide vocabulary
+(`src/inference/sampler.h:41`, `kSamplerVocab = 256`).
+
+**Why it is a gap and not a broken invariant.** The slot ranges exist and are
+enforced elsewhere: decode-side
+(`src/core/serialization/tokenizer.cpp:80-85`), the sampler's FSM mask
+(`src/inference/sampler.cpp:140-155`, applied at
+`src/inference/sampler.cpp:227-229`) and the model-manifest compatibility
+check (`src/inference/model_manifest.cpp:268-272`). An out-of-range prefix id
+is therefore rejected further downstream (or only masked) — the ORT boundary
+is the one place that does not check it. No invariant above promised a
+boundary guard, so nothing above is broken; the missing check is simply
+recorded here as an open gap.
+
+**Owner, work and acceptance criteria.** `docs/BACKLOG-phase-B.md` item
+**B10** — the deferred-work record: where the guard would go, why it was
+deferred, the owner decision it needs (reject vs. mask), and its observable
+acceptance criteria (a test in `tests/test_ort_logits.cpp` that names the
+slot range it violates, with no false rejection on the frozen prefixes at
+`tests/test_ort_logits.cpp:48-60`). The separate, larger item in B10 — a
+product-level pin on the logits the committed `training/model.logits.onnx`
+produces — is also still open: the sidecar's output is pinned by no artifact
+in this repository.
+
+**Status at the S10 close (2026-10-19).** OPEN, knowingly. No test binds it,
+no gate covers it, and the invariant binding set above is unchanged. The
+numbers behind this statement are in `docs/measurements/s10-final.md` §4.
