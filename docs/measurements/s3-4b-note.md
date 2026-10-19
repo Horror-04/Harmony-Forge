@@ -96,3 +96,13 @@ Precise blast boundary, proven live this date (not asserted):
   `cube-baseline-v2` (composer streams moved; spot 0/16),
   C1–C6 guard shapes, wiring/binding/shape golden VALUES (pins still
   live, re-banked under the new streams with documented reason).
+
+## 8. Correction (2026-10-19): the C2059 cause is ESTABLISHED
+
+The §6 "Scratch-form note" (cause unestablished) is superseded: the cause
+IS established — the single-expression `+1` variants of the `sseed` line
+carried an extra closing paren, so the `error C2059` was a plain C++
+syntax error, not an MSVC/toolchain quirk. See
+`docs/measurements/s3-quirks.md` (Status: CAUSE ESTABLISHED) and the
+permanent probe `tools/c2059_probe/probe_c2059.py`, which compiles the
+real site TU in the well-formed and the malformed shapes.

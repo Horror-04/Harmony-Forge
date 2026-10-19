@@ -10,23 +10,25 @@ failure.
 
 Consequence: the binding constraint "NO single-line inner-expression
 mutations at `candidate_model.cpp:191-192`" RETIRES as a compiler
-workaround — the well-formed one-line form compiles on the real TU
-(proven by `tools/c2059_probe/probe_c2059.py`). The two-statement form
-remains the RECOMMENDED shape for scratch mutations (one closing paren
-less to typo), but future mutation batteries may use either form.
+workaround — the well-formed one-line forms compile on the real TU: the
+site's two lines joined, and an inner-expression mutation on one line
+(`p.seed + index + 1`), both proven by `tools/c2059_probe/probe_c2059.py`.
+The two-statement form remains the RECOMMENDED shape for scratch
+mutations (one closing paren less to typo), but future mutation
+batteries may use either form.
 
 ## What the failure actually was (2026-10-19)
 
-Paren census of the record's own lines (the numbers below are counted
-from the file, not remembered):
+Paren census of the record's own lines (the line numbers are THIS file's,
+as of this revision; the paren counts are counted, not remembered):
 
-| line | form | `(` | `)` | delta |
+| line (this file) | form | `(` | `)` | delta |
 |---|---|---|---|---|
-| :14 | the balanced form | 2 | 2 | 0 |
-| :17 | repro #1 `p.seed + index + 1` | 2 | 3 | -1 |
-| :18 | repro #2 `p.seed + index + 0` | 2 | 3 | -1 |
-| :19 | repro #3 `p.seed ^ index` | 2 | 3 | -1 |
-| :20 | repro #4 `(p.seed + index) + 1u` | 2 | 4 | -2 |
+| :51 | the balanced form | 2 | 2 | 0 |
+| :54 | repro #1 `p.seed + index + 1` | 2 | 3 | -1 |
+| :55 | repro #2 `p.seed + index + 0` | 2 | 3 | -1 |
+| :56 | repro #3 `p.seed ^ index` | 2 | 3 | -1 |
+| :57 | repro #4 `(p.seed + index) + 1u` | 2 | 4 | -2 |
 
 A negative delta is an unmatched closing paren — a syntax error, and the
 compiler was right to reject it. The same four mutations with BALANCED
@@ -130,9 +132,10 @@ What it asserts (one compile of the real TU per shape):
 | shape | expected |
 |---|---|
 | the site file, unmodified | compiles |
-| a well-formed ONE-LINE mutation of the site | compiles |
+| the well-formed ONE-LINE form (the site's two lines joined) | compiles |
+| a well-formed INNER-EXPRESSION mutation on one line (`p.seed + index + 1`) | compiles |
 | the two-statement form (the recommended shape) | compiles |
-| each of the four recorded malformed forms (:17-:20) | fails to compile |
+| each of the four recorded malformed forms (:54-:57) | fails to compile |
 
 Only the COMPILE FAILURE is asserted for the malformed forms: "C2059" is
 a property of the typo, not of the compiler, so the diagnostic text is
@@ -147,16 +150,17 @@ from a real one:
 | 1 | FAIL | a fact does not hold: the site or the toolchain broke |
 | 2 | SKIP | no MSVC toolchain found (nothing to assert; with `--require-msvc` this is a FAIL) |
 | 3 | PROBE-BROKEN | the probe's own anchor or variant table is out of date — a PROBE bug, never a finding about the site |
-| 4 | RETIRE | the well-formed one-line form stopped compiling: the premise that retired the constraint broke |
+| 4 | RETIRE | a well-formed one-line form stopped compiling: the premise that retired the constraint broke |
 
 The RETIRE verdict is the loud one. The constraint above is retired, so
-its premise has to keep holding: if the well-formed one-line form stops
+its premise has to keep holding: if a well-formed one-line form (the
+lines joined, or an inner-expression mutation on one line) stops
 compiling, the site or the toolchain changed and the constraint must be
 re-opened before it is trusted again.
 
 Observed 2026-10-19 on MSVC 19.51.36260 for x64 (Visual Studio 18
-Community, toolset 14.51.36231): the site compiles as it stands, the
-well-formed one-line form compiles, and all four malformed forms fail to
+Community, toolset 14.51.36231): the site compiles as it stands, both
+well-formed one-line forms compile, and all four malformed forms fail to
 compile (`error C2059: syntax error: ')'` — one diagnostic for the three
 one-extra-paren forms, two for the two-extra-paren form #4).
 

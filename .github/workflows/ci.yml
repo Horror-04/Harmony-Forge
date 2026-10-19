@@ -144,18 +144,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: C2059 quirk probe (self-retiring compiler witness)
-        # B7 guard for the MSVC C2059 quirk (docs/measurements/s3-quirks.md,
-        # status CAUSE UNESTABLISHED). The probe compiles the `sseed`
-        # statement shapes and pins the OUTCOME: the record's one-line repro
-        # form must fail with `error C2059`, the balanced one-line, the
-        # balanced-mutation and the two-statement forms must compile.
+      - name: sseed probe (real-TU compile witness)
+        # B7 guard for the `sseed` initializer (docs/measurements/s3-quirks.md,
+        # Status: CAUSE ESTABLISHED). The cause of the old `error C2059` is
+        # KNOWN: the scratch mutations carried an extra closing paren - a
+        # plain C++ syntax error, not a toolchain quirk. The probe compiles
+        # the REAL site TU and asserts: the site compiles as it stands, the
+        # well-formed one-line forms compile (lines joined, and an
+        # inner-expression mutation on one line - the fact that retired the
+        # old constraint), and each of the four recorded malformed forms
+        # fails to compile.
         # It runs HERE, not in the `gates` job: it needs the MSVC toolchain
         # (which this job already requires for the build), while the gates
-        # job stays stdlib-only. No build tree, no project headers, no venv.
-        # Both verdicts fail the job on purpose: RETIRE (MSVC stopped
-        # emitting C2059 - the constraint can be dropped) and FAIL (an
-        # outcome change) must be noticed, never ignored.
+        # job stays stdlib-only. No build tree, no venv.
+        # The verdicts fail the job on purpose: RETIRE (a well-formed
+        # one-line form stopped compiling - the site or the toolchain broke,
+        # so the retired constraint must be re-opened) and FAIL (a fact no
+        # longer holds) must be noticed, never ignored.
         run: python tools/c2059_probe/probe_c2059.py --require-msvc
 
       - name: Vocab layout check (spec -> gen.h freshness + frozen pin)
