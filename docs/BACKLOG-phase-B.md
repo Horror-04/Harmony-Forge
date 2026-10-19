@@ -85,6 +85,25 @@ src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
 
 ## B1 — Chord-root-anchored keynorm
 
+> **Reading note — the request has two readings; only one of them is
+> deferred.** "Chord-root keynorm" can be read two ways.
+> **(a) keynorm *anchored on* the chord root** — the canonical key derived
+> from the progression's chord root instead of from the scale family.
+> **This is the reading this item is about, and the capability does not exist
+> in the tree**: the anchor today is a scale-family lookup only (see "Where
+> it lives" below). **(b) keynorm *of* the chord roots** — chord roots
+> transposed into the canonical key. **That half is already implemented and
+> pinned**: `src/inference/keynorm.cpp:146-151` / `:153-158` shift every
+> chord root by the canonical shift (mirrored by
+> `training/keynorm.py:118-121`), with the C++ case "keynorm chord roots
+> shift identically with python parity" and the python check
+> `training/tests/test_keynorm.py:201`; the vectors live in
+> `tests/golden/keynorm_vectors.json` (golden-manifest record
+> `tests/golden_manifest.json:15-25`). **This item therefore exists only
+> under reading (a).** If the owner meant reading (b), the work is already
+> done and this item should be closed (it is also listed under "items NOT
+> carried" #1).
+
 **Where it lives.**
 The canonical anchor today is a **scale-family lookup only**:
 
@@ -112,10 +131,12 @@ the tree are the four listed above, and every caller
 `tools/render_model.py:303-313`) passes a scale/mode name.
 
 **What exactly is deferred.** The capability to compute the canonical key
-from the **progression's chord root** (i.e. a keynorm view whose anchor is
-the first/dominant chord root rather than the scale family), mirrored in
+from the progression's **chord root** — i.e. a keynorm view whose anchor is
+derived from the progression rather than from the scale family — mirrored in
 both implementations, with the same C++↔Python byte-parity contract the
-current keynorm has.
+current keynorm has. **Which** chord-root rule the anchor uses is *not*
+decided here: the rule itself is the open owner decision below, and this
+entry defers the *capability*, not a particular rule.
 
 **Why it was deferred.** It is a *semantic* change to the training view, not
 a refactor: the anchor decides what the model sees, so shipping it would
@@ -174,9 +195,12 @@ each future attempt will re-derive the analysis from scratch.
   `hf::plugin::paramsFromState(...)` → `src/plugin/state/PluginState.cpp:166-170`
   → `PatternDocument::makeParamsWithModel` → Strict.
 - There is **no mode control** in the Arrange UI: the whole widget set is
-  enumerated at `src/plugin/ui/ArrangeBar.h:73-80` (a type combo, labels,
-  bars/seed boxes, energy/variation sliders and add/del/up/down/build
-  buttons) and the public API at `src/plugin/ui/ArrangeBar.h:26-48` — no
+  enumerated at `src/plugin/ui/ArrangeBar.h:70-80` (the section list
+  `sections_` `:70` and `selected_` `:71`, the list box model `model_` `:72`
+  and `list_` `:73`, a type combo `typeBox_` `:74`, the labels `:75`, the
+  bars/seed boxes `:76`, the energy/variation sliders `:77`, the
+  add/del/up/down buttons `:78`, the build button `:79` and the status
+  label `:80`) and the public API at `src/plugin/ui/ArrangeBar.h:26-48` — no
   mode member, no mode combo, no mode field.
 - The data model has no mode slot either: `struct Section`
   (`src/core/arrangement/arrangement.h:109-115`) has exactly five fields
@@ -280,9 +304,13 @@ re-bank the pin, not a cleanup.
   `tests/golden_manifest.json:117`).
 - The cube baseline v3 (`docs/measurements/s0-sha-matrix-v3.csv`) is
   re-measured for the affected mode/leg rows and the delta is recorded.
-- The text guard `tools/check_bodies.py` (currently RED, see B9) is either
-  green again or is formally retired in the same commit that changes the
-  seed values.
+- The guard that actually constrains the seed values is the **behavioural**
+  pin `tests/test_s4b_seed_binding.cpp:124`, not the S3 text guard: the text
+  guard `tools/check_bodies.py` is **retired** (RED by design after the
+  sanctioned Pcg32 change, advisory in CI — see B9), so it cannot gate this
+  change. Changing the seed values must make the behavioural pin RED, and
+  the re-banked digests must be recorded in the golden manifest (the
+  criterion above).
 
 **Owner decision required:** which derivation replaces the additive form —
 `stream_seed(p, i)` (reusing the composer's hash), a dedicated
@@ -324,16 +352,25 @@ sampler or the model, and the change then costs a full re-bank.
 
 *TU-local small helpers.*
 
-- `mod12` is defined **11 times** in `src/`, of which **10 are TU-local
-  copies** and only one is a shared inline:
-  - shared inline: `src/inference/detail/candidate_helpers.h:23`
-  - TU-local: `src/core/model/selection.cpp:15`,
+- The pitch-class helper appears under **three** spellings in `src/`:
+  - `mod12` — **10** sites: the shared inline
+    `src/inference/detail/candidate_helpers.h:23` and 9 TU-local copies at
+    `src/core/model/selection.cpp:15`,
     `src/core/music/chord_detect.cpp:21`, `src/core/music/key_detect.cpp:22`,
     `src/core/music/scale.cpp:27`, `src/core/music/voice_leading.cpp:16`,
     `src/inference/constraints.cpp:19`, `src/inference/ranking.cpp:17`,
     `src/inference/sampler.cpp:23`, `src/inference/keynorm.cpp:17`
-    (the `noexcept` variant), and
-    `src/plugin/ui/PatternDocument.cpp:20` (spelled `mod12int`).
+    (the `noexcept` variant);
+  - `mod12int` — **1** TU-local site: `src/plugin/ui/PatternDocument.cpp:20`;
+  - `pc_of` — **1** TU-local site: `src/core/music/explain.cpp:15`
+    (`int pc_of(int pitch) { return ((pitch % 12) + 12) % 12; }`).
+
+  That is **12 named definitions, 11 of them TU-local copies** and one the
+  shared inline. The same normalisation is additionally written **inline**
+  (not as a named function) at 4 sites:
+  `src/plugin/audio/PluginEditor.cpp:54`,
+  `src/plugin/audio/PluginEditor.cpp:606`,
+  `src/plugin/ui/ChordTrack.cpp:51`, `src/plugin/ui/ExplainView.cpp:34`.
 - `octave_pull` is defined **twice**: the shared inline at
   `src/inference/detail/candidate_helpers.h:25-29` and a TU-local copy in
   `src/inference/keynorm.cpp:19-23` (with the register constants
@@ -346,7 +383,8 @@ sampler or the model, and the change then costs a full re-bank.
 
 **What exactly is deferred.** Consolidating the duplicated strict/
 strong-beat semantics into one shared definition, and moving the TU-local
-`mod12` / `octave_pull` / register constants onto shared headers.
+pitch-class helpers (`mod12` / `mod12int` / `pc_of`) / `octave_pull` /
+register constants onto shared headers.
 
 **Why it was deferred.** Each copy is a *documented* local policy today, and
 the S3 cut deliberately moved bodies "byte-identically" — unifying them
@@ -357,9 +395,13 @@ decision: `src/core` must stay JUCE-free and `src/inference` must not depend
 on the plugin, so a shared helper has to land in a place both can include.
 
 **Acceptance criteria (observable).**
-- `git grep -n "int mod12(" -- src` returns **1** definition, and
-  `git grep -n "int octave_pull(" -- src` returns **1** definition, each in
-  a shared header included by its consumers (no per-TU copies remain).
+- `git grep -nE "^\s*(inline\s+)?int\s+(mod12|mod12int|pc_of)\s*\(" -- src`
+  returns **one** definition in total (the shared one), and
+  `git grep -nE "^\s*(inline\s+)?int\s+octave_pull\s*\(" -- src` returns
+  **one** definition — each in a shared header included by its consumers, so
+  no per-TU copy of any of the three spellings survives. The 4 inline
+  expression sites listed above are folded into the shared helper as well
+  (or the criterion is met only once they are gone).
 - The strong-beat predicate has **one** definition, referenced by the
   sampler, the ranking and the constraints code, and the three sites agree
   on it (the current comment at `src/inference/sampler.cpp:86-87` is either
@@ -375,8 +417,12 @@ observed in the tree: `src/core/music/` (already JUCE-free, and
 `src/core/music/ranges.h` is the existing home of `in_register` /
 `kMiddleC`), or a new `src/inference/detail/` header (where
 `candidate_helpers.h` already lives but which `src/core` may not include).
-The choice decides whether `src/core`'s five `mod12` copies can be unified
-in the same change or must stay.
+The choice decides whether `src/core`'s pitch-class helpers — the five
+`mod12` copies (`src/core/model/selection.cpp:15`,
+`src/core/music/chord_detect.cpp:21`, `src/core/music/key_detect.cpp:22`,
+`src/core/music/scale.cpp:27`, `src/core/music/voice_leading.cpp:16`) plus
+`pc_of` (`src/core/music/explain.cpp:15`), six in total — can be unified in
+the same change or must stay.
 
 **Risk / impact of leaving it deferred.** A rule fix (for example a
 strong-beat boundary change) has to be applied in up to five places, and
@@ -408,25 +454,36 @@ brief; it was re-measured here, not copied.
 sampling) that can be reasoned about and tested separately.
 
 **Why it was deferred.** `sample_continue` is the production sampling path
-and its bytes are pinned end-to-end: the wiring digests
-(`tests/golden/sampler_wiring.json`, registered in
-`tests/golden_manifest.json:198-208`), the seed-binding digests
-(`tests/golden_manifest.json:111-122`), the cube baseline v3
-(`docs/measurements/s0-sha-matrix-v3.csv`) and the 128-sha worker-output
-harness (a measurement-record artifact family — see
-`docs/measurements/s3-4b-note.md:51` and `docs/measurements/master-health.md:17`
-— not a script in `tools/`). A split is behaviour-preserving in principle,
-but the S2→S10 cycle had no budget for re-proving all of them, and the file
-is in the background-thread path where a mistake is not caught by the RT
-gate.
+and its bytes are pinned end-to-end, by six independent artifact families:
+(1) the wiring digests (`tests/golden/sampler_wiring.json`, registered in
+`tests/golden_manifest.json:198-208`), (2) the seed-binding digests
+(`tests/golden_manifest.json:111-122`), (3) the cube baseline v3
+(`docs/measurements/s0-sha-matrix-v3.csv`), (4) the 128-cell worker-output
+sha set (`docs/measurements/s2b-sampler-output-shas.json` — a banked JSON
+whose `rows` array holds 128 entries; see
+`docs/measurements/s3-4b-note.md:51` and `docs/measurements/master-health.md:17`),
+(5) the boundary cell (the `boundary` section of that same JSON, documented
+at `docs/measurements/s4b-boundary-cell.md`) and (6) the golden MIDI seeds
+(`tests/golden/seeds/seed_7.mid`, `tests/golden/seeds/seed_42.mid`).
+**No tool is registered as the 128-cell harness**: the nearest tool is
+`tools/sha_matrix.py` (`--seeds N`, default 72 at `tools/sha_matrix.py:54`,
+usage at `:22`), which produces the *cube* SHA matrix
+(`docs/measurements/s0-sha-matrix.csv`), not the 128-cell set. A split is
+behaviour-preserving in principle, but the S2→S10 cycle had no budget for
+re-proving all of them, and the file is in the background-thread path where
+a mistake is not caught by the RT gate.
 
 **Acceptance criteria (observable).**
-- No function in `src/inference/sampler.cpp` has CCN above 15 (measured with
-  the method in this document); `sample_continue` is either gone or reduced
-  to a coordinator.
+- No function in `src/inference/sampler.cpp` has CCN above the ceiling the
+  owner sets for this file (measured with the method in this document);
+  `sample_continue` is either gone or reduced to a coordinator. **The
+  ceiling is the owner's to pick — this record does not decide it.** 15 is
+  a *candidate* only (it is the ceiling the three S3.5 functions were parked
+  against, `docs/measurements/s3-0-ccn.md:49-53`), not a decision.
 - The split is a **pure move**: the pinned bytes do not move — the wiring
-  digests, the seed-binding digests, the cube baseline v3 rows and the
-  128-sha harness are all byte-identical before and after.
+  digests, the seed-binding digests, the cube baseline v3 rows, the 128-cell
+  sha set and the golden MIDI seeds are all byte-identical before and
+  after.
 - Each new stage has a direct unit test (the existing suite is the
   baseline: `tests/test_sampler.cpp` and `tests/test_ort_logits.cpp`).
 - `python tools/check_layers.py --strict` and `python tools/rt_scan.py --strict`
@@ -454,7 +511,7 @@ re-bank, which historically costs more than the change itself.
 *The piano-roll undo path (verified: the roll owns no undo logic of its
 own).*
 
-- `src/plugin/ui/PianoRoll.h:16-17` and `:46-47` state the contract:
+- `src/plugin/ui/PianoRoll.h:15-16` and `:46-47` state the contract:
   "undo/redo (every edit commits through PatternDocument -> UndoManager)"
   and "All commits happen on mouse-up so one gesture = one undo step".
 - The gesture handlers call the document, never an undo stack:
@@ -725,8 +782,13 @@ of `candidates.cpp` and explicitly parked the dissection for later
 unchanged, CCN must not grow"; `docs/measurements/s3-remainder.md` and
 `docs/measurements/s3-4a-note.md:60-64` record the facade ratchet, not a
 dissection plan). The composer output is pinned byte-for-byte by the cube
-baseline v3 (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-sha
-worker-output harness (`docs/measurements/s3-4b-note.md:51`) and the golden
+baseline v3 (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-cell
+worker-output sha set (`docs/measurements/s2b-sampler-output-shas.json`, whose
+`rows` array holds 128 entries; referenced at
+`docs/measurements/s3-4b-note.md:51` — **no tool is registered as that
+harness**; the nearest is `tools/sha_matrix.py`, `--seeds N`, default 72 at
+`tools/sha_matrix.py:54`, which produces the cube matrix
+`docs/measurements/s0-sha-matrix.csv`) and the golden
 MIDI (`tests/golden/seeds/seed_7.mid`, `tests/golden/seeds/seed_42.mid`), so
 a dissection is a behaviour-preserving-but-re-bankable change.
 
@@ -736,7 +798,8 @@ a dissection is a behaviour-preserving-but-re-bankable change.
   `src/inference/candidate_modes.cpp` has CCN above the ceiling the owner
   picks (measured with the method in this document).
 - The split is a pure move: the cube baseline v3
-  (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-sha harness, the
+  (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-cell sha set
+  (`docs/measurements/s2b-sampler-output-shas.json`), the
   golden MIDI seeds (`tests/golden/seeds/seed_7.mid`, `seed_42.mid`) and the
   `tests/test_candidates.cpp` / `tests/test_s4b_mode_shape.cpp` pins are
   all byte-identical before and after.
