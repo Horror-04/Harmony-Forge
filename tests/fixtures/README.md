@@ -23,3 +23,53 @@ byte-for-byte).
 There is deliberately NO oversize-limit fixture: the reader applies no
 cap (`midi_read.h` "No bar/note caps"), so a limit test would invent
 behavior. Large-file cost is timing-only and untraced (see the test).
+
+# Fixture systematization (owned by S4b-main)
+
+Per-area subdirectories (e.g. `ingest/`); the S6.3 `ref_*` files above stay
+flat (grandfathered). What goes here: hand-built inputs + run-captured
+expectations that tests read instead of inline literals. Naming:
+`<area>_<name>.<ext>`. Provenance rule: every entry gets a
+`tests/golden_manifest.json` `fixtures` record (test/pins/how/commit — same
+object format as `in_test`) naming the derivation command/files.
+
+Text formats preferred (XML stays XML — never re-encoded lossily); a BINARY
+`.mid` lands here ONLY where MIDI bytes are the assertion, justified per
+file. Every fixture must be REPRODUCIBLE (procedure below — no opaque blobs).
+
+# S4b-main T2 ingest fixtures (`ingest/`)
+
+Read by `training/tests/test_ingest.py` (stdlib `open` relative to the test
+file; missing file fails loudly, no silent skip). All four are TEXT; zero
+`.mid` binaries — justification: `test_ingest.py` asserts no MIDI bytes,
+only symbolic pitches (absolute MIDI pitch ints) and parse ticks.
+
+| file | mirrors | purpose |
+|---|---|---|
+| `ingest/mini_satb.json` | `_mini_satb(0)` | 4-voice quarter-note SATB pitch fixtures + bars/tonic/scale |
+| `ingest/openscore_v3_mini.mscx` | `_V3_MINI` | byte-exact v3 mini (TimeSig, dots, dyad, rest, tuplet, grace) |
+| `ingest/openscore_v2_mini.mscx` | `_V2_MINI` | byte-exact v2 mini (3/4, half note) |
+| `ingest/openscore_ticks.json` | `parse_mscx` capture | bars / measure_ticks / event tuples / half-note dur golden |
+
+Reproduction (clean tree, repo root; byte-exact — verified by
+`check_ingest_fixtures_match_literals` in phase 1, file-only reads in
+phase 2):
+
+```powershell
+training/.venv/Scripts/python -c "
+import sys, json, importlib.util
+sys.path.insert(0, 'training'); sys.path.insert(0, 'training/ingest')
+import openscore
+spec = importlib.util.spec_from_file_location('ti', 'training/tests/test_ingest.py')
+ti = importlib.util.module_from_spec(spec); spec.loader.exec_module(ti)
+open('tests/fixtures/ingest/mini_satb.json','w',encoding='utf-8').write(json.dumps(ti._mini_satb(0), indent=1, sort_keys=True)+chr(10))
+open('tests/fixtures/ingest/openscore_v3_mini.mscx','wb').write(ti._V3_MINI.encode('utf-8'))
+open('tests/fixtures/ingest/openscore_v2_mini.mscx','wb').write(ti._V2_MINI.encode('utf-8'))
+"
+```
+
+`openscore_ticks.json` is run-captured from the producer
+(`training/ingest/openscore.py::parse_mscx`) on the clean tree — same
+session, `v3_bars=2 / v3_measure_ticks=[1920,1920] / v2_measure_ticks=[1440]`
+matching the in-test asserts it replaces; regen only by re-running the
+capture and re-verifying `training/tests/test_ingest.py` ALL GREEN.

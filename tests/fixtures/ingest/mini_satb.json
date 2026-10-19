@@ -1,0 +1,333 @@
+{
+ "alto": [
+  {
+   "dur_sub": 4,
+   "pitch": 67,
+   "start_sub": 0
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 69,
+   "start_sub": 4
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 71,
+   "start_sub": 8
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 12
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 74,
+   "start_sub": 16
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 20
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 71,
+   "start_sub": 24
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 69,
+   "start_sub": 28
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 67,
+   "start_sub": 32
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 69,
+   "start_sub": 36
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 71,
+   "start_sub": 40
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 67,
+   "start_sub": 44
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 69,
+   "start_sub": 48
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 71,
+   "start_sub": 52
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 56
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 71,
+   "start_sub": 60
+  }
+ ],
+ "bars": 4,
+ "bass": [
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 0
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 4
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 8
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 43,
+   "start_sub": 12
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 16
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 20
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 43,
+   "start_sub": 24
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 28
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 32
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 36
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 43,
+   "start_sub": 40
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 44
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 48
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 43,
+   "start_sub": 52
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 56
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 48,
+   "start_sub": 60
+  }
+ ],
+ "scale": "major",
+ "soprano": [
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 0
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 74,
+   "start_sub": 4
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 76,
+   "start_sub": 8
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 77,
+   "start_sub": 12
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 79,
+   "start_sub": 16
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 77,
+   "start_sub": 20
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 76,
+   "start_sub": 24
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 74,
+   "start_sub": 28
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 32
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 74,
+   "start_sub": 36
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 76,
+   "start_sub": 40
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 72,
+   "start_sub": 44
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 74,
+   "start_sub": 48
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 76,
+   "start_sub": 52
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 77,
+   "start_sub": 56
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 76,
+   "start_sub": 60
+  }
+ ],
+ "tenor": [
+  {
+   "dur_sub": 4,
+   "pitch": 60,
+   "start_sub": 0
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 62,
+   "start_sub": 4
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 64,
+   "start_sub": 8
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 65,
+   "start_sub": 12
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 67,
+   "start_sub": 16
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 65,
+   "start_sub": 20
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 64,
+   "start_sub": 24
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 62,
+   "start_sub": 28
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 60,
+   "start_sub": 32
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 62,
+   "start_sub": 36
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 64,
+   "start_sub": 40
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 60,
+   "start_sub": 44
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 62,
+   "start_sub": 48
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 64,
+   "start_sub": 52
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 65,
+   "start_sub": 56
+  },
+  {
+   "dur_sub": 4,
+   "pitch": 64,
+   "start_sub": 60
+  }
+ ],
+ "tonic": 60
+}

@@ -22,6 +22,58 @@ import listening
 import openscore
 
 
+# --- S4b-main T2 fixture systematization (phase 1: file checks ALONGSIDE literals).
+#
+# Fixtures live in tests/fixtures/ingest/ (see tests/fixtures/README.md):
+#   mini_satb.json            <- _mini_satb(0) pitch fixtures (absolute MIDI pitches)
+#   openscore_v3_mini.mscx    <- _V3_MINI (byte-exact)
+#   openscore_v2_mini.mscx    <- _V2_MINI (byte-exact)
+#   openscore_ticks.json      <- run-captured parse_mscx expectations (ticks golden)
+# Reproduction: re-run the derivation commands in tests/fixtures/README.md
+# (no opaque blobs: all four fixtures are TEXT; zero .mid binaries — this
+# file asserts no MIDI bytes, only symbolic pitches/ticks).
+_FIXDIR = os.path.normpath(os.path.join(
+    os.path.dirname(os.path.dirname(HERE)), "tests", "fixtures", "ingest"))
+
+
+def _fix_text(name):
+    with open(os.path.join(_FIXDIR, name), "rb") as f:
+        return f.read().decode("utf-8")
+
+
+def _fix_json(name):
+    import json
+    with open(os.path.join(_FIXDIR, name), "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _capture_ticks():
+    # Producer-side capture without inline numerics (tuple unpacking, so the
+    # S4b.0 off-golden lint sees no new vector block here).
+    p3 = openscore.parse_mscx(_V3_MINI.encode())
+    p2 = openscore.parse_mscx(_V2_MINI.encode())
+    conv = lambda evs: [[a, b, c, d, list(ps)] for (a, b, c, d, ps) in evs]
+    return {
+        "v3_bars": p3["bars"], "v3_measure_ticks": p3["measure_ticks"],
+        "v3_events": conv(p3["staves"][0]),
+        "v2_bars": p2["bars"], "v2_measure_ticks": p2["measure_ticks"],
+        "v2_events": conv(p2["staves"][0]),
+        "v2_second_dur": p2["staves"][0][1][3],
+    }
+
+
+def check_ingest_fixtures_match_literals():
+    assert _fix_json("mini_satb.json") == _mini_satb(0), \
+        "mini_satb.json must equal the _mini_satb(0) literal"
+    assert _fix_text("openscore_v3_mini.mscx") == _V3_MINI, \
+        "v3 fixture must equal the _V3_MINI literal"
+    assert _fix_text("openscore_v2_mini.mscx") == _V2_MINI, \
+        "v2 fixture must equal the _V2_MINI literal"
+    assert _fix_json("openscore_ticks.json") == _capture_ticks(), \
+        "openscore_ticks.json must equal the producer capture"
+    print("PASS ingest fixture files match literals + producer ticks")
+
+
 def check_ledger_refuses_sa_nc_unknown():
     for spdx in ("CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0", "UNKNOWN", "", "MIT"):
         ok, reason = ledger.validate("x-src", "https://example.invalid/x",
@@ -125,6 +177,7 @@ def main():
     check_composition_note_replaces_license_spdx()
     check_fermata_snap_ends_on_fermata_bar()
     check_manifest_sha_is_real()
+    check_ingest_fixtures_match_literals()
     check_reduction_decodes()
     check_dedupe_catches_planted_duplicate()
     check_dedupe_reports_per_set()
