@@ -144,6 +144,16 @@ ALLOWLIST = [
     ("test_s30_sampler_seed.cpp", r"v >= 0\.0|v < 1\.0",
      "parameter", "unit() range property bounds [0,1): definitional, not "
      "captured pins"),
+    ("test_preview_scheduler.cpp", r"mel\.notes = \{\{",
+     "parameter", "audition-pattern Note inputs (scheduler stimulus: pitches/"
+     "starts/durs/vels parameterize the drain; pinned outputs are the "
+     "sub-floor timeMs CHECKs)"),
+    ("test_preview_scheduler.cpp", r"bass\.notes = \{\{",
+     "parameter", "single-note bass input fixture for the non-empty-preference "
+     "path (direct-track stimulus; expected 0/500 timeMs are sub-floor)"),
+    ("test_preview_scheduler.cpp", r"kT0 \+ 99999",
+     "parameter", "far-future nowMs offset for the terminal-idle empty-queue "
+     "property (time parameter, not a pinned value)"),
 ]
 
 ASSERT_RE = re.compile(r"REQUIRE|CHECK|assert|check\s*\(")
@@ -371,7 +381,8 @@ def census_file(path):
                     n = len(nums) + len(FLOAT_RE.findall(buf))
                     ctx = raw_lines[s - 1] + " " + (
                         raw_lines[s - 2] if s >= 2 else "")
-                    if n >= 4 and not allowed(path, ctx, "registered"):
+                    if n >= 4 and not allowed(path, ctx, "registered") \
+                            and not allowed(path, ctx, "parameter"):
                         out["vectors"] += 1
                         out["vec_elems"] += n
                         out["vec_blocks"].append((s, i, n,
