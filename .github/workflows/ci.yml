@@ -13,6 +13,9 @@ jobs:
     # Task 3 enforce gates (stdlib only, seconds, no build): fail fast
     # before configure/build/test. Enforce ONLY banned tokens + layer
     # includes + golden pin + sealed-split isolation — no style gates.
+    # S10.1 adds the four ratcheted counters (file size, UTF-8, CCN,
+    # off-golden literals): they are static, fast and blocking; the
+    # counts and their exceptions live in docs/measurements/ratchet.md.
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +35,7 @@ jobs:
       - name: Golden pin lint (frozen bitmap pin, NEVER-REGENERATE)
         run: python tools/lint_golden_pin.py
 
-      - name: Golden manifest lint (checked registry: schema + sha + coverage)
+      - name: "Golden manifest lint (checked registry: schema + sha + coverage)"
         # Stdlib only, seconds, no build: tests/golden_manifest.json must
         # stay a CHECKED registry. What the lint enforces:
         #  - every record carries kind/commit/produced_by/files, the kind
@@ -69,6 +72,54 @@ jobs:
           $hits = Get-ChildItem -Path training -Recurse -Filter *.py | Select-String -Pattern 'sealed_test' | Where-Object { $_.Path -notmatch 'carve_sealed\.py$' -and $_.Path -notmatch 'test_sealed\.py$' }
           if ($hits) { $hits | ForEach-Object { Write-Host $_ }; exit 1 }
           Write-Host 'sealed-grep CLEAN: only carve_sealed.py + test_sealed.py reference sealed_test'
+
+      - name: File-size gate (no code file over 500 lines may appear/grow)
+        # Stdlib only, seconds: tools/lint_file_size.py pins the 8 code
+        # files that are over 500 lines today (tracked .h/.cpp/.py under
+        # src/ tests/ tools/). The SET must not GROW (a new file over 500
+        # lines fails) and a pinned file's line count must not GROW; a
+        # shrunk pinned file is only reported (the owner prunes the list).
+        # Line counting is python over the file BYTES — never
+        # Measure-Object -Line (it counts non-empty lines only: it said
+        # 975 for the 1046-line PluginEditor.cpp, see
+        # docs/measurements/s9-0.md Appendix B).
+        run: python tools/lint_file_size.py
+
+      - name: UTF-8 gate (every tracked text file decodes as UTF-8)
+        # Stdlib only, seconds: tools/lint_utf8.py checks every tracked
+        # file except the vendored JUCE/ and external/ trees; a file with
+        # a NUL byte is binary and is skipped. Two paths are allowlisted
+        # (tools/score_sheet.md — CP1252 by an S0 decision, NEVER
+        # re-encode; tests/fixtures/ref_bad_header.mid — a deliberately
+        # corrupted MIDI fixture that must not be "fixed"). Blocking:
+        # non-zero fails the job.
+        run: python tools/lint_utf8.py
+
+      - name: Install the pinned CCN analyzer (lizard 1.24.1)
+        # The CCN ratchet measures with lizard 1.24.1 — the version this
+        # repo measured with (docs/measurements/s3-0-ccn.md). The version
+        # is PINNED on purpose: another lizard version moves the CCN
+        # numbers and would silently re-baseline the ratchet.
+        run: python -m pip install lizard==1.24.1
+
+      - name: CCN ratchet gate (no new function over CCN 15; ceiling 20)
+        # lizard + stdlib, seconds: tools/lint_ccn.py over src/. A new
+        # function above CCN 15 fails (16..20 must be pinned with a
+        # reason, >20 is the owner's hard ceiling); a pinned function's
+        # CCN may not grow; a vanished pinned function is only reported.
+        # --strict: a missing lizard fails the job instead of skipping.
+        run: python tools/lint_ccn.py --strict
+
+      - name: Off-golden literal census (hard-zero + per-file ratchet)
+        # Stdlib only, seconds: tools/lint_off_golden.py. BLOCKING since
+        # S10.1: digest64 and hex16+ must be 0 (hard-zero categories),
+        # and the per-file counts of vectors/strings/assert>=1000/toler
+        # and the TOTAL may not grow — a total-only ratchet would let
+        # literals be moved between files. The pins and the audited
+        # classification blocks live in tools/off_golden_ratchet.py
+        # (16 assert entries, 15 MANUAL_PARITY entries, 43 per-file
+        # lines); the record is docs/measurements/ratchet.md.
+        run: python tools/lint_off_golden.py
 
   build-test-validate:
     needs: gates
@@ -110,17 +161,6 @@ jobs:
         # split lands — never fail the job.
         continue-on-error: true
         run: python tools/check_bodies.py
-
-      - name: Off-golden literal census (advisory)
-        # S4b.0: report-only magic-number census over tests/*.cpp and
-        # training/tests/*.py (tools/lint_off_golden.py, stdlib only,
-        # seconds). Counts digest/vector/assert-numeric/tolerance literals
-        # with registered/parameter carve-outs; see
-        # docs/measurements/s4b-0-census.md. ADVISORY — never fail the job
-        # (exit 0 always; the S5-S9 ratchet "TOTAL must not grow" is
-        # human-enforced from the local run, the record).
-        continue-on-error: true
-        run: python tools/lint_off_golden.py
 
       - name: Determinism proof (render_midi byte-identity)
         run: |
