@@ -11,6 +11,8 @@ into golden files:
   (c) assert-numeric: REQUIRE/CHECK/assert/check( lines with an integer
       literal >= 1000 (auto heuristic) + MANUAL parity-test list below;
   (d) tolerance: approx-family identifiers or float literals on assert lines.
+  (e) string-table: initializer-like {} (cpp) / [] (py) regions holding
+      >= 3 quoted-string literals (quote-aware raw scan, exact lines).
 
 Registered in-test goldens (``tests/golden_manifest.json`` ``in_test``)
 and genuine test parameters (seeds, counts, indices: literals that
@@ -21,6 +23,9 @@ category (``registered`` / ``parameter``) carved out WITH a stated reason
 Usage: py -3 tools/lint_off_golden.py [--root DIR]
 Exit 0 always (report-only; the S5-S9 ratchet is human-enforced: the TOTAL
 below must not grow — see docs/measurements/s4b-0-census.md). Read-only.
+String tables (e) share the vector block shape and carve-outs; a block may
+count in both (b) and (e) with disjoint elems (numerics vs strings — no
+literal is counted twice; short pin strings never reach the hex floor).
 """
 
 from __future__ import annotations
@@ -66,7 +71,7 @@ MANUAL_PARITY = [
      "zero in-test literals: golden-file pattern already, probe vector is fixture"),
     ("tests/test_chordtrack_pin.cpp",
      "ChordTrack statics pre-edit capture (28 string rows)", "golden",
-     "UNREGISTERED string-literal pin (outside the 4 numeric categories: uncounted class)"),
+     "UNREGISTERED string-literal pin (category (e) string-table: counted class)"),
     ("tests/test_s30_sampler_seed.cpp",
      "ENTER seed-sensitivity (property, seeds 42/7/8) + Task-2 Pcg32 pin "
      "(two-instance stream determinism, r7/r42 reference draws, unit [0,1))",
@@ -199,6 +204,104 @@ def in_registered_region(path, lineno, raw_lines):
     return False
 
 
+def _str_tables(path, raw_lines):
+    # Category (e): initializer-like {} (cpp) / [] (py) regions holding
+    # >= 3 quoted-string literals. Same region shape as (b) (init-like test,
+    # outermost fold, registered carve-out on the start-line context) but
+    # scanned on the RAW lines with a quote/comment-aware walker, NOT the
+    # masked stream: the (a)-(d) maskers can glue lines together when a quote
+    # opens inside the other quote kind (training/tests/test_sealed.py masks
+    # 180 raw lines to 163; test_ingest.py 541 to 538), which misattributes
+    # block lines. String counting needs exact lines — and must not see
+    # brackets inside strings — so (e) tracks code/string/comment modes and
+    # counts each closing quote as one literal for every open frame (nested
+    # inits fold outward, as in (b)). Floor >= 3: TEST_CASE name+tag pairs
+    # are 2 wide and excluded as non-init bodies anyway; 3 keeps
+    # single/double string inits out while firing on real tables. Numeric
+    # and string elems are disjoint classes, so a mixed block (chordtrack
+    # rows) counts in both (b) and (e) without double-counting any literal.
+    # No R"( raw strings exist in scope (checked); a future one needs a
+    # raw-string mode here.
+    is_py = path.endswith(".py")
+    opens, closes = ("[", "]") if is_py else ("{", "}")
+    notre = re.compile(r"^\s*(namespace|struct|class|enum)\b")
+    blocks = []
+    stack = []  # [start_line, is_init, strings, parent_is_init]
+    prev_sig = ""  # significant code chars before the opener
+    mode = "code"  # code | block | sq | dq | tsq | tdq
+    for i, ln in enumerate(raw_lines, 1):
+        j = 0
+        while j < len(ln):
+            ch = ln[j]
+            nx = ln[j + 1] if j + 1 < len(ln) else ""
+            if mode == "code":
+                if is_py and ch == "#":
+                    break
+                if not is_py and ch == "/" and nx == "/":
+                    break
+                if not is_py and ch == "/" and nx == "*":
+                    mode = "block"
+                    j += 2
+                    continue
+                if is_py and ch == nx == '"' and ln[j + 2:j + 3] == '"':
+                    mode = "tdq"
+                    j += 3
+                    continue
+                if is_py and ch == nx == "'" and ln[j + 2:j + 3] == "'":
+                    mode = "tsq"
+                    j += 3
+                    continue
+                if ch == '"':
+                    mode = "dq"
+                elif ch == "'":
+                    mode = "sq"
+                elif ch == opens:
+                    is_init = True
+                    if prev_sig.endswith(")") or prev_sig.endswith("else"):
+                        is_init = False
+                    if notre.search(ln):
+                        is_init = False
+                    parent_init = any(fr[1] for fr in stack)
+                    stack.append([i, is_init, 0, parent_init])
+                    prev_sig = ""
+                elif ch == closes and stack:
+                    s, is_init, ns, parent_init = stack.pop()
+                    if is_init and not parent_init:
+                        ctx = raw_lines[s - 1] + " " + (
+                            raw_lines[s - 2] if s >= 2 else "")
+                        if ns >= 3 and not allowed(path, ctx, "registered"):
+                            blocks.append((s, i, ns,
+                                           raw_lines[s - 1].strip()[:80]))
+                else:
+                    if ch.strip():
+                        prev_sig += ch
+            elif mode == "block":
+                if ch == "*" and nx == "/":
+                    mode = "code"
+                    j += 2
+                    continue
+            elif mode in ("sq", "dq"):
+                q = "'" if mode == "sq" else '"'
+                if ch == "\\":
+                    j += 2
+                    continue
+                if ch == q:
+                    mode = "code"
+                    for fr in stack:
+                        fr[2] += 1
+            else:  # tsq | tdq: triple-quoted spans lines; brackets inside
+                q = "'''" if mode == "tsq" else '"""'
+                if ln[j:j + 3] == q:
+                    mode = "code"
+                    for fr in stack:
+                        fr[2] += 1
+                    j += 3
+                    continue
+            j += 1
+        prev_sig = prev_sig[-24:]
+    return blocks
+
+
 def census_file(path):
     with open(path, encoding="utf-8", errors="replace") as f:
         raw = f.read()
@@ -212,7 +315,8 @@ def census_file(path):
     lines = code.split("\n")
     hex_lines = hex_src.split("\n")
     out = {"digest64": [], "hex16": [], "vectors": 0, "vec_elems": 0,
-           "vec_blocks": [], "assert_num": [], "toler": []}
+           "vec_blocks": [], "strings": 0, "str_elems": 0, "str_blocks": [],
+           "assert_num": [], "toler": []}
     for i, ln in enumerate(lines, 1):
         hln = hex_lines[i - 1] if i - 1 < len(hex_lines) else ""
         for m in HEX64_RE.finditer(hln):
@@ -243,6 +347,7 @@ def census_file(path):
     # based: nested inits fold into the outermost init region (kTones counts
     # once, not once per pair); inits nested in non-init bodies (TEST_CASE)
     # still count. Registered carve-out uses the block's start-line context.
+    # (String tables (e) use the same region shape via _str_tables above.)
     opens, closes = ("{", "}") if not path.endswith(".py") else ("[", "]")
     notre = re.compile(r"^\s*(namespace|struct|class|enum)\b")
     stack = []  # [start_line, is_init, buf, parent_is_init]
@@ -277,6 +382,10 @@ def census_file(path):
                 for fr in stack:
                     fr[2] += ch
         prev_sig = prev_sig[-24:]
+    for s, e, n, t in _str_tables(path, raw_lines):
+        out["strings"] += 1
+        out["str_elems"] += n
+        out["str_blocks"].append((s, e, n, t))
     return out
 
 
@@ -287,8 +396,8 @@ def main():
     files = sorted(glob.glob(os.path.join(args.root, "tests", "*.cpp"))
                    + glob.glob(os.path.join(args.root, "training", "tests", "*.py")))
     totals = {"digest64": 0, "hex16": 0, "vectors": 0, "vec_elems": 0,
-              "assert_num": 0, "toler": 0}
-    print("file | digest64 | hex16+ | vectors(elems) | assert>=1000 | toler")
+              "strings": 0, "str_elems": 0, "assert_num": 0, "toler": 0}
+    print("file | digest64 | hex16+ | vectors(elems) | strings(elems) | assert>=1000 | toler")
     for path in files:
         rel = os.path.relpath(path, args.root).replace(os.sep, "/")
         try:
@@ -300,14 +409,16 @@ def main():
         totals["hex16"] += len(c["hex16"])
         totals["vectors"] += c["vectors"]
         totals["vec_elems"] += c["vec_elems"]
+        totals["strings"] += c["strings"]
+        totals["str_elems"] += c["str_elems"]
         totals["assert_num"] += len(c["assert_num"])
         totals["toler"] += len(c["toler"])
-        if (c["digest64"] or c["hex16"] or c["vectors"]
+        if (c["digest64"] or c["hex16"] or c["vectors"] or c["strings"]
                 or c["assert_num"] or c["toler"]):
-            print("%s | %d | %d | %d(%d) | %d | %d" % (
+            print("%s | %d | %d | %d(%d) | %d(%d) | %d | %d" % (
                 rel, len(c["digest64"]), len(c["hex16"]),
-                c["vectors"], c["vec_elems"], len(c["assert_num"]),
-                len(c["toler"])))
+                c["vectors"], c["vec_elems"], c["strings"], c["str_elems"],
+                len(c["assert_num"]), len(c["toler"])))
             for i, s in c["digest64"] + c["hex16"]:
                 print("    L%d digest: %s" % (i, s))
             for i, s in c["assert_num"]:
@@ -316,9 +427,12 @@ def main():
                 print("    L%d toler: %s" % (i, s))
             for s, e, n, t in c["vec_blocks"]:
                 print("    L%d-%d vector(%d): %s" % (s, e, n, t))
-    print("TOTAL digest64=%d hex16+=%d vectors=%d(elems=%d) assert>=1000=%d toler=%d"
+            for s, e, n, t in c["str_blocks"]:
+                print("    L%d-%d strings(%d): %s" % (s, e, n, t))
+    print("TOTAL digest64=%d hex16+=%d vectors=%d(elems=%d) strings=%d(elems=%d) assert>=1000=%d toler=%d"
           % (totals["digest64"], totals["hex16"], totals["vectors"],
-             totals["vec_elems"], totals["assert_num"], totals["toler"]))
+             totals["vec_elems"], totals["strings"], totals["str_elems"],
+             totals["assert_num"], totals["toler"]))
     print("MANUAL parity entries: %d (see MANUAL_PARITY in this script)" % len(MANUAL_PARITY))
     print("lint_off_golden: REPORT (exit 0 always; ratchet: TOTAL must not grow)")
     return 0
