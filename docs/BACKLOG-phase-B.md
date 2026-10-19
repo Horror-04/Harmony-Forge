@@ -629,6 +629,17 @@ current pattern.
 
 ---
 
+> **RESOLVED 2026-10-19 (phase-B tranche E, branch `refactor/phase-b-e`, commit
+> `18b7d80`).** Per D-B6 `SeedHistory` stays an **append-only audit log**,
+> deliberately NOT rewound by undo. The contract is now stated where the class
+> lives (`src/core/model/selection.h`), at its use site
+> (`src/plugin/ui/PatternDocument.h`) and in the UI
+> (`src/plugin/ui/CandidateBar.cpp` tooltip). Verified against the code: the
+> undo action restores only pattern/chords/freeze, while
+> `history_.push` / `mark_latest_kept` sit outside it — so "an undo of a Keep
+> leaves the entry standing" is true, and the two histories may disagree by
+> design. No behaviour change.
+
 ## B7 — The MSVC C2059 quirk has no permanent guard
 
 **Where it lives.**
@@ -1096,6 +1107,22 @@ their own behaviour, the pins will *confirm* the divergence rather than
 catch it.
 
 ---
+
+> **RESOLVED 2026-10-19 (phase-B tranche E, branch `refactor/phase-b-e`, commit
+> `55c8ccf`).** Per D-B11 the **Python side preserves all keys**
+> (`training/keynorm.py`: `shift_chords` copies the chord dict and moves only
+> `root`, with the same 0..127 clamp as C++
+> `src/inference/keynorm.cpp:146-158`; the C++ side is untouched and
+> authoritative). The two "known divergence" notes are removed in the same
+> commit (`docs/TOKENIZATION.md`, the manifest record at
+> `tests/golden_manifest.json:17`). Parity is pinned on BOTH sides over a new
+> enriched vector `#chord_parity.enriched` (root 55/62, inversion [1,0],
+> tension [7,-1], name Gmaj7#11/Amin, shift 5) in
+> `tests/golden/keynorm_vectors.json` — the golden file was EXTENDED (the
+> existing vectors are byte-identical) and the manifest re-banked
+> (`7df7976c…` → `c3e556e8…`, `capture:` form). The corpus path is unchanged
+> (corpus chords carry only {root,type}); the corruption proof reddens exactly
+> the chord-parity case and the python enriched assert.
 
 ## B12 — The Editor extraction (S9.3) was never done
 
