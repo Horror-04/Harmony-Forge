@@ -25,7 +25,10 @@ Rule:
     violation (the owner prunes the list).
 
 The pinned list below is the census MEASURED at S10.1 with lizard 1.24.1
-(``lizard -C 15 src``): 26 functions with CCN > 15. Every entry records
+(``lizard -C 15 src``): 23 functions with CCN > 15 (the S10.1 census was 26;
+two rows were pruned on 2026-10-19 after the B9 dissection of
+``apply_mode``/``apply_candidate_transform`` — both dropped below the
+target, so no pin is needed). Every entry records
 the qualified name, the file, the line range, the measured CCN and a
 reason.
 """
@@ -72,8 +75,6 @@ _PIN_TABLE = [
     ("hf::ser::parse_track", "src/core/serialization/midi_read.cpp", 58, 142, 34),
     ("hf::core::merge_with_frozen", "src/core/model/selection.cpp", 159, 254, 30),
     ("hf::ser::read_smf", "src/core/serialization/midi_read.cpp", 146, 257, 30),
-    ("hf::infer::apply_mode", "src/inference/candidate_modes.cpp", 59, 112, 30),
-    ("hf::infer::apply_candidate_transform", "src/inference/candidate_transforms.cpp", 28, 106, 30),
     ("hf::ser::decode_tokens", "src/core/serialization/tokenizer.cpp", 69, 103, 23),
     ("PianoRoll::paint", "src/plugin/ui/PianoRoll.cpp", 214, 302, 22),
     ("hf::arr::parse_arrange_spec", "src/core/arrangement/arrangement.cpp", 442, 484, 21),
@@ -94,11 +95,13 @@ _PIN_TABLE = [
     ("hf::infer::strict_core", "src/inference/sampler.cpp", 78, 114, 16),
 ]
 
-# The three S3 candidate functions carry the owner's reason verbatim.
+# The remaining S3 candidate function carries the owner's reason verbatim.
+# (`apply_mode` and `apply_candidate_transform` left this set on
+# 2026-10-19: the B9 dissection dropped both below the target — the gate
+# printed the prune NOTE and the rows were removed. See
+# docs/measurements/ratchet.md, G3.)
 _S3_CANDIDATES = (
     "hf::infer::compose_base",
-    "hf::infer::apply_mode",
-    "hf::infer::apply_candidate_transform",
 )
 
 PINNED: dict[tuple[str, str], Pin] = {

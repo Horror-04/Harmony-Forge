@@ -51,7 +51,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 |---|---|---|---|---|---|---|
 | G1 | file size | `python tools/lint_file_size.py` | tracked `.h/.cpp/.py` under `src/ tests/ tools/` | RATCHET (pinned counts) + HARD (the set may not grow) | 8 files over 500 lines, all pinned | yes (`gates` job) |
 | G2 | UTF-8 | `python tools/lint_utf8.py` | every tracked file except `JUCE/` `external/` (NUL-bearing = binary, skipped) | HARD | 0 violations, 2 allowlisted paths, 12 binary files skipped | yes (`gates` job) |
-| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 26 functions over CCN 15, all pinned | yes (`gates` job, after `pip install lizard==1.24.1`) |
+| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 23 functions over CCN 15, all pinned | yes (`gates` job, after `pip install lizard==1.24.1`) |
 | G4 | off-golden literals | `python tools/lint_off_golden.py` | `tests/*.cpp` + `training/tests/*.py` | HARD (`digest64`, `hex16+` = 0) + RATCHET (per-file + TOTAL) | `digest64=0 hex16+=0 vectors=258(elems=1956) strings=61(elems=306) assert>=1000=16 toler=80` | yes (`gates` job) |
 | G5 | layers | `python tools/check_layers.py --strict` | `src/core` / `src/inference` / `src/app` | HARD | CLEAN (0 JUCE includes in `src/core`, 0 plugin/GUI includes in `src/inference`) | yes |
 | G6 | RT | `python tools/rt_scan.py --strict` | the audio-path scope of `src/plugin/audio/` | HARD | CLEAN (0 banned tokens; scope = 46 + 58 + 39 + 127 = 270 lines) | yes |
@@ -140,7 +140,7 @@ The tests, the tools and the training tree are out of scope.
 lizard is missing the tool prints a SKIP line and exits 0; with `--strict`
 (the CI mode) it exits 1. CI installs the pinned version first.
 
-**Current value.** 25 functions with CCN > 15, all pinned, none grown.
+**Current value.** 23 functions with CCN > 15, all pinned, none grown.
 Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
@@ -150,8 +150,6 @@ Table (qualified name | file:lines | CCN | reason class):
 | `hf::ser::parse_track` | `src/core/serialization/midi_read.cpp:58-142` | 34 | S0 baseline |
 | `hf::core::merge_with_frozen` | `src/core/model/selection.cpp:159-254` | 30 | S0 baseline |
 | `hf::ser::read_smf` | `src/core/serialization/midi_read.cpp:146-257` | 30 | S0 baseline |
-| `hf::infer::apply_mode` | `src/inference/candidate_modes.cpp:59-112` | 30 | **S3 candidate** |
-| `hf::infer::apply_candidate_transform` | `src/inference/candidate_transforms.cpp:28-106` | 30 | **S3 candidate** |
 | `hf::ser::decode_tokens` | `src/core/serialization/tokenizer.cpp:69-103` | 23 | S0 baseline |
 | `PianoRoll::paint` | `src/plugin/ui/PianoRoll.cpp:214-302` | 22 | S0 baseline |
 | `hf::arr::parse_arrange_spec` | `src/core/arrangement/arrangement.cpp:442-484` | 21 | S0 baseline |
@@ -173,18 +171,32 @@ Table (qualified name | file:lines | CCN | reason class):
 
 **Exception reasons (verbatim, as the owner stated them).**
 
-* The three S3 candidates (`compose_base`, `apply_mode`,
-  `apply_candidate_transform`) carry the owner's reason verbatim:
+* The one remaining S3 candidate (`compose_base`) carries the owner's
+  reason verbatim:
   **"текстовый страж снят после Pcg32"** — pointing at
   `docs/BACKLOG-phase-B.md` item B9 (the S3 text guard
   `tools/check_bodies.py` was retired as a gate after the Pcg32 change,
   so these three functions have no automated shape guard today).
+  (`apply_mode` and `apply_candidate_transform` left the set on
+  2026-10-19 — see the prune record below.)
 * The other 22 entries carry the reason: "pre-existing at the S0 baseline
   (`docs/measurements/s0-lizard.csv`) — outside the S3 scope".
 * Pruned 2026-10-19 (S9.3 fix round 1): `HarmonyForgeEditor::
   HarmonyForgeEditor` — the S9.3 layout extraction dropped the constructor
   to CCN 13 (no longer > 15, so no pin is needed); the D-B12 ≤9 ceiling is
   separately ACCEPTED at 13, see `docs/BACKLOG-phase-B.md` D-B12.
+* Pruned 2026-10-19 (phase-B tranche C, item B9): `hf::infer::apply_mode`
+  (30 -> 3) and `hf::infer::apply_candidate_transform` (30 -> 5) — the
+  D-B9 dissection into named stages (`snap_to_parallel_union`,
+  `apply_modal_color`, `insert_chromatic_passing_tones` /
+  `find_melody_track`, `apply_catchy_transform`, `apply_complex_transform`,
+  `apply_unexpected_transform`) dropped both below the target 15, so no
+  pin is needed; the dissection is a PURE MOVE and the composed output
+  stays byte-identical (the gate printed the prune NOTE before the rows
+  were removed). The D-B9 ceiling for the three B9 functions is 20; with
+  both 30s now under the target 15, the existing gate (a new function over
+  15 must be pinned and may not grow) is the ratchet that keeps them from
+  growing back. `compose_base` (16) stays pinned — D-B9 does NOT split it.
 
 ---
 
