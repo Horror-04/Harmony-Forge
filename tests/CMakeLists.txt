@@ -67,6 +67,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     Catch2::Catch2WithMain)
   target_include_directories(test_chordtrack_pin PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
   target_compile_features(test_chordtrack_pin PRIVATE cxx_std_20)
+  target_compile_definitions(test_chordtrack_pin PRIVATE
+    HARMONY_FORGE_CHORDTRACK_PIN="${CMAKE_SOURCE_DIR}/tests/golden/chordtrack_pin.txt")
   hf_copy_ort_runtime(test_chordtrack_pin)
   catch_discover_tests(test_chordtrack_pin)
 endif()
