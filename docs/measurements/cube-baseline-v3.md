@@ -231,7 +231,7 @@ unchanged from `5970ae4` to the branch head that banks this record (§2) (§8).
 leg; `src/app/midi_exporter.cpp`.
 
 ```
-Owner signature: ______________________________   Date: ____________
+Owner signature: Horror-04 (owner; signed via controller delegation at the owner's explicit order "подпиши за меня", 2026-10-19)   Date: 2026-10-19
 ```
 
 **Tag command** — the controller runs this verbatim from the repository root
