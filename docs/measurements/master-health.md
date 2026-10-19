@@ -24,6 +24,12 @@ battery below. Binaries match HEAD (no src/ deltas pending).
 
 - `cube-baseline-v2`: Strict spot **0/16 SAME** (composer streams moved;
   shape unchanged since the last spot — still all-diff, no greens).
+  **SUPERSEDED by v3** (2026-10-19): the live determinism baseline is
+  `docs/measurements/s0-sha-matrix-v3.csv` (936 rows = 576 `render_midi` +
+  360 `render_model`, sha256 `219EAB5EA59871158E7B381A7396DA6A94E3B875BCF2ACBF0D0429F81C4175F9`),
+  recorded in `cube-baseline-v3.md`; the v2 CSV and its tag
+  `refactor/cube-baseline-v2` stay as history (bytes unchanged) — v2's
+  4-stage shape is irreproducible at any rev ≥ P^.
 - `check_bodies.py` vs `880bb15`: RED (bodies changed by behavior, not
   by move; retired — see `s3-4b-note.md` §7).
 - C1–C6 guard shapes, wiring/binding/shape golden pre-Pcg32 values.
@@ -36,6 +42,10 @@ battery below. Binaries match HEAD (no src/ deltas pending).
 - Facade lines: 221 (must not grow). New TUs ≤250.
 - `cube-baseline-v2` superseded (see above); frozen bitmap + manifest
   NEVER regenerate; `update_goldens.py` sole path for golden updates.
+- `cube-baseline-v3` is the current determinism baseline (tag
+  `refactor/cube-baseline-v3`, applied by the controller after the owner
+  signs `cube-baseline-v3.md` §9) — compare new cube runs against it, not
+  against v2.
 
 ## S7 addendum (2026-10-19, HEAD past S7 merge)
 

@@ -5,6 +5,8 @@ S1 adds only this file, `INVARIANTS.md`, an allowlist note in
 `measurements/s0-utf8-lint.md`, and a 2-line comment fix in
 `src/inference/memo_filter.h`). Every link below is relative and was
 link-checked (existence pass over all targets, recorded in the S1 task report).
+The v3 baseline rows were added on 2026-10-19 (cube baseline v3); their
+targets exist and their links are relative.
 
 Classes: **normative** (rules the code must obey), **evidentiary** (measured
 outputs backing a claim), **historical** (phase records; read-only context).
@@ -29,7 +31,9 @@ outputs backing a claim), **historical** (phase records; read-only context).
 | [measurements/s0-test-matrix.md](measurements/s0-test-matrix.md) | ctest registration matrix: 193 tests build-full/Release vs 170 build-off/Debug, delta fully attributed to CMake options |
 | [measurements/s0-tests-release.txt](measurements/s0-tests-release.txt) | Full `ctest -N` name list, build-full |
 | [measurements/s0-tests-debug.txt](measurements/s0-tests-debug.txt) | Full `ctest -N` name list, build-off |
-| [measurements/s0-sha-matrix.csv](measurements/s0-sha-matrix.csv) | Determinism SHA matrix (render_midi byte-identity evidence) |
+| [measurements/s0-sha-matrix.csv](measurements/s0-sha-matrix.csv) | Determinism SHA matrix v2 (render_midi byte-identity evidence) - **SUPERSEDED by v3** |
+| [measurements/s0-sha-matrix-v3.csv](measurements/s0-sha-matrix-v3.csv) | Determinism SHA matrix v3 - current baseline (936 rows: 576 `render_midi` + 360 `render_model`; sha256 `219EAB5EA59871158E7B381A7396DA6A94E3B875BCF2ACBF0D0429F81C4175F9`); record in `cube-baseline-v3.md` |
+| [measurements/cube-baseline-v3.md](measurements/cube-baseline-v3.md) | v3 baseline record: production + checks, classification, env verdict, owner sign-off block, tag command |
 | [measurements/s0-rt-scan.txt](measurements/s0-rt-scan.txt) | Static processBlock-region scan hits (triage list) |
 | [measurements/s0-layer-check.txt](measurements/s0-layer-check.txt) | Layer check verdict: src/core JUCE-free, src/inference plugin/GUI-free |
 | [measurements/s0-lizard.csv](measurements/s0-lizard.csv) | Complexity snapshot |
