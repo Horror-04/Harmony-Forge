@@ -461,8 +461,16 @@ editor-lifetime + 4 loop buttons + FileChooser sites as they occur).
 Append-only note; no existing text above was rewritten. Probes were scratch
 binaries (since removed); only the B12 bounds guard was kept as
 `tests/probe_b12_bounds.cpp`. Numbers below are transcribed from the probe
-report (`.superpowers/sdd-tmp/probe-u2u3-b12-report.md`, stdout quoted
-verbatim at measurement time).
+report's stdout, quoted verbatim at measurement time. **The report itself
+was scratch**: it lived at `.superpowers/sdd-tmp/probe-u2u3-b12-report.md`,
+which is gitignored and NOT part of the tree, so it is not cited as a
+source here — **this addendum is the durable copy of those numbers**, and
+the probe report is cited only as the (untracked) place the numbers were
+first transcribed from. The one probe that survived is tracked at
+`tests/probe_b12_bounds.cpp` with its golden at
+`tests/golden/b12_editor_bounds.json` and its manifest record at
+`tests/golden_manifest.json`; the guard's post-extraction verdict is
+recorded in `docs/measurements/s9-0.md` Appendix D §D-1.
 
 (a) U2 outcome (§UNTRACED U2, lines 379-381): the R1 SafePointer guard was
 exercised headless 5/5 PASS (live-host cancel path, destroyed-host late

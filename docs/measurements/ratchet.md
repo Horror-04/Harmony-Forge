@@ -57,9 +57,36 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G6 | RT | `python tools/rt_scan.py --strict` | the audio-path scope of `src/plugin/audio/` | HARD | CLEAN (0 banned tokens; scope = 46 + 58 + 39 + 127 = 270 lines) | yes |
 | G7 | golden pin | `python tools/lint_golden_pin.py` | `tests/golden/slot_bitmap.txt` + `tests/golden/manifest.json` | HARD | PASS, canonical sha `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` | yes (both jobs) |
 | G8 | invariant tags | `python tools/lint_inv_tags.py` | the `[inv1]`..`[inv5]`-tagged TEST_CASEs | HARD | PASS, 29 bindings / 5 invariants | yes (both jobs) |
-| G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 21 records (capture=14, gen=6, mixed=1) | yes |
+| G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 22 records (capture=15, gen=6, mixed=1) | yes |
 | G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **251** | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
+
+**The P-series (P1-P4) — the two runtime probes and the two CI steps added
+by the phase-B tranches.** They sit OUTSIDE the G-series on purpose: the
+G-series is the *file-size / lint / census* gate family, each row a python
+tool the `gates` job runs; the P-series is the *runtime* family — two
+headless probe binaries over the real editor and two CI steps. The rule
+vocabulary is the same (HARD / RATCHET), and the "blocking in CI" column
+answers the only question the G-series cannot: does a red verdict stop a
+push?
+
+| # | gate | command (how it is RUN) | scope | rule | current value | blocking in CI |
+|---|---|---|---|---|---|---|
+| P1 | B12 editor-bounds guard | `cmake --build build-plugdbg --config Debug --target probe_b12_bounds` then `.\build-plugdbg\tests\Debug\probe_b12_bounds.exe` **run from the repo root** (the golden path is relative; a missing file fails loudly, never skips) | the REAL `HarmonyForgeEditor`, headless (no peer, no window, no paint), at four window sizes | HARD — the expectations are FILE-BACKED in `tests/golden/b12_editor_bounds.json` (component count + canonical dump byte count + SHA256 of the dump text); any mismatch exits non-zero | **ALL-PASS (0 failures)** — components=136 at every size; bytes 3826 / 3843 / 3850 / 3880; sha256 `7f138f4b…`, `c0442dc9…`, `aa06bdb5…`, `8e29a702…` (the golden's own values — the post-extraction dumps are BYTE-IDENTICAL to the pre-extraction capture) | **NO** — the binary is deliberately NOT `catch_discover_tests`-registered (it never appears in `ctest -N`; the 221/251 counters are unchanged — re-measured 2026-10-20: 221/221 in `build-off`/Debug and 251/251 in `build-full`/Release). **CI integration is FUTURE WORK** (ruling S93-3) |
+| P2 | S93 tab-wiring guard | `cmake --build build-plugdbg --config Debug --target probe_s93_tab_wiring` then `.\build-plugdbg\tests\Debug\probe_s93_tab_wiring.exe` **run from the repo root** | the REAL editor's Edit/Explain tab buttons, found through PUBLIC child APIs only (no new accessors, no product change) | HARD — 11 wiring assertions (button present, viewports found and distinct, the visible view really switches and switches back) | **ALL-PASS (0 failures)** | **NO** — not `catch_discover_tests`-registered (never in `ctest -N`). **CI integration is FUTURE WORK** (ruling S93-3) |
+| P3 | FL-dispatcher unittest (CI step) | `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v` — the CI step "FL companion dispatcher test (pure path)" in the `gates` job | the companion's PURE path only: `plan_layout` + the dry-run path of `src/companion/fl_dispatcher.py` (no FL Studio, no venv) | HARD — the plan for `DEFAULT_LAYOUT` and the rejection of a malformed layout entry are pinned | PASS (the step runs on every push) | **YES** — the `gates` job; a failing test fails the job (D-B8: dispatcher-only step now; the general python-test step is separate later work) |
+| P4 | sseed compiler probe (CI step) | `python tools/c2059_probe/probe_c2059.py --require-msvc` — the CI step "sseed probe (real-TU compile witness)" in the `build-test-validate` job | the REAL `src/inference/candidate_model.cpp` TU, compiled EIGHT ways (site as-is + three well-formed forms + four recorded malformed forms) | HARD — a malformed form that compiles, a well-formed form that does not, or a fact that no longer holds fails the job; the verdict RETIRE (a well-formed one-line form stopped compiling) also fails | PASS | **YES** — the `build-test-validate` job (it needs the MSVC toolchain that job already requires; the `gates` job stays stdlib-only) |
+
+**The two probes are NOT ctest-registered, and that is deliberate.** Both
+are plain `main()` binaries in `tests/CMakeLists.txt` behind
+`if(HARMONY_FORGE_BUILD_PLUGIN)`, deliberately outside
+`catch_discover_tests`, so neither appears in `ctest -N` and the G10
+counters stay 221/251. They are run EXPLICITLY from the repo root (the
+paths above). The wiring probe's own header states the same
+(`tests/probe_s93_tab_wiring.cpp:19-22`): "CI integration is FUTURE WORK
+(S93-3 ruling)". Nothing in the repository runs them automatically today, so
+both must be re-run by hand after an editor change — that is the standing
+residual, stated here rather than glossed.
 
 ---
 
@@ -259,7 +286,7 @@ to be an advisory `continue-on-error` step in the build job).
 | G6 RT (`rt_scan.py --strict`) | HARD | `RT-SCAN CLEAN` (270 lines of audio-path scope) | none |
 | G7 golden pin (`lint_golden_pin.py`) | HARD | PASS, canonical sha `d66faabf…7854f58` | none — NEVER regenerate; the pin lives in the tool, so a manifest+bitmap co-edit cannot pass |
 | G8 invariant tags (`lint_inv_tags.py`) | HARD | PASS, 29 bindings / 5 invariants | none — the mapping lives in the tool |
-| G9 golden manifest (`lint_golden_manifest.py`) | HARD | PASS, 21 records (capture=14, gen=6, mixed=1) | the tool's own reasoned exclusion list (files under `tests/golden/**` + `tests/fixtures/**` that are deliberately unregistered) |
+| G9 golden manifest (`lint_golden_manifest.py`) | HARD | PASS, 22 records (capture=15, gen=6, mixed=1) | the tool's own reasoned exclusion list (files under `tests/golden/**` + `tests/fixtures/**` that are deliberately unregistered) |
 | G11 sealed isolation (the `sealed-grep` step) | HARD | CLEAN | only `training/ingest/carve_sealed.py` (the one-time producer) and `training/tests/test_sealed.py` (the verifier) may mention `sealed_test` |
 
 ---

@@ -25,14 +25,22 @@ Rule:
     violation (the owner prunes the list).
 
 The pinned list below is the census MEASURED at S10.1 with lizard 1.24.1
-(``lizard -C 15 src``): 22 functions with CCN > 15 (the S10.1 census was 26;
-two rows were pruned on 2026-10-19 after the B9 dissection of
-``apply_mode``/``apply_candidate_transform`` — both dropped below the
-target, so no pin is needed; a third row was pruned on 2026-10-19 after
-the B5 dissection of ``sample_continue`` — it dropped below the target
-too, so no pin is needed). Every entry records
-the qualified name, the file, the line range, the measured CCN and a
-reason.
+(``lizard -C 15 src``): 22 functions with CCN > 15 (the S10.1 census was
+26, so FOUR rows have been pruned since — all four prunes happened on
+2026-10-19, each dropped its function below the target, so no pin is
+needed):
+
+  1. ``HarmonyForgeEditor::HarmonyForgeEditor`` — the S9.3 layout
+     extraction dropped the constructor to CCN 13 (no longer > 15, so no
+     pin is needed; the D-B12 ceiling is separately ACCEPTED at 13, see
+     docs/BACKLOG-phase-B.md D-B12 and ruling S93-1).
+  2. ``hf::infer::apply_mode`` — the B9 dissection (30 -> 3).
+  3. ``hf::infer::apply_candidate_transform`` — the B9 dissection (30 -> 5).
+  4. ``hf::infer::sample_continue`` — the B5 dissection (68 -> 12).
+
+Every entry records the qualified name, the file, the line range, the
+measured CCN and a reason. Each prune is recorded in
+docs/measurements/ratchet.md (G3) in the same commit as the tool edit.
 """
 
 from __future__ import annotations

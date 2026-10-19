@@ -51,47 +51,92 @@ Current aggregates for the files this record touches (measured):
 file,functions,nloc_total,ccn_max,ccn_mean,ccn_gt10,ccn_gt15
 src/inference/candidates.cpp,9,115,9,3.44,0,0
 src/inference/candidate_base.cpp,2,58,16,9.0,1,1
-src/inference/candidate_transforms.cpp,1,74,30,30.0,1,1
-src/inference/candidate_modes.cpp,3,68,30,14.67,1,1
+src/inference/candidate_transforms.cpp,5,88,13,6.8,1,0
+src/inference/candidate_modes.cpp,7,81,11,6.86,1,0
 src/inference/constraints.cpp,5,70,19,7.0,1,1
 src/inference/ranking.cpp,7,68,8,4.29,0,0
-src/inference/sampler.cpp,12,271,68,10.25,2,2
+src/inference/sampler.cpp,21,309,16,6.38,3,1
 src/inference/ort_logits.cpp,7,115,18,5.71,1,1
 src/inference/keynorm.cpp,16,127,6,3.12,0,0
 src/plugin/ui/PianoRoll.cpp,24,389,22,5.62,4,3
 src/plugin/ui/PatternDocument.cpp,37,374,13,3.84,1,0
 src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
+src/plugin/audio/PluginEditor.cpp,43,575,13,3.02,1,0
+src/plugin/ui/EditorLayout.cpp,4,203,4,1.75,0,0
 ```
 
-> **S10.2/S10.3 delta note (HEAD `06f6fa6`; authority for NOW values:
-> `docs/measurements/s10-final.md` §1).** The table above was measured at
-> base `4704631`, where `src/inference` held **3899** physical lines over
-> the same 36 `.h`/`.cpp` files (blob count at `4704631`, same
-> python-newline method). At HEAD it holds **3903** (`s10-final.md` §1
-> row 4). The +4 is the S10.2 include rewrite (`4ece820`, net +1 across
-> the candidate TUs) plus the S10.3 stale-comment sweep (`b582875`, +3
-> across `candidate_model.cpp`, `candidate_modes.cpp`,
-> `candidate_transforms.cpp`); both are behaviour-neutral and touch no
-> function body, so the per-file lizard rows above are unchanged.
+> **Phase delta note (re-measured 2026-10-20, the final fix wave;
+> authority for NOW values: `docs/measurements/s10-final.md` §8 — the
+> post-phase correction section, NOT §1).** The table above was measured at
+> base `4704631`; it has been re-measured on the tree this wave commits
+> (lizard 1.24.1 over `src/`, the same tool, version and column order).
+> Three rows moved, two rows were added, and one row is explicitly
+> unchanged:
+>
+> - `src/inference/sampler.cpp` `12,271,68,10.25,2,2` → `21,309,16,6.38,3,1`
+>   — B5 dissected `sample_continue` (68 → 12) into nine named stages, so
+>   the file gained 9 functions and lost 52 CCN points at the top; the file
+>   maximum is now `strict_core` (16), which is B4's item and was NOT
+>   touched.
+> - `src/inference/candidate_transforms.cpp` `1,74,30,30.0,1,1` →
+>   `5,88,13,6.8,1,0` and `src/inference/candidate_modes.cpp`
+>   `3,68,30,14.67,1,1` → `7,81,11,6.86,1,0` — B9 split `apply_mode`
+>   (30 → 3) and `apply_candidate_transform` (30 → 5) into named stages.
+> - `src/inference/keynorm.cpp` `16,127,6,3.12,0,0` — **unchanged** by
+>   B11 (the fix is on the python side; the C++ shape was already
+>   authoritative and was not touched).
+> - `src/plugin/audio/PluginEditor.cpp` and `src/plugin/ui/EditorLayout.cpp`
+>   are **new rows** (B12 / the S9.3 extraction): the Editor's layout moved
+>   into `src/plugin/ui/EditorLayout.{h,cpp}` (the `.h` carries 1 function,
+>   `EditorRollStack::resized`, NLOC 6, CCN 3 — headers are not listed in
+>   the table, which quotes `.cpp` rows only).
+> - `src/inference` physical lines: **3899** at `4704631` → **3903** at the
+>   S10 close (`s10-final.md` §1 row 4) → **4075** NOW (python newline
+>   count over the 36 tracked `.h`/`.cpp` files; +172 from the B5 and B9
+>   dissections and the B11 fix).
+> - The tree-level numbers this record used to quote are superseded the
+>   same way: tree max-CCN **68 → 36**, functions with CCN > 15 **26 → 22**,
+>   golden registry records **20 → 22**, `src/` LOC **12357 over 104 files →
+>   12703 over 106 files** (core 2937 → 2944, inference 3903 → 4075,
+>   plugin 5361 → 5528), and the Editor **324+1046=1370 → 293+807=1100**
+>   with its max-CCN **16 → 13** and its function count **45 → 48** over 4
+>   files. Every one of those values, with its measurement method and its
+>   source, is in `docs/measurements/s10-final.md` §8.1-§8.2.
+
 
 ---
 
 ## Summary
 
-| id | title | area | risk if deferred |
-|---|---|---|---|
-| B1 | Chord-root-anchored keynorm | inference / training | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
-| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
-| B3 | `p.seed + i` seed-offset values | inference | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
-| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | the same rule is stated in 3–5 places; a fix in one place can silently miss the others |
-| B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | `sample_continue` stays a 183-line, 11-parameter function; every sampler change is a whole-function review |
-| B6 | Piano-roll undo logic + the second history stack | plugin/ui | undo stores whole-pattern snapshots per step and the seed history is not undoable, so the two histories drift |
-| B7 | MSVC C2059 quirk has no permanent guard | toolchain / build | the same one-line edit can fail to compile with a misleading error and block a future executor |
-| B8 | `src/companion/fl_dispatcher.py` is outside CI | companion / CI | the dispatcher can break silently; its own README already calls it "CI-safe" |
-| B9 | Three CCN 16/30/30 functions were never split | inference | the highest-complexity functions in the composer keep their pre-S3 shape, and the retired text guard no longer covers them |
-| B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | an out-of-range prefix id is only rejected downstream, and the real sidecar output is not pinned anywhere |
-| B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | the C++ and Python chord-shift semantics differ on enriched chords; the divergence is pinned "loud" on both sides instead of fixed |
-| B12 | The Editor extraction (S9.3) was never done | plugin/ui | the Editor stays the largest file in `src/plugin` (1046 lines, a file-size exception) and its constructor stays the layout + complexity hotspot (CCN 16) |
+**Status column (added 2026-10-20, the final fix wave).** Every item now
+carries a status, so no entry in this record reads as an open decision:
+**DECIDED (D-Bx) — NOT IMPLEMENTED** = the owner ruled (the ruling's text
+is quoted in "Owner decisions (2026-10-19, owner-delegated)" below and
+repeated at the item), and the implementation is a SEPARATE product-grade
+task that was not part of this phase; **RESOLVED** = the work landed in
+this phase and the item's own block records the result. The one-line
+"result" column is the outcome, the "risk if deferred" column is the
+residual that is still true. **The "title" column keeps each item's
+ORIGINAL name** (the same name as its section heading below), so for a
+resolved item it names the state at the time the item was raised — the
+"status" column is the current state, and the item's own block carries the
+evidence.
+
+| id | title | area | status | result (one line) | risk if deferred |
+|---|---|---|---|---|---|
+| B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
+| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
+| B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
+| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **DECIDED (D-B4) — NOT IMPLEMENTED** | the shared helper home is **`src/core/music/`**; implementation is a separate product-grade task (it unifies the rules) | the same rule is stated in 3–5 places; a fix in one place can silently miss the others |
+| B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
+| B6 | Piano-roll undo logic + the second history stack | plugin/ui | **RESOLVED** (phase-B tranche E) | per D-B6 `SeedHistory` stays an **append-only audit log**, deliberately not rewound; the contract is now stated at the class, at the use site and in one UI tooltip | the undo still stores whole-pattern snapshots per step (the snapshot design was NOT changed) |
+| B7 | MSVC C2059 quirk has no permanent guard | toolchain / build | **RESOLVED** (phase-B tranche A) | the cause IS established (a stray closing paren, **not** a toolchain quirk); the permanent guard is the **compiler probe** `tools/c2059_probe/probe_c2059.py`, now a CI step | residual: a different toolchain issue would be caught — the probe asserts the balanced one-line form compiles on the REAL TU |
+| B8 | `src/companion/fl_dispatcher.py` is outside CI | companion / CI | **RESOLVED** (phase-B tranche A) | the dispatcher's pure path **IS under CI** since `ae44d08`: `tools/tests/test_fl_dispatcher.py` + the `gates`-job step | residual: the **general** python-test step (`tools/tests/` + `training/tests/`) is still absent — D-B8 made the CI step dispatcher-only |
+| B9 | Three CCN 16/30/30 functions were never split | inference | **RESOLVED** (phase-B tranche C) | `apply_mode` **30 → 3** and `apply_candidate_transform` **30 → 5** (pure moves); `compose_base` (16) stays pinned per D-B9 | residual: the **cube leg is structurally blind to 6 of the 7 new stages**; the in-repo pins carry them (accounted per stage below) |
+| B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | **DECIDED (D-B10.1 / D-B10.2) — NOT IMPLEMENTED** | an out-of-range id is **REJECTED** at the provider (returns `false`); the sidecar pin covers **both** the logits values and the sidecar sha256; implementation is a separate product-grade task (it changes the ORT boundary semantics) | an out-of-range prefix id is only rejected downstream, and the real sidecar output is not pinned anywhere |
+| B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | **RESOLVED** (phase-B tranche E) | the divergence is **HEALED**: python preserves every key of the input chord dict, the C++ shape is authoritative; parity pinned on BOTH sides over a new enriched vector | residual: the C++ side is **ints-only** (`ChordSymbol` has no name field), so the name stays an in-test spec constant |
+| B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work) |
+
 
 ---
 
@@ -179,6 +224,22 @@ tonic-equivalent root, or something else — and is it selected per record
 or per corpus? Until that is decided, no implementation should be started
 (the choice changes every downstream number).
 
+> **DECIDED (D-B1) — NOT IMPLEMENTED.** The owner ruled (2026-10-19,
+> owner-delegated; the ruling's full text is under "Owner decisions
+> (2026-10-19, owner-delegated)" below): **the anchor is the root of the
+> FIRST CHORD of the progression, selected PER RECORD** — per-record keeps
+> the derivation a pure function of the input (no corpus-global pass,
+> consistent with the core/inference purity discipline), and the first-chord
+> root is the simplest rule covering this item's own risk-section
+> hypothesis ("normalise to the chord the phrase starts on"). The question
+> above is therefore **answered, not pending**.
+> **But the work is NOT IMPLEMENTED, and implementing it is a SEPARATE
+> product-grade task:** it changes the TRAINING VIEW (the anchor decides
+> what the model sees), so it moves every canonical-space number in
+> `training/eval_*.json`, `training/keynorm_report.json` and the cube
+> baseline v3, and it **needs a retrain** to be meaningful. The phase-B
+> cycle was scoped to behaviour-preserving moves, so nothing was started.
+
 **Risk / impact of leaving it deferred.** The keynorm family can only ever
 concentrate data onto two canonical keys (C and A). Any hypothesis that
 wants the canonical key to follow the harmony — e.g. "normalise to the
@@ -257,6 +318,20 @@ SPEC-format change and a parser change at
 switch in `ArrangeParams.base`? And should energy continue to own the
 Strict→Creative axis, or should the explicit mode control replace it?
 
+> **DECIDED (D-B2) — NOT IMPLEMENTED.** The owner ruled (2026-10-19,
+> owner-delegated; full text below): the mode is an **ARRANGEMENT-WIDE
+> SWITCH** in `ArrangeParams.base` (no SPEC-format change), and **ENERGY
+> KEEPS OWNING the Strict→Creative axis** — the SPEC format is fixed at
+> five fields, so a per-section field would break compat, and keeping
+> energy's axis preserves the current audible behaviour by default (a
+> per-section field can still be added later without breaking the global
+> switch). The question above is therefore **answered, not pending**.
+> **But the work is NOT IMPLEMENTED, and implementing it is a SEPARATE
+> product-grade task: it is a FEATURE** — mode plumbing through `Section`,
+> the SPEC format and the Arrange UI — not a cleanup. The S3 measurement
+> already reached that verdict ("no cleanup item — enabling Creative
+> arrangements would be a feature").
+
 **Risk / impact of leaving it deferred.** Arrangements remain Strict-only
 by construction, with no user-visible mode axis, and the two forced-Strict
 sites stay invisible coupling between the editor and the generator: a future
@@ -329,6 +404,18 @@ re-bank the pin, not a cleanup.
 `runner_seed(p, i)`, or something else? The choice is not neutral: it
 determines whether adjacent `p.seed` values still produce distinct
 per-candidate streams.
+
+> **DECIDED (D-B3) — NOT IMPLEMENTED.** The owner ruled (2026-10-19,
+> owner-delegated; full text below): a dedicated **`runner_seed(p, i)`**
+> with domain separation from `stream_seed` — reusing the composer's hash
+> would couple two streams that must stay independent, and a named
+> single-source derivation satisfies the acceptance criterion directly
+> (the name is internal; the behaviour is pinned by re-banked digests
+> either way). The question above is therefore **answered, not pending**.
+> **But the work is NOT IMPLEMENTED, and implementing it is a SEPARATE
+> product-grade task: it MOVES PINNED BYTES** — the seed-binding digests,
+> the cube baseline v3 rows and the golden MIDI seeds all move, so it is a
+> deliberate re-bank, not a cleanup.
 
 **Risk / impact of leaving it deferred.** The runner/sampler seed remains the
 one un-hashed stream in the composer, so candidate `i` of seed `s` and
@@ -436,6 +523,20 @@ The choice decides whether `src/core`'s pitch-class helpers — the five
 `pc_of` (`src/core/music/explain.cpp:15`), six in total — can be unified in
 the same change or must stay.
 
+> **DECIDED (D-B4) — NOT IMPLEMENTED.** The owner ruled (2026-10-19,
+> owner-delegated; full text below): the shared helper home is
+> **`src/core/music/`** (next to the `ranges.h` precedent) — it is the only
+> option meeting the acceptance criterion (reachable from core AND
+> inference with the layer gate clean, and `src/core` stays JUCE-free);
+> `src/inference/detail/` is unreachable from `src/core`. The question
+> above is therefore **answered, not pending**.
+> **But the work is NOT IMPLEMENTED, and implementing it is a SEPARATE
+> product-grade task: it UNIFIES THE RULES** — one strict/strong-beat
+> definition, one `mod12`/`octave_pull` home — and it changes the text of
+> files whose current copies are deliberate, locally-documented policy
+> (`ranking.cpp` / `constraints.cpp` have not changed since S0). It is a
+> deliberate unification, not a pure move.
+
 **Risk / impact of leaving it deferred.** A rule fix (for example a
 strong-beat boundary change) has to be applied in up to five places, and
 missing one produces a silent divergence between what the sampler permits,
@@ -507,6 +608,15 @@ the S3 ratchet only pinned the three exceptions of B9
 (`docs/measurements/s3-0-ccn.md:49-53`) and the S0 baseline table
 (`docs/measurements/s0-lizard.csv`) is a snapshot, not a gate. Until a
 ceiling is chosen, "done" has no observable threshold.
+
+> **ANSWERED (D-B5).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): the ceiling is **20** for "done" (no function in
+> `src/inference/sampler.cpp` above 20) and **15 stays the target for new
+> code** per the CCN gate — demanding 15 of a pinned-68 function would be a
+> goal, not a gate (the same goals-not-gates logic as S3's ≤300/≤120).
+> The question above is therefore **answered, not pending**: the item is
+> RESOLVED (the dissection landed — see the resolution below), and the
+> ceiling that was missing is now the D-B5 ceiling of 20.
 
 **Risk / impact of leaving it deferred.** Every future sampler change
 (adding a mask, changing the nucleus rule, adding a guard) is a
@@ -621,6 +731,16 @@ the undo stack) or stay an append-only audit log that is deliberately not
 rewound? The two answers give different UI behaviour for the history
 recall box, and the owner has to pick one before any implementation.
 
+> **ANSWERED (D-B6).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): `SeedHistory` stays an **append-only audit log**, explicitly
+> documented as **not rewound** by undo — making it undoable would destroy
+> recall information on undo and couple two different semantics, while
+> documenting the contract is prerequisite to either answer and is
+> behaviour-preserving. The question above is therefore **answered, not
+> pending**: the item is RESOLVED (the contract is now stated where the
+> class lives, at its use site and in one UI tooltip — see the resolution
+> below).
+
 **Risk / impact of leaving it deferred.** Memory grows linearly with the
 number of undo steps times the pattern size (two copies per step), and the
 seed history and the undo stack can disagree, so a user who undoes a
@@ -638,7 +758,9 @@ current pattern.
 > undo action restores only pattern/chords/freeze, while
 > `history_.push` / `mark_latest_kept` sit outside it — so "an undo of a Keep
 > leaves the entry standing" is true, and the two histories may disagree by
-> design. No behaviour change.
+> design. No logic change; one UI tooltip string was added (the history
+> box's tooltip now states the contract, and a comment records it as an
+> audit fact).
 
 ## B7 — The MSVC C2059 quirk has no permanent guard
 
@@ -714,6 +836,16 @@ was not built.
 format hook, or compiler probe). A text lint is cheapest but keeps a
 compiler bug encoded as a rule; a compiler probe is the most honest and
 the most expensive to keep.
+
+> **ANSWERED (D-B7).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): the guard shape is the **COMPILER PROBE** — at the time the
+> cause was unestablished, and encoding an unexplained compiler behaviour
+> as a lint rule is fragile; the probe asserts the outcome and self-retires
+> if MSVC fixes the quirk (the acceptance criteria explicitly allowed a
+> text lint as the fallback). The question above is therefore **answered,
+> not pending**: the item is RESOLVED (the probe landed as a CI step — see
+> the resolution below). The cause has since been ESTABLISHED (ruling
+> PBA-1), and the probe was re-aimed at the useful assertions.
 
 **Risk / impact of leaving it deferred.** The constraint lives only in a
 measurement record. An agent or contributor that edits
@@ -795,9 +927,40 @@ dispatcher-only step? The general step is more valuable but changes the CI
 runtime and the dependency set (the `training/.venv` interpreter is used
 locally for the python suites).
 
+> **ANSWERED (D-B8).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): a **DISPATCHER-ONLY step now** (stdlib, seconds,
+> `gates`-job style); the general `pytest` step becomes its own later item,
+> because it needs a venv/torch on the runner and is a runtime and
+> dependency change the record itself flags — and nothing is blocked by
+> the narrow choice. The question above is therefore **answered, not
+> pending**: the item is RESOLVED (the dispatcher step landed — see the
+> resolution below). The general python-test step is the **residual**, and
+> it is a separate item, not this one.
+
 **Risk / impact of leaving it deferred.** The companion is the one shipped
 surface with no automated check at all, while its own documentation claims
 CI-safety. A break would be found by a user in FL Studio, or not at all.
+
+> **RESOLVED 2026-10-19 (phase-B tranche A, branch `refactor/phase-b-a`,
+> commit `ae44d08`).** The dispatcher **IS under CI**. A new
+> `tools/tests/test_fl_dispatcher.py` (stdlib `unittest`, the repo's
+> `tools/tests/` convention) pins the pure, FL-free surface — the plan for
+> `DEFAULT_LAYOUT` (the 4 entries plus the trailing `name_pattern`
+> action), the rejection of a malformed layout entry, the dry-run path and
+> the custom-layout ordering — and the `gates` job gained the step "FL
+> companion dispatcher test (pure path)":
+> `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v`
+> (blocking: a failing test fails the job). Per **D-B8** the step is
+> **dispatcher-only**: the general python-test step (`tools/tests/` +
+> `training/tests/`) is a separate later item and is NOT smuggled in here
+> — it needs a venv/torch on the runner.
+> The "Where it lives" block above is the **pre-tranche snapshot**: its
+> "No CI coverage" and "No test file" statements describe the tree as it
+> stood when this item was raised and are superseded by this resolution.
+> **Residual:** the in-FL branch (`apply_layout`'s `_IN_FL` body) is still
+> unpinned and the `NOT-RUN` smoke record at `docs/FL_SMOKE.md:81-83`
+> stands — that is the residual, not this item. The gate-index row for the
+> CI step is `docs/measurements/ratchet.md` P3.
 
 ---
 
@@ -889,6 +1052,16 @@ the guard shape (re-block the text guard vs. add a dedicated CCN gate).
 Note that re-blocking `tools/check_bodies.py` first requires reconciling its
 13 current failures, which include the sanctioned Pcg32 change — that
 reconciliation is itself a piece of work not done in this cycle.
+
+> **ANSWERED (D-B9).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): the ceiling is **20** (both 30s split; the 16 stays pinned
+> with its reason) and the guard is **extend `tools/lint_ccn.py`** (the
+> dedicated CCN gate) — do **NOT** re-block `tools/check_bodies.py`,
+> because re-blocking would require reconciling the sanctioned Pcg32
+> bodies (rewriting history) while `lint_ccn.py` is the living gate that
+> already pins the over-target functions. The question above is therefore
+> **answered, not pending**: the item is RESOLVED (the split landed and the
+> two stale pin rows were pruned — see the resolution below).
 
 **Risk / impact of leaving it deferred.** The three highest-complexity
 functions in the composer keep their pre-S3 shape with no guard of any
@@ -1025,6 +1198,21 @@ semantic change, not just an addition. For item 2, does the pin cover the
 sidecar's logits values only, or also the sidecar's sha256 in the manifest
 (a binary `produced_by` of the `capture:` form)?
 
+> **DECIDED (D-B10.1 / D-B10.2) — NOT IMPLEMENTED.** The owner ruled
+> (2026-10-19, owner-delegated; full text below): **D-B10.1 — REJECTION**
+> (the provider returns `false`; fail-closed at a provider boundary, with
+> the sampler's downstream mask as the second layer — masked-but-success
+> would report success for garbage, and the acceptance criteria guard
+> against false rejections on the frozen prefixes), and **D-B10.2 — BOTH**
+> (the pin covers the sidecar's logits values AND the sidecar's sha256 in
+> one record, in the `capture:` form for the binary). The questions above
+> are therefore **answered, not pending**.
+> **But the work is NOT IMPLEMENTED, and implementing it is a SEPARATE
+> product-grade task: it CHANGES THE ORT BOUNDARY SEMANTICS** (item 1
+> touches the production sampling path, whose bytes are pinned) and adds
+> a product-level pin on a binary sidecar that is produced outside the
+> repo's golden pipeline (item 2). Neither was part of this phase.
+
 **Risk / impact of leaving it deferred.** A prefix that violates the slot
 ranges is currently only rejected further downstream (decode-side,
 `src/core/serialization/tokenizer.cpp:80-85`) or not at all; the provider
@@ -1098,6 +1286,15 @@ keys on the Python side, or narrow the C++ side to `{root, type}`? The
 second option silently drops inversion/tension from every shifted chord
 and would change what the C++ strict mask sees, so it is a product
 decision, not a refactor.
+
+> **ANSWERED (D-B11).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): the **PYTHON SIDE PRESERVES ALL KEYS** (the C++ shape is
+> authoritative) — narrowing C++ would silently drop inversion/tension from
+> every shifted chord and change what the strict mask sees, which is
+> destructive, while Python-side preservation is additive (the corpus
+> agrees either way today, so no byte moved). The question above is
+> therefore **answered, not pending**: the item is RESOLVED (the divergence
+> is healed — see the resolution below).
 
 **Risk / impact of leaving it deferred.** Any enriched chord (one carrying
 inversion or tension) is shifted differently by the two implementations, so
@@ -1207,12 +1404,72 @@ against which ceiling — the S3 "≤300/≤120" goals, a re-scoped budget, or
 ( a dedicated layout/panel unit beside the editor, or the existing panel
 headers extended).
 
+> **ANSWERED (D-B12).** The owner ruled (2026-10-19, owner-delegated; full
+> text below): **(a) CONFIRMED** — the entry condition was attempted first
+> (the headless bounds-dump guard at 3-4 window sizes, 4 h time-box, no
+> new controllers); the guard landed, so the extraction proceeded under
+> B12's acceptance criteria, else **(c)** (the value stays ratchet-pinned
+> with the reason recorded). The scope ruling fixed the ceiling as a
+> **RE-SCOPED BUDGET — Editor total (.h+.cpp) ≤1050 physical lines AND
+> .cpp max-CCN ≤9** (the S3 "≤300/≤120" were goals, not gates) with a
+> **+5 % record-with-reason tolerance**, and the ownership as a **DEDICATED
+> LAYOUT UNIT BESIDE THE EDITOR** (cross-panel layout belongs in no single
+> panel header; panel headers stay untouched). Ruling **S93-1** then
+> ACCEPTED the measured `.cpp` max-CCN **13** with a recorded reason. The
+> questions above are therefore **answered, not pending**: the item is
+> RESOLVED (the extraction landed — see the resolution below).
+
 **Risk / impact of leaving it deferred.** The Editor stays the largest file
 under `src/plugin` and a pinned file-size exception, and its constructor
 stays the file's complexity outlier. Every future change to the Editor is a
 whole-file review, the layout responsibility stays fused with the callback
 wiring, and the S9.3 decision stays open against a number set that was
 measured in S9 and has not been re-measured since.
+
+> **RESOLVED 2026-10-19/20 (the S9.3 extraction; branch
+> `refactor/s9-3-extract`, commits `bf795f3` (the extraction) + `2a553ee`
+> (the pin prune) + `0d14c3d` (the tab-wiring probe), plus the D-B12 scope
+> ruling `47d96a0`).** The extraction **landed**: the Editor's layout /
+> construction responsibility now lives in a dedicated unit,
+> `src/plugin/ui/EditorLayout.{h,cpp}` (141 + 287 = **428** physical lines,
+> 5 functions, total CCN 10, max-CCN 4), beside the editor. The panel
+> headers stay untouched, as the D-B12 ownership ruling required.
+> - **The Editor is now 293 + 807 = 1100 physical lines** (was
+>   324 + 1046 = 1370), over **48 functions in 4 files** (43 in
+>   `PluginEditor.cpp`, 4 in `EditorLayout.cpp`, 1 in `EditorLayout.h`, 0
+>   in `PluginEditor.h`) — total CCN **140** (was 137).
+> - **The constructor's max-CCN 16 → 13**
+>   (`src/plugin/audio/PluginEditor.cpp:60-227`), **ACCEPTED** by ruling
+>   **S93-1** with a recorded reason (pure-move floor; the 12 remaining
+>   branches are stay-listed callback wiring). 13 ≤ 15, so no CCN pin is
+>   needed and the constructor left the G3 pin table (ruling S93-2).
+> - **The D-B12 ceiling is met**: Editor total ≤1050 with the **+5 %
+>   record-with-reason tolerance** — 1100 ≤ 1050 × 1.05 = **1102.5**.
+>   **That TOTAL is NOT machine-enforced** (G1 pins FILES individually, so
+>   a 4-file Editor at 1100 passes with no total check) — stated plainly
+>   in `docs/measurements/s9-0.md` Appendix D, not glossed here.
+> - **The bounds guard** (`tests/probe_b12_bounds.cpp` +
+>   `tests/golden/b12_editor_bounds.json`) was the D-B12 entry condition
+>   and is **re-run GREEN on the post-extraction tree**: the dumps are
+>   **byte-identical** to the pre-extraction capture (component count 136;
+>   dump bytes 3826 / 3843 / 3850 / 3880; dump sha256 `7f138f4b…`,
+>   `c0442dc9…`, `aa06bdb5…`, `8e29a702…` at 960x600 / 1024x876 / 1280x800
+>   / 2048x1752). No re-banking was needed and none was done. The verdict
+>   and the hashes are recorded durably in
+>   `docs/measurements/s9-0.md` Appendix D §D-1.
+> - **The tab-wiring probe** (`tests/probe_s93_tab_wiring.cpp`, ruling
+>   S93-3) is **ALL-PASS (0 failures)** on the same tree — it is the
+>   guard for the wiring, which the bounds guard is blind to (§D-2).
+> - The file-size pin was re-pointed at the post-extraction count
+>   (`PluginEditor.cpp` **807**) in the same commit as the prune.
+> **Residuals, stated not glossed:** (a) neither probe is
+> `catch_discover_tests`-registered and neither runs in CI (ruling S93-3:
+> CI integration is FUTURE WORK) — they must be re-run by hand after any
+> editor change; (b) the ≤1050 total ceiling is an owner-agreed acceptance
+> criterion, not a gate.
+> The "Where it lives" block above is the **pre-extraction snapshot** and
+> is superseded by this resolution and by
+> `docs/measurements/s9-0.md` Appendix D.
 
 ---
 
@@ -1232,12 +1489,20 @@ nobody re-checks them.
    case `training/tests/test_keynorm.py:201` ("chord root must shift
    identically"), with the vectors in `tests/golden/keynorm_vectors.json`
    (record at `tests/golden_manifest.json:15-25`). Only the *anchor* half
-   of the idea is deferred (B1). **Known divergence, deliberately not
-   healed** (recorded at `tests/golden_manifest.json:17` and
-   `docs/TOKENIZATION.md:81-87`): python `shift_chords` rebuilds
-   `{root, type}` only and drops inversion/tension, while C++ preserves them
-   in place — the repo already names that unification as phase-B work, so
-   it is carried here as B11.
+   of the idea is deferred (B1). **The known divergence is HEALED, not
+   "deliberately not healed"** — the paragraph below records the state as
+   it stood when this item was checked; phase-B tranche E (B11, ruling
+   D-B11) fixed it: the python side now **preserves every key** of the
+   input chord dict and only `root` moves, with the C++ shape
+   authoritative, and the parity is pinned from BOTH sides over a new
+   enriched vector (`#chord_parity.enriched` in
+   `tests/golden/keynorm_vectors.json`). The two "known divergence" notes
+   were removed in the same commit (`docs/TOKENIZATION.md:81-87` and the
+   manifest record). The record this paragraph points at is therefore
+   **history**: at the time it was written, python `shift_chords` rebuilt
+   `{root, type}` only and dropped inversion/tension while C++ preserved
+   them in place, and the repo named that unification as phase-B work —
+   which is what B11 became.
 
 2. **A second `juce::UndoManager` in the plugin — DOES NOT EXIST.** The
    plugin owns exactly one: `src/plugin/audio/PluginProcessor.h:130`
@@ -1282,13 +1547,19 @@ nobody re-checks them.
    locations; the older document is a historical record and was not edited
    by this task.
 
-7. **A `fl_dispatcher` test — DOES NOT EXIST, and no CI step runs any
-   python test suite.** Beyond the missing dispatcher test, note that
-   `.github/workflows/ci.yml` has no `pytest` step at all, so
-   `tools/tests/` and `training/tests/` are likewise not executed by CI
-   (they are run locally with the `training/.venv` interpreter). That is
-   recorded inside B8 as part of the owner decision, not as a separate
-   entry, because the brief's item is specifically the dispatcher.
+7. **A `fl_dispatcher` test — IT NOW EXISTS, and one CI step runs one
+   python test suite (dispatcher-only).** This entry was checked before
+   the phase-B tranches; **phase-B tranche A (B8, commit `ae44d08`)
+   changed it**: `tools/tests/test_fl_dispatcher.py` (stdlib `unittest`,
+   the repo's `tools/tests/` convention) now pins the dispatcher's pure
+   path, and the `gates` job runs it as the step "FL companion dispatcher
+   test (pure path)" —
+   `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py"
+   -v`. Per **D-B8** that step is **dispatcher-only**: the general python
+   test step is still absent, so `tools/tests/` (the other files in it) and
+   `training/tests/` are still NOT executed by CI — they are run locally
+   with the `training/.venv` interpreter. The general step remains a
+   separate later item, not part of B8.
 
 8. **A product pin on the real logits of `training/model.logits.onnx` —
    DOES NOT EXIST** (no manifest record, no golden artifact, no value pin
@@ -1393,3 +1664,17 @@ ruling cites a standing rule, the rule is quoted, not extended.
     drag 2, trackBox 1, chordReplace 6, inv 2 — and forcing ≤9 would cut into the wiring = new scope
     with behavior risk). No CCN pin needed (13 ≤ 15 is clean); options (ii) wiring-helper split and
     (iii) fallback-to-(c) REJECTED.
+
+> **Reading note (added 2026-10-20, the final fix wave).** The rulings
+> above are the controller's and are quoted **as they were made**; the
+> numbers that appear inside a ruling's own text (D-B9's "26 functions",
+> D-B12's "1046" and "1370", D-B12's "layout 355 NLOC") are the
+> measurements **at the moment the ruling was made**. They were true then
+> and several of them have since moved. The rulings themselves are NOT
+> edited — a ruling is reversible only by editing this section, and this
+> wave changes no ruling. The CURRENT values live in the item blocks above
+> and in `docs/measurements/s10-final.md` §8 (the post-phase correction):
+> the CCN pin count is **22** (four prunes since S10.1's 26), the Editor
+> is **293 + 807 = 1100** physical lines (was 1046 + 324 = 1370), and the
+> extracted unit is `src/plugin/ui/EditorLayout.{h,cpp}`. Read a ruling's
+> numbers as "the state when the ruling was taken", never as a NOW value.

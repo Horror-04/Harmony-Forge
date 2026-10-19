@@ -174,7 +174,7 @@ downloaded into the CMake dependency directory). The inference HEADERS
 include no ONNX Runtime headers at all (`onnx_runner.h`, `ort_logits.h`,
 `sampler.h`), so the `sseed` statement is compiled from the same headers
 in either configuration; the ONNX-macro configuration was additionally
-compiled by hand on 2026-10-19 and gave the same outcome for all seven
+compiled by hand on 2026-10-19 and gave the same outcome for all eight
 shapes.
 
 The guard comment at the site (`src/inference/candidate_model.cpp`,

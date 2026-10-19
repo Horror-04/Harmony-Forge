@@ -271,3 +271,105 @@ pending)"), so the pointer above used to dangle.
   `node_modules`, `.git`) directories, and `docs/MAP.md` was regenerated —
   **258 files, 1271 symbols, 0 `.venv` paths** — so
   `py -3 tools/gen_map.py --check` now PASSES.
+
+## 8. Post-phase correction (2026-10-20) — the phase-B tranches touched 12 rows of the final table
+
+**APPEND-ONLY.** Nothing in §1-§7 above is rewritten: those sections are
+the S10 close, measured on the S10 tree, and they stay as the S10 record.
+This section is a dated **correction**: it states, for every metric the
+owner-delegated phase moved, the value NOW, and names the row(s) of §1 and
+the section(s) of this document it supersedes. A reader who needs the
+current value must read this section; a reader who needs the S10 record
+reads §1.
+
+**Why the correction exists.** `docs/BACKLOG-phase-B.md:48-76` declares
+this document the authority for the NOW values ("authority for NOW values:
+`docs/measurements/s10-final.md` §1"). The owner-delegated phase that
+followed the S10 close (the owner decisions D-B1..D-B12, the U2/U3 probes
+and the B12 guard, the S9.3 extraction and the phase-B tranches A/B/C/D/E)
+moved **11** of those numbers and touched a **12th row** without changing
+it (row 5, `src/app` — the layer did not grow). The declaration therefore
+had to be repointed at the corrected values, and the corrected values had
+to be recorded somewhere that is not the S10 close — that is this section.
+
+**Method (unchanged from §0, re-run on the tree this wave commits).**
+Line counts: python newline count over the working-tree bytes of every
+tracked `.h`/`.cpp` under `src/` (`data.count(b"\n")` plus one for a
+trailing partial line) — `Measure-Object -Line` is **banned** (it counts
+only non-empty lines; it produced 975 for the 1046-line `PluginEditor.cpp`).
+Complexity: lizard **1.24.1** over `src/` (the same tool and version as
+`docs/measurements/s0-lizard.csv`). Counts and census figures: the repo's
+own gates — `tools/lint_file_size.py`, `tools/lint_golden_manifest.py`,
+`tools/lint_ccn.py --strict`. Every number below names its source.
+
+### 8.1 The corrected values, row by row
+
+| §1 row | metric | value in §1 (the S10 close) | **value NOW (corrected)** | how measured (source) |
+|---|---|---|---|---|
+| **3** | source LOC — `src/core` | 2937 over 33 files | **2944** over 33 files (+7) | python newline count over the tracked `.h`/`.cpp` bytes of `src/core` |
+| **4** | source LOC — `src/inference` | 3903 over 36 files | **4075** over 36 files (+172) | same method; the growth is the phase-B dissections (B5 `sample_continue` → 9 named stages, B9 `apply_mode` / `apply_candidate_transform` → named stages) and the B11 keynorm fix |
+| **5** | source LOC — `src/app` | 156 over 5 files | **156** over 5 files (unchanged) | same method |
+| **6** | source LOC — `src/plugin` | 5361 over 30 files | **5528** over 32 files (+167 / +2 files) | same method; the two extra files are `src/plugin/ui/EditorLayout.{h,cpp}` (the S9.3 extraction) |
+| **7** | source LOC — **total** `src/` | 12357 over 104 files | **12703** over 106 files (+346 / +2 files) | python newline count over every tracked `.h`/`.cpp` under `src/`; 2944 + 4075 + 156 + 5528 = 12703, 33 + 36 + 5 + 32 = 106 |
+| **13** | **max-CCN function** (whole tree) | CCN 68 — `hf::infer::sample_continue`, `src/inference/sampler.cpp:170-352` | **CCN 36** — `hf::music::validate_voice_leading`, `src/core/music/voice_leading.cpp:27-102` | lizard 1.24.1 over `src/`; the tree maximum is now a pre-existing S0-baseline function. (The 68 → 36 move is B5: `sample_continue` was dissected 68 → 12.) |
+| **14** | functions with CCN > 15 | 26 | **22** | lizard 1.24.1 over `src/`; the CCN gate prints "functions over the target: 22 (pinned 22)" — 26 → 22 is four prunes: the Editor constructor (S9.3, 16 → 13), `apply_mode` (B9, 30 → 3), `apply_candidate_transform` (B9, 30 → 5), `sample_continue` (B5, 68 → 12) |
+| **16** | file-size census (> 500 lines) | 8 files, all pinned (`PluginEditor.cpp` **1046**, `lint_golden_manifest.py` **837**) | **8 files, all pinned, 0 new** — `tools/lint_file_size.py`: `tools/step1_table.py` 1120, `src/plugin/audio/PluginEditor.cpp` **807**, `tests/test_sampler.cpp` 919, `tools/lint_golden_manifest.py` **842**, `tools/tests/test_golden_manifest_lint.py` 649, `tests/test_selection.cpp` 626, `tests/test_memo_filter.cpp` 509, `tools/render_model.py` 505 | `tools/lint_file_size.py` (PASS: 8 pinned files, 0 new). Two pins moved: the Editor `.cpp` 1046 → 807 (S9.3 extraction) and the manifest lint 837 → 842 (the B12 `probe_b12_bounds` WRITER binding); the other six pins did not move. The SET did not grow. |
+| **20** | golden registry records | **20 records** — `in_test` 10, `golden_midi` 2, `fixtures` 8; forms capture=14, gen=5, mixed=1 | **22 records** — `in_test` **12**, `golden_midi` 2, `fixtures` 8; forms **capture=15, gen=6, mixed=1** | `tools/lint_golden_manifest.py` (PASS): "forms accepted: capture=15, gen=6, mixed=1 (22 records)". The two new `in_test` records are the B12 bounds guard (`tests/probe_b12_bounds.cpp`) and the enriched keynorm chord-shape parity record (B11) |
+| **23** | **Editor** (AS-IS) — physical lines | 324 + 1046 = **1370** | **293 + 807 = 1100** | python newline count on the working tree; the `.cpp` figure is independently confirmed by the G1 file-size pin (807) |
+| **24** | **Editor** (AS-IS) — max-CCN function | **CCN 16** — `HarmonyForgeEditor::HarmonyForgeEditor` | **CCN 13** — `HarmonyForgeEditor::HarmonyForgeEditor`, `src/plugin/audio/PluginEditor.cpp:60-227` (NLOC 128, length 168) | lizard 1.24.1. Ruling **S93-1** ACCEPTED 13 with a recorded reason (pure-move floor; the 12 remaining branches are stay-listed callback wiring — preview 1, drag 2, trackBox 1, chordReplace 6, inv 2). 13 ≤ 15, so no CCN pin is needed; the constructor left the G3 pin table |
+| **25** | **Editor** (AS-IS) — function count / total CCN | **45 functions** (44 `.cpp` + 1 `.h`), **total CCN 137** (134 + 3) | **48 functions** over **4 files** (43 in `PluginEditor.cpp`, 4 in `EditorLayout.cpp`, 1 in `EditorLayout.h`, 0 in `PluginEditor.h`), **total CCN 140** (130 + 7 + 3) | lizard 1.24.1 over the four files. The Editor is now FOUR files: the S9.3 extraction added `src/plugin/ui/EditorLayout.{h,cpp}` (141 + 287 = 428 physical lines, 5 functions, total CCN 10, max-CCN 4), and `PluginEditor.h` now carries no function at all (`RollStack::resized` moved to `EditorLayout.h`). The per-file split of the +3: `PluginEditor.cpp` shed 1 function and 4 CCN points (44 → 43 functions, 134 → 130 CCN), `EditorLayout.cpp` brought 4 functions / 7 CCN, `EditorLayout.h` brought 1 function / 3 CCN (the `.h` half of the old 137) |
+
+### 8.2 The §5 table, corrected
+
+§5 ("The Editor as it stands (the S9.3 extraction is deferred)") is
+**superseded** by this subsection — the extraction is not deferred, it
+landed. The corrected values:
+
+| quantity | §5 said | **NOW** | where |
+|---|---|---|---|
+| physical lines | 324 (`.h`) + 1046 (`.cpp`) = 1370 | **293 (`.h`) + 807 (`.cpp`) = 1100**, over **4 files** with the extracted unit (`EditorLayout.h` 141 + `EditorLayout.cpp` 287 = 428) | python newline count on the working tree; the `.cpp` figure is independently confirmed by `tools/lint_file_size.py` (pinned at 807) |
+| functions | 45 (44 `.cpp` + 1 `.h`) — S0: 46 | **48** over 4 files — S0: 46 | lizard 1.24.1 |
+| total CCN | 137 (134 + 3) — S0: 152 (149 + 3) | **140** (130 + 7 + 3) — S0: 152 | lizard 1.24.1 |
+| max-CCN function | CCN 16 — the constructor | **CCN 13** — the constructor, `src/plugin/audio/PluginEditor.cpp:60-227` (NLOC 128, length 168) | lizard 1.24.1; accepted by ruling S93-1, no pin needed (13 ≤ 15) |
+| next-highest | `importReferenceMidi` 9, `timerCallback` 8, `trackName` 7 | unchanged: `importReferenceMidi` 9, `timerCallback` 8, `trackName` 7 | lizard 1.24.1 |
+| the file-size gate | the `.cpp` is one of the 8 pinned files | unchanged: `src/plugin/audio/PluginEditor.cpp` is one of the 8 pinned files, now at **807** | `tools/lint_file_size.py` |
+| the S9.3 deferral | "the S9.3 extraction is deferred" | **the extraction LANDED** (`bf795f3`); the D-B12 ceiling (Editor total ≤1050, +5 % record-with-reason tolerance) is met at 1100 ≤ 1102.5 — and that TOTAL is **not** machine-enforced (G1 pins files individually) | `docs/measurements/s9-0.md` Appendix D (the post-extraction measurement, the D-B12 ceiling and the plain statement that no gate sums the Editor's lines) |
+
+### 8.3 What did NOT move (stated, so the correction is not over-read)
+
+- The **ctest counters** (rows 1-2): **re-measured in this wave, on this
+  tree** — `ctest --test-dir build-full -C Release --output-on-failure` →
+  **251/251 passed (100 %)**, wall 21.65 s; `ctest --test-dir build-off -C
+  Debug --output-on-failure` → **221/221 passed (100 %)**, wall 3.54 s.
+  Both hold their pinned values, so the G10 ratchet did not move. The
+  phase-B work was behaviour-preserving by construction (pure moves,
+  re-banked only where the owner said so) and the S9.3 extraction is
+  proved behaviour-preserving by the B12 bounds guard re-run: the
+  post-extraction dumps are **byte-identical** to the pre-extraction
+  golden (component count 136 and dump sha256 `7f138f4b…`, `c0442dc9…`,
+  `aa06bdb5…`, `8e29a702…` at 960x600 / 1024x876 / 1280x800 / 2048x1752) —
+  see `docs/measurements/s9-0.md` Appendix D §D-1.
+- The **off-golden census** (row 15) and the **layer / RT / UTF-8 / golden-pin
+  / invariant-tag** verdicts (rows 17-19, 22): unchanged; all the gates are
+  green on the tree this wave commits.
+- The **S0 baseline column** of §1: history, untouched.
+- Rows **8-12** (the lizard NLOC rows): not restated here. They were not
+  re-measured in this wave, and the S0-comparable NLOC semantics plus the
+  per-function aggregation make them a separate measurement from the
+  physical-line rows 3-7. **They are therefore still the S10-close values
+  and are NOT superseded by this section** — stated plainly so a reader
+  does not assume the whole §1 table was re-measured.
+
+### 8.4 Where the corrected values live
+
+- This section (§8) — the authority for the NOW values, replacing §1's
+  claim to that role for the metrics listed in §8.1 and §8.2.
+- `docs/measurements/s9-0.md` Appendix D — the post-extraction Editor
+  measurement, the D-B12 ceiling and its (un)enforcement, and the durable
+  probe verdict.
+- `docs/measurements/ratchet.md` — the live gate values (§1's gate index:
+  G9's record count, the G3 pin table, the G1 file-size pins) and the
+  P1-P4 rows for the two probes and the two new CI steps.
+- `docs/BACKLOG-phase-B.md` — the aggregates table and the NOW-authority
+  pointer, repointed at this section.
+
