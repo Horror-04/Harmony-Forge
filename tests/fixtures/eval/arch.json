@@ -1,0 +1,5 @@
+{
+ "arch": "large",
+ "params": 3558144,
+ "provenance": "S4b-main T5. GOLDEN class: large-arch exact param count, run-captured on the clean tree at BASE ffa2a2b. Producer: training/tinilm.py ARCHES['large'] via tinilm.build_model(arch='large') + tinilm.param_count (sum of state_dict numels). Consumer: training/tests/test_eval.py check_load_v2_arch_ckpt (v2 arch-tagged ckpt loads strict). Hand-derived mirror fractions (2/3, 0.5/0.0), slot-math lists and gate thresholds stay in-test (echo/parameter, see task report)."
+}

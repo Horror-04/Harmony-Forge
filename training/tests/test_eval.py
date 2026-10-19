@@ -8,6 +8,7 @@ asserts the mirror matches hand-computed values and that evaluate() passes
 all gates on the exported model.onnx.
 """
 
+import json
 import os
 import sys
 
@@ -18,6 +19,13 @@ import tokenizer as tok
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRAINING = os.path.join(HERE, "..")
+
+# S4b-main T5 phase 1: the large-arch param pin lives in
+# tests/fixtures/eval/arch.json (fidelity check alongside the literal in
+# check_load_v2_arch_ckpt; literal removed in phase 2).
+_ARCH = json.load(open(os.path.join(
+    os.path.dirname(os.path.dirname(HERE)),
+    "tests", "fixtures", "eval", "arch.json")))
 
 
 def check_mirror() -> None:
@@ -322,6 +330,7 @@ def check_load_v2_arch_ckpt() -> None:
         model, arch = E._load_torch_lm(tmp, torch, "cpu")
         n = sum(v.numel() for v in model.state_dict().values())
         assert n == tinilm.param_count(ref) == 3558144, n
+        assert n == _ARCH["params"], n
         assert arch["d_model"] == tinilm.ARCHES["large"]["d_model"], arch
         for (ka, va), (kb, vb) in zip(
                 ref.state_dict().items(), model.state_dict().items()):

@@ -1,0 +1,62 @@
+{
+ "coverage_old_n": 12,
+ "inversion_want": [
+  [
+   67,
+   4
+  ],
+  [
+   64,
+   4
+  ],
+  [
+   60,
+   4
+  ]
+ ],
+ "neighbour_want_dn": [
+  [
+   62,
+   2
+  ],
+  [
+   64,
+   2
+  ],
+  [
+   66,
+   2
+  ],
+  [
+   65,
+   2
+  ],
+  [
+   67,
+   2
+  ]
+ ],
+ "neighbour_want_up": [
+  [
+   65,
+   2
+  ],
+  [
+   64,
+   2
+  ],
+  [
+   66,
+   2
+  ],
+  [
+   69,
+   2
+  ],
+  [
+   67,
+   2
+  ]
+ ],
+ "provenance": "S4b-main T5. GOLDEN class: seeded device outputs of training/procedural_gen.py, run-captured on the clean tree at BASE ffa2a2b (no producer change in this task). inversion_want: PG.apply_device([(60,4),(64,4),(67,4)], 'inversion', Random(0), 48, 'major'); neighbour wants: PG.apply_device([(64,4),(66,2),(67,4)], 'neighbour', Random(7), 48, 'major') (seeded Random(7) lands on one of the two; both banked); coverage_old_n: PG.progression_coverage(PG.sample_old(400, 7))['n'] (1 rule, 12 signatures). Consumers: training/tests/test_procedural_gen.py check_motivic_identity + check_coverage_one_rule_vs_fifteen. Crafted INPUT motives, SPEC_NAMES, seeds, rate bands and the new-arm 15 (== len(SPEC_NAMES), spec-derived echo) stay in-test with reasons in the task report."
+}

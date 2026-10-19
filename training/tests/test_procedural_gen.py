@@ -16,6 +16,7 @@ Run: ``training/.venv/Scripts/python training/tests/test_procedural_gen.py``
 """
 
 import itertools
+import json
 import os
 import random
 import sys
@@ -26,6 +27,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import tokenizer as tok
 
 import procedural_gen as PG
+
+# S4b-main T5 phase 1: seeded device-output goldens live in
+# tests/fixtures/procedural/device_outputs.json (fidelity checks alongside
+# the literals below; literals removed in phase 2).
+_GOLD = json.load(open(os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)))),
+    "tests", "fixtures", "procedural", "device_outputs.json")))
 
 SPEC_NAMES = [
     "I-V-vi-IV", "I-vi-IV-V", "I-IV-V-I", "vi-IV-I-V",
@@ -114,6 +123,7 @@ def check_motivic_identity() -> None:
     inv = PG.apply_device(list(inv_motive), "inversion", random.Random(0),
                           48, "major")
     assert inv == [(67, 4), (64, 4), (60, 4)], (inv, inv_motive)
+    assert inv == [tuple(p) for p in _GOLD["inversion_want"]], (inv, inv_motive)
     assert [d for _, d in inv] == [d for _, d in inv_motive]
     steps_in = [b - a for (a, _), (b, _) in zip(inv_motive, inv_motive[1:])]
     steps_out = [b - a for (a, _), (b, _) in zip(inv, inv[1:])]
@@ -128,6 +138,8 @@ def check_motivic_identity() -> None:
     exp_nb_up = [(65, 2), (64, 2), (66, 2), (69, 2), (67, 2)]
     exp_nb_dn = [(62, 2), (64, 2), (66, 2), (65, 2), (67, 2)]
     assert nb == exp_nb_up or nb == exp_nb_dn, (nb, exp_nb_up, exp_nb_dn)
+    assert nb == [tuple(p) for p in _GOLD["neighbour_want_up"]] or \
+        nb == [tuple(p) for p in _GOLD["neighbour_want_dn"]], (nb, nb_motive)
     assert sum(d for _, d in nb) == sum(d for _, d in nb_motive), nb
     # Diminution keeps pitch order, halves durations.
     dim = PG.apply_device(list(motive), "diminution", random.Random(0),
@@ -204,6 +216,7 @@ def check_coverage_one_rule_vs_fifteen() -> None:
     assert new_cov["n"] == 15, new_cov
     assert new_cov["n"] > old_cov["n"], (new_cov, old_cov)
     assert old_cov["n"] == 12, old_cov  # 1 rule, 12 signatures
+    assert old_cov["n"] == _GOLD["coverage_old_n"], old_cov
 
 
 def main() -> int:
