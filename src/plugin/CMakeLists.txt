@@ -46,6 +46,8 @@ target_sources(HarmonyForge PRIVATE
   ui/UITokens.h
   ui/HFLookAndFeel.h
   ui/HFLookAndFeel.cpp
+  ui/EditorLayout.h
+  ui/EditorLayout.cpp
 )
 
 target_include_directories(HarmonyForge PRIVATE

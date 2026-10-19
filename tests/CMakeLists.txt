@@ -305,7 +305,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/CandidateBar.cpp
     ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/ui/ExplainView.cpp
-    ../src/plugin/ui/HFLookAndFeel.cpp)
+    ../src/plugin/ui/HFLookAndFeel.cpp
+    ../src/plugin/ui/EditorLayout.cpp)
   target_link_libraries(test_rt_violation_counter PRIVATE
     harmony_forge_core harmony_forge_inference harmony_forge_app
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
@@ -339,7 +340,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/CandidateBar.cpp
     ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/ui/ExplainView.cpp
-    ../src/plugin/ui/HFLookAndFeel.cpp)
+    ../src/plugin/ui/HFLookAndFeel.cpp
+    ../src/plugin/ui/EditorLayout.cpp)
   target_link_libraries(test_rt_soak PRIVATE
     harmony_forge_core harmony_forge_inference harmony_forge_app
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra
@@ -426,7 +428,8 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/CandidateBar.cpp
     ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/ui/ExplainView.cpp
-    ../src/plugin/ui/HFLookAndFeel.cpp)
+    ../src/plugin/ui/HFLookAndFeel.cpp
+    ../src/plugin/ui/EditorLayout.cpp)
   target_link_libraries(probe_b12_bounds PRIVATE
     harmony_forge_core harmony_forge_inference harmony_forge_app
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_gui_extra

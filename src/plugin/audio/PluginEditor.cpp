@@ -55,13 +55,6 @@ juce::String refKeyName(const hf::music::KeyEstimate& k) {
   return juce::String(kNames[static_cast<size_t>(pc)]) + " " + juce::String(k.scale);
 }
 
-// Phase 7 Task 4 (A): 12 px group gap -> 1 px kBorder vertical fade-divider.
-// Takes the gap rect (already removed from the row) and returns the centred
-// 1 px strip, inset 5 px top/bottom so the fade never touches the row edge.
-juce::Rectangle<int> groupDivider(const juce::Rectangle<int>& gap) {
-  return {gap.getCentreX(), gap.getY() + 5, 1, juce::jmax(0, gap.getHeight() - 10)};
-}
-
 }  // namespace
 
 HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
@@ -73,26 +66,20 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
       candidateBar(doc),
       explainView(doc),
       previewGen_(std::make_unique<hf::infer::AsyncGenerateQueue>(1)),
-      previewCtl_(*previewGen_) {
-  // Phase 7 Task 2: single LookAndFeel point — propagates to all children via
-  // the JUCE hierarchy lookup (restored in the dtor). Paint only; no
-  // callbacks change. The Preview CTA gets the primary variant tag here, at
-  // creation (Generate/Keep/Build are tagged in CandidateBar/ArrangeBar).
-  setLookAndFeel(&laf_);
-  previewButton.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
-  // Phase 6 Task 2 (B): resizable window. Minimum 960x600: every fixed row
-  // still fits at 944 px content width (trackRow zooms flex, CandidateBar
-  // buttons share with a reserved history slice, ArrangeBar splits are
-  // relative, model/status split proportionally — see resized()); the
-  // CandidateBar history box needs the extra room (below ~860 px it would
-  // squeeze to zero). Maximum 2048x1752 (2x the default 1024x876) bounds
-  // host-driven growth.
-  setResizable(true, true);
-  setResizeLimits(960, 600, 2048, 1752);
-  setSize(1024, 876);
-
-  transportLabel.setText("Transport: --", juce::dontSendNotification);
-  addAndMakeVisible(transportLabel);
+      previewCtl_(*previewGen_),
+      layout_{transportLabel, previewButton, dragButton, exportButton, undoButton, redoButton,
+              bpmLabel, bpmSlider, densityLabel, densitySlider, trackLabel, trackBox, freezeTrackButton,
+              axisBox, snapLabel, snapBox, quantButton, zoomHSlider, zoomVSlider, chordBarLabel,
+              chordRootBox, chordTypeBox, chordReplaceButton, invUpButton, invDownButton, modelLabel,
+              modelButton, modelClearButton, samplingButton, modelHintLabel, statusLabel, refImportButton,
+              refReportLabel, refKeyButton, refChordsButton, refSeedButton, rollStack, chordTrack, roll,
+              viewport, editTabButton, explainTabButton, explainViewport, explainView, candidateBar,
+              arrangeBar, laf_} {
+  // S9.3 (B12): creation/adding live in EditorLayout (pure move); the wiring
+  // below stays, in order, byte-identical.
+  layout_.configure(*this, hf::plugin::bpm(proc.state()), hf::plugin::density(proc.state()),
+                    hf::plugin::useSampling(proc.state()));
+  layout_.addAll(*this);
 
   // Phase 6 Task 5 (A): while an async preview/export job is pending this
   // button is its Cancel affordance (drops the pending id; the bounded
@@ -104,7 +91,6 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
     else
       startPreview();
   };
-  addAndMakeVisible(previewButton);
 
   // External file drag must start from a mouse event: run it on mouseDown.
   // Phase 6 Task 1 item C: keyboard Enter/Space funnel into onClick below
@@ -127,97 +113,44 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   dragButton.addMouseListener(this, false);
   dragSpaceKey_.target = &dragButton;
   dragButton.addKeyListener(&dragSpaceKey_);
-  addAndMakeVisible(dragButton);
 
   exportButton.onClick = [this] { exportMultitrack(); };
-  addAndMakeVisible(exportButton);
 
   undoButton.onClick = [this] { proc.undo().undo(); };
   redoButton.onClick = [this] { proc.undo().redo(); };
-  addAndMakeVisible(undoButton);
-  addAndMakeVisible(redoButton);
 
-  bpmLabel.setText("BPM", juce::dontSendNotification);
-  addAndMakeVisible(bpmLabel);
-  bpmSlider.setRange(20.0, 300.0, 1.0);
-  bpmSlider.setValue(hf::plugin::bpm(proc.state()), juce::dontSendNotification);
   bpmSlider.onDragStart = [this] { proc.undo().beginNewTransaction(); };
   bpmSlider.onValueChange = [this] {
     hf::plugin::setBpm(proc.state(), bpmSlider.getValue(), &proc.undo());
   };
-  addAndMakeVisible(bpmSlider);
-
-  densityLabel.setText("Density", juce::dontSendNotification);
-  addAndMakeVisible(densityLabel);
-  densitySlider.setRange(0.0, 1.0, 0.01);
-  densitySlider.setValue(hf::plugin::density(proc.state()), juce::dontSendNotification);
   densitySlider.onDragStart = [this] { proc.undo().beginNewTransaction(); };
   densitySlider.onValueChange = [this] {
     hf::plugin::setDensity(proc.state(), densitySlider.getValue(), &proc.undo());
   };
-  addAndMakeVisible(densitySlider);
 
-  // Track + freeze row.
-  trackLabel.setText("Track", juce::dontSendNotification);
-  addAndMakeVisible(trackLabel);
   trackBox.onChange = [this] {
     const int id = trackBox.getSelectedId();
     if (id > 0) doc.setTrackShown(id - 1);
   };
-  // Phase 7 Task 5 (D): honest empty state — a fresh document has no tracks,
-  // so the box would read as broken-blank until the first Regenerate/Keep.
-  // Display-only (selection logic untouched; hidden once a track is shown).
-  trackBox.setTextWhenNothingSelected("No tracks yet");
-  addAndMakeVisible(trackBox);
 
   freezeTrackButton.onClick = [this] {
     const int t = doc.trackShown();
     doc.setTrackFrozen(t, !hf::core::is_track_frozen(doc.freeze(), t));
   };
-  addAndMakeVisible(freezeTrackButton);
 
-  axisBox.addItemList({"Full", "Rhythm", "Pitch"}, 1);
-  axisBox.setSelectedId(1, juce::dontSendNotification);
   axisBox.onChange = [this] {
     doc.setFreezeAxis(doc.trackShown(),
                       static_cast<hf::core::FreezeAxis>(axisBox.getSelectedId() - 1));
   };
-  addAndMakeVisible(axisBox);
-
-  snapLabel.setText("Snap", juce::dontSendNotification);
-  addAndMakeVisible(snapLabel);
-  snapBox.addItemList({"1/4", "1/8", "1/16", "1/32"}, 1);
-  snapBox.setSelectedId(3, juce::dontSendNotification);
   snapBox.onChange = [this] {
     static const int kGrids[4] = {480, 240, 120, 60};
     roll.setSnapGrid(kGrids[juce::jlimit(1, 4, snapBox.getSelectedId()) - 1]);
   };
-  addAndMakeVisible(snapBox);
 
   quantButton.onClick = [this] { doc.quantizeSelection(roll.snapGrid(), 100); };
-  addAndMakeVisible(quantButton);
-
-  zoomHSlider.setRange(0.05, 2.0, 0.01);
-  zoomHSlider.setValue(0.35, juce::dontSendNotification);
   zoomHSlider.onValueChange = [this] { applyZoom(); };
-  addAndMakeVisible(zoomHSlider);
-  zoomVSlider.setRange(2.0, 16.0, 0.5);
-  zoomVSlider.setValue(6.0, juce::dontSendNotification);
   zoomVSlider.onValueChange = [this] { applyZoom(); };
-  addAndMakeVisible(zoomVSlider);
 
-  // Chord editor row (acts on the ChordTrack's selected bar).
-  chordBarLabel.setText("Chord bar: -", juce::dontSendNotification);
-  addAndMakeVisible(chordBarLabel);
-  juce::StringArray roots;
-  for (const char* n : {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"})
-    roots.add(n);
-  chordRootBox.addItemList(roots, 1);
-  addAndMakeVisible(chordRootBox);
-  juce::StringArray types;
-  for (const auto& t : ChordTrack::chordTypes()) types.add(t);
-  chordTypeBox.addItemList(types, 1);
-  addAndMakeVisible(chordTypeBox);
   chordReplaceButton.onClick = [this] {
     const int bar = chordTrack.selectedBar();
     if (bar < 0 || bar >= static_cast<int>(doc.chords().size())) return;
@@ -235,72 +168,34 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
     next.type = ChordTrack::chordTypes()[static_cast<size_t>(typeId)];
     doc.replaceChord(bar, next);
   };
-  addAndMakeVisible(chordReplaceButton);
   invUpButton.onClick = [this] {
     if (chordTrack.selectedBar() >= 0) doc.applyInversion(chordTrack.selectedBar(), 1);
   };
-  addAndMakeVisible(invUpButton);
   invDownButton.onClick = [this] {
     if (chordTrack.selectedBar() >= 0) doc.applyInversion(chordTrack.selectedBar(), -1);
   };
-  addAndMakeVisible(invDownButton);
 
-  // Phase 3 Task 4 item A: ModelPath picker (message thread, undoable).
-  modelLabel.setText("Model:", juce::dontSendNotification);
-  addAndMakeVisible(modelLabel);
   modelButton.onClick = [this] { chooseModelFile(); };
-  addAndMakeVisible(modelButton);
   modelClearButton.onClick = [this] { clearModel(); };
-  addAndMakeVisible(modelClearButton);
-  // Phase 10 Task 2: sampling toggle (Create-view, model row). Undoable,
-  // persistent, reflected on undo/redo via valueTreePropertyChanged below.
-  samplingButton.setClickingTogglesState(true);
-  samplingButton.setToggleState(hf::plugin::useSampling(proc.state()),
-                                juce::dontSendNotification);
   samplingButton.onClick = [this] {
     proc.undo().beginNewTransaction("Sampling");
     hf::plugin::setUseSampling(proc.state(), samplingButton.getToggleState(), &proc.undo());
   };
-  addAndMakeVisible(samplingButton);
-  modelHintLabel.setText("", juce::dontSendNotification);
-  addAndMakeVisible(modelHintLabel);
-  statusLabel.setText("", juce::dontSendNotification);
-  addAndMakeVisible(statusLabel);
   refreshModelRow();
 
   // Phase 5 Task 2: reference import row (message thread; never audio).
   refImportButton.onClick = [this] { chooseReferenceFile(); };
-  addAndMakeVisible(refImportButton);
-  addAndMakeVisible(refReportLabel);
   refKeyButton.onClick = [this] { adoptReferenceKey(); };
-  addAndMakeVisible(refKeyButton);
   refChordsButton.onClick = [this] { adoptReferenceChords(); };
-  addAndMakeVisible(refChordsButton);
   refSeedButton.onClick = [this] { seedFromReference(); };
-  addAndMakeVisible(refSeedButton);
   refreshReferenceRow();
 
-  // Roll stack in a viewport (one scroller for chords + roll).
-  rollStack.chords = &chordTrack;
-  rollStack.roll = &roll;
-  rollStack.addAndMakeVisible(chordTrack);
-  rollStack.addAndMakeVisible(roll);
-  viewport.setViewedComponent(&rollStack, false);
-  addAndMakeVisible(viewport);
-
-  // Phase 5 Task 3: Edit/Explain tab row (minimal toggle; no editor redesign).
-  editTabButton.setToggleState(true, juce::dontSendNotification);
-  editTabButton.onClick = [this] { showExplainTab(false); };
-  addAndMakeVisible(editTabButton);
-  explainTabButton.setToggleState(false, juce::dontSendNotification);
-  explainTabButton.onClick = [this] { showExplainTab(true); };
-  addAndMakeVisible(explainTabButton);
-  explainViewport.setViewedComponent(&explainView, false);
-  addAndMakeVisible(explainViewport);
   // Phase 6 Task 5 (pre-existing Task 1 concern 3, root-caused): hiding MUST
   // come after addAndMakeVisible - the latter re-shows the component, so the
   // old order (hide-then-add) left ExplainView painting over the roll until
   // Edit was pressed. Statement order is the whole fix (one focused change).
+  editTabButton.onClick = [this] { showExplainTab(false); };
+  explainTabButton.onClick = [this] { showExplainTab(true); };
   explainViewport.setVisible(false);
 
   chordTrack.onBarSelected = [this](int bar) { refreshChordRow(bar); };
@@ -313,12 +208,10 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
     candidateBar.setSeedAndBars(e.seed, e.bars);
   };
   candidateBar.setSeedAndBars(hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
-  addAndMakeVisible(candidateBar);
 
   arrangeBar.onBuild = [this](const std::vector<hf::arr::Section>& sections) {
     doBuildArrangement(sections);
   };
-  addAndMakeVisible(arrangeBar);
 
   roll.setKey(hf::plugin::rootKey(proc.state()),
               hf::plugin::scaleName(proc.state()).toLowerCase().toStdString());
@@ -330,17 +223,6 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   doc.addChangeListener(this);
   proc.state().addListener(this);
   refreshTrackBox();
-  // Phase 7 Task 4 (A): toolbar field labels are 11 px (kFontCaption)
-  // kTextMuted caption pairs for their controls. They stay side-by-side
-  // within the existing 26 px rows — label-above-control would need taller
-  // rows, which are Phase-6-owned geometry, so the scale/colour land and
-  // the positions stay. Readout labels (transport/chord-bar/model/status/
-  // report/hint) keep the default look-and-feel text (white, contrast-
-  // pinned in test_focus_resize.cpp).
-  for (auto* l : {&bpmLabel, &densityLabel, &trackLabel, &snapLabel}) {
-    l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
-    l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
-  }
   startTimer(25);  // transport poll + preview scheduler + width sync
 }
 
@@ -372,14 +254,14 @@ void HarmonyForgeEditor::paint(juce::Graphics& g) {
   // to transparent at both ends. All rects come from resized() — paint
   // duplicates no layout math. Guards: pre-first-resized paint sees empty
   // rects and draws nothing (isEmpty skips).
-  for (const auto& pr : panelRows_) {
+  for (const auto& pr : layout_.panelRows_) {
     if (pr.isEmpty()) continue;
     g.setColour(juce::Colour(hf::ui::UITokens::kBgPanel));
     g.fillRect(pr);
     g.setColour(juce::Colour(hf::ui::UITokens::kBorder));
     g.fillRect(pr.getX(), pr.getBottom() - 1, pr.getWidth(), 1);
   }
-  for (const auto& d : dividers_) {
+  for (const auto& d : layout_.dividers_) {
     if (d.isEmpty()) continue;
     const float cx = static_cast<float>(d.getCentreX());
     const juce::Colour clear =
@@ -393,129 +275,8 @@ void HarmonyForgeEditor::paint(juce::Graphics& g) {
 }
 
 void HarmonyForgeEditor::resized() {
-  auto r = getLocalBounds().reduced(8);
-  // Phase 7 Task 4 (A): paint-only divider strips are rebuilt every layout
-  // pass (message thread). Row rects are captured into panelRows_ as each
-  // row is consumed; child bounds keep their Phase-6 sizes, row heights and
-  // the 4 px inter-row rhythm are unchanged. Group-boundary gaps widen
-  // 6 -> 12 px to seat the 1 px divider (≈ the brief's 12 px group padding;
-  // intra-group 6 px gaps ≈ the 8 px base; vertical rhythm untouched).
-  dividers_.clear();
-  panelRows_[kPanelTransport] = r.removeFromTop(22);
-  transportLabel.setBounds(panelRows_[kPanelTransport]);
-  r.removeFromTop(4);
-  auto row = r.removeFromTop(28);
-  panelRows_[kPanelButtons] = row;
-  previewButton.setBounds(row.removeFromLeft(100));
-  row.removeFromLeft(6);
-  dragButton.setBounds(row.removeFromLeft(100));
-  row.removeFromLeft(6);
-  exportButton.setBounds(row.removeFromLeft(110));
-  dividers_.push_back(groupDivider(row.removeFromLeft(12)));
-  undoButton.setBounds(row.removeFromLeft(70));
-  row.removeFromLeft(6);
-  redoButton.setBounds(row.removeFromLeft(70));
-  r.removeFromTop(4);
-  auto bpmRow = r.removeFromTop(26);
-  panelRows_[kPanelBpm] = bpmRow;
-  bpmLabel.setBounds(bpmRow.removeFromLeft(60));
-  bpmSlider.setBounds(bpmRow.removeFromLeft(220));
-  dividers_.push_back(groupDivider(bpmRow.removeFromLeft(12)));
-  densityLabel.setBounds(bpmRow.removeFromLeft(60));
-  densitySlider.setBounds(bpmRow);
-  r.removeFromTop(4);
-  auto trackRow = r.removeFromTop(26);
-  panelRows_[kPanelTrack] = trackRow;
-  trackLabel.setBounds(trackRow.removeFromLeft(48));
-  trackBox.setBounds(trackRow.removeFromLeft(140));
-  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
-  freezeTrackButton.setBounds(trackRow.removeFromLeft(110));
-  trackRow.removeFromLeft(6);
-  axisBox.setBounds(trackRow.removeFromLeft(90));
-  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
-  snapLabel.setBounds(trackRow.removeFromLeft(44));
-  snapBox.setBounds(trackRow.removeFromLeft(70));
-  trackRow.removeFromLeft(6);
-  quantButton.setBounds(trackRow.removeFromLeft(90));
-  dividers_.push_back(groupDivider(trackRow.removeFromLeft(12)));
-  // Phase 6 Task 2 (B): zoom sliders split the remainder evenly (were 2 ×
-  // 120 px fixed, overflowing narrow windows). ~152 px each at the minimum
-  // (was 161 px: three group gaps widened 6 -> 12 px above, −18 px total).
-  const int zoomEach = juce::jmax(0, trackRow.getWidth() / 2);
-  zoomHSlider.setBounds(trackRow.removeFromLeft(zoomEach));
-  trackRow.removeFromLeft(6);
-  zoomVSlider.setBounds(trackRow);
-  r.removeFromTop(4);
-  auto chordRow = r.removeFromTop(26);
-  panelRows_[kPanelChord] = chordRow;
-  chordBarLabel.setBounds(chordRow.removeFromLeft(110));
-  dividers_.push_back(groupDivider(chordRow.removeFromLeft(12)));
-  chordRootBox.setBounds(chordRow.removeFromLeft(70));
-  chordRow.removeFromLeft(6);
-  chordTypeBox.setBounds(chordRow.removeFromLeft(90));
-  chordRow.removeFromLeft(6);
-  chordReplaceButton.setBounds(chordRow.removeFromLeft(120));
-  dividers_.push_back(groupDivider(chordRow.removeFromLeft(12)));
-  invUpButton.setBounds(chordRow.removeFromLeft(60));
-  chordRow.removeFromLeft(6);
-  invDownButton.setBounds(chordRow.removeFromLeft(60));
-  r.removeFromTop(4);
-  // Phase 3 Task 4 item A/B: model picker row + hint/progress row.
-  // Phase 6 Task 2 (B+C): the model label takes a proportional 38% (was a
-  // fixed 340 px, which squeezed the status label against long paths); the
-  // status label keeps the rest so both stay visible at the minimum width
-  // (358 / 376 px). Both use the default look-and-feel label colour (white,
-  // measured 7.46:1 on the editor background — no colour change needed).
-  auto modelRow = r.removeFromTop(28);
-  panelRows_[kPanelModel] = modelRow;
-  modelLabel.setBounds(modelRow.removeFromLeft(modelRow.getWidth() * 38 / 100));
-  dividers_.push_back(groupDivider(modelRow.removeFromLeft(12)));
-  modelButton.setBounds(modelRow.removeFromLeft(100));
-  modelRow.removeFromLeft(6);
-  modelClearButton.setBounds(modelRow.removeFromLeft(80));
-  modelRow.removeFromLeft(6);
-  // Phase 10 Task 2: sampling toggle sits with the model it needs (sidecar
-  // resolves next to the picked weights). Fixed 104 px: the status label
-  // keeps the rest (~290 px at default width, ~250 px at the 960 minimum —
-  // enough for the short busy/ellipsis texts).
-  samplingButton.setBounds(modelRow.removeFromLeft(104));
-  dividers_.push_back(groupDivider(modelRow.removeFromLeft(12)));
-  statusLabel.setBounds(modelRow);
-  r.removeFromTop(4);
-  panelRows_[kPanelHint] = r.removeFromTop(22);
-  modelHintLabel.setBounds(panelRows_[kPanelHint]);
-  r.removeFromTop(4);
-  // Phase 5 Task 2: reference report row (import + adopt actions).
-  auto refRow = r.removeFromTop(28);
-  panelRows_[kPanelRef] = refRow;
-  refImportButton.setBounds(refRow.removeFromLeft(110));
-  dividers_.push_back(groupDivider(refRow.removeFromLeft(12)));
-  refSeedButton.setBounds(refRow.removeFromRight(90));
-  refRow.removeFromRight(6);
-  refChordsButton.setBounds(refRow.removeFromRight(110));
-  refRow.removeFromRight(6);
-  refKeyButton.setBounds(refRow.removeFromRight(90));
-  dividers_.push_back(groupDivider(refRow.removeFromRight(12)));
-  refReportLabel.setBounds(refRow);
-  r.removeFromTop(4);
-  // Phase 5 Task 3: Edit/Explain tab row (viewport and Explain share the rest).
-  auto tabRow = r.removeFromTop(26);
-  panelRows_[kPanelTab] = tabRow;
-  editTabButton.setBounds(tabRow.removeFromLeft(90));
-  tabRow.removeFromLeft(6);
-  explainTabButton.setBounds(tabRow.removeFromLeft(90));
-  r.removeFromTop(4);
-  auto arrange = r.removeFromBottom(120);
-  arrangeBar.setBounds(arrange);
-  r.removeFromBottom(4);
-  auto cand = r.removeFromBottom(40);
-  candidateBar.setBounds(cand);
-  r.removeFromBottom(4);
-  viewport.setBounds(r);
-  explainViewport.setBounds(r);
-  explainView.setSize(r.getWidth(), explainView.contentHeight());
-  rollStack.setSize(std::max(viewport.getWidth(), roll.getWidth()),
-                    68 + roll.getHeight());
+  // S9.3 (B12): the positioning pass lives in EditorLayout::layout().
+  layout_.layout(getLocalBounds());
 }
 
 void HarmonyForgeEditor::timerCallback() {

@@ -14,6 +14,7 @@
 #include "../ui/ArrangeBar.h"
 #include "../ui/CandidateBar.h"
 #include "../ui/ChordTrack.h"
+#include "../ui/EditorLayout.h"
 #include "../ui/ExplainView.h"
 #include "../ui/HFLookAndFeel.h"
 #include "../ui/PatternDocument.h"
@@ -108,20 +109,6 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   void mouseUp(const juce::MouseEvent& e) override;
 
  private:
-  // Stacks the chord track above the roll so one Viewport scrolls both.
-  struct RollStack : public juce::Component {
-    void resized() override {
-      // Guard: the editor's setSize() fires resized() before the child
-      // pointers are assigned in the constructor body.
-      if (chords == nullptr || roll == nullptr) return;
-      const int w = juce::jmax(chords->getWidth(), roll->getWidth());
-      chords->setSize(w, 64);
-      roll->setTopLeftPosition(0, 68);
-    }
-    ChordTrack* chords = nullptr;
-    PianoRoll* roll = nullptr;
-  };
-
   // juce::Timer: transport poll + preview note scheduler + width sync.
   void timerCallback() override;
 
@@ -189,27 +176,6 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   // dtor's setLookAndFeel(nullptr) always finds it alive. No logic — paint
   // only, propagated to children via the JUCE hierarchy lookup.
   hf::ui::HFLookAndFeel laf_;
-
-  // Phase 7 Task 4 (A): toolbar row panels + group dividers are paint-only.
-  // resized() captures each row's rect and each 12 px group gap's 1 px strip
-  // (message thread, alongside the existing setBounds calls); paint() fills
-  // the panels (kBgPanel + 1 px kBorder bottom separator) and the
-  // fade-dividers. Row heights, child sizes and the inter-row 4 px rhythm
-  // are untouched (Phase-6-owned geometry).
-  enum RowPanel {
-    kPanelTransport,
-    kPanelButtons,
-    kPanelBpm,
-    kPanelTrack,
-    kPanelChord,
-    kPanelModel,
-    kPanelHint,
-    kPanelRef,
-    kPanelTab,
-    kNumPanels
-  };
-  juce::Rectangle<int> panelRows_[kNumPanels];
-  std::vector<juce::Rectangle<int>> dividers_;
 
   HarmonyForgeProcessor& proc;
   PatternDocument doc;
@@ -284,7 +250,7 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   int refBars_ = 0;
   juce::String refStatus_{"Reference: none"};
 
-  RollStack rollStack;
+  EditorRollStack rollStack;
   ChordTrack chordTrack;
   PianoRoll roll;
   juce::Viewport viewport;
@@ -319,6 +285,9 @@ class HarmonyForgeEditor : public juce::AudioProcessorEditor,
   // drawn dot count (-1 = force redraw on the next Timer tick).
   juce::String previewStatusBase_;
   int previewAnimDots_ = -1;
+
+  // S9.3 (B12): layout bundle (declared last; binds the widgets above).
+  EditorLayout layout_;
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HarmonyForgeEditor)
 };
