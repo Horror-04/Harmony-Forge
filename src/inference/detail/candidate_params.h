@@ -3,8 +3,11 @@
 // Candidate shared parameter types (S3 slice 2): `GenMode` + `GenParams`,
 // moved verbatim from `candidates.h` so the candidate TUs (`candidate_base`,
 // `candidate_transforms`, modes, facade) share one narrow header instead of
-// the candidates.h re-export. Existing consumers keep seeing both types
-// through the candidates.h re-export.
+// the mega-header. This header is the facade's OWN public-API dependency:
+// `GenMode`/`GenParams` appear in the facade's signatures
+// (`generate_candidates(const GenParams&)`, `progression_for_params`), so the
+// facade includes it directly; the candidate TUs include it directly as well
+// (their headers only forward-declare `GenParams`).
 #pragma once
 
 #include <string>

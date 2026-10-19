@@ -11,6 +11,10 @@
 #include "detail/candidate_helpers.h"
 #include "core/music/scale.h"
 #include "core/serialization/vocab_layout.gen.h"
+#include "candidate_base.h"
+#include "candidate_model.h"
+#include "candidate_modes.h"
+#include "candidate_transforms.h"
 #include "inference_runner.h"
 #include "keynorm.h"
 #include "memo_filter.h"
@@ -64,16 +68,16 @@ std::vector<int> scale_or_major(const std::string& scale) {
 
 // Runner-stage material now lives in candidate_model.cpp
 // (S3 slice 4a, moved byte-identically; the declaration comes from
-// candidate_model.h via candidates.h).
+// candidate_model.h, included directly above).
 
 
 // Per-index character transforms now live in candidate_transforms.cpp
 // (S3 slice 2, moved byte-identically; the declaration comes from
-// candidate_transforms.h via candidates.h).
+// candidate_transforms.h, included directly above).
 
 // Mode post-processing now lives in candidate_modes.cpp
 // (S3 slice 3, moved byte-identically; the declaration comes from
-// candidate_modes.h via candidates.h).
+// candidate_modes.h, included directly above).
 
 // Final guard: codec caps (drop/skip, never UB) + hard clamps.
 void enforce_caps(core::Pattern& pat, int bars) {
@@ -100,7 +104,7 @@ void enforce_caps(core::Pattern& pat, int bars) {
 // Sampler-adjacent model group now lives in candidate_model.cpp
 // (S3 slice 4a, moved byte-identically, including the single
 // `sample_continue` call-site; the declaration comes from
-// candidate_model.h via candidates.h).
+// candidate_model.h, included directly above).
 
 // Shared pipeline behind generate_candidates / with_runner (ADD, Task 4).
 // The empty model path (default) runs the verbatim pre-Task-4 statements,
@@ -182,7 +186,7 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
 
 // Deterministic quarter-note base + chord-tone helper now live in
 // candidate_base.cpp (S3 slice 1, moved byte-identically; the declaration
-// comes from candidate_base.h via candidates.h).
+// comes from candidate_base.h, included directly above).
 
 core::ChordProgression progression_for_params(const GenParams& params) {
   const int bars = std::clamp(params.bars, 1, kMaxBars);

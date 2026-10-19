@@ -8,17 +8,10 @@
 #include "core/model/note.h"
 #include "inference_runner.h"
 
-// S3 slices 1-4: candidate TU re-exports. Included here so existing consumers
-// of this header keep seeing the full candidate API (re-export; declarations
-// stay valid). These headers never include candidates.h back (forward
-// declarations only), so there is no include cycle.
-#include "candidate_base.h"
-#include "candidate_model.h"
-#include "candidate_modes.h"
-#include "candidate_transforms.h"
-// Shared parameter types (`GenMode`, `GenParams`) live in the narrow
-// detail/candidate_params.h; re-exported here so existing consumers are
-// unaffected by the S3 TU split.
+// `GenMode`/`GenParams` are part of THIS facade's own public API
+// (`generate_candidates(const GenParams&)`, `progression_for_params`), so the
+// facade legitimately includes the narrow params header. This is a real
+// dependency, NOT a compatibility shim.
 #include "detail/candidate_params.h"
 
 namespace hf::infer {

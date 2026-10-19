@@ -40,6 +40,7 @@
 #include <utility>
 #include <vector>
 
+#include "candidate_modes.h"
 #include "candidates.h"
 #include "core/model/note.h"
 #include "core/music/scale.h"

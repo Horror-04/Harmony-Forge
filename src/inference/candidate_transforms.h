@@ -3,8 +3,8 @@
 // Candidate per-index character transforms TU (S3 slice 2):
 // `apply_candidate_transform` + transforms-only helpers (none: the body calls
 // only shared `detail/` names + core music libs — see
-// docs/measurements/s3-helpers-transforms.md). Re-exported through
-// `candidates.h`; declarations stay valid.
+// docs/measurements/s3-helpers-transforms.md). Included directly by its
+// consumers; declarations stay valid.
 #pragma once
 
 #include <vector>
@@ -15,8 +15,8 @@
 namespace hf::infer {
 
 // Forward declaration (defined in detail/candidate_params.h): only referenced
-// here, never named by value, so no include cycle with the candidates.h
-// re-export.
+// here, never named by value, so this header stays independent of the facade
+// (no include cycle).
 struct GenParams;
 
 // Per-index character transforms (deterministic via rng): idx0 untouched,
