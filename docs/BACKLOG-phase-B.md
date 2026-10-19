@@ -834,8 +834,7 @@ a dissection is a behaviour-preserving-but-re-bankable change.
 - No function in `src/inference/candidate_base.cpp`,
   `src/inference/candidate_transforms.cpp` or
   `src/inference/candidate_modes.cpp` has CCN above the ceiling the owner
-  picks (measured with the method in this document).
-- The split is a pure move: the cube baseline v3
+  picks (measured with the method in this document).- The split is a pure move: the cube baseline v3
   (`docs/measurements/s0-sha-matrix-v3.csv`), the 128-cell sha set
   (`docs/measurements/s2b-sampler-output-shas.json`), the
   golden MIDI seeds (`tests/golden/seeds/seed_7.mid`, `seed_42.mid`) and the
@@ -859,6 +858,36 @@ functions in the composer keep their pre-S3 shape with no guard of any
 kind: they can grow, be moved, or change shape without a single automated
 signal. The cycle's "CCN must not grow" ratchet is, today, an aspiration in
 a measurement record rather than a check.
+
+> **RESOLVED 2026-10-19 (phase-B tranche C, branch `refactor/phase-b-b9`,
+> commits `43c73fc` + `52d837a`).** Against the D-B9 ceiling of **20**:
+> `apply_mode` **30 → 3** (stages `snap_to_parallel_union` 5,
+> `apply_modal_color` 11, `is_modal_color` 6,
+> `insert_chromatic_passing_tones` 9) and `apply_candidate_transform`
+> **30 → 5** (stages `find_melody_track` 3, `apply_catchy_transform` 7,
+> `apply_complex_transform` 6, `apply_unexpected_transform` 13); TU maxima are
+> now **11** and **13**; `compose_base` (16) is compliant with the ceiling and
+> was **not** touched. The split is a **pure move** (same constants, same RNG
+> draw order, same single `resolve_harmonic_conflicts` call). The ratchet
+> criterion was already met by `tools/lint_ccn.py`; the two now-stale pin
+> rows were pruned in the tool and in `docs/measurements/ratchet.md` in one
+> commit, and `tools/check_bodies.py` was NOT re-blocked (per D-B9).
+> Byte-identity evidence, per stage: the **cube leg is structurally blind** —
+> `tools/render_midi.cpp` exports only `cands[0]` and accepts only
+> `--mode Strict|Creative`, so the 576 re-run rows reach exactly one new
+> stage (`insert_chromatic_passing_tones`, 288 Creative rows; re-run
+> 576/576, 0 diff). The other seven stages are pinned **in-repo** and run in
+> ctest on every build: G1/G2/G3 (manifest `in_test` records 6/7/8) cover the
+> Creative/Experimental paths, the 12 FNV-1a digests
+> `tests/golden/sampler_wiring.json#wiring.digests[3][4]` (over
+> `encode_pattern(generate_candidates(p)[i])`, i=0..3, three fixtures) cover
+> the three transform stages, and the seed-binding pin
+> `tests/test_s4b_seed_binding.cpp` covers the per-index seeds. NOT
+> re-generated (file-byte-unchanged only): the 128-cell sha set and the
+> boundary cell — both are sampler-leg artifacts, not composer-sensitive; the
+> 360 `render_model` rows are composer-free (`tools/render_model.py` is pure
+> Python; the only C++ composer call sites are
+> `src/inference/candidates.cpp:164-165`).
 
 ---
 
