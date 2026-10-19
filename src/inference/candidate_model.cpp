@@ -189,13 +189,13 @@ core::Pattern material_via_sampler_or_greedy(const core::Pattern& feed, const Ge
       shift_chords_to_canonical(meta.chords, kn_shift);
     }
     const SamplerCfg cfg = production_sampler_cfg();
-    // B7 guard - do NOT paste the record's one-line MUTATION form here: the
-    // inner-expression mutations recorded in docs/measurements/s3-quirks.md
-    // (status CAUSE UNESTABLISHED) fail under MSVC with an opaque
-    // `error C2059: syntax error: ')'` and no pointer to the reason. Use the
-    // two-statement split the record lists. The balanced one-line form
-    // compiles; the compiler probe tools/c2059_probe/probe_c2059.py pins
-    // both outcomes and self-retires loudly when MSVC stops emitting C2059.
+    // B7: the scratch mutations that once failed here with `error C2059:
+    // syntax error: ')'` each carried extra closing paren(s) - a plain C++
+    // syntax error, NOT an MSVC quirk; the well-formed one-line form
+    // compiles (cause ESTABLISHED: docs/measurements/s3-quirks.md). The
+    // two-statement split the record lists stays the RECOMMENDED shape for
+    // scratch mutations (one paren less to typo), but either form is fine:
+    // tools/c2059_probe/probe_c2059.py compiles this file both ways.
     const std::uint64_t sseed =
         static_cast<std::uint64_t>(static_cast<unsigned>(p.seed + index));
     std::array<int, kSamplerMaxTokens - 1> buf{};

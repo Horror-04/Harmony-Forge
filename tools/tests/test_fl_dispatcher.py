@@ -19,8 +19,10 @@ Covers src/companion/fl_dispatcher.py:
 - _dry_run() prints exactly the plan, one action per line;
 - _dry_run(path) prints the plan of a JSON layout file;
 - apply_layout() outside FL Studio returns the plan and touches nothing
-  (the `_IN_FL` bail-out) - the "CI-safe" claim of src/companion/README.md,
-  pinned here.
+  (the `_IN_FL` bail-out) - env-independent: the non-FL branch is forced
+  and the FL modules are replaced by tripwires, so the case behaves the
+  same on a CI runner and on an FL-equipped dev box. This is the
+  "CI-safe" claim of src/companion/README.md, pinned here.
 
 WHY tools/tests/ (and not a sibling directory): the dispatcher is a
 repo-level python surface, and tools/tests/ is this repo's python test home
@@ -115,6 +117,13 @@ class PlanLayoutTest(unittest.TestCase):
         self.assertIn("layout entries need", str(ctx.exception))
 
 
+class _ForbiddenModule(object):
+    """A tripwire: ANY attribute access is a bug in the pure path."""
+
+    def __getattr__(self, name):
+        raise AssertionError("the pure path touched the FL module: %s" % name)
+
+
 class DryRunTest(unittest.TestCase):
     def test_dry_run_prints_the_plan_one_action_per_line(self):
         self.assertEqual(_plan_lines(), EXPECTED_DEFAULT_PLAN)
@@ -136,12 +145,23 @@ class DryRunTest(unittest.TestCase):
             {"op": "name_pattern", "prefix": "HF"},
         ])
 
-    def test_apply_layout_outside_fl_returns_the_plan(self):
-        # No FL Studio modules in this environment: the dispatcher must take
-        # its dry-run branch and touch nothing.
-        self.assertFalse(FD._IN_FL,
-                         "FL modules present - the pure path is not pinned here")
-        self.assertEqual(FD.apply_layout(), EXPECTED_DEFAULT_PLAN)
+    def test_apply_layout_outside_fl_returns_the_plan_and_touches_nothing(self):
+        # ENV-INDEPENDENT: the non-FL branch is FORCED and the FL modules
+        # are replaced by tripwires, so this behaves the same on a plain CI
+        # runner and on an FL-equipped dev box (where the `channels` /
+        # `patterns` / `ui` modules import fine). The contract pinned here:
+        # outside FL Studio, apply_layout returns the plan and touches no
+        # FL module at all.
+        saved = (FD._IN_FL, FD.channels, FD.patterns, FD.ui)
+        FD._IN_FL = False
+        FD.channels = _ForbiddenModule()
+        FD.patterns = _ForbiddenModule()
+        FD.ui = _ForbiddenModule()
+        try:
+            plan = FD.apply_layout()
+        finally:
+            FD._IN_FL, FD.channels, FD.patterns, FD.ui = saved
+        self.assertEqual(plan, EXPECTED_DEFAULT_PLAN)
 
 
 if __name__ == "__main__":

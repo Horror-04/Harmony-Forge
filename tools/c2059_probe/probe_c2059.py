@@ -1,32 +1,45 @@
 # Copyright (C) 2026 Horror-04
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""B7 permanent guard - the MSVC C2059 quirk probe (self-retiring).
+"""B7 permanent guard - the `sseed` C2059 probe (cause ESTABLISHED).
 
-The quirk: `docs/measurements/s3-quirks.md` (status CAUSE UNESTABLISHED)
-records that one-line inner-expression mutations of the `sseed` initializer
-at `src/inference/candidate_model.cpp` fail under MSVC with
-`error C2059: syntax error: ')'` - an opaque diagnostic with no pointer to
-the explanation. Because the cause is unestablished, this guard pins the
-OUTCOME, not a cause: it compiles the statement shapes and asserts what the
-current MSVC does with them.
+THE CAUSE (established 2026-10-19, record: docs/measurements/s3-quirks.md):
+the scratch mutations that once failed at the `sseed` initializer in
+src/inference/candidate_model.cpp with `error C2059: syntax error: ')'`
+each carried extra closing paren(s) - one, except the record's fourth
+repro form, which carries two. That is a plain C++ syntax error - any
+compiler rejects it - NOT an MSVC quirk. The well-formed one-line form
+COMPILES, which is what retired the old "no single-line inner-expression
+mutations at this site" constraint.
+
+WHAT THIS PROBE PINS (it compiles the REAL site file, not a copy of it):
+
+  (a) the site TU compiles AS IT STANDS;
+  (b) a well-formed ONE-LINE mutation of the site compiles - the fact
+      that retires the constraint;
+  (c) each of the four recorded MALFORMED forms fails to compile. Only
+      the FAILURE is asserted: "C2059" is not a property of the compiler
+      but of the typo, so the diagnostic text is printed, never pinned;
+  (d) the two-statement form (the record's RECOMMENDED shape for scratch
+      mutations - one paren less to typo) compiles.
+
+VERDICTS - distinct exit codes, so a spurious verdict is distinguishable
+from a real one:
+
+  0  PASS         every fact above holds.
+  1  FAIL         a fact does not hold: the site or the toolchain broke.
+  2  SKIP         no MSVC toolchain found (nothing to assert; not an
+                  error). With --require-msvc this becomes a FAIL.
+  3  PROBE-BROKEN the probe could not build the variant it wanted: its
+                  anchor no longer matches the site, or a variant's text
+                  does not match its declared expectation. This is a PROBE
+                  bug, never a finding about the site or the compiler.
+  4  RETIRE       the well-formed one-line form stopped compiling: the
+                  premise that retired the constraint broke. Loud on
+                  purpose - the constraint must NOT stay retired silently.
 
 Run (from anywhere):
     py -3 tools/c2059_probe/probe_c2059.py
     py -3 tools/c2059_probe/probe_c2059.py --require-msvc   # CI form
-
-Exit codes:
-    0  PASS - the outcome is the expected one (the quirk still reproduces).
-    1  FAIL - the outcome CHANGED (a form that used to compile no longer
-       does, or the diagnostic is no longer C2059). The record needs a new
-       entry; do NOT silently accept it.
-    1  RETIRE - the record's repro form now COMPILES: MSVC no longer emits
-       C2059, so the quirk is gone and the constraint in the record (and
-       this probe) can be retired. The probe says so out loud, on purpose.
-    2  SKIP - no MSVC toolchain found (nothing to assert). With
-       --require-msvc a missing toolchain is a FAIL instead (CI form).
-
-The probe needs NO build tree and NO project headers: the witness TU
-(`c2059_probe.cpp`) carries the statement shapes itself.
 """
 
 import argparse
@@ -38,22 +51,93 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TU_PATH = os.path.join(HERE, "c2059_probe.cpp")
-RECORD = "docs/measurements/s3-quirks.md"
+REPO_ROOT = os.path.dirname(os.path.dirname(HERE))
+SITE_REL = os.path.join("src", "inference", "candidate_model.cpp")
+RECORD_REL = os.path.join("docs", "measurements", "s3-quirks.md")
+SITE = os.path.join(REPO_ROOT, SITE_REL)
 
-# (label, -D switch or None, expectation)
-#   "compile" -> cl must succeed
-#   "C2059"   -> cl must fail AND the diagnostic must carry C2059
-VARIANTS = (
-    ("one-line, balanced", None, "compile"),
-    ("one-line, record repro form", "HF_PROBE_MUTATION", "C2059"),
-    ("one-line mutation, balanced parens", "HF_PROBE_MUTATION_BAL", "compile"),
-    ("two-statement (record working form)", "HF_PROBE_TWOSTATEMENT", "compile"),
+# The include dirs of the harmony_forge_inference target (see
+# src/inference/CMakeLists.txt: target_include_directories PUBLIC
+# <this dir> and <this dir>/../core, plus the repo's `src` root). The
+# probe uses the repo's OWN directories - it never reads a build tree.
+INCLUDE_DIRS = (
+    os.path.join("src", "inference"),
+    os.path.join("src", "core"),
+    "src",
 )
 
-CL_FLAGS = ["/nologo", "/c", "/EHsc", "/std:c++20", "/utf-8", "/W3"]
+# The project defines of the production build, minus HARMONY_FORGE_WITH_ONNX:
+# the offline-stub configuration (-DHARMONY_FORGE_WITH_ONNX=OFF, a
+# first-class option of this repo) is the one a build-tree-free probe can
+# reproduce. The inference HEADERS include no ONNX Runtime headers
+# (onnx_runner.h / ort_logits.h / sampler.h), so the `sseed` statement is
+# compiled from the same headers either way.
+DEFINES = ("WIN32", "_WINDOWS", "NDEBUG")
 
-VERSION_RE = re.compile(r"Version ([0-9.]+) for ([A-Za-z0-9]+)")
+CL_FLAGS = ("/nologo", "/c", "/EHsc", "/std:c++20", "/utf-8", "/W3")
+
+# The site statement the record's mutations were applied to. The probe
+# REPLACES this whole statement. If the site text ever changes, the
+# anchor stops matching and the probe reports PROBE-BROKEN - it never
+# silently compiles an unmutated file and calls it a pass.
+SITE_STATEMENT_RE = re.compile(
+    r"    const std::uint64_t sseed =\s*"
+    r"static_cast<std::uint64_t>\(static_cast<unsigned>\(p\.seed \+ index\)\);")
+
+# The well-formed one-line form: the shape the old constraint forbade and
+# the probe proves to compile.
+ONE_LINE = ("    const std::uint64_t sseed = static_cast<std::uint64_t>("
+            "static_cast<unsigned>(p.seed + index));")
+
+# The two-statement form of the record: the RECOMMENDED shape for scratch
+# mutations (one closing paren less to typo).
+TWO_STATEMENT = ("    const unsigned sseed32 = static_cast<unsigned>(p.seed +"
+                 " index);\n    const std::uint64_t sseed = sseed32 + 1u;")
+
+# The four recorded repro forms (docs/measurements/s3-quirks.md), each
+# with the extra closing paren(s) that made it malformed. The paren delta
+# of each record line is part of the variant's declaration: repro #1-#3
+# carry ONE extra closing paren, repro #4 carries TWO (the record's line
+# 20 has 2 `(` and 4 `)`).
+MALFORMED = (
+    ("malformed-1", "record repro #1 (p.seed + index + 1)",
+     "    const std::uint64_t sseed =\n"
+     "        static_cast<std::uint64_t>(static_cast<unsigned>("
+     "p.seed + index + 1)));", -1),
+    ("malformed-2", "record repro #2 (p.seed + index + 0)",
+     "    const std::uint64_t sseed =\n"
+     "        static_cast<std::uint64_t>(static_cast<unsigned>("
+     "p.seed + index + 0)));", -1),
+    ("malformed-3", "record repro #3 (p.seed ^ index)",
+     "    const std::uint64_t sseed =\n"
+     "        static_cast<std::uint64_t>(static_cast<unsigned>("
+     "p.seed ^ index)));", -1),
+    ("malformed-4", "record repro #4 ((p.seed + index) + 1u)",
+     "    const std::uint64_t sseed =\n"
+     "        static_cast<std::uint64_t>(static_cast<unsigned>("
+     "p.seed + index) + 1u)));", -2),
+)
+
+# (key, label, expectation, replacement or None, paren delta of the
+#  replacement). "compile" -> cl must succeed, "compile-error" -> cl must
+#  fail. The paren delta is the SELF-CHECK of each variant's text: a
+#  well-formed statement has 0, a malformed one the extra closing paren(s)
+#  of the record's line. A variant whose text does not match its
+#  declaration is a PROBE bug and is reported as such - never as a site
+#  finding.
+VARIANTS = (
+    ("site", "site as-is (the repo's file, unmodified)", "compile", None, 0),
+    ("one-line", "well-formed ONE-LINE mutation", "compile", ONE_LINE, 0),
+    ("two-statement", "two-statement form (record's recommended shape)",
+     "compile", TWO_STATEMENT, 0),
+) + tuple((key, label, "compile-error", text, delta)
+          for (key, label, text, delta) in MALFORMED)
+
+EXIT_PASS = 0
+EXIT_FAIL = 1
+EXIT_SKIP = 2
+EXIT_PROBE_BROKEN = 3
+EXIT_RETIRE = 4
 
 
 def _decode(raw):
@@ -116,13 +200,11 @@ def _cl_in_vs(vs_root):
     tools = os.path.join(vs_root, "VC", "Tools", "MSVC")
     if not os.path.isdir(tools):
         return None
-    best = None
     for ver in sorted(os.listdir(tools), reverse=True):
         cand = os.path.join(tools, ver, "bin", "Hostx64", "x64", "cl.exe")
         if os.path.isfile(cand):
-            best = cand
-            break
-    return best
+            return cand
+    return None
 
 
 def find_toolchain():
@@ -159,20 +241,43 @@ def find_toolchain():
 
 def compiler_version(cl, env):
     proc = subprocess.run([cl], capture_output=True, env=env)
-    match = VERSION_RE.search(_decode(proc.stdout + proc.stderr))
+    match = re.search(r"Version ([0-9.]+) for ([A-Za-z0-9]+)",
+                      _decode(proc.stdout + proc.stderr))
     if match:
         return "MSVC %s for %s" % (match.group(1), match.group(2))
     return "MSVC (version banner unavailable)"
 
 
-def compile_variant(cl, env, define, workdir):
-    """Compile the witness TU in one shape; return (returncode, output)."""
-    src = os.path.join(workdir, "c2059_probe.cpp")
-    shutil.copyfile(TU_PATH, src)
-    obj = os.path.join(workdir, "c2059_probe.obj")
-    cmd = [cl] + CL_FLAGS
-    if define:
+def read_site():
+    """The site source, with the line endings normalised to \\n."""
+    with open(SITE, "rb") as fh:
+        raw = fh.read()
+    text = raw.decode("utf-8")
+    return text.replace("\r\n", "\n")
+
+
+def build_variant(text, replacement):
+    """Apply a statement replacement; return (new_text, applied)."""
+    if replacement is None:
+        return text, True
+    # A lambda replacement keeps the text literal (no backslash escapes).
+    new_text, count = SITE_STATEMENT_RE.subn(
+        lambda _m: replacement, text, count=1)
+    return new_text, (count == 1)
+
+
+def compile_source(cl, env, source_text, workdir):
+    """Compile the (possibly mutated) site source; return (code, output)."""
+    src = os.path.join(workdir, "candidate_model.cpp")
+    data = source_text.replace("\n", "\r\n").encode("utf-8")
+    with open(src, "wb") as fh:
+        fh.write(data)
+    obj = os.path.join(workdir, "candidate_model.obj")
+    cmd = [cl] + list(CL_FLAGS)
+    for define in DEFINES:
         cmd.append("/D" + define)
+    for inc in INCLUDE_DIRS:
+        cmd += ["/I", os.path.join(REPO_ROOT, inc)]
     cmd += [src, "/Fo" + obj]
     proc = subprocess.run(cmd, capture_output=True, cwd=workdir, env=env)
     return proc.returncode, _decode(proc.stdout + proc.stderr)
@@ -185,66 +290,111 @@ def first_error_line(output):
     return "(no error line found)"
 
 
+def check_variant_text(replacement, delta):
+    """Self-check of a variant's text: the declared paren delta must hold."""
+    if replacement is None:
+        return True
+    opens = replacement.count("(")
+    closes = replacement.count(")")
+    return (opens - closes) == delta
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
-        description="B7 probe: pin the MSVC C2059 outcome (self-retiring).")
+        description="B7 probe: the `sseed` statement compiles on the real "
+                    "site, and the malformed forms fail to compile.")
     parser.add_argument("--require-msvc", action="store_true",
                         help="fail (instead of skipping) when no MSVC "
                              "toolchain is found (CI form)")
     args = parser.parse_args(argv)
 
-    print("[c2059] B7 probe - record: %s" % RECORD)
+    print("[sseed] B7 probe - record: %s" % RECORD_REL.replace("\\", "/"))
+    print("[sseed] site: %s" % SITE_REL.replace("\\", "/"))
+
+    # --- the probe's own self-checks (a broken probe is NOT a finding) ---
+    for (key, label, expectation, replacement, delta) in VARIANTS:
+        if not check_variant_text(replacement, delta):
+            print("[sseed] PROBE-BROKEN: variant %r (%s) has paren delta %d, "
+                  "expected %d - the variant table is wrong."
+                  % (key, label,
+                     (replacement.count("(") - replacement.count(")"))
+                     if replacement else 0, delta))
+            return EXIT_PROBE_BROKEN
+
     cl, env = find_toolchain()
     if cl is None:
-        msg = ("[c2059] SKIP: no MSVC toolchain found - the probe cannot "
-               "assert the outcome")
+        print("[sseed] SKIP: no MSVC toolchain found - the probe cannot "
+              "assert the outcome")
         if args.require_msvc:
-            print(msg)
-            print("[c2059] FAIL: --require-msvc was given and MSVC is absent")
-            return 1
-        print(msg)
-        return 2
+            print("[sseed] FAIL: --require-msvc was given and MSVC is absent")
+            return EXIT_FAIL
+        return EXIT_SKIP
+    print("[sseed] compiler: %s" % compiler_version(cl, env))
 
-    print("[c2059] compiler: %s" % compiler_version(cl, env))
-    print("[c2059] witness TU: %s" % os.path.relpath(TU_PATH, HERE))
+    site_text = read_site()
+    if len(SITE_STATEMENT_RE.findall(site_text)) != 1:
+        print("[sseed] PROBE-BROKEN: the anchor (the `sseed` statement) does "
+              "not match the site exactly once - update the probe.")
+        return EXIT_PROBE_BROKEN
+
     results = []
     with tempfile.TemporaryDirectory() as workdir:
-        for (label, define, expect) in VARIANTS:
-            code, out = compile_variant(cl, env, define, workdir)
-            if expect == "compile":
-                ok = (code == 0)
-            else:
-                ok = (code != 0) and ("C2059" in out)
-            results.append((label, expect, code, out, ok))
-            state = "as expected" if ok else "CHANGED"
-            print("[c2059]   %-38s expect=%-8s cl_exit=%d  %s"
-                  % (label, expect, code, state))
+        for (key, label, expectation, replacement, delta) in VARIANTS:
+            source, applied = build_variant(site_text, replacement)
+            if not applied:
+                print("[sseed] PROBE-BROKEN: variant %r could not be applied "
+                      "to the site - update the probe." % key)
+                return EXIT_PROBE_BROKEN
+            if replacement is not None and source == site_text:
+                print("[sseed] PROBE-BROKEN: variant %r did not change the "
+                      "site - update the probe." % key)
+                return EXIT_PROBE_BROKEN
+            code, out = compile_source(cl, env, source, workdir)
+            ok = (code == 0) if expectation == "compile" else (code != 0)
+            results.append((key, label, expectation, code, ok))
+            print("[sseed]   %-46s expect=%-13s cl_exit=%d  %s"
+                  % (label, expectation, code,
+                     "as expected" if ok else "DEVIATION"))
             if not ok:
-                print("[c2059]     compiler said: %s" % first_error_line(out))
+                print("[sseed]     compiler said: %s" % first_error_line(out))
 
-    # The repro form compiling again == MSVC stopped emitting C2059.
-    repro_ok = None
-    for (label, expect, code, out, ok) in results:
-        if expect == "C2059":
-            repro_ok = (code == 0)
-            break
-    if repro_ok:
-        print("[c2059] RETIRE: the record's repro form now COMPILES - MSVC no "
-              "longer emits C2059.")
-        print("[c2059]   The quirk is gone: drop the constraint in %s and "
-              "delete tools/c2059_probe/." % RECORD)
-        return 1
+    def outcome(key):
+        for entry in results:
+            if entry[0] == key:
+                return entry
+        return None
+
+    # (a) the site itself must compile - if it does not, the site or the
+    #     toolchain broke, which is the most fundamental finding.
+    site_entry = outcome("site")
+    if site_entry is not None and not site_entry[4]:
+        print("[sseed] FAIL: the site TU does not compile as it stands - the "
+              "site or the toolchain broke. Fix that first.")
+        return EXIT_FAIL
+
+    # (b) the well-formed one-line form must compile: this is the fact that
+    #     retired the old constraint. If it stops compiling, the premise
+    #     of the retirement broke - say so loudly.
+    one_line = outcome("one-line")
+    if one_line is not None and not one_line[4]:
+        print("[sseed] RETIRE: the well-formed ONE-LINE form no longer "
+              "compiles - the premise that retired the constraint broke.")
+        print("[sseed]   The site or the toolchain changed: re-open the "
+              "constraint in %s before trusting it."
+              % RECORD_REL.replace("\\", "/"))
+        return EXIT_RETIRE
 
     bad = [r for r in results if not r[4]]
     if bad:
-        print("[c2059] FAIL: the outcome CHANGED (%d of %d shapes). The "
-              "record %s needs a new entry - do not silently accept it."
-              % (len(bad), len(results), RECORD))
-        return 1
+        print("[sseed] FAIL: %d of %d shapes deviate - the site or the "
+              "toolchain changed; %s needs a new entry."
+              % (len(bad), len(results), RECORD_REL.replace("\\", "/")))
+        return EXIT_FAIL
 
-    print("[c2059] PASS: the outcome is unchanged - the record's repro form "
-          "still fails with C2059 and every other shape compiles.")
-    return 0
+    print("[sseed] PASS: the site compiles as it stands, the well-formed "
+          "one-line form compiles, and all four malformed forms fail to "
+          "compile (plain C++ syntax errors, not an MSVC quirk).")
+    return EXIT_PASS
 
 
 if __name__ == "__main__":
