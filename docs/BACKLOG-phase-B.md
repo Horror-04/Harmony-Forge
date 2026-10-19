@@ -1194,3 +1194,86 @@ nobody re-checks them.
    in `tests/test_ort_logits.cpp`). This is **not** dropped: it is carried
    inside B10 as the explicitly-separate, larger sub-item, exactly as the
    brief describes it.
+
+---
+
+## Owner decisions (2026-10-19, owner-delegated)
+
+At the owner's explicit order "сделай всё сам" ("do everything yourself",
+2026-10-19), the controller ruled on all twelve open decisions below. Each
+ruling is reversible by editing this section; no ruling executes phase-B work
+by itself — implementation still needs its own tracked task per item. Where a
+ruling cites a standing rule, the rule is quoted, not extended.
+
+- **D-B1 (anchor rule).** Anchor = **root of the first chord of the
+  progression, selected per record**. Per-record keeps the derivation a pure
+  function of the input (no corpus-global pass — consistent with the
+  core/inference purity discipline); first-chord root is the simplest rule
+  covering the risk section's example hypothesis ("normalise to the chord
+  the phrase starts on"). Reversibility: B1's acceptance criteria require
+  the rule to be stated in `docs/TOKENIZATION.md` before any byte is pinned,
+  so a wrong pick is caught before it hardens.
+- **D-B2 (mode scope + energy axis).** **Arrangement-wide switch** in
+  `ArrangeParams.base` (no SPEC-format change), and **energy keeps owning
+  the Strict→Creative axis**. The SPEC format is fixed at five fields —
+  per-section would break compat; keeping energy's axis preserves current
+  audible behaviour by default. A per-section field can still be added later
+  without breaking the global switch.
+- **D-B3 (seed derivation).** A dedicated **`runner_seed(p, i)`** with domain
+  separation from `stream_seed`. Reusing the composer's hash would couple two
+  streams that must stay independent; a named single-source derivation
+  satisfies the acceptance criterion directly. The name is internal; behaviour
+  is pinned by re-banked digests either way.
+- **D-B4 (helper home).** **`src/core/music/`** (next to the `ranges.h`
+  precedent). It is the only option meeting the acceptance criterion
+  (reachable from core AND inference with the layer gate clean);
+  `src/inference/detail/` is unreachable from `src/core`.
+- **D-B5 (sampler ceiling).** Ceiling **20** for "done" (`sample_continue`
+  split until no function in the file exceeds 20); **15 stays the target
+  for new code** per the CCN gate. This matches the enforced gate (hard 20,
+  16–20 pinned) and the standing rule ("функция ≤15, жёсткий 20, не
+  растёт"); demanding 15 for a pinned-68 function would be a goal, not a
+  gate (same goals-not-gates logic as S3's ≤300/≤120). A stricter ceiling
+  can still be picked later.
+- **D-B6 (SeedHistory under undo).** Stays an **append-only audit log**,
+  explicitly documented as not rewound. Making it undoable destroys recall
+  information on undo and couples two different semantics; documenting the
+  contract is prerequisite to either answer and is behaviour-preserving.
+- **D-B7 (C2059 guard shape).** **Compiler probe**. The cause is
+  UNESTABLISHED — encoding an unexplained compiler behaviour as a lint rule
+  is fragile (the record says so itself); the probe asserts the outcome and
+  self-retires if MSVC fixes the quirk. Fallback to a text lint is
+  explicitly allowed by the acceptance criteria.
+- **D-B8 (CI pytest scope).** **Dispatcher-only step now** (stdlib, seconds,
+  gates-job style); the general pytest step becomes its own later item. The
+  general step needs venv/torch on the runner — a runtime and dependency
+  change the record itself flags. Nothing is blocked: the general step can
+  be added later.
+- **D-B9 (three-function ceiling + guard).** Ceiling **20** (both 30s split;
+  the 16 stays pinned with reason); guard = **extend
+  `tools/lint_ccn.py`** (dedicated CCN gate), do NOT re-block
+  `tools/check_bodies.py`. Re-blocking would require reconciling sanctioned
+  Pcg32 bodies — rewriting history — while `lint_ccn.py` is the living gate
+  that already pins all 26 functions.
+- **D-B10.1 (reject vs mask).** **Rejection** (provider returns `false`).
+  Fail-closed at a provider boundary: invalid prefixes are programmer
+  errors, and the sampler's downstream mask stays as the second layer;
+  masked-but-success would report success for garbage. False rejections are
+  guarded by the acceptance criteria (frozen prefixes must still pass, full
+  ctest stays green).
+- **D-B10.2 (sidecar pin scope).** **Both** — logits values AND the sidecar
+  sha256 in one record (`capture:` form for the binary). The stated risk is
+  exactly silent sidecar change; values catch drift, sha pins identity.
+- **D-B11 (authoritative side).** **Python preserves all keys** (C++ shape
+  authoritative). Narrowing C++ would silently drop inversion/tension from
+  every shifted chord and change what the strict mask sees — destructive;
+  Python-side preservation is additive. Corpus agrees either way today, so
+  no byte moves now.
+- **D-B12 (S9.3 verdict).** **(a) CONDITIONAL** — attempt the entry
+  condition first (headless bounds-dump guard at 3–4 window sizes, 4h
+  time-box, no new controllers, per Sonnet's rule). Sonnet's ≥150-line
+  block condition holds (layout 355 NLOC, `resized()` 125 lines at CCN 1);
+  the dump guard is the only untested premise. If the guard lands, proceed
+  with the extraction under B12's acceptance criteria; else **(c)** — the
+  value stays ratchet-pinned (the file-size gate already pins 1046) with
+  the reason recorded here.
