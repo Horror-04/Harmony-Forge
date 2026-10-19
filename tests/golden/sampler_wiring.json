@@ -1,0 +1,15 @@
+{
+  "doc": "Sampler wiring + FSM slot-range pins (S4b-main T4). OLD wiring byte-pins re-banked under Pcg32 — every consumer (exactly one: tests/test_sampler.cpp) reads this file. SHARPLY DISTINCT from the registered S4b binding set (tests/test_s4b_seed_binding.cpp kPinned for seeds 0/10/11, manifest in_test, STAYS in-test, zero byte overlap — verified by tree-wide grep) and from the frozen 128-sha worker-output set (docs/measurements/s2b-sampler-output-shas.json: sha256 of dump_worker_ids continuation bytes over seeds 0..31 x fsm x strict; FROZEN, re-run byte-compare only). Fixture INPUT params (seed/bars/tonic/scale) stay in-test (wiring_base/wiring_fixtures); only pinned EXPECTED values live here.",
+  "wiring": {
+    "provenance": "generate_candidates greedy bytes (use_sampling=false) on the 3 wiring fixtures (seed/bars/tonic/scale = 7/4/60/major, 99/2/57/natural_minor, 3/8/65/dorian); FNV-1a hex64 of encode_pattern per candidate, 4 candidates each, row order = fixture order. BASELINE 2026-10-15 on the untouched greedy path; RE-BASELINED under Task 2 (candidates mt19937->Pcg32 moved every stream; determinism halves still hold; single-decision mutation red-proof in the Task-2 report).",
+    "digests": [
+      ["6394e5c6be200543", "90a9c545514d0586", "e76b47e0251d3b3c", "2c6020bcb31fca2f"],
+      ["a21658f36823a870", "2cf1714db87ffa5a", "5c25438e4ed7059f", "8dd1abcf575fd304"],
+      ["e28b231b6f1aa82a", "2301a70a31417714", "5b71abe9a9ee4d40", "0a0cbef957453031"]
+    ]
+  },
+  "fsm_slot_ranges": {
+    "provenance": "fsm_allowed_range body slots 0..5 [lo,hi] (inclusive-hi spelling of the [lo,hi) codec bounds) pinned against the shipped codec, INDEPENDENT of the gen.h-backed headers. CONSOLIDATED into this file with the wiring set (same test file, same sampler-pin class, one atomic file). Re-pointing at kVocabSlotLo/Hi was REJECTED: the S2b-4b + vocab_layout-I1 cases already reference the headers, so re-pointing would collapse this independent shipped-codec pin into the header-reference check and lose the gen.h-tables==shipped-codec proof.",
+    "want": [[0, 15], [0, 15], [0, 5], [0, 127], [1, 64], [0, 7]]
+  }
+}

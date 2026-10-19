@@ -11,6 +11,9 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -31,6 +34,9 @@
 #endif
 #ifndef HARMONY_FORGE_LOGITS_MODEL
 #define HARMONY_FORGE_LOGITS_MODEL "training/model.logits.onnx"
+#endif
+#ifndef HARMONY_FORGE_SAMPLER_WIRING
+#define HARMONY_FORGE_SAMPLER_WIRING "tests/golden/sampler_wiring.json"
 #endif
 
 namespace {
@@ -157,6 +163,114 @@ std::vector<int> finalize_local(const std::vector<int>& ids) {
   out.push_back(static_cast<int>(n));
   for (size_t i = 1; i < 1 + n * 6 && i < ids.size(); ++i) out.push_back(ids[i]);
   return out;
+}
+
+// Minimal strict reader for tests/golden/sampler_wiring.json (S4b-main T4;
+// R3: no JSON lib in C++ — quoted-string + int scanners only; fixture INPUT
+// params stay in-test, only pinned EXPECTED values are read here).
+// Every shape deviation returns false (fails loudly, never throws).
+bool sw_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string sw_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool sw_key_colon(const std::string& text, size_t& pos, const char* key) {
+  const std::string q = std::string("\"") + key + "\"";
+  const size_t at = text.find(q, pos);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != ':') return false;
+  ++pos;
+  while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+  return pos < text.size();
+}
+
+bool sw_expect(const std::string& text, size_t& pos, char c) {
+  while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != c) return false;
+  ++pos;
+  return true;
+}
+
+bool sw_parse_int(const std::string& text, size_t& pos, int& out) {
+  while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+  bool neg = false;
+  if (pos < text.size() && text[pos] == '-') {
+    neg = true;
+    ++pos;
+  }
+  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
+  int v = 0;
+  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
+    v = v * 10 + (text[pos] - '0');
+    ++pos;
+  }
+  out = neg ? -v : v;
+  return true;
+}
+
+bool sw_parse_quoted(const std::string& text, size_t& pos, std::string& out) {
+  // NOTE: double-quote is spelled 34, never '"': a '"' inside a char
+  // literal opens a phantom multi-line string for tools/lint_off_golden.py
+  // (its masker meets '"' before char literals), gluing lines and fusing
+  // vector regions. 34 keeps the masked stream line-aligned.
+  while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != 34) return false;
+  ++pos;
+  out.clear();
+  while (pos < text.size() && text[pos] != 34) {
+    const char c = text[pos];
+    if (c == '\\' || c < 0x20 || c > 0x7e) return false;
+    out.push_back(c);
+    ++pos;
+  }
+  if (pos >= text.size()) return false;
+  ++pos;
+  return !out.empty();
+}
+
+// Reads wiring digests[3][4] (row order = fixture order).
+bool sw_digests(const std::string& text, std::string out[3][4]) {
+  size_t pos = 0;
+  if (!sw_key_colon(text, pos, "digests")) return false;
+  if (!sw_expect(text, pos, '[')) return false;
+  for (int f = 0; f < 3; ++f) {
+    if (!sw_expect(text, pos, '[')) return false;
+    for (int i = 0; i < 4; ++i) {
+      if (!sw_parse_quoted(text, pos, out[f][i])) return false;
+      while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+      if (i < 3 && !sw_expect(text, pos, ',')) return false;
+    }
+    if (!sw_expect(text, pos, ']')) return false;
+    while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+    if (f < 2 && !sw_expect(text, pos, ',')) return false;
+  }
+  return sw_expect(text, pos, ']');
+}
+
+// Reads fsm_slot_ranges want[6][2].
+bool sw_ranges(const std::string& text, int out[6][2]) {
+  size_t pos = 0;
+  if (!sw_key_colon(text, pos, "want")) return false;
+  if (!sw_expect(text, pos, '[')) return false;
+  for (int s = 0; s < 6; ++s) {
+    if (!sw_expect(text, pos, '[')) return false;
+    if (!sw_parse_int(text, pos, out[s][0])) return false;
+    if (!sw_expect(text, pos, ',')) return false;
+    if (!sw_parse_int(text, pos, out[s][1])) return false;
+    if (!sw_expect(text, pos, ']')) return false;
+    while (pos < text.size() && sw_is_ws(text[pos])) ++pos;
+    if (s < 5 && !sw_expect(text, pos, ',')) return false;
+  }
+  return sw_expect(text, pos, ']');
 }
 
 }  // namespace
@@ -458,6 +572,15 @@ TEST_CASE("sampler FSM slot ranges match the shipped codec", "[sampler]") {
     CHECK(lo == want[s][0]);
     CHECK(hi == want[s][1]);
   }
+  // S4b-main T4 phase 1: file==literal fidelity (literals kept until green).
+  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
+  REQUIRE(!sw_text.empty());
+  int gsw[6][2];
+  REQUIRE(sw_ranges(sw_text, gsw));
+  for (int s = 0; s < 6; ++s) {
+    CHECK(gsw[s][0] == want[s][0]);
+    CHECK(gsw[s][1] == want[s][1]);
+  }
   CHECK_FALSE(hf::infer::fsm_allowed_range(6, lo, hi));
   CHECK(hf::infer::fsm_slot_for_pos(0) == -1);
   for (size_t n = 1; n < 25; ++n)
@@ -704,6 +827,13 @@ TEST_CASE("wiring flag OFF keeps pre-phase history bytes", "[sampler][wiring]") 
       CHECK(hex64(fnv1a_ids(a[static_cast<size_t>(i)])) == kPinned[f][i]);
     }
   }
+  // S4b-main T4 phase 1: file==literal fidelity (literals kept until green).
+  const std::string sw_text = sw_read_file(HARMONY_FORGE_SAMPLER_WIRING);
+  REQUIRE(!sw_text.empty());
+  std::string gsw[3][4];
+  REQUIRE(sw_digests(sw_text, gsw));
+  for (size_t f = 0; f < 3; ++f)
+    for (int i = 0; i < 4; ++i) CHECK(gsw[f][i] == kPinned[f][i]);
 }
 
 TEST_CASE("wiring unavailable provider falls back to greedy bytes", "[sampler][wiring]") {

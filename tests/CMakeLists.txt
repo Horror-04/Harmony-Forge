@@ -206,7 +206,8 @@ hf_add_test(test_sampler test_sampler.cpp)
 target_compile_definitions(test_sampler PRIVATE
   HARMONY_FORGE_MEMO_INDEX="${CMAKE_SOURCE_DIR}/training/memo_index.bin"
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx"
-  HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx")
+  HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
+  HARMONY_FORGE_SAMPLER_WIRING="${CMAKE_SOURCE_DIR}/tests/golden/sampler_wiring.json")
 # S3.0 Phase 2 (C4) characterization: ENTER-path seed sensitivity (new test, no existing test modified).
 hf_add_test(test_s30_sampler_seed test_s30_sampler_seed.cpp)
 # Task 2 (determinism hardening): golden MIDI file pin + model-manifest gate
