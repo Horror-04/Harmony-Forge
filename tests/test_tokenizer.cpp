@@ -68,8 +68,10 @@ TEST_CASE("golden: single melody note (parity training/parity_vectors.json#singl
   t.channel = 0;
   t.notes.push_back(hf::core::Note{60, 0, 480, 100});
   p.tracks.push_back(t);
-  CHECK(hf::ser::encode_pattern(p) == std::vector<int>{1, 0, 0, 1, 60, 4, 6});
-  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("single-melody"));
+  // Expected ids live in training/parity_vectors.json#single-melody
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  const std::vector<int> expected = pv_require_ids("single-melody");
+  CHECK(hf::ser::encode_pattern(p) == expected);
 }
 
 TEST_CASE("golden: drums bar1 subbeat5 (parity training/parity_vectors.json#drums-offbeat)", "[tokenizer]") {
@@ -81,8 +83,10 @@ TEST_CASE("golden: drums bar1 subbeat5 (parity training/parity_vectors.json#drum
   t.channel = 0;
   t.notes.push_back(hf::core::Note{36, 2520, 120, 64});
   p.tracks.push_back(t);
-  CHECK(hf::ser::encode_pattern(p) == std::vector<int>{1, 1, 5, 5, 36, 1, 3});
-  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("drums-offbeat"));
+  // Expected ids live in training/parity_vectors.json#drums-offbeat
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  const std::vector<int> expected = pv_require_ids("drums-offbeat");
+  CHECK(hf::ser::encode_pattern(p) == expected);
 }
 
 TEST_CASE("notes at bar >= 16 are dropped (16-bar cap)", "[tokenizer]") {
@@ -123,7 +127,7 @@ TEST_CASE("decode rejects over-cap and out-of-range bars", "[tokenizer]") {
 }
 
 namespace {
-// training/parity_vectors.json fixtures, embedded verbatim (R3: no JSON lib in C++).
+// Pattern builder for the golden cases (inputs stay in-test: parameter).
 hf::core::Track make_track(hf::core::TrackType type,
                            std::initializer_list<hf::core::Note> notes) {
   hf::core::Track t;
@@ -235,8 +239,8 @@ bool pv_ids_for_name(const std::string& text, const char* want,
   }
 }
 
-// Phase-1 wiring: file ids alongside the inline literal (both must agree;
-// phase 2 removes the literal). Returns the file ids (REQUIREs loud).
+// File-backed expectation: expected ids by reference (no inline copy).
+// Returns the file ids (REQUIREs loud on missing file/shape deviation).
 std::vector<int> pv_require_ids(const char* name) {
   const std::string text = pv_read_file(HARMONY_FORGE_PARITY_VECTORS);
   REQUIRE(!text.empty());
@@ -258,15 +262,11 @@ TEST_CASE("golden: multi-track all six types (parity #multi-track)", "[tokenizer
   p.tracks.push_back(make_track(hf::core::TrackType::CounterMelody, {{67, 960, 480, 88}}));
   p.tracks.push_back(make_track(hf::core::TrackType::Drums,
                                 {{36, 0, 120, 120}, {38, 480, 120, 100}, {42, 240, 120, 64}}));
-  const std::vector<int> expected{12, 0, 0, 0, 48, 16, 4, 0, 0, 0, 52, 16, 4, 0, 0,  0, 55, 16,
-                                 4,  0, 0, 1, 72, 2,  6, 0, 4, 1, 76, 2,  5, 1,  0,  2, 36, 4,
-                                 6,  0, 2, 3, 60, 1,  4, 0, 3, 3, 64, 1,  4, 0,  8,  4, 67, 4,
-                                 5,  0, 0, 5, 36, 1,  7, 0, 4, 5, 38, 1,  6, 0,  2,  5, 42, 1, 3};
+  // Expected ids live in training/parity_vectors.json#multi-track
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  const std::vector<int> expected = pv_require_ids("multi-track");
   const auto ids = hf::ser::encode_pattern(p);
   CHECK(ids == expected);
-  const std::vector<int> pv_ids = pv_require_ids("multi-track");
-  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
-  CHECK(ids == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 12);
@@ -277,11 +277,10 @@ TEST_CASE("golden: clamping edges (parity #clamp-edges)", "[tokenizer]") {
   hf::core::Pattern p;
   p.tracks.push_back(
       make_track(hf::core::TrackType::Melody, {{-5, -10, 0, 0}, {200, 1919, 120, 200}}));
-  const std::vector<int> expected{2, 0, 0, 1, 0, 1, 0, 0, 15, 1, 127, 1, 7};
+  // Expected ids live in training/parity_vectors.json#clamp-edges
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  const std::vector<int> expected = pv_require_ids("clamp-edges");
   CHECK(hf::ser::encode_pattern(p) == expected);
-  const std::vector<int> pv_ids = pv_require_ids("clamp-edges");
-  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
-  CHECK(hf::ser::encode_pattern(p) == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::ser::encode_pattern(*back) == expected);
@@ -289,24 +288,23 @@ TEST_CASE("golden: clamping edges (parity #clamp-edges)", "[tokenizer]") {
 
 TEST_CASE("golden: empty pattern (parity #empty)", "[tokenizer]") {
   const hf::core::Pattern p;
-  CHECK(hf::ser::encode_pattern(p) == std::vector<int>{0});
-  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("empty"));
-  const auto back = hf::ser::decode_tokens(std::vector<int>{0});
+  // Expected ids live in training/parity_vectors.json#empty; read by reference.
+  const std::vector<int> expected = pv_require_ids("empty");
+  CHECK(hf::ser::encode_pattern(p) == expected);
+  const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 0);
-  CHECK(hf::ser::encode_pattern(*back) == std::vector<int>{0});
+  CHECK(hf::ser::encode_pattern(*back) == expected);
 }
 
 TEST_CASE("golden: 16-bar cap drops bar-20 note (parity #cap-16bars)", "[tokenizer]") {
   hf::core::Pattern p;
   p.tracks.push_back(make_track(hf::core::TrackType::Melody,
                                 {{60, 0, 480, 100}, {62, 20 * 1920, 480, 90}}));
-  const std::vector<int> expected{
-      1, 0, 0, 1, 60, 4, 6};
+  // Expected ids live in training/parity_vectors.json#cap-16bars
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  const std::vector<int> expected = pv_require_ids("cap-16bars");
   CHECK(hf::ser::encode_pattern(p) == expected);
-  const std::vector<int> pv_ids = pv_require_ids("cap-16bars");
-  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
-  CHECK(hf::ser::encode_pattern(p) == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 1);
@@ -321,98 +319,12 @@ TEST_CASE("golden: 1024-token cap keeps 170 notes (parity #cap-1024)", "[tokeniz
   for (int i = 0; i < 171; ++i)
     t.notes.push_back(hf::core::Note{60 + (i % 24), i * 120, 120, 100});
   p.tracks.push_back(t);
-  const std::vector<int> expected{
-      170, 0, 0, 1, 60, 1, 6, 0, 1, 1, 61, 1,
-      6, 0, 2, 1, 62, 1, 6, 0, 3, 1, 63, 1,
-      6, 0, 4, 1, 64, 1, 6, 0, 5, 1, 65, 1,
-      6, 0, 6, 1, 66, 1, 6, 0, 7, 1, 67, 1,
-      6, 0, 8, 1, 68, 1, 6, 0, 9, 1, 69, 1,
-      6, 0, 10, 1, 70, 1, 6, 0, 11, 1, 71, 1,
-      6, 0, 12, 1, 72, 1, 6, 0, 13, 1, 73, 1,
-      6, 0, 14, 1, 74, 1, 6, 0, 15, 1, 75, 1,
-      6, 1, 0, 1, 76, 1, 6, 1, 1, 1, 77, 1,
-      6, 1, 2, 1, 78, 1, 6, 1, 3, 1, 79, 1,
-      6, 1, 4, 1, 80, 1, 6, 1, 5, 1, 81, 1,
-      6, 1, 6, 1, 82, 1, 6, 1, 7, 1, 83, 1,
-      6, 1, 8, 1, 60, 1, 6, 1, 9, 1, 61, 1,
-      6, 1, 10, 1, 62, 1, 6, 1, 11, 1, 63, 1,
-      6, 1, 12, 1, 64, 1, 6, 1, 13, 1, 65, 1,
-      6, 1, 14, 1, 66, 1, 6, 1, 15, 1, 67, 1,
-      6, 2, 0, 1, 68, 1, 6, 2, 1, 1, 69, 1,
-      6, 2, 2, 1, 70, 1, 6, 2, 3, 1, 71, 1,
-      6, 2, 4, 1, 72, 1, 6, 2, 5, 1, 73, 1,
-      6, 2, 6, 1, 74, 1, 6, 2, 7, 1, 75, 1,
-      6, 2, 8, 1, 76, 1, 6, 2, 9, 1, 77, 1,
-      6, 2, 10, 1, 78, 1, 6, 2, 11, 1, 79, 1,
-      6, 2, 12, 1, 80, 1, 6, 2, 13, 1, 81, 1,
-      6, 2, 14, 1, 82, 1, 6, 2, 15, 1, 83, 1,
-      6, 3, 0, 1, 60, 1, 6, 3, 1, 1, 61, 1,
-      6, 3, 2, 1, 62, 1, 6, 3, 3, 1, 63, 1,
-      6, 3, 4, 1, 64, 1, 6, 3, 5, 1, 65, 1,
-      6, 3, 6, 1, 66, 1, 6, 3, 7, 1, 67, 1,
-      6, 3, 8, 1, 68, 1, 6, 3, 9, 1, 69, 1,
-      6, 3, 10, 1, 70, 1, 6, 3, 11, 1, 71, 1,
-      6, 3, 12, 1, 72, 1, 6, 3, 13, 1, 73, 1,
-      6, 3, 14, 1, 74, 1, 6, 3, 15, 1, 75, 1,
-      6, 4, 0, 1, 76, 1, 6, 4, 1, 1, 77, 1,
-      6, 4, 2, 1, 78, 1, 6, 4, 3, 1, 79, 1,
-      6, 4, 4, 1, 80, 1, 6, 4, 5, 1, 81, 1,
-      6, 4, 6, 1, 82, 1, 6, 4, 7, 1, 83, 1,
-      6, 4, 8, 1, 60, 1, 6, 4, 9, 1, 61, 1,
-      6, 4, 10, 1, 62, 1, 6, 4, 11, 1, 63, 1,
-      6, 4, 12, 1, 64, 1, 6, 4, 13, 1, 65, 1,
-      6, 4, 14, 1, 66, 1, 6, 4, 15, 1, 67, 1,
-      6, 5, 0, 1, 68, 1, 6, 5, 1, 1, 69, 1,
-      6, 5, 2, 1, 70, 1, 6, 5, 3, 1, 71, 1,
-      6, 5, 4, 1, 72, 1, 6, 5, 5, 1, 73, 1,
-      6, 5, 6, 1, 74, 1, 6, 5, 7, 1, 75, 1,
-      6, 5, 8, 1, 76, 1, 6, 5, 9, 1, 77, 1,
-      6, 5, 10, 1, 78, 1, 6, 5, 11, 1, 79, 1,
-      6, 5, 12, 1, 80, 1, 6, 5, 13, 1, 81, 1,
-      6, 5, 14, 1, 82, 1, 6, 5, 15, 1, 83, 1,
-      6, 6, 0, 1, 60, 1, 6, 6, 1, 1, 61, 1,
-      6, 6, 2, 1, 62, 1, 6, 6, 3, 1, 63, 1,
-      6, 6, 4, 1, 64, 1, 6, 6, 5, 1, 65, 1,
-      6, 6, 6, 1, 66, 1, 6, 6, 7, 1, 67, 1,
-      6, 6, 8, 1, 68, 1, 6, 6, 9, 1, 69, 1,
-      6, 6, 10, 1, 70, 1, 6, 6, 11, 1, 71, 1,
-      6, 6, 12, 1, 72, 1, 6, 6, 13, 1, 73, 1,
-      6, 6, 14, 1, 74, 1, 6, 6, 15, 1, 75, 1,
-      6, 7, 0, 1, 76, 1, 6, 7, 1, 1, 77, 1,
-      6, 7, 2, 1, 78, 1, 6, 7, 3, 1, 79, 1,
-      6, 7, 4, 1, 80, 1, 6, 7, 5, 1, 81, 1,
-      6, 7, 6, 1, 82, 1, 6, 7, 7, 1, 83, 1,
-      6, 7, 8, 1, 60, 1, 6, 7, 9, 1, 61, 1,
-      6, 7, 10, 1, 62, 1, 6, 7, 11, 1, 63, 1,
-      6, 7, 12, 1, 64, 1, 6, 7, 13, 1, 65, 1,
-      6, 7, 14, 1, 66, 1, 6, 7, 15, 1, 67, 1,
-      6, 8, 0, 1, 68, 1, 6, 8, 1, 1, 69, 1,
-      6, 8, 2, 1, 70, 1, 6, 8, 3, 1, 71, 1,
-      6, 8, 4, 1, 72, 1, 6, 8, 5, 1, 73, 1,
-      6, 8, 6, 1, 74, 1, 6, 8, 7, 1, 75, 1,
-      6, 8, 8, 1, 76, 1, 6, 8, 9, 1, 77, 1,
-      6, 8, 10, 1, 78, 1, 6, 8, 11, 1, 79, 1,
-      6, 8, 12, 1, 80, 1, 6, 8, 13, 1, 81, 1,
-      6, 8, 14, 1, 82, 1, 6, 8, 15, 1, 83, 1,
-      6, 9, 0, 1, 60, 1, 6, 9, 1, 1, 61, 1,
-      6, 9, 2, 1, 62, 1, 6, 9, 3, 1, 63, 1,
-      6, 9, 4, 1, 64, 1, 6, 9, 5, 1, 65, 1,
-      6, 9, 6, 1, 66, 1, 6, 9, 7, 1, 67, 1,
-      6, 9, 8, 1, 68, 1, 6, 9, 9, 1, 69, 1,
-      6, 9, 10, 1, 70, 1, 6, 9, 11, 1, 71, 1,
-      6, 9, 12, 1, 72, 1, 6, 9, 13, 1, 73, 1,
-      6, 9, 14, 1, 74, 1, 6, 9, 15, 1, 75, 1,
-      6, 10, 0, 1, 76, 1, 6, 10, 1, 1, 77, 1,
-      6, 10, 2, 1, 78, 1, 6, 10, 3, 1, 79, 1,
-      6, 10, 4, 1, 80, 1, 6, 10, 5, 1, 81, 1,
-      6, 10, 6, 1, 82, 1, 6, 10, 7, 1, 83, 1,
-      6, 10, 8, 1, 60, 1, 6, 10, 9, 1, 61, 1,
-      6};
+  // Expected ids live in training/parity_vectors.json#cap-1024
+  // (provenance: training/tokenizer.py encode_pattern); read by reference.
+  // 1021 elems by reference: no 1.1k-elem copy (S4b-main T3).
+  const std::vector<int> expected = pv_require_ids("cap-1024");
   const auto ids = hf::ser::encode_pattern(p);
   CHECK(ids == expected);
-  const std::vector<int> pv_ids = pv_require_ids("cap-1024");
-  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
-  CHECK(ids == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 170);

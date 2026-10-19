@@ -23,6 +23,32 @@ Flat layout per note: `[Bar(bar_index), Subbeat(pos), TrackType, Pitch, Duration
 prefixed by `[num_notes]`. Little-endian plain ints (no varint yet).
 `decode_tokens` validates length → `std::nullopt` on corrupt input.
 
+## Tokenizer parity reference (`training/parity_vectors.json`)
+
+Cross-language parity pins for the codec (`training/tokenizer.py` ↔
+`src/core/serialization/tokenizer.{h,cpp}`), read from BOTH sides
+(`tests/test_tokenizer.cpp` + `training/tests/test_parity.py`).
+
+- **By reference, never copied**: the 7 named vectors (`single-melody`,
+  `drums-offbeat`, `empty`, `multi-track`, `clamp-edges`, `cap-16bars`,
+  `cap-1024` — ~1.1k elems, mostly the 1021-elem `cap-1024` block) live
+  ONLY in the training-owned reference. The C++ side points at the file
+  (absolute `HARMONY_FORGE_PARITY_VECTORS` CMake def, relative fallback
+  for ad-hoc runs) via a minimal strict ints-only scanner (`pv_*` in
+  `test_tokenizer.cpp`, R3: no JSON lib in C++) — no 1.1k-elem copy.
+- **Update procedure**: re-run the `meta.generator` producer
+  (`training/tokenizer.py encode_pattern`), replace the `ids` arrays, and
+  re-green BOTH suites (full `test_tokenizer` binary in build-full
+  Release + build-off Debug, and
+  `training/.venv/Scripts/python training/tests/test_parity.py`).
+  Corruption proof per set before landing: corrupt one reference value →
+  EXACTLY its case reddens, then revert.
+- **Left in-test (not golden)**: corrupt/over-cap/bar-16 reject probes
+  (hostile inputs → parameter), `Note{...}` fixtures (inputs → parameter),
+  count/size asserts (1024 cap, counts → parameter), and the 7-elem
+  duplicate in the non-parity 16-bar-cap case (hand-computed echo of the
+  documented formula, same standing as the parity case it mirrors).
+
 ## Keynorm golden contract (`tests/golden/keynorm_vectors.json`)
 
 Cross-language parity pins for the canonical transpose

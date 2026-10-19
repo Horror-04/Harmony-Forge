@@ -3,8 +3,9 @@
 """Golden-vector parity: Python tokenizer output must equal fixtures.
 
 Run: ``python training/tests/test_parity.py`` (stdlib only, exit 0 = PASS).
-The C++ side (``tests/test_tokenizer.cpp``) embeds the same numbers and
-asserts decode/encode equality — no JSON parser in C++ by design (R3).
+The C++ side (``tests/test_tokenizer.cpp``) reads the same file by reference
+via its ints-only R3 scanner — no JSON parser in C++ by design (R3), no
+1.1k-elem copy (S4b-main T3) — and asserts decode/encode equality.
 """
 
 import json
