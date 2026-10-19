@@ -27,262 +27,45 @@ class ArrangeBar : public juce::Component {
  public:
   std::function<void(const std::vector<hf::arr::Section>&)> onBuild;
 
-  ArrangeBar() {
-    // Phase 6 Task 2 (A2): custom surface — keyboard-focusable with a 2 px
-    // accent ring (standard buttons/sliders inside keep JUCE defaults).
-    setWantsKeyboardFocus(true);
-    sections_ = {
-        {hf::arr::SectionType::Intro, 4, 0.3f, 0.2f, 7},
-        {hf::arr::SectionType::Verse, 8, 0.5f, 0.3f, 7},
-        {hf::arr::SectionType::Chorus, 8, 0.9f, 0.4f, 8},
-    };
-    model_.owner = this;
-    list_.setModel(&model_);
-    list_.setRowHeight(18);
-    addAndMakeVisible(list_);
-
-    for (int i = 0; i < 9; ++i)
-      typeBox_.addItem(hf::arr::section_type_name(static_cast<hf::arr::SectionType>(i)), i + 1);
-    typeBox_.onChange = [this] { applyEditors(); };
-    addAndMakeVisible(typeBox_);
-    typeLabel_.setText("Type", juce::dontSendNotification);
-    addAndMakeVisible(typeLabel_);
-
-    barsBox_.setInputRestrictions(3, "0123456789");
-    barsBox_.onTextChange = [this] { applyEditors(); };
-    addAndMakeVisible(barsBox_);
-    barsLabel_.setText("Bars", juce::dontSendNotification);
-    addAndMakeVisible(barsLabel_);
-
-    seedBox_.setInputRestrictions(10, "0123456789");
-    seedBox_.onTextChange = [this] { applyEditors(); };
-    addAndMakeVisible(seedBox_);
-    seedLabel_.setText("Seed", juce::dontSendNotification);
-    addAndMakeVisible(seedLabel_);
-
-    energySlider_.setRange(0.0, 1.0, 0.01);
-    energySlider_.onValueChange = [this] { applyEditors(); };
-    addAndMakeVisible(energySlider_);
-    energyLabel_.setText("Energy", juce::dontSendNotification);
-    addAndMakeVisible(energyLabel_);
-
-    variationSlider_.setRange(0.0, 1.0, 0.01);
-    variationSlider_.onValueChange = [this] { applyEditors(); };
-    addAndMakeVisible(variationSlider_);
-    variationLabel_.setText("Vari", juce::dontSendNotification);
-    addAndMakeVisible(variationLabel_);
-
-    addButton_.onClick = [this] {
-      sections_.push_back({hf::arr::SectionType::Verse, 4, 0.5f, 0.3f,
-                           static_cast<unsigned>(sections_.size())});
-      selected_ = static_cast<int>(sections_.size()) - 1;
-      refresh();
-    };
-    addAndMakeVisible(addButton_);
-    removeButton_.onClick = [this] {
-      if (selected_ < 0 || selected_ >= static_cast<int>(sections_.size())) return;
-      sections_.erase(sections_.begin() + selected_);
-      // Guard: erasing the last section leaves size 0, where
-      // jlimit(0, -1, ...) would trip the JUCE Debug assert (min > max).
-      selected_ = sections_.empty()
-                      ? -1
-                      : juce::jlimit(0, static_cast<int>(sections_.size()) - 1, selected_);
-      refresh();
-    };
-    addAndMakeVisible(removeButton_);
-    upButton_.onClick = [this] {
-      if (selected_ > 0 && selected_ < static_cast<int>(sections_.size())) {
-        std::swap(sections_[static_cast<size_t>(selected_)],
-                  sections_[static_cast<size_t>(selected_ - 1)]);
-        --selected_;
-        refresh();
-      }
-    };
-    addAndMakeVisible(upButton_);
-    downButton_.onClick = [this] {
-      if (selected_ >= 0 && selected_ + 1 < static_cast<int>(sections_.size())) {
-        std::swap(sections_[static_cast<size_t>(selected_)],
-                  sections_[static_cast<size_t>(selected_ + 1)]);
-        ++selected_;
-        refresh();
-      }
-    };
-    addAndMakeVisible(downButton_);
-
-    buildButton_.onClick = [this] {
-      if (onBuild) onBuild(sections_);
-    };
-    // Phase 7 Task 2: primary CTA tag (paint only — callback untouched).
-    buildButton_.getProperties().set(hf::ui::HFLookAndFeel::kPrimaryProperty, true);
-    addAndMakeVisible(buildButton_);
-    addAndMakeVisible(status_);
-    // Phase 7 Task 4 (B): field labels are 11 px kTextMuted captions for
-    // their controls; the live-count status doubles as the bar's section
-    // header (13 px bold kTextBright). Positions/sizes untouched.
-    for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_}) {
-      l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
-      l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
-    }
-    status_.setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontBody).withStyle("Bold")));
-    status_.setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextBright));
-    refresh();  // sets the live count text (no hardcoded placeholder)
-  }
+  ArrangeBar();
 
   // Phase 6 Task 5 (B): pure live-count text for the status label - pinned
   // headless in tests/test_visual_polish.cpp (ArrangeBar itself owns widgets
   // and cannot be instantiated headless; see test_focus_resize.cpp NOTE).
-  static juce::String countTextFor(int nSections, int totalBars) {
-    return "Arrange: " + juce::String(nSections) +
-           (nSections == 1 ? " section, " : " sections, ") + juce::String(totalBars) +
-           (totalBars == 1 ? " bar" : " bars");
-  }
+  static juce::String countTextFor(int nSections, int totalBars);
 
-  void setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
+  void setStatus(const juce::String& s);
 
   // Phase 6 Task 2 (A2): ring only — the panel fill below is the bar's own
   // kBgPanel surface (message-thread paint; no layout change).
-  void paint(juce::Graphics& g) override {
-    g.fillAll(juce::Colour(hf::ui::UITokens::kBgPanel));
-    // Phase 7 Task 4 (B): 1 px kBorder top separator, mirroring the editor
-    // toolbar rows' bottom separators.
-    g.setColour(juce::Colour(hf::ui::UITokens::kBorder));
-    g.fillRect(0, 0, getWidth(), 1);
-    if (hasKeyboardFocus(true)) hf::ui::paintFocusRing(g, getLocalBounds());
-  }
+  void paint(juce::Graphics& g) override;
 
-  void focusGained(FocusChangeType) override { repaint(); }
-  void focusLost(FocusChangeType) override { repaint(); }
+  void focusGained(FocusChangeType) override;
+  void focusLost(FocusChangeType) override;
 
-  void mouseDown(const juce::MouseEvent&) override { grabKeyboardFocus(); }
+  void mouseDown(const juce::MouseEvent&) override;
 
-  void resized() override {
-    // Phase 6 Task 2 (B): relative splits (were fixed 300 + 400 px, which
-    // clipped on narrow windows). list 28% / editors 40% / build+status the
-    // rest; at the 960 px editor minimum that is 262 / 374 / 294.
-    auto r = getLocalBounds().reduced(4);
-    const int w = juce::jmax(0, r.getWidth());
-    list_.setBounds(r.removeFromLeft(w * 28 / 100));
-    r.removeFromLeft(6);
-    const int midW = w * 40 / 100;
-    auto mid = r.removeFromLeft(midW);
-    auto row1 = mid.removeFromTop(30);
-    typeLabel_.setBounds(row1.removeFromLeft(36));
-    // Fixed labels/boxes in row1 take 236 px (36+6+34+48+6+36+70); the type
-    // box flexes with whatever is left (138 px at the editor minimum).
-    typeBox_.setBounds(row1.removeFromLeft(juce::jmax(0, midW - 236)));
-    row1.removeFromLeft(6);
-    barsLabel_.setBounds(row1.removeFromLeft(34));
-    barsBox_.setBounds(row1.removeFromLeft(48));
-    row1.removeFromLeft(6);
-    seedLabel_.setBounds(row1.removeFromLeft(36));
-    seedBox_.setBounds(row1.removeFromLeft(70));
-    mid.removeFromTop(4);
-    auto row2 = mid.removeFromTop(30);
-    energyLabel_.setBounds(row2.removeFromLeft(52));
-    // Fixed labels take 94 px (52+6+36); the two sliders split the rest
-    // evenly (140 px each at the editor minimum).
-    const int each = juce::jmax(0, (midW - 94) / 2);
-    energySlider_.setBounds(row2.removeFromLeft(each));
-    row2.removeFromLeft(6);
-    variationLabel_.setBounds(row2.removeFromLeft(36));
-    variationSlider_.setBounds(row2.removeFromLeft(each));
-    mid.removeFromTop(4);
-    auto row3 = mid.removeFromTop(28);
-    addButton_.setBounds(row3.removeFromLeft(60));
-    row3.removeFromLeft(4);
-    removeButton_.setBounds(row3.removeFromLeft(60));
-    row3.removeFromLeft(4);
-    upButton_.setBounds(row3.removeFromLeft(50));
-    row3.removeFromLeft(4);
-    downButton_.setBounds(row3.removeFromLeft(60));
-    auto right = r;
-    buildButton_.setBounds(right.removeFromTop(34));
-    right.removeFromTop(4);
-    status_.setBounds(right);
-  }
+  void resized() override;
 
  private:
   struct Model : public juce::ListBoxModel {
     ArrangeBar* owner = nullptr;
-    int getNumRows() override { return static_cast<int>(owner->sections_.size()); }
-    void paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) override {
-      // Phase 6 Task 4: tokens (values equal the Colours they replace).
-      // Phase 7 Task 4 (B): cells on kBgCard, selected cell on
-      // kCardSelected (brief-mandated; replaces the Phase-6 kListSelected
-      // fill). Hover: N/A — ListBox exposes no hover state to the model and
-      // the brief forbids adding new mouse tracking.
-      g.fillAll(juce::Colour(selected ? hf::ui::UITokens::kCardSelected
-                                     : hf::ui::UITokens::kBgCard));
-      g.setColour(juce::Colour(hf::ui::UITokens::kTextBright));
-      g.drawText(owner->rowText(row), 4, 0, w - 8, h, juce::Justification::centredLeft, true);
-    }
-    void selectedRowsChanged(int last) override { owner->selectRow(last); }
+    int getNumRows() override;
+    void paintListBoxItem(int row, juce::Graphics& g, int w, int h, bool selected) override;
+    void selectedRowsChanged(int last) override;
   };
 
-  juce::String rowText(int row) const {
-    const auto& s = sections_[static_cast<size_t>(row)];
-    return juce::String(row) + " " + hf::arr::section_type_name(s.type) + " " +
-           juce::String(s.bars) + "b e" + juce::String(s.energy, 2) + " v" +
-           juce::String(s.variation, 2) + " s" + juce::String(s.seed);
-  }
+  juce::String rowText(int row) const;
 
-  void selectRow(int row) {
-    selected_ = row;
-    refreshEditors();
-  }
+  void selectRow(int row);
 
-  void refreshEditors() {
-    const bool has =
-        selected_ >= 0 && selected_ < static_cast<int>(sections_.size());
-    typeBox_.setEnabled(has);
-    barsBox_.setEnabled(has);
-    seedBox_.setEnabled(has);
-    energySlider_.setEnabled(has);
-    variationSlider_.setEnabled(has);
-    if (!has) return;
-    const auto& s = sections_[static_cast<size_t>(selected_)];
-    typeBox_.setSelectedId(static_cast<int>(s.type) + 1, juce::dontSendNotification);
-    barsBox_.setText(juce::String(s.bars), juce::dontSendNotification);
-    seedBox_.setText(juce::String(s.seed), juce::dontSendNotification);
-    energySlider_.setValue(s.energy, juce::dontSendNotification);
-    variationSlider_.setValue(s.variation, juce::dontSendNotification);
-  }
+  void refreshEditors();
 
   // Editor widgets -> selected section (transient view state; the Build
   // result is what enters the undo history via PatternDocument).
-  void applyEditors() {
-    if (selected_ < 0 || selected_ >= static_cast<int>(sections_.size())) return;
-    auto& s = sections_[static_cast<size_t>(selected_)];
-    const int typeId = typeBox_.getSelectedId();
-    if (typeId >= 1 && typeId <= 9) s.type = static_cast<hf::arr::SectionType>(typeId - 1);
-    s.bars = juce::jlimit(1, 512, barsBox_.getText().getIntValue());
-    s.seed = static_cast<unsigned>(seedBox_.getText().getLargeIntValue());
-    s.energy = static_cast<float>(energySlider_.getValue());
-    s.variation = static_cast<float>(variationSlider_.getValue());
-    list_.updateContent();
-    list_.repaint();
-  }
+  void applyEditors();
 
-  void refresh() {
-    if (selected_ >= static_cast<int>(sections_.size()))
-      selected_ = static_cast<int>(sections_.size()) - 1;
-    list_.updateContent();
-    list_.selectRow(selected_);
-    refreshEditors();
-    // Phase 6 Task 5 (B): honest live counts bound to the section model -
-    // every add/delete/reorder lands here, so the label can never go stale.
-    // A Build result written via setStatus() stays until the next section
-    // edit restores the live count (documented transient); totals sum bars.
-    int totalBars = 0;
-    for (const auto& s : sections_) totalBars += s.bars;
-    status_.setText(countTextFor(static_cast<int>(sections_.size()), totalBars),
-                    juce::dontSendNotification);
-    // Phase 6 Task 5 (D): no sections, no build - the disabled button (with
-    // the "0 sections" count above) is the honest empty state, not a
-    // silent no-op Build.
-    buildButton_.setEnabled(!sections_.empty());
-    repaint();
-  }
+  void refresh();
 
   std::vector<hf::arr::Section> sections_;
   int selected_ = 0;

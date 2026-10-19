@@ -164,7 +164,7 @@ endif()
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(test_visual_polish test_visual_polish.cpp
     ../src/plugin/ui/PatternDocument.cpp ../src/plugin/ui/ExplainView.cpp
-    ../src/plugin/ui/ChordTrack.cpp
+    ../src/plugin/ui/ChordTrack.cpp ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/audio/RtViolationCounter.cpp)
   target_link_libraries(test_visual_polish PRIVATE
     harmony_forge_core harmony_forge_inference
@@ -292,6 +292,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/PianoRoll.cpp
     ../src/plugin/ui/ChordTrack.cpp
     ../src/plugin/ui/CandidateBar.cpp
+    ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_violation_counter PRIVATE
@@ -325,6 +326,7 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
     ../src/plugin/ui/PianoRoll.cpp
     ../src/plugin/ui/ChordTrack.cpp
     ../src/plugin/ui/CandidateBar.cpp
+    ../src/plugin/ui/ArrangeBar.cpp
     ../src/plugin/ui/ExplainView.cpp
     ../src/plugin/ui/HFLookAndFeel.cpp)
   target_link_libraries(test_rt_soak PRIVATE
