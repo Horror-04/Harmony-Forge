@@ -2,11 +2,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include <catch2/catch_test_macros.hpp>
 
+#include <fstream>
 #include <initializer_list>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "core/model/note.h"
 #include "core/model/track_pattern.h"
 #include "core/serialization/tokenizer.h"
+
+#ifndef HARMONY_FORGE_PARITY_VECTORS
+#define HARMONY_FORGE_PARITY_VECTORS "training/parity_vectors.json"
+#endif
+
+namespace {
+// Defined alongside make_track below; declared here so the early golden
+// cases (single-melody, drums-offbeat) can use it.
+std::vector<int> pv_require_ids(const char* name);
+}  // namespace
 
 TEST_CASE("tokenizer roundtrip", "[tokenizer]") {
   hf::core::Pattern p;
@@ -55,6 +69,7 @@ TEST_CASE("golden: single melody note (parity training/parity_vectors.json#singl
   t.notes.push_back(hf::core::Note{60, 0, 480, 100});
   p.tracks.push_back(t);
   CHECK(hf::ser::encode_pattern(p) == std::vector<int>{1, 0, 0, 1, 60, 4, 6});
+  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("single-melody"));
 }
 
 TEST_CASE("golden: drums bar1 subbeat5 (parity training/parity_vectors.json#drums-offbeat)", "[tokenizer]") {
@@ -67,6 +82,7 @@ TEST_CASE("golden: drums bar1 subbeat5 (parity training/parity_vectors.json#drum
   t.notes.push_back(hf::core::Note{36, 2520, 120, 64});
   p.tracks.push_back(t);
   CHECK(hf::ser::encode_pattern(p) == std::vector<int>{1, 1, 5, 5, 36, 1, 3});
+  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("drums-offbeat"));
 }
 
 TEST_CASE("notes at bar >= 16 are dropped (16-bar cap)", "[tokenizer]") {
@@ -116,6 +132,118 @@ hf::core::Track make_track(hf::core::TrackType type,
   t.notes.assign(notes.begin(), notes.end());
   return t;
 }
+
+// Minimal strict reader for training/parity_vectors.json (S4b-main T3 phase 1;
+// R3: no JSON lib in C++ — ints only; `"name"`/`"ids"` keys are unique to
+// vector entries, verified against the file's key set in the task report).
+// Every shape deviation returns false (fails loudly, never throws).
+bool pv_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string pv_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool pv_parse_int(const std::string& text, size_t& pos, int& out) {
+  bool neg = false;
+  if (pos < text.size() && text[pos] == '-') {
+    neg = true;
+    ++pos;
+  }
+  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
+  int v = 0;
+  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
+    v = v * 10 + (text[pos] - '0');
+    ++pos;
+  }
+  out = neg ? -v : v;
+  return true;
+}
+
+// Find `"name": "<want>"`, then that entry's `"ids": [...]` (must precede the
+// next entry's `"name"`). Returns false on any deviation.
+bool pv_ids_for_name(const std::string& text, const char* want,
+                     std::vector<int>& out) {
+  const std::string nq = "\"name\"";
+  const std::string iq = "\"ids\"";
+  const std::string w = want;
+  size_t cur = 0;
+  while (true) {
+    const size_t at = text.find(nq, cur);
+    if (at == std::string::npos) return false;
+    size_t pos = at + nq.size();
+    while (pos < text.size() && pv_is_ws(text[pos])) ++pos;
+    if (pos >= text.size() || text[pos] != ':') {
+      cur = at + 1;
+      continue;
+    }
+    ++pos;
+    while (pos < text.size() && pv_is_ws(text[pos])) ++pos;
+    if (pos >= text.size() || text[pos] != '"') {
+      cur = at + 1;
+      continue;
+    }
+    ++pos;
+    if (text.compare(pos, w.size(), w) != 0) {
+      cur = at + 1;
+      continue;
+    }
+    pos += w.size();
+    if (pos >= text.size() || text[pos] != '"') {
+      cur = at + 1;
+      continue;
+    }
+    ++pos;
+    const size_t ia = text.find(iq, pos);
+    if (ia == std::string::npos) return false;
+    const size_t na = text.find(nq, pos);
+    if (na != std::string::npos && na < ia) return false;
+    size_t p = ia + iq.size();
+    while (p < text.size() && pv_is_ws(text[p])) ++p;
+    if (p >= text.size() || text[p] != ':') return false;
+    ++p;
+    while (p < text.size() && pv_is_ws(text[p])) ++p;
+    if (p >= text.size() || text[p] != '[') return false;
+    ++p;
+    out.clear();
+    while (true) {
+      while (p < text.size() && pv_is_ws(text[p])) ++p;
+      if (p >= text.size()) return false;
+      if (text[p] == ']') {
+        ++p;
+        return true;
+      }
+      int v = 0;
+      if (!pv_parse_int(text, p, v)) return false;
+      out.push_back(v);
+      while (p < text.size() && pv_is_ws(text[p])) ++p;
+      if (p < text.size() && text[p] == ',') {
+        ++p;
+        continue;
+      }
+      if (p < text.size() && text[p] == ']') {
+        ++p;
+        return true;
+      }
+      return false;
+    }
+  }
+}
+
+// Phase-1 wiring: file ids alongside the inline literal (both must agree;
+// phase 2 removes the literal). Returns the file ids (REQUIREs loud).
+std::vector<int> pv_require_ids(const char* name) {
+  const std::string text = pv_read_file(HARMONY_FORGE_PARITY_VECTORS);
+  REQUIRE(!text.empty());
+  std::vector<int> ids;
+  REQUIRE(pv_ids_for_name(text, name, ids));
+  return ids;
+}
 }  // namespace
 
 TEST_CASE("golden: multi-track all six types (parity #multi-track)", "[tokenizer]") {
@@ -136,6 +264,9 @@ TEST_CASE("golden: multi-track all six types (parity #multi-track)", "[tokenizer
                                  5,  0, 0, 5, 36, 1,  7, 0, 4, 5, 38, 1,  6, 0,  2,  5, 42, 1, 3};
   const auto ids = hf::ser::encode_pattern(p);
   CHECK(ids == expected);
+  const std::vector<int> pv_ids = pv_require_ids("multi-track");
+  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
+  CHECK(ids == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 12);
@@ -148,6 +279,9 @@ TEST_CASE("golden: clamping edges (parity #clamp-edges)", "[tokenizer]") {
       make_track(hf::core::TrackType::Melody, {{-5, -10, 0, 0}, {200, 1919, 120, 200}}));
   const std::vector<int> expected{2, 0, 0, 1, 0, 1, 0, 0, 15, 1, 127, 1, 7};
   CHECK(hf::ser::encode_pattern(p) == expected);
+  const std::vector<int> pv_ids = pv_require_ids("clamp-edges");
+  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
+  CHECK(hf::ser::encode_pattern(p) == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::ser::encode_pattern(*back) == expected);
@@ -156,6 +290,7 @@ TEST_CASE("golden: clamping edges (parity #clamp-edges)", "[tokenizer]") {
 TEST_CASE("golden: empty pattern (parity #empty)", "[tokenizer]") {
   const hf::core::Pattern p;
   CHECK(hf::ser::encode_pattern(p) == std::vector<int>{0});
+  CHECK(hf::ser::encode_pattern(p) == pv_require_ids("empty"));
   const auto back = hf::ser::decode_tokens(std::vector<int>{0});
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 0);
@@ -169,6 +304,9 @@ TEST_CASE("golden: 16-bar cap drops bar-20 note (parity #cap-16bars)", "[tokeniz
   const std::vector<int> expected{
       1, 0, 0, 1, 60, 4, 6};
   CHECK(hf::ser::encode_pattern(p) == expected);
+  const std::vector<int> pv_ids = pv_require_ids("cap-16bars");
+  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
+  CHECK(hf::ser::encode_pattern(p) == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 1);
@@ -272,6 +410,9 @@ TEST_CASE("golden: 1024-token cap keeps 170 notes (parity #cap-1024)", "[tokeniz
       6};
   const auto ids = hf::ser::encode_pattern(p);
   CHECK(ids == expected);
+  const std::vector<int> pv_ids = pv_require_ids("cap-1024");
+  CHECK(pv_ids == expected);  // phase-1 fidelity: file == literal
+  CHECK(ids == pv_ids);
   const auto back = hf::ser::decode_tokens(expected);
   REQUIRE(back.has_value());
   CHECK(hf::core::pattern_note_count(*back) == 170);

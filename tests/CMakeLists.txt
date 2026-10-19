@@ -27,6 +27,8 @@ hf_add_test(test_theory test_theory.cpp)
 hf_add_test(test_selection test_selection.cpp)
 hf_add_test(test_analysis test_analysis.cpp)
 hf_add_test(test_tokenizer test_tokenizer.cpp)
+target_compile_definitions(test_tokenizer PRIVATE
+  HARMONY_FORGE_PARITY_VECTORS="${CMAKE_SOURCE_DIR}/training/parity_vectors.json")
 hf_add_test(test_slot_bitmap test_slot_bitmap.cpp)
 target_compile_definitions(test_slot_bitmap PRIVATE
   HARMONY_FORGE_SLOT_BITMAP="${CMAKE_SOURCE_DIR}/tests/golden/slot_bitmap.txt")
