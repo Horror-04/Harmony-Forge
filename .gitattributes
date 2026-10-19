@@ -6,3 +6,4 @@ tests/golden/ui_palette.json text eol=lf
 tests/golden/chordtrack_pin.txt text eol=lf
 tests/fixtures/procedural/* text eol=lf
 tests/fixtures/eval/* text eol=lf
+docs/measurements/s0-sha-matrix-v3.csv text eol=lf

@@ -27,13 +27,14 @@ tools/sha_matrix.py --modes Strict,Creative --keynorm-modes OFF,ON --sampling-mo
 ```
 
 The same argv (modulo the `--v2b-model` absolute path and `--out`, both
-byte-irrelevant) was used at P^ and at HEAD.
+byte-irrelevant) was used at P^ and at the measured HEAD (`5970ae4`).
 
 ## 2. How it was produced and checked
 
 Three revisions were measured with the same shape: P^ = `96e4cfa78cc9156e309b3d7b8c86e9a7c421fff3`
-(worktree `F:/MyPrograms/wt-cube-rebase`), P = `3589205` (same worktree), HEAD
-(main checkout, own build dirs). Builds were sequenced, never parallel.
+(worktree `F:/MyPrograms/wt-cube-rebase`), P = `3589205` (same worktree), and the
+**measured HEAD = `5970ae4`** (the main checkout's `master` tip at the time of
+the run, own build dirs). Builds were sequenced, never parallel.
 
 | check | result |
 |---|---|
@@ -42,17 +43,28 @@ Three revisions were measured with the same shape: P^ = `96e4cfa78cc9156e309b3d7
 | twin invariant `onnx-on == onnx-off` (P^ full) | **288/288** twin keys |
 | P run twice | **936/936 match, 0 diff** under the comparison rule as implemented (§5); the raw CSVs differ only in the **72** default-(ON,ON) ERROR tmp-path embeddings (random per run by runner construction) |
 | twin invariant in the candidate | **288/288** preserved |
-| HEAD vs candidate | **936/936 match, 0 diff** |
+| measured HEAD (`5970ae4`) vs candidate | **936/936 match, 0 diff** |
+
+The measured HEAD is pinned as `5970ae4` (the main checkout's `master` tip at
+the time of the run). The generation path is unchanged between `5970ae4` and
+the branch head that banks this record — the diff over the SOURCE paths
+`src/inference/candidates.cpp`, `src/inference/sampler.cpp`,
+`src/inference/pcg.h`, `tools/render_midi.cpp`, `tools/render_model.py` is
+empty for that range — so the 936/936 currency result carries forward to the
+branch head. The only other paths changed in that range are CI, the
+golden-manifest lint and its test, docs and `.gitattributes` — none of them a
+render input.
 
 The banked file is the run-1 output of P (`scratch/cube-p-1.csv`), copied
 byte-for-byte to `%TEMP%\cube-v3-candidate.csv` and then into this repo; the
 sha256 in §1 was verified before and after the copy into the repository.
 
-Measured walls: P^ full 3.64 min; P run 1 3.62 min; P run 2 3.62 min; HEAD
-full ≈ 4 min. P^ build: configure build-full 0.35 min + build `render_midi`
-Release 0.34 min; configure build-off 0.45 min + build Debug 0.26 min. P
-rebuild 0.24 + 0.17 min. The main-checkout rebuild of both HEAD targets was a
-no-op (~0.01 min; the binaries were already current at HEAD).
+Measured walls: P^ full 3.64 min; P run 1 3.62 min; P run 2 3.62 min; the
+measured HEAD (`5970ae4`) full ≈ 4 min. P^ build: configure build-full 0.35 min
++ build `render_midi` Release 0.34 min; configure build-off 0.45 min + build
+Debug 0.26 min. P rebuild 0.24 + 0.17 min. The main-checkout rebuild of both
+targets was a no-op (~0.01 min; the binaries were already current at the
+measured HEAD `5970ae4`).
 
 ## 3. Classification (P^ → P, same shape, 936 keys)
 
@@ -74,16 +86,18 @@ no-op (~0.01 min; the binaries were already current at HEAD).
 | model leg unchanged, P^ → P | **360/360** |
 | `onnx-on == onnx-off` twin invariant in the candidate | **288/288** preserved |
 
-**Attribution-by-code-path only** (declared cause; NOT isolable from the
-output shas — every midi cell consumes all three draws, so per-cause
+**Cause table (per-row classification).** The `compose_base` row and the model
+row are measured; the `apply_mode` and transform rows are
+**attribution-by-code-path only** (declared cause; NOT isolable from the
+output shas — every midi cell consumes all three draws, so those per-cause
 contributions cannot be separated from the bytes):
 
-| declared cause | cells | status |
-|---|---|---|
-| `compose_base` stream change (first draw `uniform(2n)` on every call) | all 576 midi ok (Strict 288 + Creative 288, multi 0/1, onnx-on/off) | declared cause, grouped by code path; no independent per-cause measurement exists |
-| `apply_mode` Experimental branch | subset of the Creative 288 | declared cause, grouped by code path; no independent per-cause measurement exists |
-| candidate transforms, index-gated (all modes) | subset of the 576 | declared cause, grouped by code path; no independent per-cause measurement exists |
-| sampler moved verbatim / manifest gate vacuous / Python decode RNG | all 360 model | 360/360 unchanged (measured) |
+| cause | cells | classification | observed |
+|---|---|---|---|
+| `compose_base` stream change (first draw `uniform(2n)` on every call) | all 576 midi ok (Strict 288 + Creative 288, multi 0/1, onnx-on/off) | measured | **576/576 changed** (P^ → P) |
+| `apply_mode` Experimental branch | subset of the Creative 288 | attribution-by-code-path only | declared cause, grouped by code path; no independent per-cause measurement exists |
+| candidate transforms, index-gated (all modes) | subset of the 576 | attribution-by-code-path only | declared cause, grouped by code path; no independent per-cause measurement exists |
+| sampler moved verbatim / manifest gate vacuous / Python decode RNG | all 360 model | measured | **360/360 unchanged** |
 
 **384 declared-changed cells are UNMEASURED, not silent.** Derivation:
 **800** declared-changed v2 midi-ok cells − **416** comparable (288
@@ -111,8 +125,8 @@ and are new coverage, not comparable cells.
   — plus driver-path embeddings handled by the comparison mask (§5).
 - The 8 flips are **pre-classified** (they are present in the P^-vs-banked
   comparison, i.e. without P) and **stable across all five runs** (the R0
-  subset, the P^ full run, P run 1, P run 2 and HEAD are all ok on those
-  seeds).
+  subset, the P^ full run, P run 1, P run 2 and the measured HEAD `5970ae4`
+  are all ok on those seeds).
 - Python-version qualifier: no claim of cross-interpreter model-leg identity
   is made.
 
@@ -124,7 +138,8 @@ and are new coverage, not comparable cells.
 - Under the literal "mask tmp + exe" rule alone, the **P-twice pair** already
   gives **936 keys, 0 diffs** (the pair differs only in tmp filenames, already
   covered by the tmp mask). The **72** diffs arise ONLY in cross-tree
-  comparisons (worktree vs HEAD), all of them `render_model`/ERROR rows,
+  comparisons (worktree vs the measured HEAD `5970ae4`), all of them
+  `render_model`/ERROR rows,
   caused by the `.py` tree-path token (`wt-cube-rebase` vs the main checkout).
   The extra `.py`/`.onnx` masks are therefore needed only for cross-tree
   comparisons, not for the P-twice pair.
@@ -139,12 +154,17 @@ and are new coverage, not comparable cells.
   text — mask first (or compare sha/bytes + cause-class only). The P-twice
   byte-identity claim holds post-mask only.
 - The banked file is byte-identical to the run-1 output, so the sha256 in §1
-  also identifies the committed blob. Note that this repository's
-  `core.autocrlf=true` translates LF→CRLF on a fresh Windows checkout (the
-  v2 CSV is stored the same way: LF in the blob, CRLF in the working copy), so
-  a working-tree copy on Windows hashes differently from the blob. Verify the
-  artifact against the git blob (or the raw run output), not against a
-  re-checked-out working copy.
+  identifies the committed blob, the raw run output **and** the file as
+  checked out from the repository: `docs/measurements/s0-sha-matrix-v3.csv` is
+  pinned `text eol=lf` in `.gitattributes`, so a checkout yields LF bytes
+  (938 LF / 0 CR) and the pinned sha256 — verified. Without that rule the
+  repository's `core.autocrlf=true` would translate the file to CRLF on
+  checkout (938 CRLF, sha256
+  `28EA3782975dd5a7ef91bdd7cbd80a37de3f537b5dd04caa61d611a02102e9eb`), i.e.
+  the pinned sha would not be reproducible from a fresh checkout — which is
+  why the rule was added. The present working copy is LF and already hashes
+  equal to the blob. (The v2 CSV is not pinned and stays
+  LF-in-blob / CRLF-in-worktree; it is history and is not sha-pinned here.)
 
 ## 7. Why v2 is superseded (v2 kept as history)
 
@@ -180,17 +200,18 @@ retained as history, not as a live baseline.
   (§3).
 - **`src/app/midi_exporter.cpp`** (added in `ed2a760`, S6.4) is unmeasured by
   the cube — a new code path, not a regression of measured behaviour.
-- Scope of the currency claim (§2, HEAD vs candidate): it means **"no
-  render-output regression for the S6–S9 + S4b-main commits in (P, HEAD]"**.
-  The range (P, HEAD] actually also contains S1–S5 gap-closure work (e.g.
-  `e721419`, touching `src/core/model/selection.*`); all of it is cube-neutral
-  per the 936/936 result, so the label under-claims in the safe direction.
-  The P..HEAD diff is empty for the SOURCE paths `src/inference/candidates.cpp`,
-  `src/inference/sampler.cpp`, `src/inference/pcg.h`, `tools/render_midi.cpp`,
-  `tools/render_model.py`; name-based the diff is not empty
-  (`tests/test_candidates.cpp`, `tests/test_sampler.cpp`,
-  `tests/golden/sampler_wiring.json` changed) — none of those is a render
-  input, so the 936/936 conclusion is unaffected.
+- Scope of the currency claim (§2, measured HEAD `5970ae4` vs candidate): it
+  means **"no render-output regression for the S6–S9 + S4b-main commits in
+  (P, `5970ae4`]"**. The range (P, `5970ae4`] actually also contains S1–S5
+  gap-closure work (e.g. `e721419`, touching `src/core/model/selection.*`);
+  all of it is cube-neutral per the 936/936 result, so the label under-claims
+  in the safe direction.
+  The P..`5970ae4` diff is empty for the SOURCE paths
+  `src/inference/candidates.cpp`, `src/inference/sampler.cpp`,
+  `src/inference/pcg.h`, `tools/render_midi.cpp`, `tools/render_model.py`;
+  name-based the diff is not empty (`tests/test_candidates.cpp`,
+  `tests/test_sampler.cpp`, `tests/golden/sampler_wiring.json` changed) —
+  none of those is a render input, so the 936/936 conclusion is unaffected.
 
 ## 9. Owner sign-off
 
@@ -200,8 +221,9 @@ retained as history, not as a live baseline.
 (b) P-twice determinism post-mask, with the raw-artifact caveat of §6;
 (c) the classification — 576 midi keys changed within the declared set, 360
 model keys unchanged, twin invariant held (§3);
-(d) currency — HEAD == candidate, i.e. no render-output regression for
-(P, HEAD] (§8).
+(d) currency — the cube output at the measured HEAD `5970ae4` == candidate,
+i.e. no render-output regression for (P, `5970ae4`]; the generation path is
+unchanged from `5970ae4` to the branch head that banks this record (§2) (§8).
 
 **What the signature does NOT cover:** S5a's v2-anchored evidence
 (superseded-by-design, owner ruling needed); S4b-main's lint/pin gates; the
