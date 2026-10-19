@@ -1,0 +1,19 @@
+{
+  "doc": "Keynorm cross-language parity vectors (S4b-main T1). Script-generated pins: expected outputs of training/keynorm.py, mirrored byte-identically by src/inference/keynorm.{h,cpp} and pinned from BOTH sides (tests/test_keynorm.cpp + training/tests/test_keynorm.py). Corpus-derived provenance; corpus files themselves stay absolute (normalization is a load-time view).",
+  "note_parity": {
+    "provenance": "training/keynorm.py to_canonical([3, 0,0,1,67,4,5, 0,4,5,38,1,3, 0,0,2,48,4,6], 55, 'major')",
+    "tonic": 55,
+    "scale": "major",
+    "shift": 5,
+    "ids": [3, 0, 0, 1, 67, 4, 5, 0, 4, 5, 38, 1, 3, 0, 0, 2, 48, 4, 6],
+    "want": [3, 0, 0, 1, 72, 4, 5, 0, 4, 5, 38, 1, 3, 0, 0, 2, 53, 4, 6]
+  },
+  "chord_parity": {
+    "provenance": "training/keynorm.py shift_chords([{'root': 55, 'type': 'maj'}, {'root': 62, 'type': 'min'}], 5)",
+    "shift": 5,
+    "roots": [55, 62],
+    "types": ["maj", "min"],
+    "want_roots": [60, 67]
+  },
+  "known_divergence": "C++ shift_chords_to/from_canonical preserve type/inversion/tension in place; python shift_chords rebuilds {root, type} dicts only and DROPS inversion/tension/name keys. Corpus chords carry {root, type} only, so both sides agree on corpus data; enriched chords diverge. Phase-B fix — do NOT unify either side in a migration (touching chord-shift semantics fails review)."
+}

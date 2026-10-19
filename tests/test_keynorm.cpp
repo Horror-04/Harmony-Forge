@@ -17,6 +17,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,6 +28,10 @@
 #include "inference_runner.h"
 #include "keynorm.h"
 #include "sampler.h"
+
+#ifndef HARMONY_FORGE_KEYNORM_GOLDEN
+#define HARMONY_FORGE_KEYNORM_GOLDEN "tests/golden/keynorm_vectors.json"
+#endif
 
 namespace {
 
@@ -49,6 +55,95 @@ hf::infer::GenParams gmajor_params() {
   p.tonic = 55;  // G: minimal shift +5 to C
   p.scale = "major";
   return p;
+}
+
+// Minimal strict reader for tests/golden/keynorm_vectors.json (format
+// contract: docs/TOKENIZATION.md; R3: no JSON lib in C++ — ints only;
+// scale/type NAMES stay in-test spec constants, not golden values).
+// Every shape deviation returns false (fails loudly, never throws).
+bool kn_is_ws(char c) {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+std::string kn_read_file(const char* path) {
+  std::ifstream f(path, std::ios::binary);
+  if (!f) return {};
+  std::ostringstream ss;
+  ss << f.rdbuf();
+  return ss.str();
+}
+
+bool kn_section(const std::string& text, const char* name, size_t& pos) {
+  const std::string q = std::string("\"") + name + "\"";
+  const size_t at = text.find(q);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  return true;
+}
+
+bool kn_key_colon(const std::string& text, size_t& pos, const char* key) {
+  const std::string q = std::string("\"") + key + "\"";
+  const size_t at = text.find(q, pos);
+  if (at == std::string::npos) return false;
+  pos = at + q.size();
+  while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
+  if (pos >= text.size() || text[pos] != ':') return false;
+  ++pos;
+  while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
+  return pos < text.size();
+}
+
+bool kn_parse_int(const std::string& text, size_t& pos, int& out) {
+  bool neg = false;
+  if (pos < text.size() && text[pos] == '-') {
+    neg = true;
+    ++pos;
+  }
+  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
+  int v = 0;
+  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
+    v = v * 10 + (text[pos] - '0');
+    ++pos;
+  }
+  out = neg ? -v : v;
+  return true;
+}
+
+bool kn_int_after(const std::string& text, size_t sec, const char* key,
+                  int& out) {
+  size_t pos = sec;
+  if (!kn_key_colon(text, pos, key)) return false;
+  return kn_parse_int(text, pos, out);
+}
+
+bool kn_ints_after(const std::string& text, size_t sec, const char* key,
+                   std::vector<int>& out) {
+  size_t pos = sec;
+  if (!kn_key_colon(text, pos, key)) return false;
+  if (pos >= text.size() || text[pos] != '[') return false;
+  ++pos;
+  out.clear();
+  while (true) {
+    while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
+    if (pos >= text.size()) return false;
+    if (text[pos] == ']') {
+      ++pos;
+      return true;
+    }
+    int v = 0;
+    if (!kn_parse_int(text, pos, v)) return false;
+    out.push_back(v);
+    while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
+    if (pos < text.size() && text[pos] == ',') {
+      ++pos;
+      continue;
+    }
+    if (pos < text.size() && text[pos] == ']') {
+      ++pos;
+      return true;
+    }
+    return false;
+  }
 }
 
 }  // namespace
@@ -103,6 +198,30 @@ TEST_CASE("keynorm python parity vectors are byte-identical", "[keynorm]") {
                                           same.data(), same.size(), shift0));
   CHECK(shift0 == 0);
   CHECK(same == ids);
+  // Phase-1 golden check (S4b-main T1): the same expectation from
+  // tests/golden/keynorm_vectors.json#note_parity — literal + file agree
+  // here; phase 2 removes the literal and keeps the file side.
+  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  REQUIRE(!gtext.empty());
+  size_t gsec = 0;
+  REQUIRE(kn_section(gtext, "note_parity", gsec));
+  std::vector<int> gids, gwant;
+  int gshift = 0, gtonic = 0;
+  REQUIRE(kn_ints_after(gtext, gsec, "ids", gids));
+  REQUIRE(kn_ints_after(gtext, gsec, "want", gwant));
+  REQUIRE(kn_int_after(gtext, gsec, "shift", gshift));
+  REQUIRE(kn_int_after(gtext, gsec, "tonic", gtonic));
+  CHECK(gids == ids);  // migration fidelity: the file captures the literal
+  CHECK(gwant == want);
+  CHECK(gshift == shift);
+  CHECK(gtonic == 55);
+  std::vector<int> gout(gids.size(), -1);
+  int gsh = 0;
+  REQUIRE(hf::infer::keynorm_to_canonical(gids.data(), gids.size(), gtonic,
+                                          "major", gout.data(), gout.size(),
+                                          gsh));
+  CHECK(gsh == gshift);
+  CHECK(gout == gwant);
 }
 
 TEST_CASE("keynorm round-trip keeps drums and structure, bounds registers",
@@ -177,6 +296,42 @@ TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]
   CHECK(prog[1].root == 62);
   CHECK(prog[0].type == "maj");
   CHECK(prog[1].type == "min");
+  // KNOWN DIVERGENCE (phase-B fix; NOT healed by this migration — touching
+  // chord-shift semantics fails review): training/keynorm.py shift_chords
+  // rebuilds {root, type} dicts only and DROPS inversion/tension/name keys,
+  // while shift_chords_to/from_canonical preserve them in place (pinned in
+  // the clamp/shape case below). Corpus chords carry {root, type} only, so
+  // both sides agree on corpus data; enriched chords diverge.
+  // Phase-1 golden check (S4b-main T1): the same expectation from
+  // tests/golden/keynorm_vectors.json#chord_parity.
+  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  REQUIRE(!gtext.empty());
+  size_t gsec = 0;
+  REQUIRE(kn_section(gtext, "chord_parity", gsec));
+  std::vector<int> groots, gwant;
+  int gshift = 0;
+  REQUIRE(kn_ints_after(gtext, gsec, "roots", groots));
+  REQUIRE(kn_ints_after(gtext, gsec, "want_roots", gwant));
+  REQUIRE(kn_int_after(gtext, gsec, "shift", gshift));
+  REQUIRE(groots.size() == 2);
+  REQUIRE(gwant.size() == 2);
+  CHECK(groots[0] == prog[0].root);  // fidelity: file captures the literal
+  CHECK(groots[1] == prog[1].root);  // (prog is back at its input roots)
+  CHECK(gshift == 5);
+  hf::core::ChordProgression gprog;
+  hf::core::ChordSymbol ga;
+  ga.root = groots[0];
+  ga.type = "maj";
+  hf::core::ChordSymbol gb;
+  gb.root = groots[1];
+  gb.type = "min";
+  gprog.push_back(ga);
+  gprog.push_back(gb);
+  hf::infer::shift_chords_to_canonical(gprog, gshift);
+  CHECK(gprog[0].root == gwant[0]);
+  CHECK(gprog[1].root == gwant[1]);
+  CHECK(gprog[0].root == 60);
+  CHECK(gprog[1].root == 67);
 }
 
 TEST_CASE("keynorm chord shift clamps and preserves shape", "[keynorm]") {

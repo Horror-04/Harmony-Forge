@@ -226,6 +226,8 @@ target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
 hf_add_test(test_keynorm test_keynorm.cpp)
+target_compile_definitions(test_keynorm PRIVATE
+  HARMONY_FORGE_KEYNORM_GOLDEN="${CMAKE_SOURCE_DIR}/tests/golden/keynorm_vectors.json")
 # S6.3 commit 1: reference-import flow characterization (JUCE-free fixture
 # test, builds in BOTH configs incl. plugin-off). Golden: golden file path
 # below; fixtures: tests/fixtures/ (see README there + test header).

@@ -222,6 +222,37 @@ def check_report_numbers() -> None:
           f"top12 {rep['before_top12_share']:.3f} -> {rep['after_top12_share']:.3f})")
 
 
+def check_golden_parity_vectors() -> None:
+    import keynorm as K
+    path = os.path.join(HERE, "..", "..", "tests", "golden",
+                        "keynorm_vectors.json")
+    with open(path) as f:
+        gold = json.load(f)
+    note = gold["note_parity"]
+    out, shift = K.to_canonical(note["ids"], note["tonic"], note["scale"])
+    assert out == note["want"], "keynorm.py must reproduce the golden want"
+    assert shift == note["shift"], "golden shift must match canonical_shift"
+    chord = gold["chord_parity"]
+    start = [{"root": r, "type": t}
+             for r, t in zip(chord["roots"], chord["types"])]
+    moved = K.shift_chords(start, chord["shift"])
+    assert [c["root"] for c in moved] == chord["want_roots"], \
+        "shift_chords roots must match the golden want_roots"
+    assert [c["type"] for c in moved] == chord["types"], \
+        "chord types must never change"
+    # KNOWN DIVERGENCE (phase-B fix; NOT healed here): python shift_chords
+    # rebuilds {root, type} only, DROPPING inversion/tension, while the C++
+    # mirror preserves them (pinned in tests/test_keynorm.cpp clamp/shape
+    # case). This assert pins the divergence LOUD: if it ever stops
+    # dropping, phase-B owns the reunion, not a silent migration.
+    enriched = [dict(c, inversion=1, tension=[7]) for c in start]
+    redone = K.shift_chords(enriched, chord["shift"])
+    assert all(set(c) == {"root", "type"} for c in redone), \
+        "chord-shape divergence moved without a phase-B ruling"
+    print("PASS golden parity vectors reproduce keynorm.py "
+          "(chord-shape divergence still named)")
+
+
 def main() -> int:
     check_roundtrip_corpus()
     check_canonical_tonic()
@@ -230,6 +261,7 @@ def main() -> int:
     check_wrap_pc_invariant()
     check_chords_meta()
     check_report_numbers()
+    check_golden_parity_vectors()
     print("ALL keynorm tests PASS")
     return 0
 
