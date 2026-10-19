@@ -26,6 +26,16 @@ jobs:
       - name: Golden pin lint (frozen bitmap pin, NEVER-REGENERATE)
         run: python tools/lint_golden_pin.py
 
+      - name: Golden manifest lint (checked registry: schema + sha + coverage)
+        # Stdlib only, seconds, no build: tests/golden_manifest.json must
+        # stay a CHECKED registry - every record carries kind/commit/
+        # produced_by/files, every recorded sha256 equals the file's actual
+        # sha256, every produced_by is a real executable command, and every
+        # file under tests/golden/** + tests/fixtures/** is registered by
+        # some record (except the tool's reasoned exclusion list).
+        # Blocking: non-zero fails the job, same shape as the pin lint.
+        run: python tools/lint_golden_manifest.py
+
       - name: Invariant tag lint (named [inv1]-[inv5] bindings)
         # Stdlib only, seconds: every INVARIANTS.md-bound TEST_CASE carries
         # its [invN] tag (tools/lint_inv_tags.py, in-script map). Blocking:

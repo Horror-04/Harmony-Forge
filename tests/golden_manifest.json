@@ -5,43 +5,83 @@
       "test": "s4b keynorm note parity vectors byte-identical (tests/test_keynorm.cpp, [keynorm] 'python parity vectors are byte-identical' + training/tests/test_keynorm.py check_golden_parity_vectors)",
       "pins": "tests/golden/keynorm_vectors.json#note_parity ids (19 words: 3 notes incl. drums pitch 38) + want (72/53 transposed) + tonic 55 / scale major / shift 5 — GOLDEN class (script-generated: captured from training/keynorm.py to_canonical on the clean tree; Release+Debug identical). Scale/type names stay in-test spec constants on the C++ side (no JSON lib in C++; ints-only reader, contract docs/TOKENIZATION.md). Round-trip/c-g/abs-ids/reject fixtures stay in-test (parameter/relational inputs, not pins).",
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; values verified against the training/keynorm.py producer call in provenance before banking",
-      "commit": "S4b-main T1 phase-1 164bba4 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)"
+      "commit": "S4b-main T1 phase-1 164bba4 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout 164bba4 && cmake --build build-full --config Release && cmake --build build-off --config Debug && ctest --test-dir build-full -R keynorm --output-on-failure && ctest --test-dir build-off -R keynorm --output-on-failure && training/.venv/Scripts/python training/tests/test_keynorm.py",
+      "files": {
+        "tests/golden/keynorm_vectors.json": "344d7e37600c072db57c3fad63f04845dedde7c5ff6348b000f141166a3cf4fa"
+      }
     },
     {
       "test": "s4b keynorm chord-root parity (tests/test_keynorm.cpp, [keynorm] 'chord roots shift identically with python parity' + training/tests/test_keynorm.py check_golden_parity_vectors)",
       "pins": "tests/golden/keynorm_vectors.json#chord_parity roots [55, 62] + types [maj, min] + shift 5 + want_roots [60, 67] — GOLDEN class (script-generated: captured from training/keynorm.py shift_chords on the clean tree). KNOWN DIVERGENCE kept loud, not healed (phase-B fix): python shift_chords rebuilds {root, type} only (drops inversion/tension), C++ preserves them in place (pinned by the clamp/shape case); corpus chords carry {root, type} only so both sides agree there.",
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; corruption-proof per set in the task report",
-      "commit": "S4b-main T1 phase-1 164bba4 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)"
+      "commit": "S4b-main T1 phase-1 164bba4 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout 164bba4 && cmake --build build-full --config Release && cmake --build build-off --config Debug && ctest --test-dir build-full -R keynorm --output-on-failure && ctest --test-dir build-off -R keynorm --output-on-failure && training/.venv/Scripts/python training/tests/test_keynorm.py",
+      "files": {
+        "tests/golden/keynorm_vectors.json": "344d7e37600c072db57c3fad63f04845dedde7c5ff6348b000f141166a3cf4fa"
+      }
     },
     {
       "test": "s6.4 export fixed-pattern + drag encode to exact bytes (tests/test_s6_4_export.cpp, [s6_4][export]/[s6_4][drag])",
       "pins": "tests/golden/s6_4_export_bytes.txt exact SMF bytes (131, 4 tracks, format 1, 480 PPQ) for the fixed in-code pattern (Melody 3/Bass 1/Chords 2/Drums 2, preset channels 7/5/9/2 -> assigned 0/1/2/9) + MThd/format/track/PPQ structure + both Editor encode sites (finishDrag :809-812, finishExport :839-841) vs the same golden — GOLDEN class (run-captured on the clean tree; Release+Debug identical). No .mid INPUT fixture (export needs none).",
       "how": "ctest -R 's6.4' (build-full Release or build-off Debug); bytes read from the INFO dump on the clean tree per the test-header capture procedure",
-      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)"
+      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout b572caa && cmake --build build-full --config Release --target test_s6_4_export && build-full/tests/Release/test_s6_4_export.exe --success && ctest --test-dir build-full -R 's6.4' --output-on-failure",
+      "files": {
+        "tests/golden/s6_4_export_bytes.txt": "30a9ee8b54997ecde49646a965353ff1db7fa0ef8b1c7a636a31843e5c3eae79"
+      }
     },
     {
       "test": "s6.4 export empty-fallback + error-path contracts (tests/test_s6_4_export.cpp, [s6_4][export])",
       "pins": "tests/golden/s6_4_export_empty.txt exact SMF bytes (26, single empty track) for the empty pattern + hostile-input totality (negative tick / pitch 200/-5 / zero duration / channel 99 -> no throw, deterministic, read_smf round-trip clamps) + input-immutability (copy discipline); cancelled-save silent return (:848-851) + ignored replaceWithData (:850) marked UNPINNABLE (FileChooser/juce::File, JUCE-bound) with line cites — pinned as documented contracts, not weakened.",
       "how": "ctest -R 's6.4' (build-full Release or build-off Debug)",
-      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)"
+      "commit": "S6.4 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-4-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout b572caa && cmake --build build-full --config Release --target test_s6_4_export && build-full/tests/Release/test_s6_4_export.exe --success && ctest --test-dir build-full -R 's6.4' --output-on-failure",
+      "files": {
+        "tests/golden/s6_4_export_empty.txt": "5295400beea149edd1681b13fc1a4434d7b592a11f90213ccf267399b957d908"
+      }
     },
     {
       "test": "s6.3 reference-import happy-path bytes->report (tests/test_s6_3_reference_import.cpp, [s6_3][reference])",
       "pins": "tests/golden/s6_3_reference_report.txt exact AnalysisReport for tests/fixtures/ref_happy_c_major.mid (tonic 60/major/conf 1.0, chords 60:maj + 65:maj, density 4.0, drums 2, bars 2, tpb 480) — GOLDEN class (run-captured on the clean tree; Release+Debug identical). Fixture generator tools/gen_s6_3_fixtures.py.",
       "how": "ctest -R 's6.3' (build-full Release or build-off Debug); values read from the INFO dump on the clean tree per the test-header capture procedure",
-      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)"
+      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout 96a73ca && python tools/gen_s6_3_fixtures.py && cmake --build build-full --config Release --target test_s6_3_reference_import && build-full/tests/Release/test_s6_3_reference_import.exe --success && ctest --test-dir build-full -R 's6.3' --output-on-failure",
+      "files": {
+        "tests/golden/s6_3_reference_report.txt": "c5e6bbb9d7d139a1d705e3d45fee6b7765bd12bd0a94dc0fa8b259c19cc261bd",
+        "tests/fixtures/ref_happy_c_major.mid": "dfda597b0128e1fc158ec46c549fb7ffe69b6123d1065ffcad4a6a6c759f15e0"
+      }
     },
     {
       "test": "s6.3 reference-import error paths + adopt gates (tests/test_s6_3_reference_import.cpp, [s6_3][reference])",
       "pins": "exact SmfError per corrupt fixture (Truncated/BadHeader/UnsupportedType/BadEvent) + verbatim Editor hint/status TEXT (unreadable / file-is-truncated / not-a-supported-MIDI-header / format-not-supported / corrupt-MIDI-events / too-little) + adopt-gate truth table — pinned as in-test string literals mirroring PluginEditor.cpp:1016/1025-1026/1034-1035/1080. JUCE->std adaptation: TEXT is the observable; RAW compare impossible by design.",
       "how": "ctest -R 's6.3' (build-full Release or build-off Debug)",
-      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)"
+      "commit": "S6.3 commit 1 (sha recorded in .superpowers/sdd/2026-10-18-refactor-s6/task-3-report.md)",
+      "kind": "in_test",
+      "produced_by": "git checkout 96a73ca && python tools/gen_s6_3_fixtures.py && cmake --build build-full --config Release --target test_s6_3_reference_import && build-full/tests/Release/test_s6_3_reference_import.exe --success && ctest --test-dir build-full -R 's6.3' --output-on-failure",
+      "files": {
+        "tests/fixtures/ref_empty.mid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tests/fixtures/ref_truncated.mid": "6e5458f74e5d6bebc05e47edd75332ad977b673b699a325dcb7c26be14da7b7b",
+        "tests/fixtures/ref_bad_header.mid": "4844a34d8cec095f6eff24651f335fa163e5049a1722dfb6aa7159aab461eaf6",
+        "tests/fixtures/ref_unsupported_type.mid": "fc3faf100a729ac5bbc9e5b8fc4c2b55c13e51b6ef689406df6cfcd7c396916a",
+        "tests/fixtures/ref_bad_event.mid": "acea5e996e4324f38d45721d85c4101aaeccdb247f1bf6423f01d7c702ddc758",
+        "tests/fixtures/ref_too_little.mid": "4defe59426c67d71f21d6e9f18089c5a92476dfd78319f2b4959cc2aa013bfef"
+      }
     },
     {
       "test": "s4b Creative arm adds weak-beat chromatic passing tones (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
       "pins": "G1 exact passing-tone (tick,pitch) list kTones (4 pairs) — GOLDEN class (run-captured; arm is rng-free deterministic, values captured from a run). Structural CHECKs in the same case (counts, 16th-grid, duration 120, velocity 70, semitone approach, selectivity skips) are NOT goldens.",
       "how": "ctest -R 's4b Creative' (build-off Debug or build-full Release, identical — no sampler/model in path); values read from INFO 'tones (tick,pitch)' dump on the clean tree",
-      "commit": "1746ae0"
+      "commit": "1746ae0",
+      "kind": "in_test",
+      "produced_by": "git checkout 1746ae0 && cmake --build build-full --config Release && ctest --test-dir build-full -R 's4b Creative' --output-on-failure",
+      "files": {},
+      "relational": true
     },
     {
       "test": "s4b Experimental arm flips weak-beat color tones at ~25pc (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
@@ -49,13 +89,21 @@
       "how": "ctest -R 's4b Experimental arm flips' ; values read from INFO 'flips (tick:old->new)' dump on the clean tree",
       "commit": "1746ae0",
       "recaptured_in": "task-2 (see task-2-report.md)",
-      "recapture_reason": "candidates RNG mt19937->Pcg32 moved the stream; seed re-pinned 7->9 (nearest seed >= 7 with a non-vacuous flip set; seed 7 is empty under Pcg32). New kFlips {(720,69,68),(1080,71,70)} run-captured + threshold-flip (25->75) red-proof; G1/G3 values unchanged (rng-free)."
+      "recapture_reason": "candidates RNG mt19937->Pcg32 moved the stream; seed re-pinned 7->9 (nearest seed >= 7 with a non-vacuous flip set; seed 7 is empty under Pcg32). New kFlips {(720,69,68),(1080,71,70)} run-captured + threshold-flip (25->75) red-proof; G1/G3 values unchanged (rng-free).",
+      "kind": "in_test",
+      "produced_by": "git checkout 3589205 && cmake --build build-full --config Release && ctest --test-dir build-full -R 's4b Experimental arm flips' --output-on-failure",
+      "files": {},
+      "relational": true
     },
     {
       "test": "s4b Experimental arm keeps parallel-union pitches (tests/test_s4b_mode_shape.cpp, [modes][s4b])",
       "pins": "G3 exact kept-probe list kKept (3 pairs) — GOLDEN class (deterministic rng-free union snap, run-verified). Union-membership property + Strict-moves foil are NOT goldens.",
       "how": "ctest -R 's4b Experimental arm keeps' ; values read from INFO 'probes (tick,pitch)' dump on the clean tree",
-      "commit": "1746ae0"
+      "commit": "1746ae0",
+      "kind": "in_test",
+      "produced_by": "git checkout 1746ae0 && cmake --build build-full --config Release && ctest --test-dir build-full -R 's4b Experimental arm keeps' --output-on-failure",
+      "files": {},
+      "relational": true
     },
     {
       "test": "s4b sampler index-seed binding is pinned per candidate (tests/test_s4b_seed_binding.cpp, [sampler][s4b])",
@@ -63,7 +111,11 @@
       "how": "ctest -R 's4b sampler index-seed' (build-full Release, engaged path); values read from failure-diff / INFO dump on the clean tree, double-confirmed; swap red-proof per seed in task reports",
       "commit": "6519803",
       "recaptured_in": "task-2 (see task-2-report.md)",
-      "recapture_reason": "candidates RNG mt19937->Pcg32 moved every stream; all 12 hashes re-banked. Swap (sseed index->(index+1)%4) red-proof on the new streams: 11/12 redden, survivor seed-0 row-3 (same swap-invariance character as A1). New coincidence pattern: seed-10 rows 0+2 reuse seed-0 row-0 bytes."
+      "recapture_reason": "candidates RNG mt19937->Pcg32 moved every stream; all 12 hashes re-banked. Swap (sseed index->(index+1)%4) red-proof on the new streams: 11/12 redden, survivor seed-0 row-3 (same swap-invariance character as A1). New coincidence pattern: seed-10 rows 0+2 reuse seed-0 row-0 bytes.",
+      "kind": "in_test",
+      "produced_by": "git checkout 3589205 && cmake --build build-full --config Release && ctest --test-dir build-full -R 's4b sampler index-seed' --output-on-failure",
+      "files": {},
+      "relational": true
     }
   ],
   "golden_midi": [
@@ -77,7 +129,13 @@
       "sha256": "ea7650b3e13c96f1de346425f6547891dfc843e64b830bfbf08a5853b749d386",
       "bytes": 170,
       "how": "tools/render_midi --seed 7 --bars 4 --out tests/golden/seeds/seed_7.mid (melody-only SMF0, 480 PPQ); pinned by tests/test_golden_midi.cpp; regen only via tools/update_golden_midi.py --write --reason ...",
-      "banked_in": "task-2 (see task-2-report.md)"
+      "banked_in": "task-2 (see task-2-report.md)",
+      "kind": "golden",
+      "commit": "task-2 (see task-2-report.md)",
+      "produced_by": "cmake --build build-full --config Release --target render_midi && python tools/update_golden_midi.py --write --reason \"regenerate golden MIDI seed 7\" && ctest --test-dir build-full -R 'golden MIDI seeds reproduce committed bytes' --output-on-failure",
+      "files": {
+        "tests/golden/seeds/seed_7.mid": "ea7650b3e13c96f1de346425f6547891dfc843e64b830bfbf08a5853b749d386"
+      }
     },
     {
       "seed": 42,
@@ -89,7 +147,13 @@
       "sha256": "8e3550526157c93b47e81bdfd57c150b2305ec324bce36b9829289802f0927df",
       "bytes": 170,
       "how": "tools/render_midi --seed 42 --bars 4 --out tests/golden/seeds/seed_42.mid (melody-only SMF0, 480 PPQ); pinned by tests/test_golden_midi.cpp; regen only via tools/update_golden_midi.py --write --reason ...",
-      "banked_in": "task-2 (see task-2-report.md)"
+      "banked_in": "task-2 (see task-2-report.md)",
+      "kind": "golden",
+      "commit": "task-2 (see task-2-report.md)",
+      "produced_by": "cmake --build build-full --config Release --target render_midi && python tools/update_golden_midi.py --write --reason \"regenerate golden MIDI seed 42\" && ctest --test-dir build-full -R 'golden MIDI seeds reproduce committed bytes' --output-on-failure",
+      "files": {
+        "tests/golden/seeds/seed_42.mid": "8e3550526157c93b47e81bdfd57c150b2305ec324bce36b9829289802f0927df"
+      }
     }
   ],
   "fixtures": [
@@ -97,50 +161,92 @@
       "test": "ingest SATB pitch fixtures file-backed (training/tests/test_ingest.py _mini_satb + reduction/dedupe/homophonic/parity checks)",
       "pins": "tests/fixtures/ingest/mini_satb.json: _mini_satb(0) as TEXT JSON (4x16 absolute MIDI pitches + bars 4 / tonic 60 / scale major) - hand-composed C-major quarter-note SATB per the test header (no music21); transposed variants (+2/-2/+5) derive by shift at call time. Zero .mid: no MIDI bytes asserted, symbolic pitches only.",
       "how": "training/.venv/Scripts/python training/tests/test_ingest.py ALL GREEN (reduction/dedupe/homophonic/parity checks consume _mini_satb); file==literal fidelity proven in phase 1 by check_ingest_fixtures_match_literals, file-only reads from phase 2",
-      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)"
+      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)",
+      "kind": "fixture",
+      "produced_by": "git checkout 906f623 && training/.venv/Scripts/python -c \"import sys, json, importlib.util; sys.path.insert(0, 'training'); sys.path.insert(0, 'training/ingest'); import openscore; spec = importlib.util.spec_from_file_location('ti', 'training/tests/test_ingest.py'); ti = importlib.util.module_from_spec(spec); spec.loader.exec_module(ti); open('tests/fixtures/ingest/mini_satb.json','w',encoding='utf-8').write(json.dumps(ti._mini_satb(0), indent=1, sort_keys=True)+chr(10))\" && training/.venv/Scripts/python training/tests/test_ingest.py",
+      "files": {
+        "tests/fixtures/ingest/mini_satb.json": "7c844fd46c1732953593a7dd322b5d4c36ba719a20d10ee8978878209635c9d3"
+      }
     },
     {
       "test": "ingest openscore .mscx minis + tick golden (training/tests/test_ingest.py check_openscore_mscx_parse_minimal)",
       "pins": "tests/fixtures/ingest/openscore_v3_mini.mscx + openscore_v2_mini.mscx (byte-exact v3/v2 minis) + openscore_ticks.json (v3 bars 2 / measure_ticks [1920,1920] / 4 events incl. dotted-8th dyad dur 360 + triplet 160s + grace-skip; v2 [1440] / half-note dur 960) - GOLDEN class (run-captured via training/ingest/openscore.py parse_mscx on the clean tree). TEXT throughout (XML stays XML); zero .mid justified as above.",
       "how": "training/.venv/Scripts/python training/tests/test_ingest.py; corruption-proof per entry in the task report (fixture-byte 60->61 + tick-assert 1920->1921 each redden exactly check_openscore_mscx_parse_minimal, neighbors green, scratch-reverted)",
-      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)"
+      "commit": "S4b-main T2 phase-1 906f623 (fixtures + file==literal checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-2-report.md)",
+      "kind": "fixture",
+      "produced_by": "git checkout 906f623 && training/.venv/Scripts/python -c \"import sys, json, importlib.util; sys.path.insert(0, 'training'); sys.path.insert(0, 'training/ingest'); import openscore; spec = importlib.util.spec_from_file_location('ti', 'training/tests/test_ingest.py'); ti = importlib.util.module_from_spec(spec); spec.loader.exec_module(ti); open('tests/fixtures/ingest/openscore_v3_mini.mscx','wb').write(ti._V3_MINI.encode('utf-8')); open('tests/fixtures/ingest/openscore_v2_mini.mscx','wb').write(ti._V2_MINI.encode('utf-8')); open('tests/fixtures/ingest/openscore_ticks.json','w',encoding='utf-8').write(json.dumps(ti._capture_ticks(), indent=1, sort_keys=True)+chr(10))\" && training/.venv/Scripts/python training/tests/test_ingest.py",
+      "files": {
+        "tests/fixtures/ingest/openscore_v3_mini.mscx": "b0c4afd2aa4a53fff6549c6ef2b009378c57986c33fa336f6d7a22d0d02a3641",
+        "tests/fixtures/ingest/openscore_v2_mini.mscx": "5469da8663799e96282e89dcf03c2a82de15308d4125ed65bc97b467fbff56a2",
+        "tests/fixtures/ingest/openscore_ticks.json": "a41ab51535b50aa7913587c553942166ca14751755aa8e9d7912ea18b55d6507"
+      }
     },
     {
       "test": "tokenizer expected vectors by reference (tests/test_tokenizer.cpp, 7 golden cases)",
       "pins": "training/parity_vectors.json#single-melody/drums-offbeat/empty/multi-track/clamp-edges/cap-16bars/cap-1024 ids (~1.1k elems, mostly the 1021-elem cap-1024 block) - GOLDEN class (run-captured from training/tokenizer.py encode_pattern; Release+Debug identical). Training-owned reference OUTSIDE tests/fixtures/ by design: read BY REFERENCE via the ints-only R3 pv_* scanner (no copy, no new file). Note{...} inputs + corrupt/over-cap reject probes + count/size asserts stay in-test (parameter/echo/hostile per contract docs/TOKENIZATION.md); midi_read + keynorm small vectors stay in-test with per-block reasons (no golden-class vectors found; see task report).",
       "how": "test_tokenizer binary (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_parity.py; corruption-proof per vector class in the task report (reference corrupt -> exactly its case reds, scratch-reverted)",
-      "commit": "S4b-main T3 phase-1 4a3bd76 (reference checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-3-report.md)"
+      "commit": "S4b-main T3 phase-1 4a3bd76 (reference checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-3-report.md)",
+      "kind": "fixture",
+      "produced_by": "git checkout 4a3bd76 && cmake --build build-full --config Release && ctest --test-dir build-full -R 'golden:' --output-on-failure && training/.venv/Scripts/python training/tests/test_parity.py",
+      "files": {
+        "training/parity_vectors.json": "806ad0b993aa5c867ef478b2fabbb7d1569a4e67b824f4fa55d0a0b113588ca3"
+      }
     },
     {
       "test": "sampler wiring digests + FSM slot ranges from one golden file (tests/test_sampler.cpp, [sampler][wiring] 'wiring flag OFF keeps pre-phase history bytes' + [sampler] 'sampler FSM slot ranges match the shipped codec')",
       "pins": "tests/golden/sampler_wiring.json#wiring digests[3][4] (12 FNV-1a hex64 of generate_candidates greedy bytes on fixtures 7/4/60/major + 99/2/57/natural_minor + 3/8/65/dorian; BASELINE 2026-10-15, RE-BASELINED under Task 2 for Pcg32) + #fsm_slot_ranges want[6][2] (shipped-codec pin, CONSOLIDATED here: re-pointing at kVocabSlotLo/Hi rejected — S2b-4b + vocab_layout I1 already reference the headers, so re-pointing would collapse the independent gen.h==codec proof) - GOLDEN class (run-captured; Release+Debug identical). Fixture INPUT params stay in-test (wiring_base/wiring_fixtures); no Python side pins these bytes (tree-wide grep of all 12 hexes: sole consumer test_sampler.cpp). SHARPLY DISTINCT from the manifest-registered S4b binding set (test_s4b_seed_binding.cpp kPinned seeds 0/10/11, stays in-test, zero byte overlap) and the frozen 128-sha worker-output set (re-run byte-compare only). Strict sw_* quoted-string+int scanner (no JSON lib; quote spelled 34 so the off-golden lint masker never sees a phantom string). Sibling header-referenced range cases unchanged with stated reason (no inline literals to migrate).",
       "how": "test_sampler binary (build-full Release + build-off Debug); corruption-proof per set in the task report (digest corrupt -> exactly the wiring case reds; range corrupt -> exactly the slot-ranges case reds; scratch-reverted; proven in build-full with the REAL provider engaged)",
-      "commit": "S4b-main T4 phase-1 4850d95 (golden file + dual-reader checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-4-report.md)"
+      "commit": "S4b-main T4 phase-1 4850d95 (golden file + dual-reader checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-4-report.md)",
+      "kind": "fixture",
+      "produced_by": "git checkout 4850d95 && cmake --build build-full --config Release && ctest --test-dir build-full -R 'wiring|sampler FSM slot ranges' --output-on-failure",
+      "files": {
+        "tests/golden/sampler_wiring.json": "377e8b86039f1329ace0ed466c37387b23dd4a195bec5394d93330c8a9118298"
+      }
     },
     {
       "test": "procedural_gen seeded device outputs file-backed (training/tests/test_procedural_gen.py check_motivic_identity + check_coverage_one_rule_vs_fifteen)",
       "pins": "tests/fixtures/procedural/device_outputs.json: inversion_want (contour-mirror of the crafted [(60,4),(64,4),(67,4)] motive) + neighbour_want_up/dn (both seeded-Random(7) branches of the crafted [(64,4),(66,2),(67,4)] motive) + coverage_old_n 12 (PG.progression_coverage(PG.sample_old(400, 7))[n], 1 rule / 12 signatures) - GOLDEN class (seeded device outputs, run-captured on the clean tree). Crafted INPUT motives + SPEC_NAMES + seeds + rate bands + new-arm 15 (== len(SPEC_NAMES), spec-derived echo) stay in-test with per-block reasons in the task report.",
       "how": "training/.venv/Scripts/python training/tests/test_procedural_gen.py ALL GREEN (file-only reads from phase 2); file==literal fidelity proven in phase 1 by alongside checks; corruption-proof per set in the task report (want corrupt -> exactly check_motivic_identity reds; old_n corrupt -> exactly check_coverage_one_rule_vs_fifteen reds; scratch-reverted)",
-      "commit": "S4b-main T5 phase-1 78ce06e (fixtures + file==literal checks GREEN, literals kept) + phase-2 24654a2 (literal removal)"
+      "commit": "S4b-main T5 phase-1 78ce06e (fixtures + file==literal checks GREEN, literals kept) + phase-2 24654a2 (literal removal)",
+      "kind": "fixture",
+      "produced_by": "git checkout 24654a2 && training/.venv/Scripts/python training/tests/test_procedural_gen.py",
+      "files": {
+        "tests/fixtures/procedural/device_outputs.json": "cd140ce47203d11b19e77b43757b9db309287f640c685919527113464ae31db3"
+      }
     },
     {
       "test": "eval large-arch param pin file-backed (training/tests/test_eval.py check_load_v2_arch_ckpt)",
       "pins": "tests/fixtures/eval/arch.json: params 3558144 for arch large - GOLDEN class (run-captured: tinilm.build_model(arch=large) + tinilm.param_count on the clean tree). Hand-derived mirror fractions (2/3, suffix 0.0/whole 0.5), slot-math lists, gate thresholds and relational teacher-forced checks stay in-test (echo/parameter/relational, see task report).",
       "how": "training/.venv/Scripts/python training/tests/test_eval.py ALL GREEN (file-only read from phase 2); file==literal fidelity proven in phase 1; corruption-proof in the task report (3558144->3558145 reddens exactly check_load_v2_arch_ckpt, scratch-reverted)",
-      "commit": "S4b-main T5 phase-1 78ce06e (fixture + file==literal check GREEN, literal kept) + phase-2 24654a2 (literal removal)"
+      "commit": "S4b-main T5 phase-1 78ce06e (fixture + file==literal check GREEN, literal kept) + phase-2 24654a2 (literal removal)",
+      "kind": "fixture",
+      "produced_by": "git checkout 24654a2 && training/.venv/Scripts/python training/tests/test_eval.py",
+      "files": {
+        "tests/fixtures/eval/arch.json": "bb21f1a10ec0096aed69b81f318b68fd80847175882c82f669ffbc58a88ad33a"
+      }
     },
     {
       "test": "UI palette pins file-backed (tests/test_note_cues.cpp byte-identical fills + tests/test_focus_resize.cpp kFocusRing + contrast pairs)",
       "pins": "tests/golden/ui_palette.json#cues chord/scale/chromatic/drums fills + lane interior + conflict hatch base + selected white (exact asserted ARGBs, Phase 7 design-2.1 palette) + #focus ring (kFocusRing token, duplicates the cues scale-blue accent by design) + pair_fg/pair_bg (10 contrast gate-input pairs) - GOLDEN-UI class (run-captured on the clean tree). Geometry (note_rect inputs, band rects, pixel-count gates), WCAG gate thresholds (3.0/4.5), computed ratio comments (hand-derived echo) and hollow/hatched/dashed treatment inequalities stay in-test with per-block reasons in the task report. kFocusRing static_assert removed (cannot consume a file at compile time; runtime CHECK carries the pin).",
       "how": "test_note_cues binary explicit (build-full Release, 343 assertions) + ctest -R focus (build-full Release); corruption-proof per set in the task report (one-digit ARGB corrupts redden exactly their case; pair corrupts need gate-crossing since gates are threshold-only, documented; scratch-reverted)",
-      "commit": "S4b-main T5 phase-1 3e6710d (golden file + readers + fidelity checks GREEN, literals kept) + phase-2 25044bb (literal removal)"
+      "commit": "S4b-main T5 phase-1 3e6710d (golden file + readers + fidelity checks GREEN, literals kept) + phase-2 25044bb (literal removal)",
+      "kind": "fixture",
+      "produced_by": "git checkout 25044bb && cmake --build build-full --config Release && ctest --test-dir build-full -R 'note fill colours' --output-on-failure && ctest --test-dir build-full -R 'focus' --output-on-failure",
+      "files": {
+        "tests/golden/ui_palette.json": "024aad4a9364f6c6f908735801cbe7652434b851ca4c538318eb15411cfb4193"
+      }
     },
     {
       "test": "chordtrack statics + delegation pins file-backed (tests/test_chordtrack_pin.cpp, [chordtrack][pin] 'ChordTrack statics match the pre-edit capture' + 'delegated ChordTrack lookups equal the core helpers')",
       "rows": 27,
       "pins": "tests/golden/chordtrack_pin.txt: required exact header root|type|inv|tensions|tonic|scale|name|degree|function + 27 data rows (root|type|inv|tensions|tonic|scale|name|degree|function; empty tensions = none; one row carries tension 14, rows carry inv 0/1/2) - GOLDEN class (pre-edit capture, transcribed field-exact; Release-only binary, plugin-ON). SCOPE AMENDMENT 28->27: census/MANUAL_PARITY said 28, file holds 27 (14 C-major + 2 inversion/tension + 8 A-minor + 1 dorian + 2 unknown-scale); mismatch present at census commit d07260c (pre-existing miscount, not a regression); lint arithmetic corroborates 27 exactly (57 numerics = 27x2 roots/tonics + inv 1,2 + tension 14; 135 strings = 27x5 type/scale/name/degree/function); tree-wide consumer sweep found no 28th row (test_explain single CHECKs are parameter-class, explain.cpp is implementation). Controller ruling: migrate all 27. Format LINES not JSON: uniform string-heavy records (name/degree/function + type/scale carry the pin; only root/inv/tonic/tensions are ints), human-readable + diff-friendly, no JSON lib in C++ (R3); pipe occurs in no cell; required exact header keeps the file self-describing while the reader stays fail-loud (missing/wrong header, wrong row count, bad int/text cell all fail, never skip; trailing CR tolerated for Windows worktree rewrites, rejected elsewhere). Chord inputs stay as file columns BY DESIGN (the pin IS the rendered triple per input row; the delegation case re-proves ChordTrack==core per row). No Python side (sole consumer test_chordtrack_pin.cpp). Strict ct_ line reader (no quoted-string parsing, so no 34-spelling needed; only pipe/newline/comma char literals).",
       "how": "test_chordtrack_pin binary explicit + ctest -R 'ChordTrack|chordtrack' (build-full Release, plugin-ON-only); corruption-proof in the task report (row-1 function Tonic->Tonix reddens exactly 'ChordTrack statics match the pre-edit capture', full-suite FAILED list = that test only, scratch-reverted)",
-      "commit": "S4b-main T6 phase-1 766fc21 (golden file + strict reader + file==literal fidelity checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-6-report.md)"
+      "commit": "S4b-main T6 phase-1 766fc21 (golden file + strict reader + file==literal fidelity checks GREEN, literals kept) + phase-2 (literal removal; sha recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-6-report.md)",
+      "kind": "fixture",
+      "produced_by": "git checkout 766fc21 && cmake --build build-full --config Release && ctest --test-dir build-full -R 'ChordTrack|chordtrack' --output-on-failure",
+      "files": {
+        "tests/golden/chordtrack_pin.txt": "57bfa38186cb428ad0c04879625f152dc2f313f9b2635bdb76bbd64f6f41ab5a"
+      }
     }
   ]
 }
