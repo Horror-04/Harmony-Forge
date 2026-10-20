@@ -74,6 +74,20 @@ GOLDEN_REL = "tests/golden/ort_logits_values.txt"
 PREFIX_IDS = [1, 0, 0, 1, 60, 4, 4]
 VOCAB = 256
 
+# The MEASURED divergence between this capture (onnxruntime 1.31.0, the
+# repo's training venv) and the C++ provider (the pinned prebuilt
+# onnxruntime 1.22.0): the two are different ORT releases, so they are NOT
+# bit-exact. The numbers were measured on this machine (the same ones the
+# C++ test's kLogitsTol comment and the manifest record state); they are
+# written into the golden's header so a reader of the golden ALONE cannot
+# mistake the values for bit-exact.
+K_DIFFERING = "217 of the 256"
+K_MAX_ABS_GAP = "2.86e-06"
+K_MAX_ULP = "193"
+# The tolerance the C++ side compares the values with (kLogitsTol in
+# tests/test_ort_logits.cpp).
+K_TOLERANCE = "1e-04"
+
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -141,6 +155,18 @@ def render(model_sha: str, values: list[float], values_sha: str,
         "# The capture ran on onnxruntime %s; the C++ build uses the pinned" %
         ort_version,
         "# prebuilt onnxruntime 1.22.0 (src/inference/CMakeLists.txt).",
+        "#",
+        "# NOT BIT-EXACT (MEASURED): the two runtimes are different ORT",
+        "# releases, so %s captured values differ in the last bits, the" %
+        K_DIFFERING,
+        "# largest absolute gap is %s and the largest distance is %s ULP;" %
+        (K_MAX_ABS_GAP, K_MAX_ULP),
+        "# the argmax (the decision vector) is IDENTICAL. The C++ side",
+        "# therefore compares the values within a DOCUMENTED TOLERANCE of",
+        "# %s (~35x the measured noise, ~3 orders of magnitude below any" %
+        K_TOLERANCE,
+        "# real change of the model) and pins the sidecar's sha256 and the",
+        "# argmax EXACTLY (the identity and the decision layers).",
         "format 1",
         "model %s" % SIDECAR_REL,
         "model_sha256 %s" % model_sha,

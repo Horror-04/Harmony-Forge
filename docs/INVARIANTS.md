@@ -6,16 +6,19 @@ cited only after verifying its `.exe` exists AND its cases register:
 build-full/tests/Release holds all 9 cited binaries;
 build-off/tests/Debug holds 8 of 9 (test_preview_synth is plugin-ON
 gated and has no off build -- stated, not fudged). Suite totals
-re-verified via `ctest -N` at the S10 close (2026-10-19): **251 tests
+re-verified via `ctest -N` at **phase-B B10 (2026-10-20): 254 tests
 (build-full/Release), 221 tests (build-off/Debug)**
-(docs/measurements/s10-final.md, section 1, rows 1-2). The **S0
-baseline** for the same two configurations was **193 tests
-(build-full/Release), 170 tests (build-off/Debug)**
-(docs/measurements/s0-test-matrix.md:10-11) -- the S0 numbers are the
-baseline, the current numbers are the gate. Per invariant, one
-"Spot-check" line names 1-2 exact Catch2 case strings personally
-verified present in BOTH suites' `ctest -N` (numbers are the observed
-full/off test numbers, re-derived at the S10 close).
+(docs/measurements/ratchet.md, the G10 row + the §7 counter table --
+the growth over the S10 close (2026-10-19: 251/221) is the 3 new B10
+ORT-only cases in tests/test_ort_logits.cpp, which live in an
+`#ifdef HARMONY_FORGE_WITH_ONNX` block and therefore move the full
+configuration only). The **S0 baseline** for the same two
+configurations was **193 tests (build-full/Release), 170 tests
+(build-off/Debug)** (docs/measurements/s0-test-matrix.md:10-11) -- the
+S0 numbers are the baseline, the current numbers are the gate. Per
+invariant, one "Spot-check" line names 1-2 exact Catch2 case strings
+personally verified present in BOTH suites' `ctest -N` (numbers are the
+observed full/off test numbers, re-derived at the S10 close).
 
 CI job for all five: `build-test-validate` (`.github/workflows/ci.yml`).
 Relevant steps: `Test` (`ctest --test-dir build -C Release
@@ -60,14 +63,17 @@ byte-identity)` (render_midi seed-7 twice + binary compare).
 
 ## INV-3: Both suites stay fully green (refactor behavior gate)
 
-`ctest` passes **251/251 in build-full/Release** and **221/221 in
-build-off/Debug** (measured 2026-10-19 at the S10 close --
-docs/measurements/s10-final.md, section 1, rows 1-2). The 30-test delta
-is option-gated only: the plugin-ON families contribute 28
+`ctest` passes **254/254 in build-full/Release** and **221/221 in
+build-off/Debug** (measured 2026-10-20 at phase-B B10 --
+docs/measurements/ratchet.md, the G10 row + the §7 counter table; the
+growth over the S10 close's 251/221 is the 3 new B10 ORT-only cases in
+tests/test_ort_logits.cpp, which are compiled out of the off
+configuration by their `#ifdef HARMONY_FORGE_WITH_ONNX` block). The
+33-test delta is option-gated only: the plugin-ON families contribute 28
 (test_chordtrack_pin 2, test_keyboard_moves 9, test_focus_resize 4,
 test_preview_synth 2, test_plugin_state 4, test_params_from_state 2,
 test_vertical_slice 1, test_rt_violation_counter 3, test_rt_soak 1) and
-the ONNX option a net 2 (3 real cases in test_ort_logits vs the 1
+the ONNX option a net 5 (6 real cases in test_ort_logits vs the 1
 offline-stub case). Release-vs-Debug contributes zero: the only
 `#ifndef NDEBUG` blocks in the test tree (4 sites, in
 tests/test_rt_violation_counter.cpp and tests/test_rt_soak.cpp) sit in
@@ -163,7 +169,7 @@ a blocking step in the `gates` and `build-test-validate` CI jobs.
 | inv2 | "model path threads into generation deterministically" — configured model path still yields identical outputs incl. async == sync |
 | inv2 | "memo filter is deterministic" — same Pattern + same index gives identical results (shared with inv4) |
 | inv3 | "keynorm flag-off generate path is bit-identical to pre-task output" — spot-check; refactor left default-path bytes unchanged |
-| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 251/251 full + 221/221 off) |
+| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 254/254 full + 221/221 off) |
 | inv4 | "verbatim run is truncated at the offending window" — spot-check; first >= 4-window run is cut before the completing token |
 | inv4 | "clean generation passes through byte-identical" — clean input untouched |
 | inv4 | "missing index file loads nullopt and never throws" — empty/missing index is a safe no-op, never throws |

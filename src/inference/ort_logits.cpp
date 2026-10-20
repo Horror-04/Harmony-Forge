@@ -107,8 +107,7 @@ void note_slot_range_rejection() noexcept {
       const char* msg =
           "[harmony-forge] the logits provider rejected a prefix: an id is "
           "outside the range of its slot (the frozen vocab layout). The call "
-          "fails; the caller falls back (greedy bytes in the production "
-          "path).\n";
+          "fails; no logits are produced for that prefix.\n";
       std::fwrite(msg, 1, std::strlen(msg), stderr);
     }
   } catch (...) {

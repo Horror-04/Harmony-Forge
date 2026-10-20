@@ -11,6 +11,15 @@
 # ort_logits.cpp): intra_op_num_threads=1, ORT_ENABLE_BASIC.
 # The capture ran on onnxruntime 1.31.0; the C++ build uses the pinned
 # prebuilt onnxruntime 1.22.0 (src/inference/CMakeLists.txt).
+#
+# NOT BIT-EXACT (MEASURED): the two runtimes are different ORT
+# releases, so 217 of the 256 captured values differ in the last bits, the
+# largest absolute gap is 2.86e-06 and the largest distance is 193 ULP;
+# the argmax (the decision vector) is IDENTICAL. The C++ side
+# therefore compares the values within a DOCUMENTED TOLERANCE of
+# 1e-04 (~35x the measured noise, ~3 orders of magnitude below any
+# real change of the model) and pins the sidecar's sha256 and the
+# argmax EXACTLY (the identity and the decision layers).
 format 1
 model training/model.logits.onnx
 model_sha256 70961f32a8debe023924c5a54290f5e3946b95776112c9c776d88ae2bed58823

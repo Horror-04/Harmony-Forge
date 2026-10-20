@@ -71,10 +71,10 @@ binding is a false acceptance.
   tools/update_golden_midi.py   the Task-2 golden MIDI files (--write)
   tools/gen_s6_3_fixtures.py    the S6.3 reference-import fixtures
   training/tests/test_ingest.py the S4b-main T2 ingest-fixture derivation
+  tests/probe_b12_bounds.cpp    the B12 editor-bounds golden (--write)
   tools/capture_ort_logits_golden.py
                                 the B10 product pin: the golden holding the
                                 committed sidecar's real output (values+sha)
-  training/export_logits.py    the committed logits sidecar binary itself
 
 What this lint does NOT prove (read this before trusting a PASS)
 ----------------------------------------------------------------
