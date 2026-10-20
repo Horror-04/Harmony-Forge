@@ -4,11 +4,12 @@
 // octave pull and the melody/bass register windows.
 //
 // This is the ONE definition site for the whole tree. Before B4a the same
-// three bodies were copy-pasted into 12 translation units
-// (`mod12` / `mod12int` / `pc_of`), 2 more places defined `octave_pull`, and
-// the four register constants were declared twice. All of those copies were
-// byte-identical duplicates of the bodies below, so the move is a pure move:
-// no constant, comparison, order or behaviour changed.
+// three bodies were copy-pasted into 12 definitions spread over 12 files
+// (`mod12` / `mod12int` / `pc_of`; one of them, detail/candidate_helpers.h,
+// was already a shared inline header), 2 more places defined `octave_pull`,
+// and the four register constants were declared twice. All of those copies
+// were byte-identical duplicates of the bodies below, so the move is a pure
+// move: no constant, comparison, order or behaviour changed.
 //
 // Header-only and `inline`, so there is no TU and no link change (same shape
 // as the `ranges.h` precedent next door: `kMiddleC` + `in_register`).

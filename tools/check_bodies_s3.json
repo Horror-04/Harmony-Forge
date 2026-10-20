@@ -21,14 +21,14 @@
     "mod12": {
       "sig": "int mod12",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 44, "end": 44},
-      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 23, "end": 23},
-      "allow": []
+      "new": {"path": "src/core/music/pitch_class.h", "start": 24, "end": 24},
+      "allow": [{"old": "int mod12(int v) {", "new": "int mod12(int v) noexcept {"}]
     },
     "octave_pull": {
       "sig": "int octave_pull",
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 71, "end": 75},
-      "new": {"path": "src/inference/detail/candidate_helpers.h", "start": 25, "end": 29},
-      "allow": []
+      "new": {"path": "src/core/music/pitch_class.h", "start": 28, "end": 32},
+      "allow": [{"old": "int octave_pull(int pitch, int lo, int hi) {", "new": "int octave_pull(int pitch, int lo, int hi) noexcept {"}]
     },
     "apply_mode": {
       "sig": "void apply_mode",
