@@ -120,7 +120,7 @@ compiles the REAL site file — `src/inference/candidate_model.cpp`, taken
 from the repo, with the repo's own include dirs (`src/inference`,
 `src/core`, `src`) — in several shapes of the `sseed` statement. It is a
 tool, not a ctest binary: no CMake target, no `ctest -N` entry (the
-counters stay 221/251), and it reads NO build tree.
+counters stay 221/254), and it reads NO build tree.
 
 Command (stdlib python + an MSVC toolchain; no venv, no build):
 
