@@ -35,6 +35,30 @@ jobs:
       - name: Layer gate (src/core JUCE-free, inference plugin-free)
         run: python tools/check_layers.py --strict
 
+      - name: JUCE build-support gate (the build INPUTS are TRACKED)
+        # Stdlib only, seconds, no build. The JUCE CMake/build-tool
+        # support tree (JUCE/extras/Build, 47 files) is a build INPUT,
+        # not a build output - but `.gitignore`'s `build*/` rule (git's
+        # ignore matching is case-insensitive on Windows) swallowed it,
+        # so it was never tracked and a fresh checkout could not
+        # configure JUCE at all. The lint asserts the key inputs are
+        # TRACKED in git (not merely present on disk), that the tracked
+        # set equals the pinned upstream count, and that the tracked and
+        # the on-disk sets agree. Blocking: non-zero fails the job.
+        run: python tools/lint_juce_build_support.py
+
+      - name: Locale-independence gate (no locale-decoded subprocess capture)
+        # Stdlib only, seconds. `subprocess.run(..., text=True)` without
+        # an explicit `encoding=` decodes the child's bytes with the
+        # LOCALE - that crashed the first GitHub Actions run on the
+        # cp1252 runner. The AST guard used to live only inside
+        # tools/tests/test_git_locale_independence.py, where the CI
+        # never executed it (the workflow has no pytest step); it now
+        # lives in this script and the test calls the script's function
+        # (one implementation, no duplicated logic). Blocking: non-zero
+        # fails the job.
+        run: python tools/lint_locale_independence.py
+
       - name: RT gate (no banned tokens in audio-path scope)
         run: python tools/rt_scan.py --strict
 
@@ -89,6 +113,12 @@ jobs:
         # venv/torch on the runner and is separate later work - it is NOT
         # smuggled in here. Blocking: a failing test fails the job.
         run: python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v
+
+      - name: CI-input gate unit test (JUCE build-support tracked)
+        # Stdlib only, seconds, no venv, no build: the unit-level proof
+        # for tools/lint_juce_build_support.py (the gate above). A
+        # scratch git repo per case; the real tree is never modified.
+        run: python -m unittest discover -s tools/tests -p "test_lint_juce_build_support.py" -v
 
       - name: File-size gate (no code file over 500 lines may appear/grow)
         # Stdlib only, seconds: tools/lint_file_size.py pins the 8 code
@@ -208,6 +238,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "render_midi (ci_a.mid) failed: exit $LASTEXITCODE" }
           .\build\tools\Release\render_midi.exe --seed 7 --bars 4 --out ci_b.mid
           if ($LASTEXITCODE -ne 0) { throw "render_midi (ci_b.mid) failed: exit $LASTEXITCODE" }
+          # EXPLICIT existence guard for BOTH renders: Get-FileHash on a
+          # missing file only fails because the runner's pwsh sets
+          # $ErrorActionPreference='stop' - a silent, unreadable reason.
+          # The determinism proof must name the file that is missing.
+          foreach ($f in @('ci_a.mid', 'ci_b.mid')) {
+            if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { throw "DETERMINISM FAIL: $f was not rendered (the file does not exist) - nothing to compare" }
+          }
           $a = (Get-FileHash -Path ci_a.mid -Algorithm SHA256).Hash
           $b = (Get-FileHash -Path ci_b.mid -Algorithm SHA256).Hash
           Write-Host "ci_a.mid sha256 = $a"

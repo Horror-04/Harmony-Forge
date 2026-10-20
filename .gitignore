@@ -1,4 +1,11 @@
 build*/
+# The JUCE CMake/build-tool support tree is a build INPUT, not a build
+# output. Git's ignore matching is case-insensitive on Windows, so the
+# `build*/` rule above also swallowed `JUCE/extras/Build/` (47 files) - a
+# fresh checkout could then never configure JUCE at all. Re-include it here
+# (the rule above stays: the real build dirs and the upstream
+# `JUCE/examples/*/Builds/` output dirs remain ignored).
+!JUCE/extras/Build/
 cmake-build*/
 out/
 DerivedData/

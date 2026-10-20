@@ -34,7 +34,11 @@ raising. The tests below:
   3. the same with the locale FORCED to cp1252 (the runner's condition):
      the lint must still work;
   4. a repo-wide GUARD: no ``tools/**/*.py`` may call subprocess with
-     ``text=True`` and no explicit ``encoding=``.
+     ``text=True`` and no explicit ``encoding=``. The guard's LOGIC lives
+     in ``tools/lint_locale_independence.py`` (a script, so the CI can
+     run it as a blocking step - while it lived only in this test, the
+     workflow never executed it); the test below calls that script's
+     function, so the rule is implemented once.
 
 NOTE on the locale knob: since Python 3.11 ``io.TextIOWrapper`` (and so
 subprocess) asks the LOCALE MODULE for the encoding - ``locale.getencoding()``
@@ -44,7 +48,6 @@ the knob that actually drives the decode, ``getpreferredencoding`` is the
 pre-3.11 knob and the one the CI failure is usually described with.
 """
 
-import ast
 import hashlib
 import json
 import locale
@@ -58,6 +61,15 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
 LINT = os.path.join(REPO_ROOT, "tools", "lint_golden_manifest.py")
 TOOLS_DIR = os.path.join(REPO_ROOT, "tools")
+
+# The AST GUARD lives in a SCRIPT (tools/lint_locale_independence.py) so
+# that it can run as a blocking CI step - while it lived only here, the
+# CI never executed it (the workflow has no pytest step). This test is
+# the unit-level proof and calls THAT script's function: the scan logic
+# exists once, in the script.
+sys.path.insert(0, TOOLS_DIR)
+
+import lint_locale_independence as LOCALE  # noqa: E402
 
 # The tracked name that broke the first CI run (Cyrillic).
 NON_ASCII_NAME = "методология.txt"
@@ -298,96 +310,18 @@ class ForcedLocalePremiseTest(unittest.TestCase):
                       "under a forced cp1252 locale")
 
 
-_SUBPROCESS_FUNCS = ("run", "Popen", "check_output", "call")
-
-
-def _imported_subprocess_names(tree) -> set:
-    """The bare names that refer to subprocess helpers (`from subprocess
-    import run`)."""
-    names = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "subprocess":
-            for alias in node.names:
-                names.add(alias.asname or alias.name)
-    return names
-
-
-def _call_kind(node, imported: set):
-    """The subprocess helper a call names, or None."""
-    func = node.func
-    if isinstance(func, ast.Attribute):
-        if isinstance(func.value, ast.Name) and func.value.id == "subprocess":
-            return func.attr
-        return None
-    if isinstance(func, ast.Name) and func.id in imported:
-        return func.id
-    return None
-
-
-def _text_mode(kwargs: dict):
-    """True when the call decodes the child's output as text."""
-    for name in ("text", "universal_newlines"):
-        if name not in kwargs:
-            continue
-        value = kwargs[name]
-        if isinstance(value, ast.Constant):
-            if value.value:
-                return True
-            continue
-        return True          # a computed value: assume text mode
-    return False
-
-
-def _has_explicit_encoding(kwargs: dict) -> bool:
-    """True when the call names an encoding that is not None."""
-    if "encoding" not in kwargs:
-        return False
-    value = kwargs["encoding"]
-    if isinstance(value, ast.Constant) and value.value is None:
-        return False
-    return True
-
-
 class SubprocessEncodingGuardTest(unittest.TestCase):
     """(4) the class of bug must not come back: every locale-decoded
-    subprocess capture names an explicit encoding."""
+    subprocess capture names an explicit encoding.
+
+    The scan itself lives in tools/lint_locale_independence.py (the CI
+    runs that script as a blocking gate); this test calls it, so the
+    rule is proven ONCE.
+    """
 
     def _violations(self):
-        found = []
-        for dirpath, dirnames, filenames in os.walk(TOOLS_DIR):
-            dirnames[:] = [d for d in dirnames
-                           if d != "__pycache__" and not d.startswith(".venv")]
-            for name in sorted(filenames):
-                if not name.endswith(".py"):
-                    continue
-                path = os.path.join(dirpath, name)
-                rel = os.path.relpath(path, REPO_ROOT).replace(os.sep, "/")
-                with open(path, encoding="utf8") as f:
-                    source = f.read()
-                tree = ast.parse(source, filename=path)
-                imported = _imported_subprocess_names(tree)
-                for node in ast.walk(tree):
-                    if not isinstance(node, ast.Call):
-                        continue
-                    kind = _call_kind(node, imported)
-                    if kind not in _SUBPROCESS_FUNCS:
-                        continue
-                    kwargs = {kw.arg: kw.value for kw in node.keywords
-                              if kw.arg is not None}
-                    splatted = any(kw.arg is None for kw in node.keywords)
-                    if splatted:
-                        found.append(
-                            "%s:%d: subprocess.%s(**...) cannot prove an "
-                            "explicit encoding" % (rel, node.lineno, kind))
-                        continue
-                    if not _text_mode(kwargs):
-                        continue
-                    if not _has_explicit_encoding(kwargs):
-                        found.append(
-                            "%s:%d: subprocess.%s decodes with the LOCALE "
-                            "(text=True without an explicit encoding=)"
-                            % (rel, node.lineno, kind))
-        return found
+        violations, _notes = LOCALE.evaluate(REPO_ROOT)
+        return violations
 
     def test_no_tool_decodes_a_subprocess_with_the_locale(self):
         violations = self._violations()
@@ -396,6 +330,27 @@ class SubprocessEncodingGuardTest(unittest.TestCase):
             "a locale-decoded subprocess capture must name an explicit "
             "encoding (encoding=\"utf-8\", errors=\"surrogateescape\"):\n"
             + "\n".join(violations))
+
+    def test_the_guard_script_flags_a_locale_decoded_capture(self):
+        # The guard must actually FIRE (a guard that cannot fail proves
+        # nothing): a synthetic tool with text=True and no encoding= is
+        # a violation, and the same file with an explicit encoding= is
+        # clean.
+        bad = ("import subprocess\n"
+               "def run(cmd):\n"
+               "    return subprocess.run(cmd, capture_output=True, "
+               "text=True)\n")
+        good = ("import subprocess\n"
+                "def run(cmd):\n"
+                "    return subprocess.run(cmd, capture_output=True, "
+                "text=True, encoding=\"utf-8\", errors=\"surrogateescape\")\n")
+        bad_hits = LOCALE.scan_source(bad, "synthetic_bad.py",
+                                      "synthetic_bad.py")
+        self.assertEqual(len(bad_hits), 1, bad_hits)
+        self.assertIn("decodes with the LOCALE", bad_hits[0])
+        good_hits = LOCALE.scan_source(good, "synthetic_good.py",
+                                       "synthetic_good.py")
+        self.assertEqual(good_hits, [], good_hits)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,10 @@
 *.gen.h text eol=lf
+# The vendored JUCE build-support tree is committed BYTE-EXACT: upstream
+# JUCE 9.0.3 stores these blobs with CRLF, so core.autocrlf would rewrite
+# them to LF and the tracked content would no longer be upstream's (the
+# sha256 of every tracked file must equal upstream's). `-text` disables
+# every EOL conversion for these paths, in both directions.
+JUCE/extras/Build/** -text
 docs/MAP.md text eol=lf
 tests/fixtures/ingest/* text eol=lf
 tests/golden/sampler_wiring.json text eol=lf
