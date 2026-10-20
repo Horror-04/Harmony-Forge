@@ -1,5 +1,6 @@
 // Copyright (C) 2026 Horror-04
 // SPDX-License-Identifier: AGPL-3.0-or-later
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 
 #include <unordered_map>
@@ -23,8 +24,6 @@ const std::unordered_map<std::string_view, std::vector<int>>& table() {
   };
   return k;
 }
-
-int mod12(int v) { return ((v % 12) + 12) % 12; }
 
 }  // namespace
 

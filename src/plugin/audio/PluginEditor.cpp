@@ -11,6 +11,7 @@
 #include "candidates.h"
 #include "core/arrangement/arrangement.h"
 #include "core/model/track_pattern.h"
+#include "core/music/pitch_class.h"
 #include "model_path.h"
 #include "PluginProcessor.h"
 
@@ -49,9 +50,8 @@ juce::String trackName(hf::core::TrackType t) {
 
 // Phase 5 Task 2: reference-report text helper (message thread only).
 juce::String refKeyName(const hf::music::KeyEstimate& k) {
-  static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
-                                   "F#", "G",  "G#", "A",  "A#", "B"};
-  const int pc = ((k.tonic % 12) + 12) % 12;
+  static const char* kNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+  const int pc = hf::music::mod12(k.tonic);
   return juce::String(kNames[static_cast<size_t>(pc)]) + " " + juce::String(k.scale);
 }
 
@@ -159,7 +159,7 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
     if (pc < 0 || typeId < 0) return;
     const auto& old = doc.chords()[static_cast<size_t>(bar)];
     // Keep the octave of the current chord, move the pitch class.
-    int root = old.root + ((pc - old.root) % 12 + 12) % 12;
+    int root = old.root + hf::music::mod12(pc - old.root);
     if (root > old.root + 6) root -= 12;
     if (root < old.root - 6) root += 12;
     root = juce::jlimit(0, 127, root);
@@ -364,7 +364,7 @@ void HarmonyForgeEditor::refreshChordRow(int bar) {
   chordBarLabel.setText("Chord bar: " + juce::String(bar), juce::dontSendNotification);
   if (bar < 0 || bar >= static_cast<int>(doc.chords().size())) return;
   const auto& ch = doc.chords()[static_cast<size_t>(bar)];
-  chordRootBox.setSelectedId(((ch.root % 12) + 12) % 12 + 1, juce::dontSendNotification);
+  chordRootBox.setSelectedId(hf::music::mod12(ch.root) + 1, juce::dontSendNotification);
   const auto types = ChordTrack::chordTypes();
   const auto it = std::find(types.begin(), types.end(), ch.type);
   chordTypeBox.setSelectedId(

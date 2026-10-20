@@ -11,6 +11,7 @@
 #include "core/model/track_pattern.h"
 #include "core/music/explain.h"
 #include "core/music/key_detect.h"
+#include "core/music/pitch_class.h"
 #include "core/music/voice_leading.h"
 
 namespace {
@@ -31,7 +32,7 @@ juce::Font bodyFont() { return juce::Font(12.0f); }
 juce::String pcName(int pitch) {
   static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
                                    "F#", "G",  "G#", "A",  "A#", "B"};
-  return kNames[static_cast<size_t>(((pitch % 12) + 12) % 12)];
+  return kNames[static_cast<size_t>(hf::music::mod12(pitch))];
 }
 
 }  // namespace

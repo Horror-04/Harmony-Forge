@@ -4,6 +4,7 @@
 
 #include "core/model/track_pattern.h"
 #include "core/music/explain.h"
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 
 namespace {
@@ -48,7 +49,7 @@ std::vector<std::string> ChordTrack::chordTypes() {
 std::string ChordTrack::chordName(const hf::core::ChordSymbol& ch) {
   static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
                                    "F#", "G",  "G#", "A",  "A#", "B"};
-  const int pc = ((ch.root % 12) + 12) % 12;
+  const int pc = hf::music::mod12(ch.root);
   return std::string(kNames[static_cast<size_t>(pc)]) + " " + ch.type;
 }
 

@@ -7,12 +7,15 @@
 
 #include "core/model/track_pattern.h"
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 
 namespace hf::core {
 namespace {
 
-int mod12(int v) { return ((v % 12) + 12) % 12; }
+// The pitch-class residue has ONE tree-wide definition
+// (core/music/pitch_class.h, phase-B B4a); re-exported here.
+using hf::music::mod12;
 
 int pc_distance(int a, int b) {
   const int d = std::abs(mod12(a) - mod12(b));

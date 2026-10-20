@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/quantizer.h"
 #include "core/music/ranges.h"
 
@@ -16,7 +17,9 @@ namespace {
 constexpr int kStrongBeatMod = 480;  // every quarter-note line at 480 PPQ
 constexpr int kGrid = 120;           // 16th-note grid at 480 PPQ
 
-int mod12(int v) { return ((v % 12) + 12) % 12; }
+// The pitch-class residue has ONE tree-wide definition
+// (core/music/pitch_class.h, phase-B B4a); re-exported here.
+using hf::music::mod12;
 
 // Nearest pitch in 0..127 whose pitch class is in `pcs` (non-empty).
 // Ties round up, mirroring ScaleDatabase::snap_to_scale.

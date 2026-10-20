@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 
 namespace hf::music {
@@ -18,8 +19,6 @@ constexpr std::array<std::string_view, 11> kScales = {
     "lydian",        "mixolydian",    "locrian",      "harmonic_minor",
     "melodic_minor", "major_pent",    "minor_pent",
 };
-
-int mod12(int v) { return ((v % 12) + 12) % 12; }
 
 }  // namespace
 

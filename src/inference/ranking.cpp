@@ -8,13 +8,16 @@
 #include <vector>
 
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/ranges.h"
 #include "core/music/scale.h"
 
 namespace hf::infer {
 namespace {
 
-int mod12(int v) { return ((v % 12) + 12) % 12; }
+// The pitch-class residue has ONE tree-wide definition
+// (core/music/pitch_class.h, phase-B B4a); re-exported here.
+using hf::music::mod12;
 
 bool is_pitched_counted(hf::core::TrackType t) {
   return t == hf::core::TrackType::Melody || t == hf::core::TrackType::Bass;

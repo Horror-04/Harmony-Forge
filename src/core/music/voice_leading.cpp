@@ -8,12 +8,11 @@
 #include <vector>
 
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/ranges.h"
 
 namespace hf::music {
 namespace {
-
-int mod12(int v) { return ((v % 12) + 12) % 12; }
 
 int sign_of(int v) { return (v > 0) - (v < 0); }
 

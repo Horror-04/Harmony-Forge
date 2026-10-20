@@ -12,12 +12,14 @@
 #include "core/model/pattern_ops.h"
 #include "core/model/track_pattern.h"
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/quantizer.h"
 
 namespace {
 
-// Residue-class helper (local copy of the constraints.cpp policy).
-int mod12int(int v) { return ((v % 12) + 12) % 12; }
+// The pitch-class residue has ONE tree-wide definition
+// (core/music/pitch_class.h, phase-B B4a); re-exported here.
+using hf::music::mod12;
 
 // Mirrors resolve_harmonic_conflicts step 3 (constraints.cpp): true when a
 // pre-resolve note sits on a strong beat (start_tick % 480 == 0) whose pitch
@@ -34,10 +36,10 @@ bool is_replace_rub(const hf::core::Note& n, const hf::core::Pattern& p,
   const auto& chord = chords[static_cast<size_t>(bar)];
   const std::vector<int> iv = hf::music::chord_intervals(chord);
   if (iv.empty()) return false;
-  const int pc = mod12int(n.pitch);
-  const int root_pc = mod12int(chord.root);
+  const int pc = mod12(n.pitch);
+  const int root_pc = mod12(chord.root);
   for (int s : iv) {
-    const int d = std::abs(pc - mod12int(root_pc + s));
+    const int d = std::abs(pc - mod12(root_pc + s));
     if (std::min(d, 12 - d) == 1) return true;
   }
   return false;

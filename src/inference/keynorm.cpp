@@ -6,21 +6,21 @@
 
 #include <string>
 
+#include "core/music/pitch_class.h"
+
 namespace hf::infer {
 namespace {
 
-constexpr int kMelodyLo = 60;  // candidates.cpp kMelodyLo/Hi
-constexpr int kMelodyHi = 84;
-constexpr int kBassLo = 24;  // candidates.cpp kBassLo/Hi
-constexpr int kBassHi = 60;
-
-int mod12(int v) noexcept { return ((v % 12) + 12) % 12; }
-
-int octave_pull(int pitch, int lo, int hi) noexcept {
-  while (pitch > hi) pitch -= 12;
-  while (pitch < lo) pitch += 12;
-  return pitch;
-}
+// The pitch-class residue, the octave pull and the melody/bass register
+// windows have ONE tree-wide definition (core/music/pitch_class.h,
+// phase-B B4a); re-exported here so the bodies below stay text-identical to
+// the pre-move originals.
+using hf::music::kBassHi;
+using hf::music::kBassLo;
+using hf::music::kMelodyHi;
+using hf::music::kMelodyLo;
+using hf::music::mod12;
+using hf::music::octave_pull;
 
 int clamp127(int v) noexcept { return v < 0 ? 0 : (v > 127 ? 127 : v); }
 
@@ -58,7 +58,7 @@ int keynorm_canonical_shift(int tonic, const std::string& scale) noexcept {
   try {
     const int cpc = keynorm_canonical_pc(scale);
     const int pc = mod12(tonic);
-    return ((((cpc - pc + 6) % 12) + 12) % 12) - 6;
+    return mod12(cpc - pc + 6) - 6;
   } catch (...) {
     return 0;
   }

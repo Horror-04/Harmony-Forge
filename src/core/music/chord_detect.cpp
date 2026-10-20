@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 
 namespace hf::music {
 namespace {
@@ -17,8 +18,6 @@ constexpr std::array<std::string_view, 16> kTypes = {
     "13",  "11",   "m9",  "9",    "maj7", "m7",  "7",   "add9",
     "6",   "m6",   "dim", "aug",  "sus2", "sus4", "maj", "min",
 };
-
-int mod12(int v) { return ((v % 12) + 12) % 12; }
 
 // Lowest input pitch carrying pitch class root_pc; falls back to a
 // 60-anchored pitch when no input pitch carries that class.

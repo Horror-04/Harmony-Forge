@@ -7,12 +7,11 @@
 #include <vector>
 
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 
 namespace hf::music {
 namespace {
-
-int pc_of(int pitch) { return ((pitch % 12) + 12) % 12; }
 
 constexpr const char* kPcNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
                                       "F#", "G",  "G#", "A",  "A#", "B"};
@@ -39,7 +38,7 @@ std::string degree_name(int d, std::string_view scale) {
 // Empty for unknown chord types.
 std::vector<int> chord_pcs(const hf::core::ChordSymbol& ch) {
   std::vector<int> pcs;
-  for (int iv : chord_intervals(ch)) pcs.push_back((pc_of(ch.root) + iv) % 12);
+  for (int iv : chord_intervals(ch)) pcs.push_back((mod12(ch.root) + iv) % 12);
   return pcs;
 }
 
@@ -55,8 +54,8 @@ int secondary_target_degree(const hf::core::ChordSymbol& ch, int tonic,
   if (ch.type != "maj" && ch.type != "7") return -1;
   const std::vector<int> iv = ScaleDatabase::intervals(scale);
   if (iv.empty()) return -1;
-  const int tonic_pc = pc_of(tonic);
-  const int root_pc = pc_of(ch.root);
+  const int tonic_pc = mod12(tonic);
+  const int root_pc = mod12(ch.root);
   auto degree_of = [&](int p) {
     const int off = (p - tonic_pc + 12) % 12;
     for (size_t i = 0; i < iv.size(); ++i)
@@ -101,7 +100,7 @@ std::string chord_function_name(const hf::core::ChordSymbol& ch, int tonic,
 
 std::string chord_explain_line(const hf::core::ChordSymbol& ch, int tonic,
                                std::string_view scale) {
-  const int root_pc = pc_of(ch.root);
+  const int root_pc = mod12(ch.root);
   const bool known = !chord_intervals(ch).empty();
   const int d = known ? ScaleDatabase::degree(ch.root, tonic, scale) : -1;
   std::string line = std::string(kPcNames[static_cast<size_t>(root_pc)]) + " " + ch.type +

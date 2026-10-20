@@ -11,6 +11,7 @@
 
 #include "core/model/note.h"
 #include "core/music/chord.h"
+#include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 #include "pcg.h"
 
@@ -20,7 +21,9 @@ namespace {
 constexpr float kTheoryFloor = 1e-6f;
 constexpr float kLogFloor = -13.815510557964274f;  // log(1e-6), as in decode.py
 
-int mod12(int v) { return ((v % 12) + 12) % 12; }
+// The pitch-class residue has ONE tree-wide definition
+// (core/music/pitch_class.h, phase-B B4a); re-exported here.
+using hf::music::mod12;
 
 int melody_id() { return static_cast<int>(core::TrackType::Melody); }  // 1
 int bass_id() { return static_cast<int>(core::TrackType::Bass); }      // 2
