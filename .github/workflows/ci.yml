@@ -10,8 +10,8 @@ on:
 
 jobs:
   gates:
-    # The enforce gates (stdlib only, seconds, no build): fail fast before
-    # configure/build/test. Three families, all blocking:
+    # The enforce gates (torch-free, seconds, no build): fail fast before
+    # configure/build/test. Four families, all blocking:
     #  * architecture/isolation — banned tokens on the audio path, the
     #    layer includes, the golden pin, the golden-manifest registry, the
     #    invariant tags, the sealed-split isolation;
@@ -21,7 +21,15 @@ jobs:
     #    CCN ratchet and the off-golden literal census. These ARE style/
     #    quality gates: they are static, fast and blocking, and every
     #    counter, exception and reason behind them is recorded in
-    #    docs/measurements/ratchet.md.
+    #    docs/measurements/ratchet.md;
+    #  * python test suites — the gates' OWN test suites: the torch-free
+    #    subset of tools/tests/ under pytest (the training-venv/torch/onnx
+    #    dependent files are excluded BY NAME) plus the two stdlib-unittest
+    #    steps (the FL dispatcher, the JUCE build-support gate). A
+    #    regression in a lint's own suite now fails the job.
+    #
+    # "torch-free" means: stdlib + the pinned pytest + the pinned lizard.
+    # The runner never gets torch, onnx or onnxruntime (no training venv).
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -108,10 +116,14 @@ jobs:
         # surface (plan_layout + the dry-run path of
         # src/companion/fl_dispatcher.py) is pinned by
         # tools/tests/test_fl_dispatcher.py (stdlib unittest, the repo's
-        # tools/tests convention). DISPATCHER-ONLY by decision D-B8: the
-        # general python test step (tools/tests/ + training/tests/) needs a
-        # venv/torch on the runner and is separate later work - it is NOT
-        # smuggled in here. Blocking: a failing test fails the job.
+        # tools/tests convention). DISPATCHER-ONLY by decision D-B8 - but the
+        # general python test step is NO LONGER "separate later work": it is
+        # implemented BELOW as "Python gate tests (the torch-free subset of
+        # tools/tests)", which runs every tools/tests file that needs no
+        # training venv (the venv/torch/onnx-dependent ones are excluded BY
+        # NAME there). The TRAINING suite (training/tests/) is still NOT run
+        # in CI: it needs the training venv + torch, which the runner does
+        # not have. Blocking: a failing test fails the job.
         run: python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v
 
       - name: CI-input gate unit test (JUCE build-support tracked)
@@ -181,21 +193,35 @@ jobs:
         # drive the TRAINING stack (training/decode.py,
         # training/evaluate.py, tools/render_model.py,
         # tools/render_batch.py), which needs the training/.venv
-        # interpreter: torch + onnxruntime (+ numpy), none of which the
-        # runner has:
+        # interpreter: torch + onnx + onnxruntime (+ numpy), none of which
+        # the runner has:
         #   test_expected_errors.py    - imports tools/render_model.py ->
-        #                                training/evaluate.py -> onnxruntime
+        #                                `import onnx` (the FIRST missing
+        #                                module) -> onnxruntime
         #   test_keynorm_ab.py        - the training stack -> torch + onnxruntime
         #   test_pressure_variants.py - the training stack -> torch + onnxruntime
         #   test_render_batch.py      - spawns tools/render_batch.py with the
-        #                                running interpreter -> onnxruntime
+        #                                running interpreter -> training/
+        #                                evaluate.py -> onnxruntime
         #   test_render_model.py      - the training stack -> torch + onnxruntime
         #   test_step1_table.py       - the training stack -> torch + onnxruntime
         # The TRAINING suite (training/tests/) is NOT run in CI for the
         # same reason: it needs the training venv + torch, which the runner
-        # does not have. The gates job stays stdlib-only.
+        # does not have. The gates job stays TORCH-FREE: stdlib + the pinned
+        # pytest + the pinned lizard - never torch/onnx/onnxruntime.
+        #
+        # MAINTAINER HINT: the --ignore= list below is EXPLICIT, so a NEW
+        # torch/onnxruntime-dependent test file under tools/tests/ is NOT
+        # silently skipped - pytest tries to COLLECT it, the import fails,
+        # and the step exits non-zero with a collection error. That is
+        # intentional: add the new file to the --ignore= list below (with
+        # its reason) to make the step green again.
         run: |
-          python -m pip install --disable-pip-version-check pytest
+          # pytest is PINNED exactly like lizard==1.24.1 (the repo's
+          # reproducibility convention): an unpinned pytest would silently
+          # re-baseline the suite's behaviour on the next release.
+          # pytest 9.1.1 needs Python >= 3.10; the runner's python is 3.12.x.
+          python -m pip install --disable-pip-version-check pytest==9.1.1
           if ($LASTEXITCODE -ne 0) { throw "pip install pytest failed: exit $LASTEXITCODE" }
           $exclude = @(
             '--ignore=tools/tests/test_expected_errors.py',
