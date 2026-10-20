@@ -187,6 +187,107 @@ TEST_CASE("ort logits fill failure is per-call, provider stays usable", "[ort_lo
   CHECK(prov.load_count() == 1);
   CHECK(prov.get_logits(pre.data(), pre.size(), lg.data()));  // good fill works
 }
+
+// B10 (phase-B tranche G, D-B10.1): the slot-range guard is a REJECTION at
+// the ORT boundary. The ranges are the frozen layout's (the generated
+// vocab_layout.gen.h): position 0 is the count head (0..kVocabMaxNotes),
+// position i>0 is body slot (i-1) % 6 with bounds [lo, hi).
+TEST_CASE("ort logits rejects a prefix that violates a named slot range", "[ort_logits]") {
+  OrtLogitsProvider prov(HARMONY_FORGE_LOGITS_MODEL);
+  REQUIRE(prov.available());
+  std::array<float, 256> lg{};
+
+  // The legal 7-id prefix (count head 1, then bar 0, subbeat 0, track 1,
+  // pitch 60, duration 4, vel_bin 4) with ONE id pushed out of range.
+  // The PITCH slot (position 4) is [0,128): 200 is outside it.
+  std::vector<int> bad_pitch = procedural_prefixes().front();
+  bad_pitch[4] = 200;
+  CHECK_FALSE(prov.get_logits(bad_pitch.data(), bad_pitch.size(), lg.data()));
+
+  // The TRACK slot (position 3) is [0,6): 6 is outside it.
+  std::vector<int> bad_track = procedural_prefixes().front();
+  bad_track[3] = 6;
+  CHECK_FALSE(prov.get_logits(bad_track.data(), bad_track.size(), lg.data()));
+
+  // The DURATION slot (position 5) is [1,65): 0 is outside it.
+  std::vector<int> bad_dur = procedural_prefixes().front();
+  bad_dur[5] = 0;
+  CHECK_FALSE(prov.get_logits(bad_dur.data(), bad_dur.size(), lg.data()));
+
+  // The VEL_BIN slot (position 6) is [0,8): 8 is outside it.
+  std::vector<int> bad_vel = procedural_prefixes().front();
+  bad_vel[6] = 8;
+  CHECK_FALSE(prov.get_logits(bad_vel.data(), bad_vel.size(), lg.data()));
+
+  // The BAR slot (position 1) is [0,16): 16 is outside it.
+  std::vector<int> bad_bar = procedural_prefixes().front();
+  bad_bar[1] = 16;
+  CHECK_FALSE(prov.get_logits(bad_bar.data(), bad_bar.size(), lg.data()));
+
+  // The SUBBEAT slot (position 2) is [0,16): 16 is outside it.
+  std::vector<int> bad_sub = procedural_prefixes().front();
+  bad_sub[2] = 16;
+  CHECK_FALSE(prov.get_logits(bad_sub.data(), bad_sub.size(), lg.data()));
+
+  // The COUNT HEAD (position 0) is 0..kVocabMaxNotes: 171 is outside it.
+  std::vector<int> bad_head = procedural_prefixes().front();
+  bad_head[0] = hf::ser::kVocabMaxNotes + 1;
+  CHECK_FALSE(prov.get_logits(bad_head.data(), bad_head.size(), lg.data()));
+
+  // The failure is PER-CALL: the provider stays loaded and usable.
+  CHECK(prov.available());
+  CHECK(prov.load_count() == 1);
+  const std::vector<int> ok = procedural_prefixes().front();
+  CHECK(prov.get_logits(ok.data(), ok.size(), lg.data()));
+}
+
+TEST_CASE("ort logits accepts every legal prefix (the slot-range guard is a no-op)",
+          "[ort_logits]") {
+  OrtLogitsProvider prov(HARMONY_FORGE_LOGITS_MODEL);
+  REQUIRE(prov.available());
+  std::array<float, 256> lg{};
+
+  // The frozen val-head prefixes and the procedural ones are all legal:
+  // the guard must not reject any of them.
+  auto fixtures = frozen_prefixes();
+  const auto procedural = procedural_prefixes();
+  fixtures.insert(fixtures.end(), procedural.begin(), procedural.end());
+  REQUIRE(fixtures.size() >= 5);
+  for (const auto& pre : fixtures) {
+    REQUIRE(prov.get_logits(pre.data(), pre.size(), lg.data()));
+  }
+
+  // The guard's boundary is EXACTLY the frozen layout's: the lowest and
+  // the highest legal id of every slot are accepted, the id just outside
+  // each bound is rejected. Slot s occupies position s+1 (position 0 is
+  // the count head).
+  for (int slot = 0; slot < hf::ser::kVocabSlotCount; ++slot) {
+    const int lo = hf::ser::kVocabSlotLo[slot];
+    const int hi = hf::ser::kVocabSlotHi[slot];
+    const std::size_t pos = static_cast<std::size_t>(slot) + 1;
+    for (int id : {lo, hi - 1}) {          // legal: inside [lo, hi)
+      std::vector<int> p = procedural_prefixes().front();
+      p[pos] = id;
+      REQUIRE(prov.get_logits(p.data(), p.size(), lg.data()));
+    }
+    for (int id : {lo - 1, hi}) {          // illegal: outside [lo, hi)
+      std::vector<int> p = procedural_prefixes().front();
+      p[pos] = id;
+      CHECK_FALSE(prov.get_logits(p.data(), p.size(), lg.data()));
+    }
+  }
+  // The count head's bounds are 0..kVocabMaxNotes.
+  for (int id : {0, hf::ser::kVocabMaxNotes}) {
+    std::vector<int> p = procedural_prefixes().front();
+    p[0] = id;
+    REQUIRE(prov.get_logits(p.data(), p.size(), lg.data()));
+  }
+  for (int id : {-1, hf::ser::kVocabMaxNotes + 1}) {
+    std::vector<int> p = procedural_prefixes().front();
+    p[0] = id;
+    CHECK_FALSE(prov.get_logits(p.data(), p.size(), lg.data()));
+  }
+}
 #else
 TEST_CASE("ort logits unavailable without ORT (offline stub)", "[ort_logits]") {
   OrtLogitsProvider prov(HARMONY_FORGE_LOGITS_MODEL);

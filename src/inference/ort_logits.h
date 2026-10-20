@@ -46,6 +46,20 @@ class OrtLogitsProvider : public ISamplerLogits {
   // never timing): 1 after a successful ctor load, else 0. Never changes
   // across `get_logits` calls.
   int load_count() const noexcept;
+  // Fills `out` with the sidecar's last-position logits row for the
+  // prefix `seq[0..n)`. `false` = the call FAILED; the failure is always
+  // per-call, never fatal and never throws.
+  //
+  // B10 slot-range guard (D-B10.1, REJECTION): before the model runs,
+  // every id of the prefix is checked against the range of the slot its
+  // position occupies (the frozen layout's kVocabSlotLo / kVocabSlotHi:
+  // position 0 is the count head 0..kVocabMaxNotes, position i>0 is body
+  // slot (i-1) % 6). An id outside its slot's range makes the call FAIL
+  // (`false`) - the same failure shape as the other invalid-input paths
+  // (provider not loaded, `out == nullptr`, `n == 0 || n > kMaxIds`,
+  // `seq == nullptr`, wrong output shape, non-finite values). The guard
+  // is a no-op on legal prefixes: the frozen val-head prefixes and the
+  // procedural ones still produce logits.
   bool get_logits(const int* seq, size_t n, float* out) noexcept override;
 
  private:

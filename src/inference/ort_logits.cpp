@@ -49,6 +49,65 @@ bool names_sidecar(const std::string& path) {
   }
 }
 
+// B10 (phase-B tranche G, D-B10.1): the slot-range guard. The provider is
+// the ORT BOUNDARY, and the sampler's FSM mask lives DOWNSTREAM of it, so a
+// prefix whose ids violate the slot ranges of the frozen vocab layout must
+// be REJECTED here (the call fails; it never returns logits for a prefix
+// that cannot be decoded). Rejection, not masking: masked-but-success would
+// report success for garbage.
+//
+// The slot INDEX comes from the sampler's own position mapping
+// (`fsm_slot_for_pos`, sampler.h) so the guard and the downstream mask can
+// never drift apart; the RANGES come from the frozen layout tables
+// (kVocabSlotLo / kVocabSlotHi in core/serialization/vocab_layout.gen.h):
+//   position 0      -> the count head (the note count, 0..kVocabMaxNotes)
+//   position i > 0  -> body slot (i - 1) % 6
+//                     (bar / subbeat / track / pitch / duration / vel_bin)
+// Bounds are [lo, hi): an id is legal iff lo <= id < hi.
+bool id_in_slot_range(size_t pos, int id) noexcept {
+  if (pos == 0) {
+    return id >= 0 && id <= hf::ser::kVocabMaxNotes;  // the count head
+  }
+  const int slot = fsm_slot_for_pos(pos);
+  if (slot < 0 || slot >= hf::ser::kVocabSlotCount) return false;
+  return id >= hf::ser::kVocabSlotLo[slot] && id < hf::ser::kVocabSlotHi[slot];
+}
+
+// True iff every id of the prefix sits inside the range of the slot its
+// position occupies. Pure, no allocation, no I/O.
+bool prefix_in_slot_ranges(const int* seq, size_t n) noexcept {
+  for (size_t i = 0; i < n; ++i)
+    if (!id_in_slot_range(i, seq[i])) return false;
+  return true;
+}
+
+// Every produced float is finite (the provider's last invalid-input check;
+// extracted so the guard's branch does not grow `get_logits`'s complexity).
+bool all_finite(const float* v) noexcept {
+  for (int i = 0; i < kSamplerVocab; ++i)
+    if (!std::isfinite(static_cast<double>(v[i]))) return false;
+  return true;
+}
+
+// One-time stderr diagnostic for a prefix the guard rejected: the abort is
+// silent otherwise, and the caller only sees "the call failed". Background
+// threads only; lock-free flag, no-throw C I/O, silent-safe fallback (the
+// same discipline as the manifest-refusal note in model_manifest.cpp).
+void note_slot_range_rejection() noexcept {
+  try {
+    static std::atomic_flag warned;
+    if (!warned.test_and_set(std::memory_order_relaxed)) {
+      const char* msg =
+          "[harmony-forge] the logits provider rejected a prefix: an id is "
+          "outside the range of its slot (the frozen vocab layout). The call "
+          "fails; the caller falls back (greedy bytes in the production "
+          "path).\n";
+      std::fwrite(msg, 1, std::strlen(msg), stderr);
+    }
+  } catch (...) {
+  }
+}
+
 std::string resolve_impl(const std::string& model_path) {
   if (model_path.empty()) return std::string{};
   if (names_sidecar(model_path)) return model_path;
@@ -153,6 +212,13 @@ bool OrtLogitsProvider::get_logits(const int* seq, size_t n, float* out) noexcep
     if (out == nullptr) return false;
     if (n == 0 || n > kMaxIds) return false;
     if (seq == nullptr) return false;
+    // B10 slot-range guard: fail closed BEFORE the model runs. A prefix
+    // that violates a slot range is an invalid input, exactly like the
+    // other invalid-input paths above (same failure shape: `false`).
+    if (!prefix_in_slot_ranges(seq, n)) {
+      note_slot_range_rejection();
+      return false;
+    }
 #ifdef HARMONY_FORGE_WITH_ONNX
     const std::lock_guard<std::mutex> lock(impl_->run_mutex);
     if (!impl_->loaded) return false;
@@ -181,8 +247,7 @@ bool OrtLogitsProvider::get_logits(const int* seq, size_t n, float* out) noexcep
     // same setup-time allowance sampler.h grants the provider).
     std::memcpy(out, data + (n - 1) * kSamplerVocab,
                 static_cast<size_t>(kSamplerVocab) * sizeof(float));
-    for (int i = 0; i < kSamplerVocab; ++i)
-      if (!std::isfinite(static_cast<double>(out[i]))) return false;
+    if (!all_finite(out)) return false;
     return true;
 #else
     return false;
