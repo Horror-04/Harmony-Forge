@@ -58,7 +58,8 @@ class DumpWorkerIdsFlagsTest(unittest.TestCase):
         if not os.path.isfile(EXE):
             self.skipTest(f"tool binary absent: {EXE}")
         proc = subprocess.run([EXE], capture_output=True, text=True,
-                              cwd=REPO_ROOT)
+                              cwd=REPO_ROOT, encoding="utf-8",
+                              errors="surrogateescape")
         self.assertEqual(proc.returncode, 2,
                          "arg-less run must print usage with exit 2")
         self.assertIn("--fsm", proc.stdout)
@@ -85,7 +86,8 @@ class DumpWorkerIdsFlagsTest(unittest.TestCase):
                      "--prefix-file", prefix,
                      "--seed", "7", "--fsm", fsm, "--strict", "ON",
                      "--out", out],
-                    capture_output=True, text=True, cwd=REPO_ROOT)
+                    capture_output=True, text=True, cwd=REPO_ROOT,
+                    encoding="utf-8", errors="surrogateescape")
                 self.assertEqual(
                     proc.returncode, 0,
                     f"seed7 fsm={fsm} must succeed: {proc.stdout[-500:]}"

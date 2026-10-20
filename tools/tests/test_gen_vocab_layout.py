@@ -41,7 +41,8 @@ def _sha(path: str) -> str:
 def _run_gen(*argv):
     return subprocess.run(
         [sys.executable, GENERATOR, *argv],
-        capture_output=True, text=True, cwd=REPO_ROOT)
+        capture_output=True, text=True, cwd=REPO_ROOT,
+        encoding="utf-8", errors="surrogateescape")
 
 
 class GenVocabLayoutTest(unittest.TestCase):
@@ -119,7 +120,8 @@ class GenVocabLayoutTest(unittest.TestCase):
             "sys.exit(1 if bad else 0)")
         proc = subprocess.run(
             [sys.executable, "-c", probe],
-            capture_output=True, text=True, cwd=REPO_ROOT)
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            encoding="utf-8", errors="surrogateescape")
         self.assertEqual(
             proc.returncode, 0,
             f"file-path spec load must not pull training/numpy/torch: "

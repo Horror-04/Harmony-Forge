@@ -208,6 +208,17 @@ def _capture_env(vcvars):
             pass
 
 
+def _env_has_msvc_paths(env) -> bool:
+    """True when `env` carries the MSVC include/lib paths.
+
+    A `cl.exe` that is only on PATH has no INCLUDE/LIB of its own: without
+    them every compile fails with "cannot open include file", which says
+    nothing about the site under test. A usable environment is the one a
+    Developer Prompt (or vcvars) sets up.
+    """
+    return bool(env.get("INCLUDE")) and bool(env.get("LIB"))
+
+
 def _cl_in_vs(vs_root):
     tools = os.path.join(vs_root, "VC", "Tools", "MSVC")
     if not os.path.isdir(tools):
@@ -219,16 +230,38 @@ def _cl_in_vs(vs_root):
     return None
 
 
+def _bare_cl(on_path):
+    """The PATH `cl` with NO set-up environment.
+
+    It cannot compile the site (no INCLUDE/LIB), but it IS the compiler the
+    machine has, so it is kept as the last resort: the probe then reports a
+    real compile attempt instead of pretending that MSVC is absent.
+    """
+    if not on_path:
+        return None, None
+    print("[sseed] NOTE: the `cl` on PATH has no INCLUDE/LIB - the "
+          "environment is not set up (a Developer Prompt or vcvars would "
+          "set it up); the compile below may fail for that reason")
+    return on_path, None
+
+
 def find_toolchain():
-    """Return (cl_path, env_or_None). (None, None) when MSVC is absent."""
+    """Return (cl_path, env_or_None). (None, None) when MSVC is absent.
+
+    A `cl` that is found on PATH is used ONLY when the environment is set
+    up (INCLUDE + LIB): a bare cl.exe has neither, and every compile would
+    then fail for a reason that has nothing to do with the site. When the
+    PATH `cl` is not usable the discovery falls through to the vswhere +
+    vcvars path, which builds a complete environment.
+    """
     if os.name != "nt":
         return None, None
     on_path = shutil.which("cl")
-    if on_path:
+    if on_path and _env_has_msvc_paths(os.environ):
         return on_path, None
     vswhere = _vswhere_path()
     if not vswhere:
-        return None, None
+        return _bare_cl(on_path)
     proc = subprocess.run(
         [vswhere, "-latest", "-products", "*", "-requires",
          "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
@@ -243,12 +276,12 @@ def find_toolchain():
             continue
         env = dict(os.environ)
         env.update(_capture_env(vcvars))
-        if "INCLUDE" not in env:
-            # vcvars did not set up the SDK include path - this install is
-            # not usable for a compile probe.
+        if not _env_has_msvc_paths(env):
+            # vcvars did not set up the SDK include/lib paths - this
+            # install is not usable for a compile probe.
             continue
         return cl, env
-    return None, None
+    return _bare_cl(on_path)
 
 
 def compiler_version(cl, env):

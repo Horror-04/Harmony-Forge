@@ -15,8 +15,7 @@ resolves in this repository.
 Tests (stdlib only, pytest/unittest): the lint passes on the repo registry;
 a clean SYNTHETIC tree passes; and each violation class fails loudly with
 the EXPECTED RULE TAG on a scratch copy (temp dirs only - the real registry
-is never mutated). Run: pytest tools/tests/ (exit 0).
-"""
+is never mutated). Run: pytest tools/tests/ (exit 0)."""
 
 import hashlib
 import json
@@ -62,8 +61,11 @@ def _write(path: str, blob: bytes) -> None:
 
 
 def _git(root: str, *args: str) -> str:
+    # The decode is EXPLICIT (never the locale): the ANSI code page RAISED
+    # inside the reader thread on a non-ASCII path.
     proc = subprocess.run(["git", "-C", root] + list(args),
-                          capture_output=True, text=True)
+                          capture_output=True, text=True,
+                          encoding="utf-8", errors="surrogateescape")
     if proc.returncode != 0:
         raise RuntimeError("git %s failed: %s" % (" ".join(args),
                                                   proc.stderr[-400:]))
@@ -74,8 +76,7 @@ def _build_tree(root: str, git: bool = True) -> str:
     """Minimal synthetic repo tree: golden + fixture + test + tool.
 
     With git=True it is a real git repo (one commit), so the lint's
-    commit-resolution check actually runs instead of being skipped.
-    """
+    commit-resolution check actually runs instead of being skipped."""
     _write(os.path.join(root, "tests", "golden", "g.txt"), GOLDEN_TXT)
     _write(os.path.join(root, "tests", "golden", "seeds", "s1.mid"), MID_BYTES)
     _write(os.path.join(root, "tests", "fixtures", "f.json"), FIXTURE_JSON)
@@ -83,10 +84,8 @@ def _build_tree(root: str, git: bool = True) -> str:
     _write(os.path.join(root, "tools", "gen_x.py"), b"print('gen')\n")
     # stubs of the tools the lint's WRITER registry binds (the rule only
     # checks that the tool PATH exists, never what it does)
-    _write(os.path.join(root, "tools", "update_golden_midi.py"),
-           b"# stub writer\n")
-    _write(os.path.join(root, "tools", "gen_s6_3_fixtures.py"),
-           b"# stub writer\n")
+    for _tool in ("update_golden_midi.py", "gen_s6_3_fixtures.py"):
+        _write(os.path.join(root, "tools", _tool), b"# stub writer\n")
     _write(os.path.join(root, "tools", "rt_scan.py"), b"# stub gate\n")
     _write(os.path.join(root, "tests", "CMakeLists.txt"),
            b"hf_add_test(test_x test_x.cpp)\n")
@@ -144,7 +143,8 @@ def _clean_manifest(commit: str) -> dict:
 def _run_lint(root: str, manifest: str):
     return subprocess.run(
         [sys.executable, LINT, "--root", root, "--manifest", manifest],
-        capture_output=True, text=True, cwd=REPO_ROOT)
+        capture_output=True, text=True, cwd=REPO_ROOT,
+        encoding="utf-8", errors="surrogateescape")
 
 
 class GoldenManifestLintTest(unittest.TestCase):

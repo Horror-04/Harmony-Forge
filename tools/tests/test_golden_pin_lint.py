@@ -29,7 +29,8 @@ MANIFEST = os.path.join(REPO_ROOT, "tests", "golden", "manifest.json")
 def _run_lint(bitmap: str, manifest: str):
     return subprocess.run(
         [sys.executable, LINT, "--bitmap", bitmap, "--manifest", manifest],
-        capture_output=True, text=True, cwd=REPO_ROOT)
+        capture_output=True, text=True, cwd=REPO_ROOT,
+        encoding="utf-8", errors="surrogateescape")
 
 
 class GoldenPinLintTest(unittest.TestCase):

@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-11
 **Status:** approved (approach B: Core + JUCE stub)
-**Sources:** `AI_MIDI_Composer_TZ.md` (product spec), `методология.txt` (5 sprints, contract-driven), `AGENTS.md` (engineering constraints), `THREADING_MODEL.md`, JUCE 9.0.3 vendored in `JUCE/`.
+**Sources:** `AI_MIDI_Composer_TZ.md` (product spec), `AI_AGENT_METHODOLOGY.txt` (5 sprints, contract-driven), `AGENTS.md` (engineering constraints), `THREADING_MODEL.md`, JUCE 9.0.3 vendored in `JUCE/`.
 
 ## 1. Goal
 

@@ -50,7 +50,8 @@ class ScanGateTest(unittest.TestCase):
         proc = subprocess.run(
             [sys.executable, os.path.join(REPO_ROOT, "tools", "rt_scan.py"),
              "--strict"],
-            capture_output=True, text=True, cwd=REPO_ROOT)
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            encoding="utf-8", errors="surrogateescape")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("RT-SCAN CLEAN", proc.stdout)
 

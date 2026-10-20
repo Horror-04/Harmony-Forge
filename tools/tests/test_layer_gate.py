@@ -88,7 +88,8 @@ class LayerGateTest(unittest.TestCase):
         proc = subprocess.run(
             [sys.executable, os.path.join(REPO_ROOT, "tools",
                                           "check_layers.py"), "--strict"],
-            capture_output=True, text=True, cwd=REPO_ROOT)
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            encoding="utf-8", errors="surrogateescape")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("LAYER CHECK CLEAN", proc.stdout)
 

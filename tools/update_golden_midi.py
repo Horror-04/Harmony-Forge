@@ -59,7 +59,11 @@ def _seed_path(seed: int) -> str:
 
 def _render(binpath: str, seed: int, bars: int, out: str) -> None:
     cmd = [binpath, "--seed", str(seed), "--bars", str(bars), "--out", out]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    # The decode is EXPLICIT (never the locale): `text=True` alone decodes
+    # the child's bytes with the ANSI code page, which RAISED inside the
+    # reader thread on a non-ASCII path.
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
+                       encoding="utf-8", errors="surrogateescape")
     if r.returncode != 0:
         raise RuntimeError("render_midi failed for seed %d: %s%s"
                            % (seed, r.stdout, r.stderr))

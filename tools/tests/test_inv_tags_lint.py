@@ -27,7 +27,8 @@ LINT = os.path.join(REPO_ROOT, "tools", "lint_inv_tags.py")
 def _run_lint(root: str):
     return subprocess.run(
         [sys.executable, LINT, "--root", root],
-        capture_output=True, text=True, cwd=REPO_ROOT)
+        capture_output=True, text=True, cwd=REPO_ROOT,
+        encoding="utf-8", errors="surrogateescape")
 
 
 class InvTagsLintTest(unittest.TestCase):

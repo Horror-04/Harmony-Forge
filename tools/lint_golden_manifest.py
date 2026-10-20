@@ -241,20 +241,24 @@ def _canonical_sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _git(root: str, *args: str, timeout: int = 60):
+    """Run git, decoding EXPLICITLY - never the LOCALE: the ANSI code page
+    (cp1252) RAISED inside the reader thread on a non-ASCII tracked path."""
+    return subprocess.run(["git", *args], cwd=root, capture_output=True,
+                          text=True, timeout=timeout, encoding="utf-8",
+                          errors="surrogateescape")
+
+
 def _git_tracked_paths(root: str):
     """Tracked repo paths via git, or None when git cannot answer."""
     try:
-        top = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"], cwd=root,
-            capture_output=True, text=True, timeout=60)
+        top = _git(root, "rev-parse", "--show-toplevel")
         if top.returncode != 0:
             return None
         if os.path.normcase(os.path.abspath(top.stdout.strip())) != \
                 os.path.normcase(os.path.abspath(root)):
             return None
-        out = subprocess.run(
-            ["git", "ls-files", "-z"], cwd=root, capture_output=True,
-            text=True, timeout=120)
+        out = _git(root, "ls-files", "-z", timeout=120)
         if out.returncode != 0:
             return None
         return {p for p in out.stdout.split("\0") if p}
@@ -268,9 +272,7 @@ def _git_state(root: str):
         return _GIT_STATE[root]
     available, shallow = False, False
     try:
-        probe = subprocess.run(
-            ["git", "rev-parse", "--is-shallow-repository"], cwd=root,
-            capture_output=True, text=True, timeout=60)
+        probe = _git(root, "rev-parse", "--is-shallow-repository")
         available = probe.returncode == 0
         if available:
             shallow = probe.stdout.strip().lower() == "true"
@@ -291,9 +293,7 @@ def _git_resolves(root: str, sha: str):
     if not available or shallow:
         return None
     try:
-        res = subprocess.run(
-            ["git", "rev-parse", "--verify", "--quiet", sha + "^{commit}"],
-            cwd=root, capture_output=True, text=True, timeout=60)
+        res = _git(root, "rev-parse", "--verify", "--quiet", sha + "^{commit}")
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
     return res.returncode == 0

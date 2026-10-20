@@ -30,6 +30,8 @@ def run_batch(*args):
         capture_output=True,
         text=True,
         cwd=str(REPO_ROOT),
+        encoding="utf-8",
+        errors="surrogateescape",
     )
 
 

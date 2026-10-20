@@ -41,7 +41,8 @@ class UpdateGoldensRefusalTest(unittest.TestCase):
         before = _sha(GOLDEN)
         proc = subprocess.run(
             [sys.executable, UPDATER, "--write"],
-            capture_output=True, text=True, cwd=REPO_ROOT)
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            encoding="utf-8", errors="surrogateescape")
         self.assertNotEqual(
             proc.returncode, 0,
             f"--write on a frozen golden must refuse (exit != 0), "
@@ -56,7 +57,8 @@ class UpdateGoldensRefusalTest(unittest.TestCase):
         # report, exit 0/1. The invariant is it never writes.
         proc = subprocess.run(
             [sys.executable, UPDATER],
-            capture_output=True, text=True, cwd=REPO_ROOT)
+            capture_output=True, text=True, cwd=REPO_ROOT,
+            encoding="utf-8", errors="surrogateescape")
         # --check is read-only: exit 0 (MATCH) or 1 (MISMATCH) both allowed
         # here; the invariant is it never writes.
         self.assertIn(proc.returncode, (0, 1))
@@ -82,7 +84,8 @@ class UpdateGoldensCiLockTest(unittest.TestCase):
         proc = subprocess.run(
             [sys.executable, UPDATER, "--write",
              "--force-frozen-rewrite", "--reason", "ci-lock probe"],
-            capture_output=True, text=True, cwd=REPO_ROOT, env=env)
+            capture_output=True, text=True, cwd=REPO_ROOT, env=env,
+            encoding="utf-8", errors="surrogateescape")
         self.assertNotEqual(
             proc.returncode, 0,
             "--force-frozen-rewrite under CI=true must refuse (exit != 0), "

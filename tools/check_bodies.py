@@ -14,9 +14,13 @@ import sys
 
 
 def repo_text_at_rev(root, rev, path):
+    # The decode is EXPLICIT (never the locale): `text=True` alone decodes
+    # the child's bytes with the ANSI code page, which RAISED inside the
+    # reader thread on a non-ASCII path.
     p = subprocess.run(
         ["git", "-C", root, "show", "%s:%s" % (rev, path)],
-        capture_output=True, text=True)
+        capture_output=True, text=True, encoding="utf-8",
+        errors="surrogateescape")
     if p.returncode != 0:
         raise SystemExit("check_bodies: git show failed for %s:%s" % (rev, path))
     return p.stdout
