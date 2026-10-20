@@ -95,8 +95,10 @@ see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag)
 | test_arrangement | full + off |
 
 Spot-check: "keynorm flag-off generate path is bit-identical to
-pre-task output" (full #214 / off #194). Also covered: "arrangement
-build is deterministic".
+pre-task output" (full #217 / off #194 -- re-derived from `ctest -N` on
+2026-10-20, after the 3 new B10 ORT-only cases moved the full
+configuration's indices by 3; the off configuration is unchanged). Also
+covered: "arrangement build is deterministic".
 
 CI: `build-test-validate`, step `Test`.
 

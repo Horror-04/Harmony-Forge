@@ -321,10 +321,11 @@ quantity (the plugin-ON Release suite); only the directory differs.
 
 **Where the numbers come from (documentary).** The counters above are the
 MEASURED pair of the final measurement pass (phase-B B10, 2026-10-20:
-221/221 off + 254/254 full); the pair before it is the S9-close run:
-`docs/measurements/s9-0.md:159` — "Config C proven blocking-green at
-close (251/251)", and `docs/INVARIANTS.md:63-66,166` — "the full registered set
-itself is the rest of this gate: `ctest` 251/251 full + 221/221 off". The
+221/221 off + 254/254 full) - the same pair
+`docs/INVARIANTS.md:66-72,174` states: "the full registered set itself is
+the rest of this gate: `ctest` 254/254 full + 221/221 off". The pair
+before it is the S9-close run: `docs/measurements/s9-0.md:159` — "Config C
+proven blocking-green at close (251/251)". The
 mapping (`build-full` = Release, `build-off` = Debug) is the
 repository's own convention (`docs/measurements/s4b-ratchet.md:8-9`,
 `docs/measurements/master-health.md:9-10` and its S7 addendum
@@ -339,7 +340,7 @@ recorded full-config/off-config pair, oldest first:
 | guardrails | 222/222 | 194/194 | `docs/measurements/master-health.md:9-10, 39` |
 | vertical-slice fix round 1 (2026-10-18) | **221/221** | **195/195** | `docs/FL_SMOKE.md:21`, `docs/MVP_GAP.md:18, 69` |
 | S7 (2026-10-19) | 249/249 | 219/219 | `docs/measurements/master-health.md:52` (S7 addendum) |
-| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159`, `docs/INVARIANTS.md:63-66,166` |
+| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159` (the S9-close record; `docs/INVARIANTS.md` quoted this pair at the time — its copy was superseded by the B10 re-pin and now reads 254/254 at `docs/INVARIANTS.md:66-72,174`) |
 | **phase-B B10 (2026-10-20) — the pair after the 3 new ORT-only cases** | **254/254** | **221/221** | this document (the G10 row + the counter table above); the growth reason: the 3 new B10 cases in `tests/test_ort_logits.cpp` are ORT-only (`#ifdef HARMONY_FORGE_WITH_ONNX`), so the off configuration does not move |
 
 **Read the two "221"s apart.** The 2026-10-18 run had 221 tests in the
