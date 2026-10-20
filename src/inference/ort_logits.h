@@ -60,7 +60,16 @@ class OrtLogitsProvider : public ISamplerLogits {
   // `seq == nullptr`, wrong output shape, non-finite values). The guard
   // is a no-op on legal prefixes: the frozen val-head prefixes and the
   // procedural ones still produce logits.
+  //
+  // This 3-arg form is the FAIL-CLOSED DEFAULT: it is the slot-checked
+  // domain. The 4-arg form takes the caller's id domain EXPLICITLY (B10,
+  // R-B10-1): in the RAW domain (the sampler's UNMASKED mode, where the
+  // ids are raw vocabulary ids and the slot ranges do not apply) the
+  // range check is skipped - the ids' own validity is the caller's
+  // business there. The domain is never inferred and never silently off.
   bool get_logits(const int* seq, size_t n, float* out) noexcept override;
+  bool get_logits(const int* seq, size_t n, float* out,
+                  LogitsIdDomain domain) noexcept override;
 
  private:
   struct Impl;

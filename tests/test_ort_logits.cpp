@@ -22,6 +22,7 @@
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -95,17 +96,15 @@ std::vector<std::vector<int>> procedural_prefixes() {
 
 // --- B10 sub-item 2: the product pin (the golden reader) -----------------
 #ifdef HARMONY_FORGE_WITH_ONNX
-//
 // The golden (tests/golden/ort_logits_values.txt) is written by
-// tools/capture_ort_logits_golden.py (the WRITER registry entry of
-// tools/lint_golden_manifest.py) and registered in tests/golden_manifest.json.
-// The reader is STRICT: an unknown key, a missing key, a malformed value or
-// a wrong row count fails loud (it never skips a row and never guesses).
+// tools/capture_ort_logits_golden.py (a WRITER of the manifest lint) and
+// registered in tests/golden_manifest.json. The reader is STRICT: an
+// unknown key, a missing key, a malformed value or a wrong row count fails
+// loud (it never skips a row and never guesses).
 struct LogitsPin {
   std::string model;          // the sidecar the capture ran on
   std::string model_sha256;   // the sidecar's identity (D-B10.2)
   std::vector<int> prefix;    // the fixed prefix the values belong to
-  int prefix_len = 0;         // the prefix's length (cross-checked)
   int argmax = -1;            // the decision vector
   std::string values_sha256;  // the digest of the values' bytes
   std::array<float, 256> values{};
@@ -146,16 +145,12 @@ bool parse_int(const std::string& s, int& out) {
 
 bool parse_int_list(const std::string& s, std::vector<int>& out) {
   out.clear();
-  std::size_t pos = 0;
-  while (pos <= s.size()) {
-    const std::size_t end = s.find(' ', pos);
-    const std::string tok = s.substr(
-        pos, (end == std::string::npos ? s.size() : end) - pos);
+  std::istringstream in(s);
+  std::string tok;
+  while (in >> tok) {
     int v = 0;
-    if (!tok.empty() && !parse_int(tok, v)) return false;
-    if (!tok.empty()) out.push_back(v);
-    if (end == std::string::npos) break;
-    pos = end + 1;
+    if (!parse_int(tok, v)) return false;
+    out.push_back(v);
   }
   return !out.empty();
 }
@@ -386,6 +381,15 @@ TEST_CASE("ort logits rejects a prefix that violates a named slot range", "[ort_
   CHECK(prov.load_count() == 1);
   const std::vector<int> ok = procedural_prefixes().front();
   CHECK(prov.get_logits(ok.data(), ok.size(), lg.data()));
+
+  // The RAW domain (B10, R-B10-1): the SAME violating prefix is NOT
+  // range-rejected - there the ids are raw vocabulary ids (the sampler's
+  // UNMASKED mode), so the slot ranges do not apply and the ids' own
+  // validity is the caller's business.
+  std::vector<int> raw = procedural_prefixes().front();
+  raw[4] = 200;  // the PITCH slot [0,128): 200 is outside it
+  CHECK(prov.get_logits(raw.data(), raw.size(), lg.data(),
+                        hf::infer::LogitsIdDomain::kRaw));
 }
 
 TEST_CASE("ort logits accepts every legal prefix (the slot-range guard is a no-op)",
@@ -406,8 +410,7 @@ TEST_CASE("ort logits accepts every legal prefix (the slot-range guard is a no-o
 
   // The guard's boundary is EXACTLY the frozen layout's: the lowest and
   // the highest legal id of every slot are accepted, the id just outside
-  // each bound is rejected. Slot s occupies position s+1 (position 0 is
-  // the count head).
+  // each bound is rejected (slot s occupies position s+1).
   for (int slot = 0; slot < hf::ser::kVocabSlotCount; ++slot) {
     const int lo = hf::ser::kVocabSlotLo[slot];
     const int hi = hf::ser::kVocabSlotHi[slot];
@@ -444,7 +447,7 @@ TEST_CASE("ort logits accepts every legal prefix (the slot-range guard is a no-o
 // values' bytes and the argmax (the decision vector). This case proves the
 // three layers: the sidecar's IDENTITY (its sha256, byte for byte), the
 // DECISION (the argmax, exact) and the VALUES (within the documented
-// tolerance - see kLogitsTol for the measured cross-ORT gap).
+// tolerance - see kLogitsTol).
 TEST_CASE("ort logits reproduces the committed sidecar's pinned logits values",
           "[ort_logits]") {
   LogitsPin pin;
@@ -459,8 +462,7 @@ TEST_CASE("ort logits reproduces the committed sidecar's pinned logits values",
   REQUIRE(model_path.size() >= pin.model.size());
   CHECK(model_path.compare(model_path.size() - pin.model.size(),
                             pin.model.size(), pin.model) == 0);
-  // The golden's own digest is consistent with its values (the file was
-  // not tampered with in a way that keeps the header honest).
+  // The golden's own digest is consistent with its values.
   CHECK(hf::infer::sha256_hex_text(values_digest_input(pin.values)) ==
         pin.values_sha256);
 

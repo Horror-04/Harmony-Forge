@@ -83,6 +83,17 @@ struct SamplerMeta {
   const MemoIndex* memo = nullptr;
 };
 
+// The ID DOMAIN of the ids a caller hands to the logits provider (B10,
+// R-B10-1). The slot ranges describe the SLOT-ENCODED vocabulary (the
+// FSM-masked domain): there every id is slot-legal by construction, so a
+// provider may range-check the prefix and fail closed. In the RAW domain
+// the ids are raw vocabulary ids (the sampler's UNMASKED mode, where the
+// FSM mask is off and a drawn id may sit outside every slot's range):
+// there the slot ranges do NOT apply - checking them would be a category
+// error, not a policy. The domain is always an EXPLICIT input; the
+// fail-closed domain is the default.
+enum class LogitsIdDomain { kSlotChecked, kRaw };
+
 // Logits provider seam (caller-owned; background threads only). Fills
 // exactly `kSamplerVocab` floats for the current id sequence. `false` =
 // failure (sampling aborts with `false`, never throws). Mirrors python
@@ -92,6 +103,18 @@ class ISamplerLogits {
  public:
   virtual ~ISamplerLogits() = default;
   virtual bool get_logits(const int* seq, size_t n, float* out) noexcept = 0;
+  // The DOMAIN-EXPLICIT form: the caller states which id domain its ids
+  // live in (see LogitsIdDomain). The default implementation keeps the
+  // 3-arg contract - a test double has no slot ranges to check - while
+  // the production provider overrides it and range-checks ONLY in the
+  // slot-checked domain. The domain is a PER-CALL input: no state, no
+  // cross-call coupling, and the 3-arg form keeps the fail-closed
+  // default.
+  virtual bool get_logits(const int* seq, size_t n, float* out,
+                          LogitsIdDomain domain) noexcept {
+    (void)domain;
+    return get_logits(seq, n, out);
+  }
 };
 
 // Caller-owned fixed working buffers (see ALLOCATION above).

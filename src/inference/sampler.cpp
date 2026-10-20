@@ -420,11 +420,19 @@ bool sample_continue(ISamplerLogits& logits, const int* prefix, size_t prefix_n,
         cfg.memo_block_run >= 1 && meta.memo != nullptr && !meta.memo->empty();
     const float t = cfg.temperature;
     const float lam = cfg.lambda_theory;
+    // B10 (R-B10-1): the id domain THIS run uses. The slot ranges
+    // describe the SLOT-ENCODED vocabulary: with the FSM mask ON every
+    // drawn id is slot-legal, so the provider range-checks the prefix
+    // (fail closed, unchanged production semantics). With the mask OFF
+    // the ids are RAW vocabulary ids (the unmasked mode), where the slot
+    // ranges do not apply. The domain is explicit, never inferred.
+    const LogitsIdDomain domain = cfg.fsm_mask ? LogitsIdDomain::kSlotChecked
+                                                : LogitsIdDomain::kRaw;
     SampleCtx ctx{meta, cfg, out, stats, scratch, floor, do_memo, t, lam, 0};
 
     for (int step = 0; step < kSamplerGenTokens; ++step) {
       if (len >= kMaxTotal) break;
-      if (!logits.get_logits(out, len, scratch.logits.data())) return false;
+      if (!logits.get_logits(out, len, scratch.logits.data(), domain)) return false;
 
       if (!cfg.use_sampling) {
         // Flag-off greedy: pure argmax of the raw logits (no masks, no

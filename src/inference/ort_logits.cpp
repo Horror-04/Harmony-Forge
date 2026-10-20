@@ -75,7 +75,14 @@ bool id_in_slot_range(size_t pos, int id) noexcept {
 
 // True iff every id of the prefix sits inside the range of the slot its
 // position occupies. Pure, no allocation, no I/O.
-bool prefix_in_slot_ranges(const int* seq, size_t n) noexcept {
+//
+// B10 (R-B10-1): the id DOMAIN decides whether the slot ranges apply at
+// all. The slot-checked domain (the default everywhere else) checks them;
+// the RAW domain does NOT - there the ids are raw vocabulary ids (the
+// sampler's UNMASKED mode) and the slot ranges do not describe them.
+bool prefix_in_slot_ranges(const int* seq, size_t n,
+                           LogitsIdDomain domain) noexcept {
+  if (domain == LogitsIdDomain::kRaw) return true;
   for (size_t i = 0; i < n; ++i)
     if (!id_in_slot_range(i, seq[i])) return false;
   return true;
@@ -207,6 +214,14 @@ int OrtLogitsProvider::load_count() const noexcept {
 }
 
 bool OrtLogitsProvider::get_logits(const int* seq, size_t n, float* out) noexcept {
+  // The 3-arg form is the FAIL-CLOSED DEFAULT (B10, R-B10-1): it is the
+  // slot-checked domain, so a caller that does not state its id domain
+  // never silently loses the range check.
+  return get_logits(seq, n, out, LogitsIdDomain::kSlotChecked);
+}
+
+bool OrtLogitsProvider::get_logits(const int* seq, size_t n, float* out,
+                                   LogitsIdDomain domain) noexcept {
   try {
     if (impl_ == nullptr || !impl_->loaded) return false;
     if (out == nullptr) return false;
@@ -215,7 +230,9 @@ bool OrtLogitsProvider::get_logits(const int* seq, size_t n, float* out) noexcep
     // B10 slot-range guard: fail closed BEFORE the model runs. A prefix
     // that violates a slot range is an invalid input, exactly like the
     // other invalid-input paths above (same failure shape: `false`).
-    if (!prefix_in_slot_ranges(seq, n)) {
+    // The RAW domain (the sampler's UNMASKED mode) is not range-checked:
+    // there the ids are raw vocabulary ids, not slot-encoded ones.
+    if (!prefix_in_slot_ranges(seq, n, domain)) {
       note_slot_range_rejection();
       return false;
     }
