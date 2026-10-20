@@ -8,9 +8,9 @@ Hybrid: Music Theory Engine (deterministic) + ONNX generative models + Constrain
 > JUCE 9.0.3 (vendored in `JUCE/`) is used under its AGPLv3 side; the
 > bundled VST3 SDK is MIT-licensed. Every recipient of a binary (installer,
 > plugin bundle, standalone app) is offered the complete corresponding
-> source under AGPLv3 via the public repository — TODO: repo URL until
-> published (see `docs/DISTRIBUTION.md` §4). Do NOT distribute binaries
-> before the source is published.
+> source under AGPLv3 via the public repository —
+> https://github.com/Horror-04/Harmony-Forge (see `docs/DISTRIBUTION.md` §4).
+> Do NOT distribute binaries before the source is published.
 
 ## Status
 

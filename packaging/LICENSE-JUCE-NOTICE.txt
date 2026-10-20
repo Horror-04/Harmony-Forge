@@ -13,8 +13,9 @@ installed alongside this notice. If you received this program as
 a binary without the source, the complete corresponding source is
 available as follows.
 
-Complete corresponding source: TODO — public repository URL until the
-source is published. See docs/DISTRIBUTION.md §4. DO NOT distribute
+Complete corresponding source: https://github.com/Horror-04/Harmony-Forge
+(the complete corresponding source of the version you received, including
+the vendored JUCE 9.0.3 tree). See docs/DISTRIBUTION.md §4. DO NOT distribute
 binaries before the source repository is public.
 
 Third-party components bundled or linked (see docs/DISTRIBUTION.md §4

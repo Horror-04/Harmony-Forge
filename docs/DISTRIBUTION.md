@@ -130,11 +130,18 @@ offering every recipient the complete corresponding source under AGPLv3,
 keeping licence notices intact (including JUCE's).
 
 - **Human step (blocking): create the public repository and push.**
-  `git remote -v` is empty — no remote exists. Until the source is
-  public at a stable URL, **no binary may be distributed** (not even to
-  testers; the R4 clean-machine install counts as distribution).
-- After publishing, replace the `TODO: repo URL` markers in `README.md`,
-  `packaging/LICENSE-JUCE-NOTICE.txt` and this section with the URL.
+  The repository now exists and is pushed:
+  `https://github.com/Horror-04/Harmony-Forge` (`origin`; `master` + the
+  `refactor/*` tags). It is created **private** — flipping it to public is
+  the remaining half of this step, and it must happen BEFORE any binary
+  distribution (not even to testers; the R4 clean-machine install counts as
+  distribution). Before the visibility flip, the sealed evaluation split must
+  leave the tracked tree (`training/corpus/sealed_test.jsonl` and
+  `training/corpus/sealed_manifest.json` are the holdout; the generator
+  `training/ingest/carve_sealed.py` stays in the repo).
+- The `TODO: repo URL` markers in `README.md`,
+  `packaging/LICENSE-JUCE-NOTICE.txt` and this section are replaced with the
+  URL above.
 - The installers surface the notice AND the full licence text (AGPL §§4/6,
   fix round 1): the Windows `.iss` shows
   `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=`, installs it next
