@@ -31,7 +31,10 @@
 #   * Standalone -> /Applications/Harmony Forge.app
 #   * onnxruntime.dylib next to the standalone app if the build tree has one
 #     (R5 parity; see the note below)
-#   * JUCE licence notice TODO(R1) -> /Library/Application Support/Harmony Forge/
+#   * JUCE licence notice (packaging/LICENSE-JUCE-NOTICE.txt, R1: the AGPL
+#     source offer carrying the public repository URL) + the full licence text
+#     (root LICENSE) -> /Library/Application Support/Harmony Forge/; both are
+#     staged unconditionally below, so `set -e` makes a missing file fatal
 #
 # NOTE (R5 parity): src/inference/CMakeLists.txt currently supports the
 # Microsoft win-x64 ONNX Runtime only (FATAL_ERROR on other platforms with

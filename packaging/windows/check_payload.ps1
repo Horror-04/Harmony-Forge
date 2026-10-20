@@ -11,9 +11,14 @@
     * the VST3 bundle module + moduleinfo.json,
     * the Standalone exe,
     * onnxruntime.dll (R5: installed next to both),
+    * the AGPL licence payload (HARD, R1 + §§4/6): the notice
+      (packaging\LICENSE-JUCE-NOTICE.txt, the AGPL source offer) and the root
+      LICENSE are present and wired into the .iss; a missing licence file is a
+      FAILURE of this check, never a note,
   plus drift guards that keep the installer script honest:
     * the installer version equals the CMake project version,
     * the .iss build dir resolves to the build tree being checked,
+    * the .iss refuses to build without the notice (ISPP #error preflight),
     * docs\SPEC.md is NOT referenced (the spec is deliberately not shipped).
 
   This is the runnable counterpart of the ISPP preflight inside the .iss (which
@@ -147,7 +152,30 @@ if ($iss -match '(?m)^\s*#define\s+LicenceFull\s+"([^"]+)"') {
 Add-Result '.iss ships root LICENSE to {app} (AGPL §§4/6)' $licenceFullOk $licenceFullDetail
 Add-Result 'shipped LICENSE byte-identical to root LICENSE' $licenceHashOk $licenceHashDetail
 
-# --- 5. Informational (never fails this check) --------------------------------
+# --- 5. JUCE licence notice (R1, HARD): the notice is the AGPL source offer ---
+# R1 is resolved (AGPLv3): packaging\LICENSE-JUCE-NOTICE.txt is committed and
+# names the public repository URL, i.e. it IS the AGPL §13 source offer. A
+# missing notice therefore fails this check -- it is not an informational note.
+$noticeExists = Test-Path -LiteralPath $licencePath -PathType Leaf
+Add-Result 'packaging\LICENSE-JUCE-NOTICE.txt exists (R1)' $noticeExists $licencePath
+
+$noticeWiredOk = $false
+$noticeWiredDetail = 'no #define LicenceNotice found in .iss'
+if ($iss -match '(?m)^\s*#define\s+LicenceNotice\s+"([^"]+)"') {
+  $noticeIssFile = [System.IO.Path]::GetFullPath((Join-Path $scriptDir $Matches[1]))
+  $shown     = $iss -match 'LicenseFile=\{#LicenceNotice\}'
+  $installed = $iss -match '(?m)^\s*Source:\s*"\{#LicenceNotice\}"\s*;\s*DestDir:\s*"\{app\}"'
+  $noticeWiredOk = (Test-Path -LiteralPath $noticeIssFile -PathType Leaf) -and $shown -and $installed
+  $noticeWiredDetail = "define=$noticeIssFile; LicenseFile=$shown; shipped-to-{app}=$installed"
+}
+Add-Result '.iss shows + ships the notice to {app} (R1)' $noticeWiredOk $noticeWiredDetail
+
+# The installer itself must refuse to build without the notice (ISPP #error).
+$noticePreflightOk = ($iss -match '(?m)^\s*#if\s*!FileExists\(LicenceNotice\)\s*$') -and `
+                     ($iss -match '(?m)^\s*#error\s+"[^"]*LICENSE-JUCE-NOTICE\.txt')
+Add-Result '.iss refuses to build without the notice (#error)' $noticePreflightOk '(drift guard)'
+
+# --- 7. Informational (never fails this check) --------------------------------
 $iscc = $null
 $cmd = Get-Command iscc.exe -ErrorAction SilentlyContinue
 if ($cmd) { $iscc = $cmd.Source }
@@ -161,11 +189,6 @@ if (-not $iscc) {
 }
 $informational = New-Object System.Collections.Generic.List[string]
 $informational.Add("iscc (Inno Setup compiler): " + $(if ($iscc) { $iscc } else { 'NOT FOUND - installer build is a human step, see packaging\windows\README.md' }))
-if (Test-Path -LiteralPath $licencePath) {
-  $informational.Add("licence notice: found ($licencePath) - it will be included automatically")
-} else {
-  $informational.Add("licence notice: MISSING (TODO(R1)) - packaging\LICENSE-JUCE-NOTICE.txt is created by the human after the licence decision; the installer builds without it until then, do NOT distribute")
-}
 
 # --- Report -------------------------------------------------------------------
 $failed = @($results | Where-Object { -not $_.Ok }).Count -gt 0

@@ -156,9 +156,13 @@ keeping licence notices intact (including JUCE's).
   to the Standalone exe together with a byte-identical copy of the root
   `LICENSE` (`#define LicenceFull "..\..\LICENSE"` + ISPP `#error`
   preflight if missing); `packaging/macos/build_pkg.sh` stages both files
-  to `/Library/Application Support/Harmony Forge/`. `check_payload.ps1`
-  enforces this with HARD checks (LICENSE shipped to `{app}` + SHA256
-  hash-compare against root LICENSE) plus the notice INFO line.
+  to `/Library/Application Support/Harmony Forge/`. The notice is committed
+  and REQUIRED, not a to-do: its repository-URL line is the AGPL §13 written
+  offer of the complete corresponding source, the `.iss` refuses to build
+  without it (ISPP `#error`), and `check_payload.ps1` fails if the notice is
+  missing or no longer wired into the `.iss`; that script HARD-checks the
+  licence text as well (shipped to `{app}` + SHA256 hash-compare against the
+  root `LICENSE`).
 
 ### Trademark compliance
 
@@ -182,21 +186,26 @@ keeping licence notices intact (including JUCE's).
 | Catch2 (tests only, FetchContent; never shipped) | BSL-1.0 | AGPL-compatible; test-only dependency |
 | Training dependencies (`training/`, Python/ML stack) | BSD-style (permissive) | model weights/corpus must not contradict AGPL on distribution — reviewed at Phase 3 merge |
 
-### Installer-notice wiring (verified 2026-10-12; full-text payload since fix round 1)
+### Installer-notice wiring (verified 2026-10-12; full-text payload since fix round 1; notice hard-required)
 
 Both installers ship the notice AND a byte-identical copy of the root
 `LICENSE` (AGPL ss4/6), so every binary recipient gets the licence text:
 
 - `packaging/windows/harmony_forge.iss`: `#define LicenceNotice "..\LICENSE-JUCE-NOTICE.txt"`
-  (relative to `packaging\windows\`) + `LicenseFile={#LicenceNotice}` in `[Setup]`
-  + conditional `[Files]` entry (`HaveLicenceNotice`), plus
-  `#define LicenceFull "..\..\LICENSE"` (two up = repo root) with an ISPP
-  `#error` preflight if missing and an unconditional `[Files]` entry
-  shipping it to `{app}` next to the Standalone exe.
-- `packaging/windows/check_payload.ps1`: `$licencePath = ...(packaging)\LICENSE-JUCE-NOTICE.txt`
-  (INFO line; never fails the check), plus HARD checks that fail the run:
-  `.iss ships root LICENSE to {app}` (define resolves + `Source` line present)
-  and `shipped LICENSE byte-identical to root LICENSE` (SHA256 hash-compare).
+  (relative to `packaging\windows\`; committed since R1) + `LicenseFile={#LicenceNotice}`
+  in `[Setup]` + an unconditional `[Files]` entry shipping it to `{app}` next
+  to the Standalone exe. A missing notice is a hard ISPP
+  `#if !FileExists(LicenceNotice)` / `#error` preflight failure, so `iscc`
+  refuses to build a notice-less installer. `#define LicenceFull "..\..\LICENSE"`
+  (two up = repo root) gets the same `#error` preflight; its `[Files]` entry
+  is unconditional and ships the full licence text to `{app}`.
+- `packaging/windows/check_payload.ps1`: HARD checks that all fail the run —
+  the notice exists (`$licencePath = ...(packaging)\LICENSE-JUCE-NOTICE.txt`),
+  the `.iss` shows it (`LicenseFile={#LicenceNotice}`), ships it to `{app}`
+  and carries the `#error` preflight, `.iss ships root LICENSE to {app}`
+  (define resolves + `Source` line present) and `shipped LICENSE
+  byte-identical to root LICENSE` (SHA256 hash-compare). A missing notice is
+  a FAIL, never an informational line.
 - `packaging/macos/build_pkg.sh`: `NOTICE_SRC="${ROOT_DIR}/packaging/LICENSE-JUCE-NOTICE.txt"`
   and root `LICENSE` both staged to `/Library/Application Support/Harmony Forge/`
   (`set -e` makes a missing file fatal, matching the Windows preflight).
