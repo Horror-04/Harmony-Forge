@@ -70,13 +70,10 @@ binding is a false acceptance.
 
   tools/update_golden_midi.py   the Task-2 golden MIDI files (--write)
   tools/gen_s6_3_fixtures.py    the S6.3 reference-import fixtures
-  training/tests/test_ingest.py the S4b-main T2 ingest-fixture derivation:
-                                the `python -c` block documented in
-                                tests/fixtures/README.md, which materialises
-                                the four tests/fixtures/ingest/* files from
-                                the literals that lived in that module at
-                                commit 906f623 (the `gen:` command checks
-                                that commit out first).
+  training/tests/test_ingest.py the S4b-main T2 ingest-fixture derivation
+  tools/capture_ort_logits_golden.py  the B10 product pin (the golden:
+                                the committed sidecar's real output + sha256)
+  training/export_logits.py    the committed logits sidecar binary itself
 
 What this lint does NOT prove (read this before trusting a PASS)
 ----------------------------------------------------------------
@@ -162,6 +159,9 @@ WRITERS = {
     "tests/probe_b12_bounds.cpp": (
         "tests/golden/b12_editor_bounds.json",
     ),
+    # B10 guard: the product pin (the golden) and the sidecar binary.
+    "tools/capture_ort_logits_golden.py": ("tests/golden/ort_logits_values.txt",),
+    "training/export_logits.py": ("training/model.logits.onnx",),
 }
 
 # Rule-4 exclusion list: files that live under tests/golden/** or
