@@ -544,6 +544,30 @@ what the ranker scores, and what the conflict resolver repairs — the
 divergence is invisible in the output because the paths disagree rather
 than fail.
 
+> **RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`,
+> commits `587dd6e` + `09eab98`) — B4a only.** The duplicated *pitch-class
+> helpers* now have ONE home, `src/core/music/pitch_class.h` (header-only,
+> `inline`, JUCE-free, per D-B4): the 12 named `mod12`/`mod12int`/`pc_of`
+> definitions, both `octave_pull` definitions, the duplicated register
+> constants (`kMelodyLo/kMelodyHi/kBassLo/kBassHi`) and the inline expression
+> sites were folded into it. A **body-equality census ran FIRST**: all 12+2+2
+> bodies were identical (`((x % 12) + 12) % 12` etc.), so every copy moved;
+> the `pc_of`/`mod12int` names were standardised to `mod12` at every call
+> site. The greps now return exactly one definition per spelling. No pinned
+> byte moved (576/576 cube-v3 render_midi rows, 128/128 worker cells,
+> boundary sha `8466a0d6…` unchanged); ctest 221/221 + 251/251 at the time.
+> The two strong-beat sites were left byte-identical, and the third
+> (`constraints.cpp`) too.
+> **B4b stays product-grade** (deliberately NOT implemented): the
+> strong-beat predicate is not one predicate but three different
+> computations — `ranking.cpp:25` `strong_beat_rub` (bar-indexed
+> pitch-class-distance-1), `sampler.cpp` `strict_core` (the codec's grid
+> proxy `((sub % 4) + 4) % 4 == 0`) and `constraints.cpp` (its own resolution
+> pass) — unifying them changes semantics, so it needs a product decision.
+> Residual: the pitch-class **name** tables (`kNames`/`kPcNames`, 4 copies)
+> are still duplicated — they are name tables, not pitch-class helpers, and
+> are the obvious next consolidation.
+
 ---
 
 ## B5 — `src/inference/sampler.cpp` complexity hotspot (CCN 68)
@@ -1220,6 +1244,37 @@ reports success for it. And the real output of the shipped logits sidecar is
 pinned by nothing: a sidecar that silently changed (a different export, a
 different graph surgery) would move every sampled byte and no artifact in
 the repository would notice.
+
+> **RESOLVED 2026-10-19 (phase-B tranche G, branch `refactor/phase-b-b10`,
+> commits `1a37a36` + `57f850c` + `f2ed70d` + `ab5ce0d` + `dc2ec04` +
+> `ec4b0c4`).** Item 1 — the **slot-range guard** is at the ORT boundary
+> (`src/inference/ort_logits.cpp`): every prefix id is checked against the
+> frozen slot range of the position it occupies (the count head's own
+> `0..170` bound for position 0, `kVocabSlotLo`/`kVocabSlotHi` for the slot
+> the sampler's own `fsm_slot_for_pos` masked), and a violation is a
+> **rejection** (`false`, the provider's existing invalid-input shape) per
+> D-B10.1 — not a mask. The guard is **domain-explicit** (ruling R-B10-1): it
+> applies in the slot-checked id domain, which is the DEFAULT; the sampler's
+> unmasked (`fsm_mask=false`) diagnostic mode runs in the raw-vocabulary
+> domain, where slot ranges do not apply (an id of `0` in the duration
+> position is legal raw vocabulary). Production is unaffected and stays
+> fail-closed (`production_sampler_cfg()` always sets `fsm_mask=true`); the
+> `--fsm OFF` diagnostic reproduces its committed fixture bytes
+> (`AAE4BEC2…`) unchanged. Item 2 — the **product pin** on the committed
+> sidecar: `tests/golden/ort_logits_values.txt`, written by the real capture
+> tool `tools/capture_ort_logits_golden.py` (registered in the manifest lint's
+> WRITER registry with an explicit artifact binding), holds the sidecar's
+> sha256, the argmax (exact), the values' digest and the values themselves.
+> The values are **NOT bit-exact** and the golden says so: the C++ provider
+> runs ORT **1.22.0** while the capture runs ORT **1.31.0**, and 217 of the
+> 256 values differ in the last bits (max |Δ| 2.86e-06, max 193 ULP) — the
+> documented tolerance is 1e-4, the argmax is identical. A sidecar swap is
+> caught twice over (the identity check on the committed file + the values).
+> No pinned byte moved (wiring digests, seed-binding digests, cube v3 rows,
+> golden MIDI seeds — all identical to the base). The 3 new ORT-only cases
+> raise the registered count to **254/254** (build-full) / **221/221**
+> (build-off); the ratchet and INVARIANTS counters were updated with the
+> growth reason.
 
 ---
 
