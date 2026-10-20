@@ -60,6 +60,8 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 23 records (capture=15, gen=7, mixed=1) | yes |
 | G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block) | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
+| G12 | Editor total budget | `python tools/lint_editor_budget.py` | the Editor's OWN file set — `src/plugin/audio/PluginEditor.h` + `src/plugin/audio/PluginEditor.cpp` (the set `docs/measurements/s9-0.md` Appendix D measures for the D-B12 ceiling) | RATCHET (a pinned file SET + a pinned ceiling: **1102** = the recorded budget 1050 + the D-B12 +5 % tolerance; 1050 × 1.05 = 1102.5 → 1102 for integer line counts) | **1100** physical lines (293 + 807) → **2 lines of headroom**; the tolerance IS exercised (1100 > the recorded 1050) | yes (`gates` job) |
+| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **272 files, 1348 symbols** (42506 bytes), regenerated + verified in the G12 commit | yes (`gates` job) |
 
 **The P-series (P1-P5) — the two runtime probes and the three CI steps added
 by the phase-B tranches.** They sit OUTSIDE the G-series on purpose: the
@@ -76,7 +78,7 @@ push?
 | P2 | S93 tab-wiring guard | `cmake --build build-plugdbg --config Debug --target probe_s93_tab_wiring` then `.\build-plugdbg\tests\Debug\probe_s93_tab_wiring.exe` **run from the repo root** | the REAL editor's Edit/Explain tab buttons, found through PUBLIC child APIs only (no new accessors, no product change) | HARD — 11 wiring assertions (button present, viewports found and distinct, the visible view really switches and switches back) | **ALL-PASS (0 failures)** | **NO** — not `catch_discover_tests`-registered (never in `ctest -N`). **CI integration is FUTURE WORK** (ruling S93-3) |
 | P3 | FL-dispatcher unittest (CI step) | `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v` — the CI step "FL companion dispatcher test (pure path)" in the `gates` job | the companion's PURE path only: `plan_layout` + the dry-run path of `src/companion/fl_dispatcher.py` (no FL Studio, no venv) | HARD — the plan for `DEFAULT_LAYOUT` and the rejection of a malformed layout entry are pinned | PASS (the step runs on every push) | **YES** — the `gates` job; a failing test fails the job (D-B8: dispatcher-only step now; the general python-test step landed later as P5) |
 | P4 | sseed compiler probe (CI step) | `python tools/c2059_probe/probe_c2059.py --require-msvc` — the CI step "sseed probe (real-TU compile witness)" in the `build-test-validate` job | the REAL `src/inference/candidate_model.cpp` TU, compiled EIGHT ways (site as-is + three well-formed forms + four recorded malformed forms) | HARD — a malformed form that compiles, a well-formed form that does not, or a fact that no longer holds fails the job; the verdict RETIRE (a well-formed one-line form stopped compiling) also fails | PASS | **YES** — the `build-test-validate` job (it needs the MSVC toolchain that job already requires; the `gates` job stays stdlib-only) |
-| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **121 passed, 0 skipped, 27 subtests** (measured 2026-10-20 with the runner's profile: the system python, no torch; 121 of the 178 collected tests) | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
+| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **121 passed, 0 skipped, 27 subtests** (measured 2026-10-20 with the runner's profile: the system python, no torch; 121 of the 178 collected tests). The count GROWS with the suite and is NOT a ratchet: the G12 gate's own test file adds **7** cases (`tools/tests/test_lint_editor_budget.py`), i.e. this subset is then 121 + 7 = **128** (re-measured 2026-10-21 with the same profile: 126 passed + 2 skipped = 128 — the 2 skips are the `dump_worker_ids.exe` cases, skipped because THIS tree has no `build-full`; the recorded run's "0 skipped" had that build tree present) | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
 
 **The two probes are NOT ctest-registered, and that is deliberate.** Both
 are plain `main()` binaries in `tests/CMakeLists.txt` behind
@@ -441,3 +443,138 @@ the ratchet is "must not drop").
    blocking one** (and the now-stale advisory step was removed from the
    build job): its exit code became meaningful with the hard-zero
    categories and the per-file ratchet.
+8. **G12 sums the D-B12 PAIR, not all four Editor files.** Appendix D
+   measures the entity twice: its physical-line rows count
+   `src/plugin/audio/PluginEditor.{h,cpp}` (293 + 807 = 1100 — the number
+   the ceiling is stated on), while its function/CCN rows are headed
+   "(4 files)" (adding the extracted layout unit: 48 functions, CCN 140).
+   The BUDGET is stated on the pair (1050 was derived from the
+   PRE-extraction pair, 1370 − ~350), so the gate sums the pair and
+   reports the layout unit as a NOTE that enforces nothing. Summing all
+   four would be 1528 — 426 above a ceiling no one recorded — so the
+   four-file sum is REPORTED, never enforced. Corollary, stated so it is
+   not read as a check that exists: no budget covers the extracted
+   `EditorLayout.{h,cpp}` pair, and no gate sums it.
+9. **G12 does not re-judge the Editor's max-CCN.** The `.cpp` CCN 13 is
+   the ACCEPTED exception of G3 (ruling S93-1; the pin-free prune note in
+   `tools/lint_ccn.py`); the budget's "≤9" is history. A gate that failed
+   on 13 would be a second, contradictory verdict on a number the owner
+   already accepted, so the total gate stays out of it.
+
+---
+
+## 10. G12 — the Editor total budget (`tools/lint_editor_budget.py`)
+
+**Rule.** RATCHET, with BOTH sides pinned in the tool: the FILE SET and the
+CEILING (1102). The summed total may not GROW past the ceiling; a smaller
+total is reported, never a failure. Two deliberate differences from the
+G1/G3/G4 convention ("a pinned entry that disappears or shrinks is a NOTE"):
+a member of the SET that disappears (or cannot be read) is a **VIOLATION**
+here — the total would silently SHRINK, which is the one failure mode a sum
+cannot see; and the shrink itself needs no NOTE because the tool prints the
+per-file counts, the total and the headroom on EVERY run (a shrink shows up
+as a bigger headroom).
+
+**Scope.** The Editor's OWN sources — `src/plugin/audio/PluginEditor.h` +
+`src/plugin/audio/PluginEditor.cpp`: the `.h+.cpp` pair D-B12's ceiling
+quantity names and the pair `docs/measurements/s9-0.md` Appendix D measures
+for it. That pair is the whole reason the gate exists: Appendix D states
+PLAINLY that before it, "there is **no gate anywhere in this repository
+that sums the Editor's lines across files**" — G1 pins files INDIVIDUALLY,
+so the four-file Editor could grow past its total budget while every file
+stayed under 500 lines.
+
+**Method.** Python line count over the file BYTES (`count(b"\n")` plus a
+trailing partial line) — the same method as G1, Appendix B and Appendix D.
+NEVER `Measure-Object -Line` (it counts only non-empty lines: 975 for the
+1046-line `PluginEditor.cpp`).
+
+**Current value (2026-10-21).** `PluginEditor.h` 293 + `PluginEditor.cpp`
+807 = **1100** physical lines ≤ ceiling **1102** → PASS, **2 lines of
+headroom**. The tolerance is EXERCISED: 1100 is 50 lines above the recorded
+budget 1050, and it is the +5 % allowance that carries it — exactly the
+situation Appendix D records ("the tolerance is exercised (1100 > 1050, so
+the plain ceiling alone would NOT have been met)").
+
+**Provenance of the ceiling (D-B12 + Appendix D).** The budget is D-B12's
+re-scoped one: "Editor total (.h+.cpp) ≤1050 physical lines AND .cpp
+max-CCN ≤9" with "a +5 % record-with-reason tolerance instead of churn"
+(`docs/BACKLOG-phase-B.md`, D-B12, 2026-10-19 scope (b)/(c)); the
+post-extraction measurement that met it is `docs/measurements/s9-0.md`
+Appendix D (**1100 ≤ 1050 × 1.05 = 1102.5**, "2 lines of headroom"). For
+integer line counts "at or under 1102.5" is exactly "at or under 1102",
+which is why the enforced ceiling is the integer 1102.
+
+**What the gate does NOT check (stated in the tool's docstring too).**
+
+* the per-file 500-line rule — that is G1 (`tools/lint_file_size.py`),
+  which pins `PluginEditor.cpp` at 807, the one file of this set above 500
+  lines;
+* the Editor's max-CCN — that is G3 (`tools/lint_ccn.py`). The budget's
+  ".cpp max-CCN ≤9" misses at an ACCEPTED **13**, recorded with its reason
+  (ruling S93-1); this gate does not re-judge it;
+* the extracted layout unit `src/plugin/ui/EditorLayout.{h,cpp}` — it sits
+  BESIDE the editor (the D-B12 ownership ruling) and NO budget covers it, so
+  none is enforced; its count is REPORTED as a NOTE on every run (141 + 287
+  = **428** lines at this commit) so the residual stays visible;
+* functions / NLOC / CCN of the entity (the "(4 files)" rows of Appendix D)
+  — those are measurements, not budgets;
+* editor code MOVED OUT of the set into a NEW file — the set is pinned, so a
+  fifth editor file passes this gate. Growing the set is an explicit edit of
+  the tool + this document in the SAME commit.
+
+**Enforcement.** Blocking in the `gates` job of `.github/workflows/ci.yml`
+("Editor total-budget gate (the D-B12 total ceiling, summed across the
+Editor's files)"); stdlib only, seconds, no build, so it needs none of the
+job's pinned dependencies. The unit-level proof is
+`tools/tests/test_lint_editor_budget.py` (7 cases: an over-budget tree
+fails, the boundary 1102-passes/1103-fails, a missing member fails, the
+real tree passes with its total reported, and `main()`'s exit codes 1/0).
+
+**How a future executor updates the number.** Measure with this tool's own
+method (its printed per-file counts ARE that measurement), then edit
+`EDITOR_FILES` / `BUDGET` / `CEILING` in the tool with the one-line reason
+and record the new value HERE, in the SAME commit (the pin lives in the
+tool, so no manifest-style co-edit can pass silently).
+
+---
+
+## 11. G13 — MAP freshness (`tools/gen_map.py --check`)
+
+**Rule.** HARD. The TRACKED `docs/MAP.md` must equal, byte for byte, what
+the generator produces for the tree as it stands. There is no counter to
+grow and no exception list.
+
+**Scope.** `docs/MAP.md` against the tree the generator walks: `src/`,
+`tools/`, `tests/`, `training/` (`.h/.hpp/.cpp` + `.py`). The deny-paths
+(`JUCE/`, `external/`, `*.onnx`, `training/corpus/sealed_test.jsonl`,
+`build*/`) and the environment trees (`.venv*`, `venv`, `__pycache__`,
+`.pytest_cache`, `node_modules`, `.git`) are never scanned —
+`docs/AGENT_PERMISSIONS.md` is the permission record, and the map's own
+header repeats it.
+
+**Current value.** FRESH — **272 files, 1348 symbols** (42506 bytes),
+regenerated and verified in the G12/G13 commit. The map MOVED in that
+commit (it was 270 files / 1340 symbols): the two new files of this wave,
+`tools/lint_editor_budget.py` and `tools/tests/test_lint_editor_budget.py`,
+are exactly the delta.
+
+**Why the row exists at all.** AGENTS.md names "verify with `--check`" as
+the MAP's own step, but that check had NEVER run in CI, so a map left stale
+by a rename/add/delete was invisible until someone ran it by hand. It is now
+a blocking step in the `gates` job ("MAP freshness gate (docs/MAP.md is
+generated - regenerate, never hand-edit)").
+
+**How a future executor fixes a red run.** Regenerate
+(`python tools/gen_map.py`) and commit the result — NEVER hand-edit
+`docs/MAP.md`; the file says so in its own header, and the `eol=lf`
+attribute in `.gitattributes` keeps the tracked bytes identical on every
+platform.
+
+**What it does not check.** That the map's SYMBOL extraction is complete:
+the rule is best-effort and single-line (C++ namespaces/classes/structs/enums
++ `TEST_CASE` suites, python top-level `def`/`class`, 30 symbols per file
+before the "(+N more)" marker), so a construct the extractor cannot see is
+absent from the map without failing this gate. It also says nothing about
+the CONTENT of the files it lists: it compares the map against the tree,
+not the tree against anything.
