@@ -55,6 +55,25 @@ tests              Catch2 (test_theory, test_tokenizer, test_constraints)
 JUCE/              vendored JUCE 9.0.3
 ```
 
+## What this repository contains
+
+- **The plugin and the engine** — `src/`, `tests/`, `tools/` (this is the
+  product; see `docs/SPEC.md`).
+- **JUCE 9.0.3 vendored in-tree** (`JUCE/`) under its AGPLv3 side, with the
+  MIT-licensed VST3 SDK — that is why the tree carries ~4.8k upstream files.
+- **The evaluation corpus** (`training/corpus/*.jsonl`) — Mutopia + OpenScore
+  material, CC0 / public domain, admitted through a per-file LICENSE-FIRST
+  gate (`training/ingest/bulk_run.py`). It is small (a few MB) and it is what
+  the model was trained and evaluated on.
+- **Trained sidecars** (`training/model*.onnx`) — the project's own exported
+  models; the bulk checkpoints stay local (`.gitignore`).
+
+The "sealed" evaluation split (`training/corpus/sealed_test.jsonl`) is a
+*partition of that same corpus*, not a secret store: its rows are present in
+the tracked bulk files, so it protects against accidental reuse inside a
+single run, not against a public reader. See `docs/DISTRIBUTION.md` §4 for
+the distribution preconditions.
+
 ## Real-time safety (AGENTS.md)
 
 No alloc / lock / I-O / inference in `processBlock`. GUI/Inference → Audio only via

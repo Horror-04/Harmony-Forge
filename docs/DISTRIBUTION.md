@@ -135,10 +135,18 @@ keeping licence notices intact (including JUCE's).
   `refactor/*` tags). It is created **private** — flipping it to public is
   the remaining half of this step, and it must happen BEFORE any binary
   distribution (not even to testers; the R4 clean-machine install counts as
-  distribution). Before the visibility flip, the sealed evaluation split must
-  leave the tracked tree (`training/corpus/sealed_test.jsonl` and
-  `training/corpus/sealed_manifest.json` are the holdout; the generator
-  `training/ingest/carve_sealed.py` stays in the repo).
+  distribution).
+  **What is in the tree, for the flip decision.** The evaluation corpus is
+  tracked (`training/corpus/*.jsonl`) and is CC0 / public-domain (Mutopia +
+  OpenScore, admitted through the per-file LICENSE-FIRST gate). The "sealed"
+  holdout (`training/corpus/sealed_test.jsonl`, 118 rows) is a *partition of
+  that same corpus* — 87/106 of `bulk_lieder.jsonl`, 25/33 of
+  `bulk_mutopia.jsonl` and 6/23 of `bulk_quartet.jsonl` ARE holdout rows, so
+  un-tracking the split file would NOT keep the holdout out of a public
+  repository. The flip therefore carries a research-integrity consequence
+  (an outside reader can reconstruct the holdout and tune against it) and no
+  licensing or user-data consequence. Keep the repository private until that
+  trade is made deliberately.
 - The `TODO: repo URL` markers in `README.md`,
   `packaging/LICENSE-JUCE-NOTICE.txt` and this section are replaced with the
   URL above.
