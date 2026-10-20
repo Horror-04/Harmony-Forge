@@ -28,7 +28,10 @@
 // crashes in ctor/resized/teardown), this guard fails with the error
 // evidence — the editor is NOT re-architected to make it pass.
 //
-// Deliberately NOT registered with catch_discover_tests (never in `ctest -N`).
+// Deliberately NOT registered with catch_discover_tests (never in `ctest -N`;
+// the counters it protects are unchanged by its existence — 221/221 in
+// build-off/Debug, 254/254 in build-full/Release).
+// CI integration is FUTURE WORK (S93-3 ruling).
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 

@@ -172,28 +172,42 @@ Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
 |---|---|---|---|
-| `hf::music::validate_voice_leading` | `src/core/music/voice_leading.cpp:27-102` | 36 | S0 baseline |
+| `hf::music::validate_voice_leading` | `src/core/music/voice_leading.cpp:26-101` | 36 | S0 baseline |
 | `hf::ser::parse_track` | `src/core/serialization/midi_read.cpp:58-142` | 34 | S0 baseline |
-| `hf::core::merge_with_frozen` | `src/core/model/selection.cpp:159-254` | 30 | S0 baseline |
+| `hf::core::merge_with_frozen` | `src/core/model/selection.cpp:162-257` | 30 | S0 baseline |
 | `hf::ser::read_smf` | `src/core/serialization/midi_read.cpp:146-257` | 30 | S0 baseline |
 | `hf::ser::decode_tokens` | `src/core/serialization/tokenizer.cpp:69-103` | 23 | S0 baseline |
 | `PianoRoll::paint` | `src/plugin/ui/PianoRoll.cpp:214-302` | 22 | S0 baseline |
 | `hf::arr::parse_arrange_spec` | `src/core/arrangement/arrangement.cpp:442-484` | 21 | S0 baseline |
 | `hf::ser::encode_pattern` | `src/core/serialization/tokenizer.cpp:37-67` | 21 | S0 baseline |
-| `hf::music::recognize_chord` | `src/core/music/chord_detect.cpp:46-110` | 20 | S0 baseline |
+| `hf::music::recognize_chord` | `src/core/music/chord_detect.cpp:45-109` | 20 | S0 baseline |
 | `hf::infer::load_impl` | `src/inference/memo_filter.cpp:54-86` | 20 | S0 baseline |
 | `PianoRoll::mouseDown` | `src/plugin/ui/PianoRoll.cpp:304-375` | 20 | S0 baseline |
 | `hf::arr::apply_energy` | `src/core/arrangement/arrangement.cpp:185-228` | 19 | S0 baseline |
-| `hf::core::freeze_complement_of_selection` | `src/core/model/selection.cpp:298-343` | 19 | S0 baseline |
-| `hf::infer::resolve_harmonic_conflicts` | `src/inference/constraints.cpp:63-105` | 19 | S0 baseline |
+| `hf::core::freeze_complement_of_selection` | `src/core/model/selection.cpp:301-346` | 19 | S0 baseline |
+| `hf::infer::resolve_harmonic_conflicts` | `src/inference/constraints.cpp:66-108` | 19 | S0 baseline |
 | `hf::infer::json_int` | `src/inference/model_manifest.cpp:155-173` | 18 | S0 baseline |
-| `hf::infer::OrtLogitsProvider::get_logits` | `src/inference/ort_logits.cpp:150-193` | 18 | S0 baseline |
+| `hf::infer::OrtLogitsProvider::get_logits` | `src/inference/ort_logits.cpp:222-274` | 18 | S0 baseline |
 | `PianoRoll::keyPressed` | `src/plugin/ui/PianoRoll.cpp:441-472` | 18 | S0 baseline |
 | `hf::arr::apply_variation` | `src/core/arrangement/arrangement.cpp:97-149` | 16 | S0 baseline |
-| `hf::music::detect_key` | `src/core/music/key_detect.cpp:26-70` | 16 | S0 baseline |
+| `hf::music::detect_key` | `src/core/music/key_detect.cpp:25-69` | 16 | S0 baseline |
 | `hf::infer::compose_base` | `src/inference/candidate_base.cpp:38-94` | 16 | **S3 candidate** |
 | `hf::infer::check_model_compatible` | `src/inference/model_manifest.cpp:288-339` | 16 | S0 baseline |
-| `hf::infer::strict_core` | `src/inference/sampler.cpp:78-114` | 16 | S0 baseline |
+| `hf::infer::strict_core` | `src/inference/sampler.cpp:81-117` | 16 | S0 baseline |
+
+**Line ranges re-derived 2026-10-20 (the final phase fix wave).** 8 of the
+22 rows carried a stale range (the tree moved under them); every row above is
+now the lizard 1.24.1 range of the named function, and the tool
+(`tools/lint_ccn.py`) carries the same numbers in the SAME commit. The
+ranges are **INDICATIVE**: the gate keys on (file, name) and the pinned CCN,
+never on the range (the range only decorates the failure message), so no
+gate verdict changed — `lint_ccn --strict` still reports "22 pinned
+functions, 22 functions over the target". The moved rows:
+`validate_voice_leading` 27-102 → 26-101, `merge_with_frozen` 159-254 →
+162-257, `recognize_chord` 46-110 → 45-109, `freeze_complement_of_selection`
+298-343 → 301-346, `resolve_harmonic_conflicts` 63-105 → 66-108,
+`get_logits` 150-193 → 222-274, `detect_key` 26-70 → 25-69, `strict_core`
+78-114 → 81-117.
 
 **Exception reasons (verbatim, as the owner stated them).**
 

@@ -373,3 +373,112 @@ landed. The corrected values:
 - `docs/BACKLOG-phase-B.md` — the aggregates table and the NOW-authority
   pointer, repointed at this section.
 
+---
+
+## 9. Correction — the HEAD re-measurement (2026-10-20, the final phase fix wave)
+
+**Why this section exists.** §8 corrected the NOW values once — measured on
+the tree at `13e9355`. The tree then moved again: the phase-B tranche F
+(B4a, `587dd6e` + `09eab98`) and the phase-B tranche G (B10, `1a37a36` …
+`ec4b0c4`) landed AFTER that measurement, and the B10 tranche re-pinned the
+ctest counters. This wave re-measured every value §8 claims. Three of them
+moved — the ctest pair (§8.3, rows 1-2), the per-layer LOC (§8.1, rows 3,
+4, 6, 7) and the golden registry record count (§8.1, row 20) — and one line
+range in §8.1 (row 13) had drifted with the tree. **This section
+supersedes §8 on exactly those values; every other value in §8 stands.**
+Nothing earlier in this document is rewritten: this document is append-only,
+so §1 and §8 keep the bytes and the dates they were written with.
+
+**Method (unchanged from §0 and §8).** Line counts: python newline count
+over the working-tree bytes of every tracked `.h`/`.cpp` under `src/`
+(`data.count(b"\n")` plus one for a trailing partial line) —
+`Measure-Object -Line` is **banned** (it counts only non-empty lines; it
+produced 975 for the 1046-line `PluginEditor.cpp`). Complexity: lizard
+**1.24.1** over `src/` (the pinned version, run with the repo's venv
+interpreter `training/.venv/Scripts/python.exe`). Counts: the repo's own
+gates — `tools/lint_file_size.py`, `tools/lint_golden_manifest.py`,
+`tools/lint_ccn.py --strict` — and `ctest -N` for the registered-case
+counts. Every number below names its source.
+
+### 9.1 The ctest pair — §8.3 (rows 1-2) is SUPERSEDED
+
+| configuration | §8.3 said | **NOW (2026-10-20)** | source |
+|---|---|---|---|
+| `build-full` (Release, plugin-ON) | 251/251 passed (100 %) | **254 registered cases** | `ctest --test-dir build-full -C Release -N` → "Total Tests: 254" |
+| `build-off` (Debug, plugin-OFF) | 221/221 passed (100 %) | **221 registered cases** | `ctest --test-dir build-off -C Debug -N` → "Total Tests: 221" |
+
+**Why the pair moved.** The growth is the **3 new B10 ORT-only cases** in
+`tests/test_ort_logits.cpp`:
+`"ort logits rejects a prefix that violates a named slot range"` (`:353`),
+`"ort logits accepts every legal prefix (the slot-range guard is a no-op)"`
+(`:395`) and `"ort logits reproduces the committed sidecar's pinned logits
+values"` (`:451`). All three sit inside the `#ifdef HARMONY_FORGE_WITH_ONNX`
+block that spans `tests/test_ort_logits.cpp:299-490`, so they are **compiled
+out of the off configuration** — which is why the off counter is unchanged
+at 221. The B10 tranche re-pinned the pair and the growth reason in
+`docs/INVARIANTS.md:66-72` and in the G10 row of
+`docs/measurements/ratchet.md`; this section aligns the two measurement
+records with that already-cited pin.
+
+**The §8.3 sentence is therefore stale in one word.** §8.3 says of the
+counters "the pinned pair, unchanged" — that was true of the tree it
+measured (`13e9355`), but the pair was re-pinned after it (a GROWTH, which
+the G10 ratchet permits: "the count may not drop"). The count never
+DROPPED: 221 → 221 in build-off, 251 → 254 in build-full. The ctest
+COUNTERS are the growth; nothing else in §8.3's paragraph (the
+behaviour-preserving argument, the byte-identical B12 bounds dumps) moved.
+
+### 9.2 The §8.1 rows that moved — re-measured at HEAD
+
+| §1/§8.1 row | metric | §8 said (measured at `13e9355`) | **NOW (re-measured at HEAD)** | source |
+|---|---|---|---|---|
+| **3** | source LOC — `src/core` | 2944 over 33 files | **2982 over 34 files** (+38 / +1 file) | python newline count over the tracked `.h`/`.cpp` bytes of `src/core`; the +1 file is B4a's one home `src/core/music/pitch_class.h` (+37 at `587dd6e`, +1 comment line at `09eab98`) |
+| **4** | source LOC — `src/inference` | 4075 over 36 files | **4222 over 36 files** (+147) | same method; the growth is B4a folding the file-local pitch-class helpers into `pitch_class.h` (+12 at `587dd6e`) plus the B10 tranche's ORT guard (+79 at `1a37a36`, +57 at `f2ed70d`, −1 comment line at `dc2ec04`) |
+| **5** | source LOC — `src/app` | 156 over 5 files | **156 over 5 files** (unchanged) | same method |
+| **6** | source LOC — `src/plugin` | 5528 over 32 files | **5532 over 32 files** (+4) | same method; B4a folded the Editor's and PatternDocument's local pitch-class helpers into `pitch_class.h` (`587dd6e`) |
+| **7** | source LOC — total `src/` | 12703 over 106 files | **12892 over 107 files** (+189 / +1 file) | python newline count over every tracked `.h`/`.cpp` under `src/`; 2982 + 4222 + 156 + 5532 = 12892, 34 + 36 + 5 + 32 = 107 |
+| **13** | max-CCN function (whole tree) | CCN 36 — `hf::music::validate_voice_leading`, `src/core/music/voice_leading.cpp:27-102` | **CCN 36 — the same function**, `src/core/music/voice_leading.cpp:26-101` | lizard 1.24.1 over `src/`; the CCN did not move, the LINE RANGE did (see §9.3) |
+| **14** | functions with CCN > 15 | 22 | **22** | lizard 1.24.1; the CCN gate prints "functions over the target: 22 (pinned 22)" |
+| **16** | file-size census (> 500 lines) | 8 files, all pinned, 0 new | **8 files, all pinned, 0 new** | `tools/lint_file_size.py` (PASS: 8 pinned files, 0 new); no count moved — `tools/step1_table.py` 1120, `src/plugin/audio/PluginEditor.cpp` 807, `tests/test_sampler.cpp` 919, `tools/lint_golden_manifest.py` 842, `tools/tests/test_golden_manifest_lint.py` 649, `tests/test_selection.cpp` 626, `tests/test_memo_filter.cpp` 509, `tools/render_model.py` 505 |
+| **20** | golden registry records | 22 records (capture=15, gen=6, mixed=1) | **23 records** (capture=15, **gen=7**, mixed=1) | `tools/lint_golden_manifest.py` (PASS): "forms accepted: capture=15, gen=7, mixed=1 (23 records)"; the new record is the B10 sidecar pin (`tests/golden/ort_logits_values.txt`, a `gen:`-form record) |
+| **23** | Editor (AS-IS) — physical lines | 293 + 807 = 1100 | **293 + 807 = 1100** (unchanged) | python newline count; the `.cpp` figure is confirmed by the G1 pin (807) |
+| **24** | Editor (AS-IS) — max-CCN function | CCN 13 — `HarmonyForgeEditor::HarmonyForgeEditor` | **CCN 13** — the same constructor, `src/plugin/audio/PluginEditor.cpp:60-227` (NLOC 128, length 168) | lizard 1.24.1 (unchanged) |
+| **25** | Editor (AS-IS) — function count / total CCN | 48 functions over 4 files, total CCN 140 | **48 functions over 4 files, total CCN 140** (unchanged) | lizard 1.24.1 (unchanged) |
+
+**What did NOT move at HEAD.** The off-golden census (§8.3, row 15), the
+layer / RT / UTF-8 / golden-pin / invariant-tag verdicts, the S0 baseline
+column, rows 8-12 (not re-measured in this wave either), the Editor's
+numbers (rows 23-25) and the tree's max-CCN and over-target count (rows
+13-14) are unchanged — every gate is green on the tree this wave commits.
+
+### 9.3 The G3 pin line ranges — §8.1 row 13 and the G3 pin table
+
+8 of the 22 G3 pin rows carried a stale line range (the tree moved under
+them; the pinned CCN of every one of them did not move). The ranges were
+re-derived with lizard 1.24.1 and updated in `tools/lint_ccn.py` +
+`docs/measurements/ratchet.md` (G3) in the SAME commit, as the ratchet
+procedure (step 4) requires. **The gate keys on (file, name) and the pinned
+CCN — never on the range** (the range only decorates the failure message),
+so no verdict changed: `lint_ccn --strict` still prints "PASS (22 pinned
+functions, 22 functions over the target)". The corrected ranges:
+`validate_voice_leading` 27-102 → 26-101, `merge_with_frozen` 159-254 →
+162-257, `recognize_chord` 46-110 → 45-109,
+`freeze_complement_of_selection` 298-343 → 301-346,
+`resolve_harmonic_conflicts` 63-105 → 66-108, `get_logits` 150-193 →
+222-274, `detect_key` 26-70 → 25-69, `strict_core` 78-114 → 81-117.
+**§8.1 row 13's own citation (`voice_leading.cpp:27-102`) is the same
+stale range; this section supersedes it** — the file is append-only, so the
+§8.1 text is left byte-untouched.
+
+### 9.4 Where the HEAD values live
+
+- This section (§9) — the authority for the NOW values that §8 carried at
+  `13e9355` and that have since moved (the ctest pair, the per-layer LOC,
+  the golden record count and the G3 line ranges).
+- `docs/measurements/ratchet.md` — the live gate values (G10's ctest pair,
+  G9's record count, the G3 pin table, G1's file-size pins) and the P1-P4
+  rows.
+- `docs/INVARIANTS.md:66-72` — the ctest pair as an invariant.
+- `docs/BACKLOG-phase-B.md` — the aggregates table and the NOW-authority
+  pointer, repointed at this section.
+

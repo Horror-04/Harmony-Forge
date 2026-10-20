@@ -53,55 +53,66 @@ src/inference/candidates.cpp,9,115,9,3.44,0,0
 src/inference/candidate_base.cpp,2,58,16,9.0,1,1
 src/inference/candidate_transforms.cpp,5,88,13,6.8,1,0
 src/inference/candidate_modes.cpp,7,81,11,6.86,1,0
-src/inference/constraints.cpp,5,70,19,7.0,1,1
-src/inference/ranking.cpp,7,68,8,4.29,0,0
-src/inference/sampler.cpp,21,309,16,6.38,3,1
-src/inference/ort_logits.cpp,7,115,18,5.71,1,1
-src/inference/keynorm.cpp,16,127,6,3.12,0,0
+src/inference/constraints.cpp,4,69,19,8.5,1,1
+src/inference/ranking.cpp,6,67,8,4.83,0,0
+src/inference/sampler.cpp,20,310,16,6.7,3,1
+src/inference/ort_logits.cpp,12,155,18,4.75,1,1
+src/inference/keynorm.cpp,14,121,6,3.29,0,0
 src/plugin/ui/PianoRoll.cpp,24,389,22,5.62,4,3
-src/plugin/ui/PatternDocument.cpp,37,374,13,3.84,1,0
+src/plugin/ui/PatternDocument.cpp,36,373,13,3.92,1,0
 src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
-src/plugin/audio/PluginEditor.cpp,43,575,13,3.02,1,0
+src/plugin/audio/PluginEditor.cpp,43,574,13,3.02,1,0
 src/plugin/ui/EditorLayout.cpp,4,203,4,1.75,0,0
 ```
 
-> **Phase delta note (re-measured 2026-10-20, the final fix wave;
-> authority for NOW values: `docs/measurements/s10-final.md` §8 — the
-> post-phase correction section, NOT §1).** The table above was measured at
-> base `4704631`; it has been re-measured on the tree this wave commits
-> (lizard 1.24.1 over `src/`, the same tool, version and column order).
-> Three rows moved, two rows were added, and one row is explicitly
-> unchanged:
+> **Phase delta note (re-measured 2026-10-20, the final phase fix wave;
+> authority for NOW values: `docs/measurements/s10-final.md` §9 — the HEAD
+> re-measurement — with §8 as the post-phase correction section; NOT §1).**
+> The table above was measured at base `4704631`; it has been re-measured on
+> the tree this wave commits (lizard 1.24.1 over `src/`, the same tool,
+> version and column order). Seven rows moved, two rows were added, and the
+> rest are explicitly unchanged:
 >
-> - `src/inference/sampler.cpp` `12,271,68,10.25,2,2` → `21,309,16,6.38,3,1`
+> - `src/inference/sampler.cpp` `12,271,68,10.25,2,2` → `20,310,16,6.7,3,1`
 >   — B5 dissected `sample_continue` (68 → 12) into nine named stages, so
->   the file gained 9 functions and lost 52 CCN points at the top; the file
->   maximum is now `strict_core` (16), which is B4's item and was NOT
->   touched.
+>   the file lost 52 CCN points at the top; the file maximum is now
+>   `strict_core` (16), which is B4's item and was NOT split. B4a then
+>   folded the file-local pitch-class helper into `pitch_class.h` (−1
+>   function) and B10 added the ORT slot-range guard's call site.
 > - `src/inference/candidate_transforms.cpp` `1,74,30,30.0,1,1` →
 >   `5,88,13,6.8,1,0` and `src/inference/candidate_modes.cpp`
 >   `3,68,30,14.67,1,1` → `7,81,11,6.86,1,0` — B9 split `apply_mode`
 >   (30 → 3) and `apply_candidate_transform` (30 → 5) into named stages.
-> - `src/inference/keynorm.cpp` `16,127,6,3.12,0,0` — **unchanged** by
->   B11 (the fix is on the python side; the C++ shape was already
->   authoritative and was not touched).
+> - `src/inference/ort_logits.cpp` `7,115,18,5.71,1,1` →
+>   `12,155,18,4.75,1,1` — B10 added the ORT-boundary slot-range guard
+>   (5 functions, +40 NLOC); the file's max-CCN is unchanged at 18.
+> - `src/inference/constraints.cpp` `5,70,19,7.0,1,1` → `4,69,19,8.5,1,1`,
+>   `src/inference/ranking.cpp` `7,68,8,4.29,0,0` → `6,67,8,4.83,0,0`,
+>   `src/inference/keynorm.cpp` `16,127,6,3.12,0,0` → `14,121,6,3.29,0,0`
+>   and `src/plugin/ui/PatternDocument.cpp` `37,374,13,3.84,1,0` →
+>   `36,373,13,3.92,1,0` — B4a folded the file-local pitch-class helpers
+>   into the shared `src/core/music/pitch_class.h` (−1 function per file,
+>   keynorm −2); every CCN maximum is unchanged, so the guard verdicts did
+>   not move.
 > - `src/plugin/audio/PluginEditor.cpp` and `src/plugin/ui/EditorLayout.cpp`
 >   are **new rows** (B12 / the S9.3 extraction): the Editor's layout moved
 >   into `src/plugin/ui/EditorLayout.{h,cpp}` (the `.h` carries 1 function,
 >   `EditorRollStack::resized`, NLOC 6, CCN 3 — headers are not listed in
 >   the table, which quotes `.cpp` rows only).
 > - `src/inference` physical lines: **3899** at `4704631` → **3903** at the
->   S10 close (`s10-final.md` §1 row 4) → **4075** NOW (python newline
->   count over the 36 tracked `.h`/`.cpp` files; +172 from the B5 and B9
->   dissections and the B11 fix).
+>   S10 close (`s10-final.md` §1 row 4) → **4075** at `13e9355` → **4222**
+>   NOW (python newline count over the 36 tracked `.h`/`.cpp` files; +172
+>   from the B5 and B9 dissections and the B11 fix, +147 more from the B10
+>   tranche).
 > - The tree-level numbers this record used to quote are superseded the
 >   same way: tree max-CCN **68 → 36**, functions with CCN > 15 **26 → 22**,
->   golden registry records **20 → 22**, `src/` LOC **12357 over 104 files →
->   12703 over 106 files** (core 2937 → 2944, inference 3903 → 4075,
->   plugin 5361 → 5528), and the Editor **324+1046=1370 → 293+807=1100**
->   with its max-CCN **16 → 13** and its function count **45 → 48** over 4
->   files. Every one of those values, with its measurement method and its
->   source, is in `docs/measurements/s10-final.md` §8.1-§8.2.
+>   golden registry records **20 → 23**, `src/` LOC **12357 over 104 files →
+>   12892 over 107 files** (core 2937 → 2982 over 34 files, inference
+>   3903 → 4222, plugin 5361 → 5532), and the Editor **324+1046=1370 →
+>   293+807=1100** with its max-CCN **16 → 13** and its function count
+>   **45 → 48** over 4 files. Every one of those values, with its
+>   measurement method and its source, is in `docs/measurements/s10-final.md`
+>   §8.1-§8.2 and §9 (the HEAD re-measurement).
 
 
 ---
@@ -114,26 +125,29 @@ carries a status, so no entry in this record reads as an open decision:
 is quoted in "Owner decisions (2026-10-19, owner-delegated)" below and
 repeated at the item), and the implementation is a SEPARATE product-grade
 task that was not part of this phase; **RESOLVED** = the work landed in
-this phase and the item's own block records the result. The one-line
-"result" column is the outcome, the "risk if deferred" column is the
-residual that is still true. **The "title" column keeps each item's
-ORIGINAL name** (the same name as its section heading below), so for a
-resolved item it names the state at the time the item was raised — the
-"status" column is the current state, and the item's own block carries the
-evidence.
+this phase and the item's own block records the result. **A SPLIT item**
+(B4) carries both halves in its one status cell — `B4a RESOLVED (…)`;
+`B4b DECIDED — NOT IMPLEMENTED (product-grade)` — because the halves are
+separable tasks with separate verdicts; each status cell points at the
+resolution note that carries the evidence. The one-line "result" column is
+the outcome, the "risk if deferred" column is the residual that is still
+true. **The "title" column keeps each item's ORIGINAL name** (the same
+name as its section heading below), so for a resolved item it names the
+state at the time the item was raised — the "status" column is the current
+state, and the item's own block carries the evidence.
 
-| id | title | area | status | result (one line) | risk if deferred |
+| id | title (the ORIGINAL name) | area | status (the ruling + the implementation state) | result (one line — the outcome) | risk if deferred (the residual that is still true) |
 |---|---|---|---|---|---|
 | B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
 | B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
-| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **DECIDED (D-B4) — NOT IMPLEMENTED** | the shared helper home is **`src/core/music/`**; implementation is a separate product-grade task (it unifies the rules) | the same rule is stated in 3–5 places; a fix in one place can silently miss the others |
+| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b DECIDED — NOT IMPLEMENTED (product-grade)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`, commits `587dd6e` + `09eab98`) — B4a only" in the B4 block below | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b** (the strong-beat predicate unification) stays product-grade: the three sites compute DIFFERENT things, so unifying them is a semantics change | residual (B4b): the strong-beat rule is still stated in 3 different computations — a fix in one place can silently miss the others; plus the 4 duplicated pitch-class NAME tables (`kNames`/`kPcNames`) |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
 | B6 | Piano-roll undo logic + the second history stack | plugin/ui | **RESOLVED** (phase-B tranche E) | per D-B6 `SeedHistory` stays an **append-only audit log**, deliberately not rewound; the contract is now stated at the class, at the use site and in one UI tooltip | the undo still stores whole-pattern snapshots per step (the snapshot design was NOT changed) |
 | B7 | MSVC C2059 quirk has no permanent guard | toolchain / build | **RESOLVED** (phase-B tranche A) | the cause IS established (a stray closing paren, **not** a toolchain quirk); the permanent guard is the **compiler probe** `tools/c2059_probe/probe_c2059.py`, now a CI step | residual: a different toolchain issue would be caught — the probe asserts the balanced one-line form compiles on the REAL TU |
 | B8 | `src/companion/fl_dispatcher.py` is outside CI | companion / CI | **RESOLVED** (phase-B tranche A) | the dispatcher's pure path **IS under CI** since `ae44d08`: `tools/tests/test_fl_dispatcher.py` + the `gates`-job step | residual: the **general** python-test step (`tools/tests/` + `training/tests/`) is still absent — D-B8 made the CI step dispatcher-only |
 | B9 | Three CCN 16/30/30 functions were never split | inference | **RESOLVED** (phase-B tranche C) | `apply_mode` **30 → 3** and `apply_candidate_transform` **30 → 5** (pure moves); `compose_base` (16) stays pinned per D-B9 | residual: the **cube leg is structurally blind to 6 of the 7 new stages**; the in-repo pins carry them (accounted per stage below) |
-| B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | **DECIDED (D-B10.1 / D-B10.2) — NOT IMPLEMENTED** | an out-of-range id is **REJECTED** at the provider (returns `false`); the sidecar pin covers **both** the logits values and the sidecar sha256; implementation is a separate product-grade task (it changes the ORT boundary semantics) | an out-of-range prefix id is only rejected downstream, and the real sidecar output is not pinned anywhere |
+| B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | **RESOLVED (phase-B tranche G)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche G, branch `refactor/phase-b-b10`)" in the B10 block below | an out-of-range id is **REJECTED** at the ORT boundary (the provider returns `false`, in the slot-checked id domain per D-B10.1); the sidecar pin covers **both** the logits values and the sidecar sha256 (`tests/golden/ort_logits_values.txt`, written by the real capture tool) | residual: the pinned values are **not bit-exact** across ORT versions (the C++ provider runs ORT 1.22.0, the capture ran 1.31.0; 217 of 256 values differ in the last bits, max \|Δ\| 2.86e-06 against a documented tolerance of 1e-4), so a sidecar swap is caught by the sha256 + the exact argmax, not by the values alone |
 | B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | **RESOLVED** (phase-B tranche E) | the divergence is **HEALED**: python preserves every key of the input chord dict, the C++ shape is authoritative; parity pinned on BOTH sides over a new enriched vector | residual: the C++ side is **ints-only** (`ChordSymbol` has no name field), so the name stays an in-test spec constant |
 | B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work) |
 
@@ -1440,9 +1454,12 @@ the verdict needs an owner decision that no measurement can supply.
   or a re-scoped budget is recorded in writing (the S3 "≤300/≤120" numbers
   were goals, not gates — `docs/measurements/s9-0.md:140-141`).
 - The extraction is behaviour-preserving: no ctest case changes, no golden
-  moves, and the counters do not drop — currently **251/251 in
-  build-full/Release** and **221/221 in build-off/Debug**
-  (`docs/measurements/s10-final.md` §1, rows 1-2).
+  moves, and the counters do not drop — currently **254/254 in
+  build-full/Release** and **221/221 in build-off/Debug** (the pair moved
+  once after the S10 close: the 3 new B10 ORT-only cases; the
+  re-measurement is in `docs/measurements/s10-final.md` §9, and the
+  extraction itself changed no case — see `docs/measurements/s9-0.md`
+  Appendix D).
 - The max-CCN function of the Editor is no longer the constructor at CCN 16,
   **or** the constructor is pinned as an explicit exception in the CCN
   ratchet with a stated reason (`docs/measurements/ratchet.md` §4).

@@ -411,8 +411,10 @@ hf_copy_ort_runtime(test_preview_scheduler)
 catch_discover_tests(test_preview_scheduler)
 # Probe B12 (branch refactor/probes-u2u3-b12, bounded runtime probe).
 # Deliberately NOT registered with catch_discover_tests: the binary never
-# appears in `ctest -N` (counters stay 221/251). Plain main() guard with
-# pinned bounds expectations, run explicitly. No existing target touched.
+# appears in `ctest -N` — the counters it protects are unchanged by its
+# existence (221/221 in build-off/Debug, 254/254 in build-full/Release).
+# Plain main() guard with pinned bounds expectations, run explicitly.
+# No existing target touched.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(probe_b12_bounds probe_b12_bounds.cpp
     ../src/plugin/audio/PluginProcessor.cpp
@@ -442,9 +444,11 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
 endif()
 # Probe S93 (fix round 2, ruling S93-3, tab-wiring probe for the S9.3
 # onClick incident). Deliberately NOT registered with catch_discover_tests:
-# the binary never appears in `ctest -N` (counters stay 221/251). Plain
-# main() wiring probe (public child APIs only, no product change), run
-# explicitly. CI integration is future work. No existing target touched.
+# the binary never appears in `ctest -N` — the counters it protects are
+# unchanged by its existence (221/221 in build-off/Debug, 254/254 in
+# build-full/Release). Plain main() wiring probe (public child APIs only,
+# no product change), run explicitly. CI integration is future work.
+# No existing target touched.
 if(HARMONY_FORGE_BUILD_PLUGIN)
   add_executable(probe_s93_tab_wiring probe_s93_tab_wiring.cpp
     ../src/plugin/audio/PluginProcessor.cpp

@@ -79,29 +79,33 @@ _BASE_REASON = ("pre-existing at the S0 baseline "
                 "(docs/measurements/s0-lizard.csv) — outside the S3 scope")
 
 # (qualified name, file, start line, end line, measured CCN)
+# The line ranges are INDICATIVE: the gate keys on (file, name) and the CCN,
+# never on the range (the range only decorates the failure message). They are
+# re-derived with lizard 1.24.1 whenever the tree moves (2026-10-20: 8 of the
+# 22 rows had drifted — see docs/measurements/ratchet.md, G3).
 _PIN_TABLE = [
-    ("hf::music::validate_voice_leading", "src/core/music/voice_leading.cpp", 27, 102, 36),
+    ("hf::music::validate_voice_leading", "src/core/music/voice_leading.cpp", 26, 101, 36),
     ("hf::ser::parse_track", "src/core/serialization/midi_read.cpp", 58, 142, 34),
-    ("hf::core::merge_with_frozen", "src/core/model/selection.cpp", 159, 254, 30),
+    ("hf::core::merge_with_frozen", "src/core/model/selection.cpp", 162, 257, 30),
     ("hf::ser::read_smf", "src/core/serialization/midi_read.cpp", 146, 257, 30),
     ("hf::ser::decode_tokens", "src/core/serialization/tokenizer.cpp", 69, 103, 23),
     ("PianoRoll::paint", "src/plugin/ui/PianoRoll.cpp", 214, 302, 22),
     ("hf::arr::parse_arrange_spec", "src/core/arrangement/arrangement.cpp", 442, 484, 21),
     ("hf::ser::encode_pattern", "src/core/serialization/tokenizer.cpp", 37, 67, 21),
-    ("hf::music::recognize_chord", "src/core/music/chord_detect.cpp", 46, 110, 20),
+    ("hf::music::recognize_chord", "src/core/music/chord_detect.cpp", 45, 109, 20),
     ("hf::infer::load_impl", "src/inference/memo_filter.cpp", 54, 86, 20),
     ("PianoRoll::mouseDown", "src/plugin/ui/PianoRoll.cpp", 304, 375, 20),
     ("hf::arr::apply_energy", "src/core/arrangement/arrangement.cpp", 185, 228, 19),
-    ("hf::core::freeze_complement_of_selection", "src/core/model/selection.cpp", 298, 343, 19),
-    ("hf::infer::resolve_harmonic_conflicts", "src/inference/constraints.cpp", 63, 105, 19),
+    ("hf::core::freeze_complement_of_selection", "src/core/model/selection.cpp", 301, 346, 19),
+    ("hf::infer::resolve_harmonic_conflicts", "src/inference/constraints.cpp", 66, 108, 19),
     ("hf::infer::json_int", "src/inference/model_manifest.cpp", 155, 173, 18),
-    ("hf::infer::OrtLogitsProvider::get_logits", "src/inference/ort_logits.cpp", 150, 193, 18),
+    ("hf::infer::OrtLogitsProvider::get_logits", "src/inference/ort_logits.cpp", 222, 274, 18),
     ("PianoRoll::keyPressed", "src/plugin/ui/PianoRoll.cpp", 441, 472, 18),
     ("hf::arr::apply_variation", "src/core/arrangement/arrangement.cpp", 97, 149, 16),
-    ("hf::music::detect_key", "src/core/music/key_detect.cpp", 26, 70, 16),
+    ("hf::music::detect_key", "src/core/music/key_detect.cpp", 25, 69, 16),
     ("hf::infer::compose_base", "src/inference/candidate_base.cpp", 38, 94, 16),
     ("hf::infer::check_model_compatible", "src/inference/model_manifest.cpp", 288, 339, 16),
-    ("hf::infer::strict_core", "src/inference/sampler.cpp", 78, 114, 16),
+    ("hf::infer::strict_core", "src/inference/sampler.cpp", 81, 117, 16),
 ]
 
 # The remaining S3 candidate function carries the owner's reason verbatim.

@@ -17,7 +17,9 @@
 // click Explain and back to Edit. Exit 0 = all checks pass, 1 otherwise.
 //
 // Deliberately NOT registered with catch_discover_tests (never in `ctest
-// -N`; counters stay 221/251). Explicit run from the repo root:
+// -N`; the counters it protects are unchanged by its existence — 221/221 in
+// build-off/Debug, 254/254 in build-full/Release). Explicit run from the
+// repo root:
 //   .\build-plugdbg\tests\Debug\probe_s93_tab_wiring.exe
 // CI integration is FUTURE WORK (S93-3 ruling).
 #include <juce_audio_processors/juce_audio_processors.h>
