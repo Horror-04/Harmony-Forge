@@ -46,6 +46,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 BANNED = [
     (r'\bnew\s+', 'new'),
@@ -144,6 +146,7 @@ def scan(region: list[tuple[int, str]], path: str) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     if argv is None:
         argv = sys.argv[1:]
     strict = argv == ['--strict']

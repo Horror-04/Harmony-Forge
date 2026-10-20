@@ -42,6 +42,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 LIMIT = 500
 CODE_EXTS = (".h", ".cpp", ".py")
@@ -65,10 +67,11 @@ PINNED: dict[str, tuple[int, str]] = {
         "sampler test file: the wiring-flag history bytes, the kPinned "
         "table and the seed cases live in one file — split deferred"),
     "tools/lint_golden_manifest.py": (
-        842,
+        845,
         "golden-manifest lint: schema + sha + coverage + writer registry "
         "are ONE rule set — splitting scatters it; 837->842 WRITER binding "
-        "probe_b12_bounds (B12 guard, fix round 2)"),
+        "probe_b12_bounds (B12 guard, fix round 2); 842->845 the CI-safe "
+        "console hardening (output-encoding fix wave)"),
     "tools/tests/test_golden_manifest_lint.py": (
         649,
         "lint test file: one test per manifest rule family — split deferred"),
@@ -81,9 +84,10 @@ PINNED: dict[str, tuple[int, str]] = {
         "memo-filter test file: filter + invocation-tag families — split "
         "deferred"),
     "tools/render_model.py": (
-        505,
+        508,
         "render-model driver: one CLI contract (flags -> model -> MIDI) in "
-        "one file — split deferred"),
+        "one file — split deferred; 505->508 the CI-safe console hardening "
+        "(output-encoding fix wave)"),
 }
 
 
@@ -180,6 +184,7 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=_REPO)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)

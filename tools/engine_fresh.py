@@ -39,8 +39,10 @@ import os
 import random
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the sibling helper
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                "..", "training"))
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 import dataset as DS
 import evaluate as E
 import theory as T
@@ -336,6 +338,7 @@ def summarize(rows: list[dict]) -> dict:
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description="Build the engine-fresh pool.")
     ap.add_argument("--n", type=int, default=N_POOL)
     ap.add_argument("--seed", type=int, default=SEED)

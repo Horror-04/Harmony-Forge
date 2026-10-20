@@ -114,16 +114,17 @@ trailing partial line). NEVER `Measure-Object -Line`.
 | `tools/step1_table.py` | 1120 | step-1 table generator: one data table per row family — splitting it scatters a single table across modules |
 | `src/plugin/audio/PluginEditor.cpp` | 807 | editor facade after the S9.3 layout extraction (layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`) — re-pinned at the post-extraction count |
 | `tests/test_sampler.cpp` | 919 | sampler test file: the wiring-flag history bytes, the kPinned table and the seed cases live in one file — split deferred |
-| `tools/lint_golden_manifest.py` | 842 | golden-manifest lint: schema + sha + coverage + writer registry are ONE rule set — splitting scatters it; 837->842 WRITER binding probe_b12_bounds (B12 guard, fix round 2) |
+| `tools/lint_golden_manifest.py` | 845 | golden-manifest lint: schema + sha + coverage + writer registry are ONE rule set — splitting scatters it; 837->842 WRITER binding probe_b12_bounds (B12 guard, fix round 2); 842->845 the CI-safe console hardening (output-encoding fix wave) |
 | `tools/tests/test_golden_manifest_lint.py` | 649 | lint test file: one test per manifest rule family — split deferred |
 | `tests/test_selection.cpp` | 626 | selection test file: SMF1 round-trip + selection + export families — split deferred |
 | `tests/test_memo_filter.cpp` | 509 | memo-filter test file: filter + invocation-tag families — split deferred |
-| `tools/render_model.py` | 505 | render-model driver: one CLI contract (flags -> model -> MIDI) in one file — split deferred |
+| `tools/render_model.py` | 508 | render-model driver: one CLI contract (flags -> model -> MIDI) in one file — split deferred; 505->508 the CI-safe console hardening (output-encoding fix wave) |
 
-**Proximity note (a live hazard).** `tools/lint_off_golden.py` is at 498
-lines after its S10.1 upgrade — 2 lines under the limit. The next line
-added to that tool must come with a split (the S4b-main migration is the
-natural one) or with a pin update in this document.
+**Proximity note (a live hazard).** `tools/lint_off_golden.py` is at 500
+lines after the CI-safe console hardening (the output-encoding fix wave) —
+it now sits EXACTLY at the limit, so the next line added to that tool makes
+it a violation. That line must come with a split (the S4b-main migration is
+the natural one) or with a pin update in this document.
 
 ---
 

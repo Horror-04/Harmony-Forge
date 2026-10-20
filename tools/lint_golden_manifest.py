@@ -122,6 +122,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 # section name -> the `kind` value every record in that section must carry.
 SECTIONS = (
@@ -806,6 +808,7 @@ def lint(root: str, manifest_path: str) -> tuple:
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--manifest", default=os.path.join(
         _REPO, "tests", "golden_manifest.json"))

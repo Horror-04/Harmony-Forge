@@ -57,6 +57,8 @@ except ImportError:  # pragma: no cover - the SKIP path is tested instead
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 TARGET = 15        # the target: no new function above this
 CEILING = 20       # the hard ceiling for an unpinned function
@@ -186,6 +188,7 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=_REPO)
     ap.add_argument("--strict", action="store_true",
