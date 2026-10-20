@@ -168,6 +168,46 @@ jobs:
         # lines); the record is docs/measurements/ratchet.md.
         run: python tools/lint_off_golden.py
 
+      - name: Python gate tests (the torch-free subset of tools/tests)
+        # Blocking. Until now CI ran ONE python test file (the FL
+        # dispatcher, via stdlib unittest), so a regression in a lint's OWN
+        # test suite was invisible until someone ran pytest locally. This
+        # step runs the torch-free subset of tools/tests/ (121 of the 178
+        # collected tests today). It sits AFTER the lizard install above, so
+        # the CCN unit tests RUN here instead of skipping. Seconds, no
+        # build, no venv.
+        #
+        # EXPLICITLY EXCLUDED - never silently dropped. These six files
+        # drive the TRAINING stack (training/decode.py,
+        # training/evaluate.py, tools/render_model.py,
+        # tools/render_batch.py), which needs the training/.venv
+        # interpreter: torch + onnxruntime (+ numpy), none of which the
+        # runner has:
+        #   test_expected_errors.py    - imports tools/render_model.py ->
+        #                                training/evaluate.py -> onnxruntime
+        #   test_keynorm_ab.py        - the training stack -> torch + onnxruntime
+        #   test_pressure_variants.py - the training stack -> torch + onnxruntime
+        #   test_render_batch.py      - spawns tools/render_batch.py with the
+        #                                running interpreter -> onnxruntime
+        #   test_render_model.py      - the training stack -> torch + onnxruntime
+        #   test_step1_table.py       - the training stack -> torch + onnxruntime
+        # The TRAINING suite (training/tests/) is NOT run in CI for the
+        # same reason: it needs the training venv + torch, which the runner
+        # does not have. The gates job stays stdlib-only.
+        run: |
+          python -m pip install --disable-pip-version-check pytest
+          if ($LASTEXITCODE -ne 0) { throw "pip install pytest failed: exit $LASTEXITCODE" }
+          $exclude = @(
+            '--ignore=tools/tests/test_expected_errors.py',
+            '--ignore=tools/tests/test_keynorm_ab.py',
+            '--ignore=tools/tests/test_pressure_variants.py',
+            '--ignore=tools/tests/test_render_batch.py',
+            '--ignore=tools/tests/test_render_model.py',
+            '--ignore=tools/tests/test_step1_table.py'
+          )
+          python -m pytest tools/tests -q @exclude
+          if ($LASTEXITCODE -ne 0) { throw "the torch-free tools/tests subset FAILED: exit $LASTEXITCODE" }
+
   build-test-validate:
     needs: gates
     runs-on: windows-2022

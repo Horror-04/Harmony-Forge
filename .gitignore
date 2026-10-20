@@ -33,3 +33,26 @@ training/export_parity.npy
 training/*.log
 # superpowers scratch (git-ignored workspaces)
 .superpowers/
+# --- local tooling artifacts: NEVER commit. One rule per local path, each
+# --- with its reason, so a stray `git add -A` cannot sweep them in. ---
+# The agent skill workspaces (the locally installed skills: code-review,
+# cpp-pro, ...). Tooling-local, NOT project sources - the project's own
+# agent instructions are the TRACKED AGENTS.md at the repo root.
+/.agents/
+# The opencode agent workspace (its own skill installs + agent config).
+# Same reason as /.agents/; AI_AGENT_METHODOLOGY.txt only DESCRIBES this
+# directory, it does not need it committed.
+/.opencode/
+# The downloaded pluginval build (bin/ + the release zip). The CI job
+# fetches its own copy into ./pluginval/ at the job root; this is the
+# local one. external/ is the documented home for third-party deps that are
+# NOT committed (external/README.md) - only that README is tracked.
+/external/pluginval/
+# The agent-skills lockfile (pins each installed skill by hash). The skill
+# installer regenerates it per machine - local state, not a project input.
+/skills-lock.json
+# A local training scratch dir (rendered .mid probes + their .sha256
+# sidecars + a .json from an A/B experiment). Experiment OUTPUT, not an
+# input. The .mid files are already covered by the `*.mid` rule above;
+# this rule also covers the .sha256 sidecars and the .json.
+/training/ab_task6/
