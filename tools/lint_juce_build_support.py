@@ -1,6 +1,10 @@
 # Copyright (C) 2026 Horror-04
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""CI-input gate: the JUCE build-support tree must be TRACKED in git.
+"""JUCE build-support gate (the build INPUTS are TRACKED).
+
+CI-input gate: the JUCE build-support tree must be TRACKED in git.
+(The title above is the CI step name in .github/workflows/ci.yml, so the
+tool and the workflow step can be mapped onto each other.)
 
 Usage: py -3 tools/lint_juce_build_support.py [--root DIR]
 Exit 0 = PASS, 1 = FAIL. CPU only, seconds, read-only (never writes).
@@ -22,15 +26,26 @@ be in the repository, or the `Configure` step of the CI can never work.
 
 WHAT THIS LINT CHECKS (all of them must hold):
 
-  1. every REQUIRED key input is TRACKED (`git ls-files`), not merely
-     present on disk - this is the check that failed before the fix;
+  1. every REQUIRED key input is in the TRACKED set (`git ls-files`), not
+     merely present on disk - this is the check that failed before the fix;
   2. every file present on disk under the tree is TRACKED (a file that
      the ignore rules swallow is invisible to a fresh checkout);
   3. every TRACKED file is present on disk (a tracked file that a fresh
      checkout would not produce is a broken tree);
-  4. the tracked count equals the PINNED count (the upstream JUCE 9.0.3
-     `extras/Build/` tree has exactly 47 files) - so a partially
-     untracked tree, or a locally modified vendored file, cannot pass.
+  4. the TRACKED set's SIZE equals the PINNED count (the upstream JUCE
+     9.0.3 `extras/Build/` tree has exactly 47 files) AND the tracked set
+     and the on-disk set are the same set of paths.
+
+WHAT THIS LINT DOES NOT CHECK - do not read more into it than it proves:
+
+  * It does NOT verify the CONTENT of the vendored files against upstream
+    JUCE. This gate compares PATHS and COUNTS only: a tracked file whose
+    bytes were modified locally would still PASS it. The upstream
+    provenance (all 47 tracked blobs byte-identical to JUCE 9.0.3) was
+    verified ONCE and is recorded in the wave report
+    (.superpowers/sdd-tmp/ci-fix2-report.md); it is a one-off
+    verification, NOT a gate, and it is not re-checked here.
+  * It covers the `JUCE/extras/Build` tree only.
 
 The pin is a ratchet in the same spirit as tools/lint_file_size.py: when
 the vendored JUCE tree is upgraded, the owner re-pins EXPECTED_COUNT
@@ -62,8 +77,9 @@ REQUIRED = (
 
 # The upstream JUCE 9.0.3 `extras/Build/` tree has exactly 47 files
 # (CMake/ 23, juce_build_tools/ 21, juceaide/ 2, plus the tree's own
-# CMakeLists.txt). A mismatch means the tracked set drifted from upstream
-# (a file was untracked, or a local variant was added).
+# CMakeLists.txt). A mismatch means the tracked set's SIZE drifted (a file
+# was untracked, or an extra file was added). It says nothing about the
+# CONTENT of the tracked files - see the module docstring.
 EXPECTED_COUNT = 47
 
 EXPECTED_COUNT_REASON = (
