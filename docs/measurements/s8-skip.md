@@ -349,3 +349,20 @@ Unchanged from the record above: editor-close under a real host/message loop
 is NOT covered (U-host), the host-side deletion thread/timing is not traced
 (U-close), and no ASan/PageHeap run was performed in this task. The SKIP
 stands as a SKIP; this append only states its basis and its coverage.\
+
+## Dated annotation (2026-10-21) — the pointers in this record are as-of the S8 tree
+
+**This section is an APPEND** (the file's own convention). Everything above
+it is the S8-SKIP record as the S8 slice wrote it and is left byte-untouched.
+
+The `file:line` pointers in this record are as of the `refactor/s8skip` tree
+(base `0ca3044`). Two of them have moved since:
+
+- the public `generate_candidates_with_runner` declaration is at
+  `src/inference/candidates.h:64` (this record says `:71`);
+- the editor's `previewGen_` member is at
+  `src/plugin/audio/PluginEditor.h:278` (this record says `:312`).
+
+The record's other findings stand as they were measured. Nothing here was
+re-measured by the 2026-10-21 annotation — no build, no `ctest` and no gate
+run happened for it.

@@ -1,5 +1,10 @@
 # Quality metrics protocol (SPEC §17)
 
+Document status: **NORMATIVE** — a protocol that is true now (the commands
+below are the ones that exist today). The counters in the "Phase-15 looks"
+and "Phase-10 sampler A/B" sections are dated RECORDS of the runs they
+describe.
+
 SPEC §17 defines **Music Quality Score** (1–5 ratings of musicality, groove,
 coherence), **Keep Rate** (% of generated variants the user keeps),
 **Time to Usable Loop** (time from opening the plugin to a usable loop),
@@ -12,8 +17,18 @@ and the MVP goal: the user keeps ≥ 1 of 4 variants in > 50% of sessions.
 > `build-full/tools/Release/render_midi.exe` remains directly runnable).
 > Keep Rate logging below is unchanged.
 
-1. Render a batch: `python tools/render_batch.py --seeds 7,8 --bars 4 --out tools/batch/`
-   (add `--multi` into a separate dir for multitrack versions).
+1. Render one file per seed. The `--seeds/--bars` CLI of
+   `tools/render_batch.py` is RETIRED — that tool is now the 4-condition
+   blind A/B batcher (`--conditions`, `--out`, `--key`, `--metrics`,
+   `--sampling-seed`, `--limit`), so the listening files are rendered with
+   the renderer directly, ONE FILE PER RUN:
+   `build-full\tools\Release\render_midi.exe --seed 7 --bars 4 --out tools\batch\melody.mid`
+   (add `--multi` for a multitrack version). The retired command rendered
+   seeds 7 AND 8 in ONE run; the loop that replaces it is the SAME renderer
+   run once per seed, each run with its own `--out` path — e.g. `--seed 7
+   --bars 4 --out tools\batch\7-4.mid`, then `--seed 8 --bars 4 --out
+   tools\batch\8-4.mid` (the retired tool named its outputs
+   `<seed>-<bars>.mid`). There is no batch flag on `render_midi.exe`.
 2. Listen to each file; score it with `tools/score_sheet.md` (one row per file).
 3. In a real plugin session, keeping a variant calls
    `SeedHistory::mark_latest_kept(candidate)` (`src/core/model/selection.h`),

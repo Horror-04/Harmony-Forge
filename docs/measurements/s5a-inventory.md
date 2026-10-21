@@ -9,6 +9,13 @@ regions) + targeted grep. NO build executed; `build-plugdbg` left
 configured-but-unbuilt (counting needs no binaries). Wall time: carried in the
 slice report (`.superpowers/sdd/2026-10-18-refactor-s5a/task-1-report.md`).
 
+**DATED (2026-10-21) — the `file:line` pointers below are as of the
+`refactor/s5a` tree.** One of them no longer resolves: the editor's
+leak-detector macro is at `src/plugin/audio/PluginEditor.h:292` (the file is
+293 lines; the record's `:319` is from the S5a tree). The processor's
+`PluginProcessor.h:138` still resolves. The rest of the inventory is a
+statement about the S5a tree and is kept as it was measured.
+
 ## 0. Config C — resolved
 
 **Config C = `build-plugdbg`: Debug + `HARMONY_FORGE_BUILD_PLUGIN=ON` +

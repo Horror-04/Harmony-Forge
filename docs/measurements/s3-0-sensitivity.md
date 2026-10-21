@@ -7,6 +7,15 @@ rebuild (build-off Debug ONLY) → units + spot → record → revert
 Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-report.md`
 (git-ignored work notes; this table is the committed record).
 
+**DATED (2026-10-21) — this table describes the `refactor/s3-0` tree, not
+today's.** The `file:line` pointers are as they were verified then;
+`src/inference/candidates.cpp` has since been dissected (256 lines now), and
+the composer RNG is now a **`Pcg32` stream**
+(`Pcg32 rng(stream_seed(p, i))`, `src/inference/candidates.cpp:124` — the
+Pcg32 change, commit `3589205`), NOT `std::mt19937`. See the dated note in
+`docs/measurements/s3-0-stage-order.md`. The record is kept as it was
+measured.
+
 ## Calibration
 
 | corruption | wall time | rebuilds |
