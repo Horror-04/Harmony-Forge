@@ -438,6 +438,121 @@ harmless while the sampler is behind a flag, but it becomes a
 correctness-shaped question the moment a future executor changes the
 sampler or the model, and the change then costs a full re-bank.
 
+**Status (B3 refactor landed 2026-10-21; VALUE change still gated).** The
+`src/inference` half of D-B3 is implemented as a **pure refactor**, so
+today's bytes cannot move:
+
+- `src/inference/seed_derivation.h` declares the single source:
+  `unsigned runner_seed(const GenParams&, int)` and the non-default
+  `unsigned runner_seed_domain(const GenParams&, int)`; `stream_seed` is
+  exported there unchanged so the new test can compare against it.
+- `src/inference/candidates.cpp` holds the only definitions. `runner_seed`
+  returns `static_cast<unsigned>(p.seed + index)` **verbatim**; the five
+  inline expressions (`candidates.cpp` greedy runner stage x2,
+  `candidate_model.cpp` greedy fallback x2 + `sseed`) resolve through it at
+  **three call sites** (`candidates.cpp`, `candidate_model.cpp` greedy, and
+  `candidate_model.cpp` `sseed`); each pair shares one call.
+- `runner_seed_domain` is domain-separated by the compile-time FNV-1a tag
+  `"hf.runner_seed.v1"` (mix64 over seed, index, xor-fold; construction
+  documented in the header). It is called by no production path.
+- `tests/test_b3_runner_seed.cpp` pins (a) today's additive value,
+  (b) domain determinism + separation from `runner_seed`/`stream_seed`,
+  (c) non-collision for `(s,i)` vs `(s+3,i+3)` and for the real overlap
+  pair `(s,i)` vs `(s+1,i-1)`. NOTE: the ruling's claim that `(s,i)` and
+  `(s+3,i+3)` receive the same additive seed is arithmetically off
+  (`s+i` vs `s+i+6`); the real collision is the overlapping-window pair
+  `(s,i)` vs `(s+1,i-1)` (e.g. `(s,3)` vs `(s+3,0)`). The test pins the
+  real pair; the ruling text above is left as written.
+- Advisory `tools/check_bodies.py` moved **13 -> 23 FAIL** in this change,
+  all disclosed and expected: the `fnv1a`/`stream_seed` range and body
+  deltas, the facade body, and the B3 test/probe additions. The step is
+  `continue-on-error: true` in CI and is not a gate.
+- `tools/c2059_probe/probe_c2059.py` is re-anchored on the new `sseed`
+  initializer (same shape variants over `runner_seed(p, index)`; labels
+  show the re-expressed forms, the literal historical repro text stays in
+  `docs/measurements/s3-quirks.md`).
+
+**Flip + re-bank procedure (one change, needs a build).** To adopt D-B3's
+value, make these edits together. Keep the seam: do not delete `runner_seed`
+in this change (deleting it is a separate cleanup that must rewrite every
+test reference). Post-flip expected relation, for every pinned pair:
+`runner_seed(p, i) == runner_seed_domain(p, i)` and both differ from
+`static_cast<unsigned>(p.seed + i)`; `runner_seed_domain` stays distinct
+from `stream_seed`; and the `(s,i)` vs `(s+3,i+3)` and adjacent
+`(s,i)` vs `(s+1,i-1)` domain values differ.
+
+1. Flip the seam: in `src/inference/candidates.cpp`, change only the body of
+   `runner_seed` to `return runner_seed_domain(p, index);`. Keep the single
+   declaration and all three call sites. Do NOT change `runner_seed_domain`
+   itself; the tag is the domain contract.
+2. Update `tests/test_b3_runner_seed.cpp` in the same change - the pre-flip
+   pins assert the old contract and would go red:
+   - Retire the legacy-equality loop in
+     `TEST_CASE("B3 runner_seed keeps today's additive value")` (the
+     426-pair `CHECK(runner_seed(p, index) ==
+     static_cast<unsigned>(p.seed + index))` table). Replace it with the
+     post-flip relation `CHECK(runner_seed(p, index) ==
+     runner_seed_domain(p, index))` over the same table, plus
+     `CHECK(runner_seed(p, index) !=
+     static_cast<unsigned>(p.seed + index))` (the committed table has no
+     accidental collision; if a future tag change creates one, record that
+     pair explicitly rather than dropping the check).
+   - Replace the additive-overlap equality loop in that case with the
+     post-flip non-collision check
+     `CHECK(runner_seed(b3_params(s), i) !=
+     runner_seed(b3_params(s+1), i-1))` for `i >= 1`; keep the
+     bars/tonic/scale/mode-independence check unchanged (the domain
+     derivation still ignores them).
+   - Rename that TEST_CASE (and the file header's "default value is still
+     the additive form" note) to state the post-flip domain value.
+   - In `TEST_CASE("B3 runner_seed_domain is deterministic and
+     domain-separated")`, flip `CHECK(domain != runner_seed(p, index))` to
+     `CHECK(domain == runner_seed(p, index))`. Keep the determinism check,
+     the `domain != stream_seed` separation, the `(s,i)` vs `(s+3,i+3)`
+     check and the adjacent-pair `(s,i)` vs `(s+1,i-1)` check unchanged;
+     those are the properties the flip must preserve.
+   - If the flip is instead done by deleting `runner_seed`, replace every
+     `runner_seed(` reference in this file with `runner_seed_domain(`,
+     delete the header declaration, and keep the same relation checks; the
+     rest of this procedure is unchanged.
+3. Build both configs and run `test_s4b_seed_binding`: it MUST go RED.
+   Capture the 12 new per-index digests from the failure diff (or a
+   temporary INFO dump) on the clean tree, double-confirmed, and re-run the
+   sseed-swap red-proof per seed before banking.
+4. Re-bank `kPinned[3][4]` in
+   `tests/test_s4b_seed_binding.cpp:189-208` (12 literals, seeds 0/10/11).
+   Update that file's RECAPTURE comment and its `p.seed+i` references
+   (header lines 6 and 179-180) to `runner_seed(p, i)`. Then re-bank the
+   `in_test` record in `tests/golden_manifest.json` whose `test` is
+   `s4b sampler index-seed binding is pinned per candidate`: update
+   `commit`, `recaptured_in`, `recapture_reason` (same shape as the Pcg32
+   re-capture: what moved, why, the swap red-proof and the new coincidence
+   pattern) and `produced_by`. The frozen bitmap pin
+   (`tools/lint_golden_pin.py`) and `tests/golden/manifest.json` are NOT
+   part of this re-bank.
+5. Re-measure the cube baseline v3 (`docs/measurements/s0-sha-matrix-v3.csv`)
+   with `tools/sha_matrix.py` for the affected legs and record the delta.
+   The rows that can move are C++-rendered rows with `sampling=ON` (the
+   `sampling` column); the model-unloaded `render_midi` rows are unaffected.
+   Prediction from the committed rows: all 576 `render_midi` rows are
+   `sampling=OFF`, and the `render_model` rows come from the Python
+   renderer, so **no v3 row is expected to move**; a non-empty delta means
+   the flip changed more than this seed and must be explained.
+6. `python tools/update_golden_midi.py` (its default check mode) must stay
+   MATCH: seeds 7/42 use the default model-less, sampling-OFF path, where
+   the runner is unloaded and the seed is never consumed. If it reddens,
+   re-bank with `--write --reason "..."` and update the `golden_midi`
+   manifest entries.
+7. Run the full gate set: `lint_golden_manifest.py`, `lint_golden_pin.py`,
+   `gen_map.py --check`, `check_layers.py --strict`, `rt_scan.py --strict`,
+   `lint_ccn.py --strict`, `lint_file_size.py`, plus the pytest/unittest
+   suites. The advisory `check_bodies` count will move again with the
+   test/probe edits and is disclosed, not gating.
+
+The cube baseline and every existing golden value are untouched by this
+commit; only the named derivation, its tests, the probe anchor and this note
+changed.
+
 ---
 
 ## B4 — Duplicated strict/constraints/ranking logic and TU-local `mod12` / `octave_pull`

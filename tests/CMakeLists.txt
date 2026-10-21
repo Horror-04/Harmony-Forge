@@ -230,6 +230,10 @@ hf_add_test(test_s4b_seed_binding test_s4b_seed_binding.cpp)
 hf_add_test(test_s4b_mode_shape test_s4b_mode_shape.cpp)
 target_compile_definitions(test_s4b_seed_binding PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")
+# B3: named single-source runner/sampler seed - refactor pin (today's additive
+# value) + the non-default D-B3 domain-separated flip candidate (new test, no
+# existing test modified).
+hf_add_test(test_b3_runner_seed test_b3_runner_seed.cpp)
 hf_add_test(test_ort_logits test_ort_logits.cpp)
 target_compile_definitions(test_ort_logits PRIVATE
   HARMONY_FORGE_LOGITS_MODEL="${CMAKE_SOURCE_DIR}/training/model.logits.onnx"

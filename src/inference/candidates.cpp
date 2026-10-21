@@ -5,6 +5,8 @@
 #include "candidates.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <string_view>
 #include <vector>
 
 #include "core/music/chord.h"
@@ -19,6 +21,7 @@
 #include "keynorm.h"
 #include "memo_filter.h"
 #include "pcg.h"
+#include "seed_derivation.h"
 
 namespace hf::infer {
 namespace {
@@ -34,7 +37,8 @@ constexpr int kMaxBars = hf::ser::kVocabMaxBars;
 constexpr int kMaxNotes = hf::ser::kVocabMaxNotes;  // codec cap: 170 notes / 1024 ids
 
 // FNV-1a: deterministic across compilers (std::hash<string> is not).
-uint64_t fnv1a(const std::string& s) {
+// constexpr so the B3 domain tag below folds to a constant (no allocation).
+constexpr uint64_t fnv1a(std::string_view s) {
   uint64_t h = 1469598103934665603ULL;
   for (unsigned char c : s) {
     h ^= c;
@@ -48,15 +52,10 @@ uint64_t mix64(uint64_t h, uint64_t v) {
   return h;
 }
 
-uint32_t stream_seed(const GenParams& p, int index) {
-  uint64_t h = fnv1a(p.scale);
-  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.seed)));
-  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.bars)));
-  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.tonic)));
-  h = mix64(h, static_cast<uint64_t>(static_cast<int>(p.mode)));
-  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(index)));
-  return static_cast<uint32_t>(h ^ (h >> 32));
-}
+// B3: domain tag for runner_seed_domain. FNV-1a of the literal at compile
+// time, so the two hash derivations start from disjoint states without any
+// per-call string work.
+constexpr uint64_t kRunnerSeedDomainSalt = fnv1a("hf.runner_seed.v1");
 
 // Facade-called scale lookup with major fallback (sole caller is
 // `generate_candidates_impl`; TU-local per the single-consumer rule).
@@ -152,11 +151,10 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
     if (p.use_sampling && runner_override == nullptr) {
       material = material_via_sampler_or_greedy(feed, p, prog, kn_shift, i);
     } else {
-      material =
-          runner_path
-              ? material_from_runner_with(feed, static_cast<unsigned>(p.seed + i), p.model_path,
-                                          runner_override)
-              : material_from_runner(feed, static_cast<unsigned>(p.seed + i));
+      const unsigned seed = runner_seed(p, i);
+      material = runner_path ? material_from_runner_with(feed, seed, p.model_path,
+                                                         runner_override)
+                             : material_from_runner(feed, seed);
     }
     if (p.keynorm_use_canonical) shift_pattern_from_canonical(material, kn_shift);
     // Decoded runner output regroups tracks by type; generation below only
@@ -183,6 +181,38 @@ std::array<core::Pattern, 4> generate_candidates_impl(const GenParams& params,
 }
 
 }  // namespace
+
+// Seed derivations (B3): the only definitions of the composer stream seed and
+// the runner/sampler seed; declared in seed_derivation.h so this TU,
+// candidate_model.cpp and the B3 unit test share them (no second copy).
+// `stream_seed` keeps its pre-B3 body byte-for-byte - it is exported only so
+// the B3 test can compare runner_seed_domain against it.
+std::uint32_t stream_seed(const GenParams& p, int index) {
+  uint64_t h = fnv1a(p.scale);
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.seed)));
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.bars)));
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.tonic)));
+  h = mix64(h, static_cast<uint64_t>(static_cast<int>(p.mode)));
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(index)));
+  return static_cast<uint32_t>(h ^ (h >> 32));
+}
+
+// TODAY'S runner/sampler seed value, verbatim from the five inline
+// `static_cast<unsigned>(p.seed + index)` sites this function replaced (B3).
+// B3 is a pure refactor: this body MUST NOT change without the full re-bank
+// procedure documented in the B3 section of docs/BACKLOG-phase-B.md.
+unsigned runner_seed(const GenParams& p, int index) {
+  return static_cast<unsigned>(p.seed + index);
+}
+
+// D-B3 domain-separated variant (construction documented in
+// seed_derivation.h). Deliberately NOT called from any production path.
+unsigned runner_seed_domain(const GenParams& p, int index) {
+  uint64_t h = kRunnerSeedDomainSalt;
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(p.seed)));
+  h = mix64(h, static_cast<uint64_t>(static_cast<uint32_t>(index)));
+  return static_cast<unsigned>(static_cast<uint32_t>(h ^ (h >> 32)));
+}
 
 // Deterministic quarter-note base + chord-tone helper now live in
 // candidate_base.cpp (S3 slice 1, moved byte-identically; the declaration
