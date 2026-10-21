@@ -54,7 +54,9 @@ console is cp1251: it forced the LOCALE (the decode) but never the STDOUT
 ENCODING (the print). The fix is ``tools/ci_encoding.py``: every tool
 hardens its console (``ci_encoding.harden_console()``) so an unencodable
 character is REPLACED (an escape) instead of raising - the console's own
-encoding is kept and the verdict + the exit code always come out.
+encoding is kept and the verdict + the exit code always come out. The
+helper's own unit-level proof lives in ``tools/tests/test_console_encoding.py``
+(split out of this file, which sits at the 500-line pin).
 NOTE on the locale knob: since Python 3.11 ``io.TextIOWrapper`` (and so
 subprocess) asks the LOCALE MODULE for the encoding - ``locale.getencoding()``
 (PEP 597) - and NOT ``locale.getpreferredencoding()`` (which is only a
@@ -85,7 +87,6 @@ TOOLS_DIR = os.path.join(REPO_ROOT, "tools")
 sys.path.insert(0, TOOLS_DIR)
 
 import lint_locale_independence as LOCALE  # noqa: E402
-import ci_encoding  # noqa: E402  (the CI-safe console helper under test)
 
 # The tracked name that broke the first CI run (Cyrillic).
 NON_ASCII_NAME = "методология.txt"
@@ -388,36 +389,6 @@ class NonAsciiStdoutEncodingTest(unittest.TestCase):
                 proc.returncode, 1,
                 "the sha rule must fail the lint: %s" % proc.stdout[-2000:])
             self.assertIn("rule2", proc.stdout)
-class ConsoleHardeningTest(unittest.TestCase):
-    """The helper itself (tools/ci_encoding.py): a cp1252 console must be
-    able to print a non-ASCII path (escaped, never raised)."""
-
-    PROBE = (
-        "import sys\n"
-        "sys.path.insert(0, %r)\n"
-        "import ci_encoding\n"
-        "ci_encoding.harden_console()\n"
-        "print('ENCODING', sys.stdout.encoding)\n"
-        "print('VERDICT:', %r)\n" % (TOOLS_DIR, NON_ASCII_NAME)
-    )
-
-    def test_a_cp1252_console_prints_a_non_ascii_path(self):
-        env = dict(os.environ)
-        env.update(_CP1252_CONSOLE_ENV)
-        proc = subprocess.run([sys.executable, "-c", self.PROBE],
-                              capture_output=True, cwd=REPO_ROOT, env=env,
-                              encoding="utf-8", errors="surrogateescape")
-        self.assertEqual(proc.returncode, 0, proc.stderr[-800:])
-        self.assertNotIn("Traceback", proc.stderr)
-        self.assertNotIn("UnicodeEncodeError", proc.stdout + proc.stderr)
-        # the console's own encoding is KEPT (the rest of the output stays
-        # readable in the console's code page)
-        self.assertIn("ENCODING cp1252", proc.stdout)
-        # the unencodable characters are escaped, never raised and never
-        # silently dropped
-        self.assertIn("VERDICT: ", proc.stdout)
-        self.assertIn("\\u043c", proc.stdout)
-        self.assertNotIn(NON_ASCII_NAME, proc.stdout)
 
 
 class ForcedLocalePremiseTest(unittest.TestCase):

@@ -11,7 +11,7 @@ on:
 jobs:
   gates:
     # The enforce gates (torch-free, seconds, no build): fail fast before
-    # configure/build/test. Four families, all blocking:
+    # configure/build/test. Five families, all blocking:
     #  * architecture/isolation — banned tokens on the audio path, the
     #    layer includes, the golden pin, the golden-manifest registry, the
     #    invariant tags, the sealed-split isolation;
@@ -164,7 +164,9 @@ jobs:
         # Line counting is python over the file bytes - never
         # Measure-Object -Line. What it does NOT check: the per-file
         # 500-line rule (lint_file_size.py), the max-CCN (lint_ccn.py,
-        # which carries the ACCEPTED .cpp CCN 13 pin with its reason), and
+        # which records the .cpp CCN 13 as an ACCEPTED EXCEPTION, NOT A
+        # PIN - it is below the >15 pin threshold, so no pin is needed;
+        # see the tool's docstring), and
         # the extracted layout unit beside the editor (no budget covers it;
         # its count is reported only). Blocking: non-zero fails the job.
         run: python tools/lint_editor_budget.py
@@ -223,7 +225,7 @@ jobs:
         # Blocking. Until now CI ran ONE python test file (the FL
         # dispatcher, via stdlib unittest), so a regression in a lint's OWN
         # test suite was invisible until someone ran pytest locally. This
-        # step runs the torch-free subset of tools/tests/ (121 of the 178
+        # step runs the torch-free subset of tools/tests/ (132 of the 189
         # collected tests today). It sits AFTER the lizard install above, so
         # the CCN unit tests RUN here instead of skipping. Seconds, no
         # build, no venv.

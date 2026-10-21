@@ -21,10 +21,16 @@ Symbol rule (best-effort, deterministic, single-line only):
 Usage:
   py -3 tools/gen_map.py           # regenerate docs/MAP.md (LF, sorted)
   py -3 tools/gen_map.py --check   # exit 1 if docs/MAP.md is stale, else 0
+
+The flag is parsed by argparse, so an UNKNOWN argument (a typo such as
+``--chek``, or ``--check=1``) is a usage ERROR (exit 2) instead of a silent
+fall-through to the WRITE path: a mistyped check must never rewrite the
+file it was meant to verify.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
@@ -140,11 +146,13 @@ def render() -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    if argv is None:
-        argv = sys.argv[1:]
-    check = argv == ["--check"]
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--check", action="store_true",
+                    help="verify docs/MAP.md is FRESH; never writes (exit 1 "
+                         "when stale)")
+    args = ap.parse_args(sys.argv[1:] if argv is None else argv)
     text = render()
-    if check:
+    if args.check:
         try:
             with open(_MAP, encoding="utf8", newline="") as f:
                 current = f.read()

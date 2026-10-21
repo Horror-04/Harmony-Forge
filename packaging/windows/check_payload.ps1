@@ -127,7 +127,7 @@ foreach ($a in $artefacts) {
 # --- 4. docs\SPEC.md must NOT be shipped -------------------------------------
 Add-Result 'docs\SPEC.md not referenced by .iss' (-not ($iss -like '*SPEC.md*')) "(deliberately not shipped)"
 
-# --- 6. AGPL §§4/6 (fix round 1, HARD): the full licence text ships --------
+# --- 5. AGPL §§4/6 (fix round 1, HARD): the full licence text ships --------
 $licenceFullOk = $false
 $licenceFullDetail = 'no #define LicenceFull found in .iss'
 $licenceHashOk = $false
@@ -152,7 +152,7 @@ if ($iss -match '(?m)^\s*#define\s+LicenceFull\s+"([^"]+)"') {
 Add-Result '.iss ships root LICENSE to {app} (AGPL §§4/6)' $licenceFullOk $licenceFullDetail
 Add-Result 'shipped LICENSE byte-identical to root LICENSE' $licenceHashOk $licenceHashDetail
 
-# --- 5. JUCE licence notice (R1, HARD): the notice is the AGPL source offer ---
+# --- 6. JUCE licence notice (R1, HARD): the notice is the AGPL source offer ---
 # R1 is resolved (AGPLv3): packaging\LICENSE-JUCE-NOTICE.txt is committed and
 # names the public repository URL, i.e. it IS the AGPL §13 source offer. A
 # missing notice therefore fails this check -- it is not an informational note.

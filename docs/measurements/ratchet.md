@@ -61,7 +61,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block) | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 | G12 | Editor total budget | `python tools/lint_editor_budget.py` | the Editor's OWN file set — `src/plugin/audio/PluginEditor.h` + `src/plugin/audio/PluginEditor.cpp` (the set `docs/measurements/s9-0.md` Appendix D measures for the D-B12 ceiling) | RATCHET (a pinned file SET + a pinned ceiling: **1102** = the recorded budget 1050 + the D-B12 +5 % tolerance; 1050 × 1.05 = 1102.5 → 1102 for integer line counts) | **1100** physical lines (293 + 807) → **2 lines of headroom**; the tolerance IS exercised (1100 > the recorded 1050) | yes (`gates` job) |
-| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **272 files, 1348 symbols** (42506 bytes), regenerated + verified in the G12 commit | yes (`gates` job) |
+| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **274 files, 1355 symbols** (42722 bytes), regenerated + verified in the final-review fix commit (the map last moved at the D merge `9eb31a3`: 273 files / 1355 symbols, 42678 bytes; the D-branch record below §11 was 272 / 1348, measured WITHOUT task A's `tools/ci_encoding.py`) | yes (`gates` job) |
 
 **The P-series (P1-P5) — the two runtime probes and the three CI steps added
 by the phase-B tranches.** They sit OUTSIDE the G-series on purpose: the
@@ -78,7 +78,7 @@ push?
 | P2 | S93 tab-wiring guard | `cmake --build build-plugdbg --config Debug --target probe_s93_tab_wiring` then `.\build-plugdbg\tests\Debug\probe_s93_tab_wiring.exe` **run from the repo root** | the REAL editor's Edit/Explain tab buttons, found through PUBLIC child APIs only (no new accessors, no product change) | HARD — 11 wiring assertions (button present, viewports found and distinct, the visible view really switches and switches back) | **ALL-PASS (0 failures)** | **NO** — not `catch_discover_tests`-registered (never in `ctest -N`). **CI integration is FUTURE WORK** (ruling S93-3) |
 | P3 | FL-dispatcher unittest (CI step) | `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v` — the CI step "FL companion dispatcher test (pure path)" in the `gates` job | the companion's PURE path only: `plan_layout` + the dry-run path of `src/companion/fl_dispatcher.py` (no FL Studio, no venv) | HARD — the plan for `DEFAULT_LAYOUT` and the rejection of a malformed layout entry are pinned | PASS (the step runs on every push) | **YES** — the `gates` job; a failing test fails the job (D-B8: dispatcher-only step now; the general python-test step landed later as P5) |
 | P4 | sseed compiler probe (CI step) | `python tools/c2059_probe/probe_c2059.py --require-msvc` — the CI step "sseed probe (real-TU compile witness)" in the `build-test-validate` job | the REAL `src/inference/candidate_model.cpp` TU, compiled EIGHT ways (site as-is + three well-formed forms + four recorded malformed forms) | HARD — a malformed form that compiles, a well-formed form that does not, or a fact that no longer holds fails the job; the verdict RETIRE (a well-formed one-line form stopped compiling) also fails | PASS | **YES** — the `build-test-validate` job (it needs the MSVC toolchain that job already requires; the `gates` job stays stdlib-only) |
-| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **121 passed, 0 skipped, 27 subtests** (measured 2026-10-20 with the runner's profile: the system python, no torch; 121 of the 178 collected tests). The count GROWS with the suite and is NOT a ratchet: the G12 gate's own test file adds **7** cases (`tools/tests/test_lint_editor_budget.py`), i.e. this subset is then 121 + 7 = **128** (re-measured 2026-10-21 with the same profile: 126 passed + 2 skipped = 128 — the 2 skips are the `dump_worker_ids.exe` cases, skipped because THIS tree has no `build-full`; the recorded run's "0 skipped" had that build tree present) | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
+| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **130 passed, 2 skipped, 27 subtests** (the torch-free subset collects **132**; measured 2026-10-21 on the merged tree with the runner's profile: the system python, no torch, no `build-full` — the 2 skips are the `dump_worker_ids.exe` cases, which need that build tree). The full `tools/tests/` collection is **189** tests; the six training-stack files are excluded by name in the step. The count GROWS with the suite and is NOT a ratchet: the G12 gate's own file `tools/tests/test_lint_editor_budget.py` contributes **7** cases, and the console-hardening case lives in `tools/tests/test_console_encoding.py` (split out at the 500-line pin) | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
 
 **The two probes are NOT ctest-registered, and that is deliberate.** Both
 are plain `main()` binaries in `tests/CMakeLists.txt` behind
@@ -534,9 +534,13 @@ real tree passes with its total reported, and `main()`'s exit codes 1/0).
 
 **How a future executor updates the number.** Measure with this tool's own
 method (its printed per-file counts ARE that measurement), then edit
-`EDITOR_FILES` / `BUDGET` / `CEILING` in the tool with the one-line reason
-and record the new value HERE, in the SAME commit (the pin lives in the
-tool, so no manifest-style co-edit can pass silently).
+`EDITOR_FILES` and `BUDGET` / `TOLERANCE_PCT` in the tool (`CEILING` is
+DERIVED from the last two — `BUDGET * (100 + TOLERANCE_PCT) // 100` —
+never type it), add the one-line reason, update the hard-coded
+1050 / 5 / 1102 assertions in `tools/tests/test_lint_editor_budget.py`
+(they pin the constants independently), and record the new value HERE, in
+the SAME commit (the pin lives in the tool, so no manifest-style co-edit
+can pass silently).
 
 ---
 
@@ -554,11 +558,22 @@ grow and no exception list.
 `docs/AGENT_PERMISSIONS.md` is the permission record, and the map's own
 header repeats it.
 
-**Current value.** FRESH — **272 files, 1348 symbols** (42506 bytes),
-regenerated and verified in the G12/G13 commit. The map MOVED in that
-commit (it was 270 files / 1340 symbols): the two new files of this wave,
-`tools/lint_editor_budget.py` and `tools/tests/test_lint_editor_budget.py`,
-are exactly the delta.
+**Current value.** FRESH — **274 files, 1355 symbols** (42722 bytes),
+regenerated and verified in the final-review fix commit (G13). That
+commit moved the map by ONE file: the console-hardening test class moved
+out of `tools/tests/test_git_locale_independence.py` into its own
+`tools/tests/test_console_encoding.py` (+1 file, the symbol count
+unchanged).
+
+**Provenance of the merged tree.** Before that split the merged tree was
+**273 files, 1355 symbols** (42678 bytes), regenerated and verified in the
+D **merge** (`9eb31a3`) — not in the G12 commit. The delta from the base
+the D record was computed on (`8b51c9e`: 270 files / 1340 symbols) to
+that merged tree is **three** new files, not two: `tools/ci_encoding.py`
+(task A) plus `tools/lint_editor_budget.py` and
+`tools/tests/test_lint_editor_budget.py` (task D) — i.e. 270 + 3 = 273
+files and 1340 + 15 = 1355 symbols. The D-branch record (272 files /
+1348 symbols, 42506 bytes) predates task A and is not the merged tree.
 
 **Why the row exists at all.** AGENTS.md names "verify with `--check`" as
 the MAP's own step, but that check had NEVER run in CI, so a map left stale

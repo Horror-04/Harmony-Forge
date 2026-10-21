@@ -74,10 +74,13 @@ WHAT THIS GATE DOES NOT CHECK - do not read more into it than it proves:
 
 RE-PINNING (the ratchet procedure, docs/measurements/ratchet.md:30-44).
   The pin lives in THIS tool, so a silent manifest-style co-edit cannot
-  pass: to accept a new number, edit EDITOR_FILES / BUDGET / CEILING here,
-  add the one-line reason, re-measure with this tool's own method, and
-  record the new value in docs/measurements/ratchet.md (G12) in the SAME
-  commit. A shrink is REPORTED by the tool's numbers, never a failure.
+  pass: to accept a new number, edit EDITOR_FILES and BUDGET /
+  TOLERANCE_PCT here (CEILING is DERIVED from them - never type it), add
+  the one-line reason, re-measure with this tool's own method, update the
+  hard-coded 1050 / 5 / 1102 assertions in
+  tools/tests/test_lint_editor_budget.py, and record the new value in
+  docs/measurements/ratchet.md (G12) in the SAME commit. A shrink is
+  REPORTED by the tool's numbers, never a failure.
 """
 
 from __future__ import annotations
@@ -88,6 +91,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 # The Editor's OWN file set - the pair D-B12's ceiling quantity names
 # (".h+.cpp") and docs/measurements/s9-0.md Appendix D measures for it (the
@@ -168,9 +173,12 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
     notes.append("Editor total: %d physical lines (the set and the number: %s)"
                  % (total, MEASURED_SOURCE))
     notes.append("budget: %d physical lines - %s" % (BUDGET, BUDGET_SOURCE))
+    tolerance_factor = (100 + TOLERANCE_PCT) / 100
+    exact_ceiling = BUDGET * tolerance_factor
     notes.append("ceiling: %d = the budget %d + the %d%% tolerance "
-                 "(%d x 1.05 = 1102.5 -> 1102 for integer line counts)"
-                 % (CEILING, BUDGET, TOLERANCE_PCT, BUDGET))
+                 "(%d x %g = %g -> %d for integer line counts)"
+                 % (CEILING, BUDGET, TOLERANCE_PCT, BUDGET,
+                    tolerance_factor, exact_ceiling, CEILING))
     headroom = CEILING - total
     notes.append("headroom: %d line(s) under the ceiling" % headroom
                  if headroom >= 0 else
@@ -206,6 +214,7 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=_REPO)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)

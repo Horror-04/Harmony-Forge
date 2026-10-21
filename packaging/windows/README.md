@@ -54,9 +54,12 @@ Machine-wide install (`PrivilegesRequired=admin`); a desktop shortcut is offered
 ## Preflight checks
 
 - `check_payload.ps1` — verifies every referenced artefact exists in
-  `build-full` and that the installer version matches the CMake project version.
+  `build-full`, that the installer version matches the CMake project version,
+  and that the licence payload is HARD-wired (the notice + the root `LICENSE`
+  ship to `{app}`, and the shipped `LICENSE` is byte-identical to the root one).
 - `harmony_forge.iss` also contains an ISPP preflight: `iscc` refuses to compile
-  if the VST3 module, the Standalone exe or `onnxruntime.dll` (R5) is missing.
+  if the VST3 module, the Standalone exe or `onnxruntime.dll` (R5) is missing,
+  or if `LICENSE-JUCE-NOTICE.txt` / the root `LICENSE` is absent (`#error`).
 
 ## DO NOT run the installer on this machine
 

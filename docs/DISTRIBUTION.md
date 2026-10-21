@@ -186,7 +186,7 @@ keeping licence notices intact (including JUCE's).
 | Catch2 (tests only, FetchContent; never shipped) | BSL-1.0 | AGPL-compatible; test-only dependency |
 | Training dependencies (`training/`, Python/ML stack) | BSD-style (permissive) | model weights/corpus must not contradict AGPL on distribution — reviewed at Phase 3 merge |
 
-### Installer-notice wiring (verified 2026-10-12; full-text payload since fix round 1; notice hard-required)
+### Installer-notice wiring (verified 2026-10-21 after the hard-require change; full-text payload since fix round 1)
 
 Both installers ship the notice AND a byte-identical copy of the root
 `LICENSE` (AGPL ss4/6), so every binary recipient gets the licence text:

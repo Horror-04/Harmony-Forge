@@ -348,6 +348,11 @@ def check_variant_text(replacement, delta):
 
 
 def main(argv):
+    # BEFORE the parser: argparse prints its OWN errors (a bad flag, a
+    # missing value) through the console, so a cp1252 console must already
+    # be hardened when the parse fails - otherwise the usage message dies
+    # with a traceback instead of the error.
+    ci_encoding.harden_console()  # the console must never raise on a path
     parser = argparse.ArgumentParser(
         description="B7 probe: the `sseed` statement compiles on the real "
                     "site, and the malformed forms fail to compile.")
@@ -355,8 +360,6 @@ def main(argv):
                         help="fail (instead of skipping) when no MSVC "
                              "toolchain is found (CI form)")
     args = parser.parse_args(argv)
-
-    ci_encoding.harden_console()  # the console must never raise on a path
 
     print("[sseed] B7 probe - record: %s" % RECORD_REL.replace("\\", "/"))
     print("[sseed] site: %s" % SITE_REL.replace("\\", "/"))
