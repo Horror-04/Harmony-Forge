@@ -228,12 +228,14 @@ still pinned.
 **One more row's range re-derived 2026-10-21 (the doc-truth pass).** The
 B2 wave moved one line above `parse_arrange_spec`, so its MEASURED range is
 now **441-483** (the table above carries the measured value; `lint_ccn
---strict` prints `src/core/arrangement/arrangement.cpp:441-483`). The pin
-range inside `tools/lint_ccn.py` still reads 442-484 — the tool is outside
-this doc-only pass, and the range is INDICATIVE (the gate keys on (file,
-name) and the pinned CCN 21), so no gate verdict changed either way. The
-next wave that edits the pin table should re-pin that row in the tool and
-the document in the SAME commit, as the ratchet requires.
+--strict` prints `src/core/arrangement/arrangement.cpp:441-483`). Through
+the doc-truth pass itself the pin range inside `tools/lint_ccn.py` still
+read 442-484 — the tool was outside that doc-only pass, and the range is
+INDICATIVE (the gate keys on (file, name) and the pinned CCN 21), so no
+gate verdict changed either way. The fix round that followed the scoped
+re-review re-pinned that row in the tool to the measured 441-483, so the
+tool and this document now carry the same numbers in the SAME commit, as
+the ratchet requires.
 
 **Exception reasons (verbatim, as the owner stated them).**
 

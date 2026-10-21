@@ -926,7 +926,7 @@ than fail.
 > **Known, accepted minor inefficiency (recorded, NOT fixed):** the folded
 > repair path derives the bar chord's intervals **twice per rub note** —
 > once inside `strong_beat_repair_target`
-> (`src/inference/strong_beat.h:167`) and once in the caller
+> (`src/inference/strong_beat.h:179`) and once in the caller
 > (`src/inference/constraints.cpp:71`, right after the call at `:68-69`).
 > The two derivations are identical (the same `hf::music::chord_intervals`
 > over the same bar chord), so the RESULT cannot move; it is simply twice

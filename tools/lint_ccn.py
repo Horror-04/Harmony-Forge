@@ -94,7 +94,7 @@ _PIN_TABLE = [
     ("hf::ser::read_smf", "src/core/serialization/midi_read.cpp", 146, 257, 30),
     ("hf::ser::decode_tokens", "src/core/serialization/tokenizer.cpp", 69, 103, 23),
     ("PianoRoll::paint", "src/plugin/ui/PianoRoll.cpp", 214, 302, 22),
-    ("hf::arr::parse_arrange_spec", "src/core/arrangement/arrangement.cpp", 442, 484, 21),
+    ("hf::arr::parse_arrange_spec", "src/core/arrangement/arrangement.cpp", 441, 483, 21),
     ("hf::ser::encode_pattern", "src/core/serialization/tokenizer.cpp", 37, 67, 21),
     ("hf::music::recognize_chord", "src/core/music/chord_detect.cpp", 45, 109, 20),
     ("hf::infer::load_impl", "src/inference/memo_filter.cpp", 54, 86, 20),
