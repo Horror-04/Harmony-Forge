@@ -58,7 +58,7 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G7 | golden pin | `python tools/lint_golden_pin.py` | `tests/golden/slot_bitmap.txt` + `tests/golden/manifest.json` | HARD | PASS, canonical sha `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` | yes (both jobs) |
 | G8 | invariant tags | `python tools/lint_inv_tags.py` | the `[inv1]`..`[inv5]`-tagged TEST_CASEs | HARD | PASS, 29 bindings / 5 invariants | yes (both jobs) |
 | G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 24 records (capture=16, gen=7, mixed=1) | yes |
-| G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** — the PINNED pair, i.e. the last MEASURED one (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block). The merged backlog wave ran no build, so the pinned counters stay here; the wave's EXPECTED pair is **273 (build-full) / 233 (build-off)** — see §7 for the derivation and `docs/measurements/s10-final.md` §10.1 | yes (the test job) |
+| G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** — the PINNED pair of the EARLIER wave, i.e. the last pair MEASURED locally (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block). The merged backlog wave's pair is **273 (build-full) / 233 (build-off)**: the build-full half is now **MEASURED** — CI run id `39625770936` on commit `1552665` reported "100% tests passed, 0 tests failed out of 273" in the build-full (Release) configuration (CI's `build` directory carries the build-full semantics, see §7) — and the build-off half (233) is still the STATIC EXPECTATION, **not** measured by CI (CI runs one configuration only); the PINNED pair stays 254/221 until an off-configuration run measures it. See §7 for the derivation and `docs/measurements/s10-final.md` §10.1 | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 | G12 | Editor total budget | `python tools/lint_editor_budget.py` | the Editor's OWN file set — `src/plugin/audio/PluginEditor.h` + `src/plugin/audio/PluginEditor.cpp` (the set `docs/measurements/s9-0.md` Appendix D measures for the D-B12 ceiling) | RATCHET (a pinned file SET + a pinned ceiling: **1102** = the recorded budget 1050 + the D-B12 +5 % tolerance; 1050 × 1.05 = 1102.5 → 1102 for integer line counts) | **1100** physical lines (293 + 807) → **2 lines of headroom**; the tolerance IS exercised (1100 > the recorded 1050) | yes (`gates` job) |
 | G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **280 files, 1384 symbols** (44270 bytes). The map was regenerated at each of the four backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b` (277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384, the LAST regeneration) — and verified FRESH at the doc-truth commit (`python tools/gen_map.py --check` → "gen_map: FRESH (44270 bytes)"; the counts are `docs/MAP.md:6`) | yes (`gates` job) |
@@ -370,6 +370,15 @@ configuration is unchanged at 221 (they live in an
 `#ifdef HARMONY_FORGE_WITH_ONNX` block). Re-measured 2026-10-20:
 221/221 in `build-off`/Debug and 254/254 in `build-full`/Release.
 
+**The CI-measured full-configuration count (2026-10-21).** The table above
+is the LOCAL measurement pass (phase-B B10, 2026-10-20). The merged wave
+tree (`1552665`) was measured later, by CI run id `39625770936`: its ctest
+step reported "100% tests passed, 0 tests failed out of 273" — the
+build-full (Release) semantics (CI's `build` directory; see "The build
+directories" below). The build-off half (233) is still the static
+expectation: CI runs one configuration only, so the OFF count is NOT yet
+measured.
+
 Both are RATCHET counters: the count may not drop. `build-off` is the
 plugin-OFF Debug tree; `build-full` is the plugin-ON Release tree (the
 ONNX-backed tests exist only there).
@@ -382,10 +391,12 @@ build-full semantics under the name `build`. The counter is the same
 quantity (the plugin-ON Release suite); only the directory differs.
 
 **Where the numbers come from (documentary).** The counters above are the
-MEASURED pair of the final measurement pass (phase-B B10, 2026-10-20:
-221/221 off + 254/254 full) - the same pair
-`docs/INVARIANTS.md:66-72,174` states: "the full registered set itself is
-the rest of this gate: `ctest` 254/254 full + 221/221 off". The pair
+MEASURED pair of the final LOCAL measurement pass (phase-B B10, 2026-10-20:
+221/221 off + 254/254 full) - the PINNED pair, kept as the last locally
+measured one; `docs/INVARIANTS.md` now states the wave's pair on top of it
+(the header block + the INV-3 gate): "the full registered set itself is the
+rest of this gate: `ctest` 273/273 full + 233/233 off" (the build-full half
+MEASURED by CI, the build-off half still the static expectation). The pair
 before it is the S9-close run: `docs/measurements/s9-0.md:159` — "Config C
 proven blocking-green at close (251/251)". The
 mapping (`build-full` = Release, `build-off` = Debug) is the
@@ -402,9 +413,9 @@ recorded full-config/off-config pair, oldest first:
 | guardrails | 222/222 | 194/194 | `docs/measurements/master-health.md:9-10, 39` |
 | vertical-slice fix round 1 (2026-10-18) | **221/221** | **195/195** | `docs/FL_SMOKE.md:21`, `docs/MVP_GAP.md:18, 69` |
 | S7 (2026-10-19) | 249/249 | 219/219 | `docs/measurements/master-health.md:52` (S7 addendum) |
-| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159` (the S9-close record; `docs/INVARIANTS.md` quoted this pair at the time — its copy was superseded by the B10 re-pin and now reads 254/254 at `docs/INVARIANTS.md:66-72,174`) |
+| **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159` (the S9-close record; `docs/INVARIANTS.md` quoted this pair at the time — its copy was superseded by the B10 re-pin, which read 254/254, and the wave tree now reads 273/273 full (CI-measured) + 233/233 off (expected)) |
 | **phase-B B10 (2026-10-20) — the pair after the 3 new ORT-only cases** | **254/254** | **221/221** | this document (the G10 row + the counter table above); the growth reason: the 3 new B10 cases in `tests/test_ort_logits.cpp` are ORT-only (`#ifdef HARMONY_FORGE_WITH_ONNX`), so the off configuration does not move |
-| **backlog wave (2026-10-21) — the EXPECTED pair, NOT yet measured** | **273/273** | **233/233** | the static census in §7 (the wave ran no build): 254 + 12 + 7 and 221 + 12 — to be confirmed by the first green CI run of the merged wave; the PINNED pair stays 254/221 until then |
+| **backlog wave (2026-10-21) — the wave's pair: the build-full half MEASURED, the build-off half still EXPECTED** | **273/273** | **233/233** | the static census in §7 (the wave ran no local build): 254 + 12 + 7 and 221 + 12 — the build-full half was MEASURED by CI run id `39625770936` on commit `1552665` ("100% tests passed, 0 tests failed out of 273", the build-full/Release configuration); the build-off half (233) is **not** measured (CI runs one configuration only), so the PINNED pair stays 254/221 until an off-configuration run measures it |
 
 **Read the two "221"s apart.** The 2026-10-18 run had 221 tests in the
 FULL (build-full) configuration and 195 in the off configuration
@@ -448,11 +459,16 @@ accounted for:
   one in the tree: 3 cases always compiled + 6 ORT-only + 1 offline stub =
   10 macros, i.e. 9 in the full configuration and 4 in the off one).
 
-So the proxy's 274/239 corresponds to the EXPECTED MEASURED pair **273
-(build-full) / 233 (build-off)** — 254 + 12 + 7 and 221 + 12 — to be
-confirmed by the first green CI run of the merged wave in both
-configurations; the wave itself ran no build, so the PINNED counters stay
-at the recorded 254/221 (the ratchet is "must not drop").
+So the proxy's 274/239 corresponds to the wave's pair **273 (build-full) /
+233 (build-off)** — 254 + 12 + 7 and 221 + 12. The build-full half is now
+**MEASURED**: CI run id `39625770936` on commit `1552665` reported "100%
+tests passed, 0 tests failed out of 273" in the build-full (Release)
+configuration (CI configures `build` and runs `ctest --test-dir build -C
+Release`, i.e. the build-full semantics under the name `build`). The
+build-off half (233) is still the **STATIC EXPECTATION — NOT measured**:
+CI runs one configuration only, so the OFF count awaits a run of its own;
+the wave itself ran no local build, so the PINNED counters stay at the
+recorded 254/221 (the ratchet is "must not drop") until then.
 
 ---
 

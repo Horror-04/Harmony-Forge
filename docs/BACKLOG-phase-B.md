@@ -466,10 +466,14 @@ gets Strict, not the persisted value.
 > the **B12** block below ("OPEN FOLLOW-UP (B12 bounds golden re-capture)"),
 > which carries the exact commands; the probe is neither ctest-registered
 > nor in CI, so no gate breaks. `docs/INVARIANTS.md`'s ctest counts were
-> the B10 measurement (254/221); the merged backlog wave EXPECTS 273/233
+> the B10 measurement (254/221); the merged backlog wave has 273/233
 > (12 registered cases in both configurations - B1 +1, B2 +3, B3 +2, B4b +6
-> - and 7 plugin-ON-only ones, all B2's) and they are re-derived with
-> `ctest -N` after the first green build of the merged wave.
+> - and 7 plugin-ON-only ones, all B2's). The build-full half (273) is now
+> MEASURED — CI run id `39625770936` on commit `1552665` reported "100%
+> tests passed, 0 tests failed out of 273" in the build-full (Release)
+> configuration; the build-off half (233) is still the static expectation
+> (CI runs one configuration only) and is re-derived with `ctest -N` on the
+> next build of the off configuration.
 
 ---
 

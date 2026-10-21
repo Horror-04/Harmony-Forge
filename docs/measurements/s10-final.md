@@ -504,19 +504,23 @@ over the working-tree bytes of every tracked `.h`/`.cpp` under `src/`
 `tools/lint_file_size.py`, `tools/lint_golden_manifest.py`,
 `tools/lint_ccn.py --strict`. The ctest counters are the **STATIC census**
 (`tests/CMakeLists.txt` + the `TEST_CASE` macros in `tests/*.cpp`): the wave
-ran no build, so the pair below is an ARITHMETIC EXPECTATION, to be
-confirmed by the first green CI run of the merged wave. The LOC rows are
+ran no build, so the pair below was an ARITHMETIC EXPECTATION when this
+pass wrote it. Since then the build-full half has been **MEASURED** by CI
+run id `39625770936` on commit `1552665` ("100% tests passed, 0 tests failed
+out of 273", the build-full (Release) configuration); the build-off half
+(233) is still the static expectation, **not** measured (CI runs one
+configuration only). The LOC rows are
 measured on the tree **as this doc-truth commit leaves it** (the wave's
 code plus this pass's comment-only edits — 11 lines in
 `src/core/arrangement/arrangement.h` and 12 in `src/inference/strong_beat.h`;
 no function, NLOC or CCN moved).
 
-### 10.1 The ctest pair — §9.1 is SUPERSEDED (an EXPECTED pair, not a measurement)
+### 10.1 The ctest pair — §9.1 is SUPERSEDED (the wave's pair: the build-full half since MEASURED by CI, the build-off half still an EXPECTATION)
 
-| configuration | §9.1 said (measured 2026-10-20) | **NOW (the wave's EXPECTED pair)** | source |
+| configuration | §9.1 said (measured 2026-10-20) | **NOW (the wave's pair)** | source |
 |---|---|---|---|
-| `build-full` (Release, plugin-ON) | 254 registered cases | **273 registered cases** | the static census: 283 `TEST_CASE` macros in 48 test binaries, 43 registered, 274 registered cases (239 in the both-configuration binaries + 35 plugin-ON-only), less the one `#else` offline stub the full configuration does not compile (the file compiles 9 of its 10 macros there) |
-| `build-off` (Debug, plugin-OFF) | 221 registered cases | **233 registered cases** | the same census, less the six `#ifdef HARMONY_FORGE_WITH_ONNX` cases the off configuration does not compile (the file compiles 4 of its 10 macros there) |
+| `build-full` (Release, plugin-ON) | 254 registered cases | **273 registered cases** | the static census: 283 `TEST_CASE` macros in 48 test binaries, 43 registered, 274 registered cases (239 in the both-configuration binaries + 35 plugin-ON-only), less the one `#else` offline stub the full configuration does not compile (the file compiles 9 of its 10 macros there) — **MEASURED** by CI run id `39625770936` on commit `1552665` ("100% tests passed, 0 tests failed out of 273") |
+| `build-off` (Debug, plugin-OFF) | 221 registered cases | **233 registered cases** | the same census, less the six `#ifdef HARMONY_FORGE_WITH_ONNX` cases the off configuration does not compile (the file compiles 4 of its 10 macros there) — still the STATIC EXPECTATION: CI runs one configuration only, so this half is **not** measured |
 
 **The 19 registered cases the wave added.** 12 in BOTH configurations — B1
 +1 (`tests/test_keynorm.cpp`), B2 +3 (`tests/test_arrangement.cpp` +2,
@@ -526,8 +530,12 @@ no function, NLOC or CCN moved).
 `tests/test_plugin_state.cpp` +4, `tests/test_params_from_state.cpp` +2 and
 the new `tests/test_arrange_mode_model.cpp` binary +1. That is
 **254 + 12 + 7 = 273** (build-full) and **221 + 12 = 233** (build-off). The
-PINNED counters stay at the recorded **254/221** until the first green CI
-run of the merged wave (the G10 ratchet is "must not drop"); the gate values
+build-full half was **MEASURED** by CI run id `39625770936` on commit
+`1552665` ("100% tests passed, 0 tests failed out of 273", the build-full
+(Release) configuration); the build-off half (233) is still the STATIC
+EXPECTATION, **not** measured (CI runs one configuration only), so the
+PINNED counters stay at the recorded **254/221** until an off-configuration
+run measures it (the G10 ratchet is "must not drop"); the gate values
 and the full derivation live in `docs/measurements/ratchet.md` §7 and in
 `docs/INVARIANTS.md`.
 
@@ -578,11 +586,12 @@ these values**:
 ### 10.4 Where the wave's values live
 
 - This section (§10) — the authority for the NOW values of the merged
-  backlog wave (the ctest EXPECTED pair, the per-layer LOC, the CCN count,
+  backlog wave (the ctest pair, the per-layer LOC, the CCN count,
   the golden record count and the per-file aggregate rows).
 - `docs/measurements/ratchet.md` — the live gate values (G10's ctest pair,
   G3's CCN count and pin table, G13's MAP freshness) and §7's static census.
-- `docs/INVARIANTS.md` — the ctest pair as an invariant (273/233, expected).
+- `docs/INVARIANTS.md` — the ctest pair as an invariant (273 full — MEASURED
+  by CI run id `39625770936` on commit `1552665`; 233 off — still expected).
 - `docs/BACKLOG-phase-B.md` — the aggregates table and the phase-delta note,
   both re-measured and pointing at this section.
 
