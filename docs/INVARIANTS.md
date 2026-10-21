@@ -244,7 +244,7 @@ build, tests/CMakeLists.txt); tags are inert Catch2 metadata that travel
 with the case wherever it builds, and the lint is source-level, so no
 per-suite presence is required of full-only cases.
 
-## DECLARED GAPS (NOT invariants — open, owned, tracked in the phase-B record)
+## DECLARED GAPS (NOT invariants — none open here; GAP-1 RESOLVED, owned, tracked in the phase-B record)
 
 **What this section is, and what it is not.** The five sections above
 (INV-1..INV-5) are the repo's invariants: each binds to named ctest binaries
@@ -276,7 +276,7 @@ cites them.
 **What the guard is now.** `OrtLogitsProvider::get_logits`
 (`src/inference/ort_logits.cpp:222-274`) calls
 `prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`;
-the helper at `:83-85`) and returns `false` for a prefix that violates a
+the helper at `:83-89`) and returns `false` for a prefix that violates a
 slot range, BEFORE the model runs. The guard is **domain-explicit** (ruling
 R-B10-1): the slot-checked id domain is the DEFAULT (the 3-arg overload at
 `:215-220` passes `LogitsIdDomain::kSlotChecked`), so production is

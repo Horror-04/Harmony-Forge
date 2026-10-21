@@ -23,7 +23,9 @@ Rules:
   (`:211`) and the off-golden literal census (`:222`) — the line numbers
   are THIS tree's `.github/workflows/ci.yml` (the `run:` line of each
   step). The `gates` job carries one more gate of the isolation family
-  besides the four named above: the repo-hygiene gate (`:196`,
+  besides the FIVE style gates named above it — the file-size, the Editor
+  total-budget, the UTF-8, the max-CCN and the off-golden-census steps:
+  the repo-hygiene gate (`:196`,
   `tools/lint_repo_hygiene.py` — an ignored path may not be TRACKED), added
   by the H1 change.
 - `src/core` stays JUCE-free (pure standard C++20); `src/inference` stays
