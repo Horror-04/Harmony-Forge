@@ -8,36 +8,108 @@ human steps.
 Document status: **NORMATIVE** for the rules it states (§1-§8: what is
 shipped, the licence obligations, the installer wiring, the runtime-library
 deployment rule) — those are true now. The "Status at a glance" table, the
-recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13);
+recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13 / 21);
 dated notes are added where a later change moved them.
 
-## Status at a glance (local verification, 2026-10-12)
+## Status at a glance (local verification, 2026-10-12; packaging re-verified 2026-10-21)
 
 | Item | Status |
 | --- | --- |
 | Windows build with `AU` in `FORMATS` | Verified unaffected (JUCE skips AU on non-Apple; see §2) |
-| Windows installer script (`iscc`) | Compiled: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,578,025 bytes, SHA256 `AAB2EE0EF1CDDFA7F562EE2C5D2FF361541C4ABC3F4EED9A5971DA1E05C2BC87`) |
-| Executing any installer / pkg | **NOT-RUN by design** (system side effect; human step — §5) |
-| macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3) |
-| Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) |
+| Windows installer script (`iscc`) | **COMPILED 2026-10-21**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8.3 MB, SHA256 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`) — build record below; the artefact is git-ignored and NOT committed |
+| Executing the Windows installer | **RUN once locally, 2026-10-21**: installed into a temp dir, the payload verified in place, then removed with the installer's own uninstaller (the removal was verified item by item). Nothing is installed on the development machine now — §5 |
+| macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3); the `.pkg` was never executed |
+| Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) — the local install is NOT the R4 step |
 | Licence decision (R1) | **DECIDED: AGPLv3** — our code under AGPL-3.0-or-later, JUCE under its AGPL side (§4) |
 | Code signing / notarization | Not implemented; plan stub in §6 |
+
+**NOTE (2026-10-21):** the rows above are re-recorded from the wave that
+actually ran — the Release rebuild, the 273/273 `ctest` run, the 18/18 payload
+preflight, the `iscc` compile and a local install that was uninstalled again
+(see "Windows installer build record" below). The 2026-10-12 row they
+supersede recorded an earlier artefact (8,578,025 bytes, SHA256
+`AAB2EE0E…2BC87`) that was **not in the tree** when this wave started
+(`build-full/` is git-ignored and regenerated), so that hash identifies nothing
+on disk any more — the SHA256 to verify against in §5 is the 2026-10-21 one
+above.
 
 Reproduce the Windows gates:
 
 ```powershell
 cmake --build build-full --config Release
-ctest --test-dir build-full -C Release          # 273/273 (CI-measured)
+ctest --test-dir build-full -C Release          # 273/273 (CI-measured; re-measured locally 2026-10-21)
 ctest --test-dir build-off  -C Debug            # 233/233 (static expectation)
 powershell -File packaging\windows\check_payload.ps1
 & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss
 ```
 
 The ctest pair is the one `docs/measurements/ratchet.md` §7 owns: **273**
-(build-full/Release) is MEASURED (CI run `39625770936` on commit `1552665`),
-**233** (build-off/Debug) is still the static expectation — CI runs one
-configuration only. The block carried `94/94` when this file was written
+(build-full/Release) is MEASURED (CI run `39625770936` on commit `1552665`;
+re-measured locally on 2026-10-21 — 273/273, 0 failed, 23.8 s, the count is
+unchanged), **233** (build-off/Debug) is still the static expectation — CI runs
+one configuration only. The block carried `94/94` when this file was written
 (2026-10-12); that was the count of that day.
+
+### Windows installer build record (2026-10-21)
+
+**What ran, on this machine, in this wave — every number below is measured:**
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Release rebuild | `cmake --build build-full --config Release` | incremental, 2.2 min, exit 0 |
+| Test suite | `ctest -C Release` (in `build-full/`) | **273/273 passed, 0 failed** (23.8 s) |
+| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS, 18/18 checks** |
+| Installer compile | `ISCC.exe` (Inno Setup 6) on `packaging\windows\harmony_forge.iss` | **Successful compile** |
+
+The 18 preflight checks: the version sync (CMake `0.1.0` == `.iss` `0.1.0`); the
+`.iss` build dir resolves to the checked tree; the VST3 module and
+`moduleinfo.json` exist; the Standalone exe exists; `onnxruntime.dll` exists
+next to both; `docs\SPEC.md` is NOT referenced by the `.iss`; the root
+`LICENSE` ships to `{app}` and is byte-identical to the root file (sha256
+`E0EEDBA615D5CD1B986AFB6C5B3A4B1AE33713E7E9DC74D19DAEC5E3221F9D2E`);
+`packaging\LICENSE-JUCE-NOTICE.txt` exists, is shown and is shipped; the ISPP
+`#error` preflight is present.
+
+**The artefact.**
+
+- Path: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
+- Size: 8.3 MB
+- SHA256: `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`
+- Built 2026-10-21 from the current `master`.
+- It lives inside the git-ignored `build-full/` tree — it is **NOT committed**,
+  and it is **NOT distributable** yet (§4: the repository is still private by
+  the owner's deliberate decision).
+
+**Its composition is evidenced by the compiler's own log** — the `iscc` compile
+log lists exactly what it compressed: `moduleinfo.json`, `Harmony Forge.vst3`
+(x86_64-win), `onnxruntime.dll`, `Harmony Forge.exe`,
+`packaging\LICENSE-JUCE-NOTICE.txt`, the root `LICENSE`.
+
+**A local install was executed, verified in place, and then removed.** The
+installer was run on this machine with the documented command line
+(`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=<dir> /LOG` — the bare
+`/LOG`, not `/LOG=<path>`; an unquoted `/LOG=<path>` is an invalid command
+line and the setup aborts before it opens its log) and returned exit 0; the
+Inno log (6.7.3) records "User privileges: Administrative", "Administrative
+install mode: Yes", "Installation process succeeded", "Need to restart
+Windows? No". The payload was verified **in place**: the VST3 bundle
+(`…\Common Files\VST3\Harmony Forge.vst3` with `moduleinfo.json` and the
+x86_64-win module) and `…\Common Files\VST3\onnxruntime.dll`; in the install
+dir, `Harmony Forge.exe`, `onnxruntime.dll`, the `LICENSE` (byte-identical to
+the root `LICENSE`, sha256 `E0EEDBA6…9D2E`) and `LICENSE-JUCE-NOTICE.txt`;
+plus the Start Menu shortcut, the desktop shortcut and the uninstall registry
+key. The install was then **uninstalled immediately** with the installer's own
+uninstaller (exit 0), and the removal was verified item by item — the VST3
+bundle, the Common Files `onnxruntime.dll`, both shortcuts, the uninstall
+registry key and the install directory are all gone. **The plugin is NOT
+installed on the development machine**: nothing is installed and nothing is
+registered; the only thing that remains is the `.exe` in the git-ignored build
+tree.
+
+**What is still NOT-RUN: the R4 clean-machine install** (§5). The local
+install above is NOT the R4 step: R4 is an install on a machine that has never
+had the plugin, and §4 counts it as distribution — so it stays blocked on the
+repository becoming public, and it is the owner's step.
 
 ## 1. What is shipped
 
@@ -235,8 +307,21 @@ Both installers ship the notice AND a byte-identical copy of the root
 
 ## 5. Clean-machine verification (R4) — NOT-RUN
 
-Installing on a fresh VM / second machine is a **human step**. This machine
-never executes the produced installer (it writes into the system VST3 folder).
+Installing on a fresh VM / second machine is a **human step**, and it is
+**still NOT-RUN**: the R4 step is an install on a machine that has never had
+the plugin, and §4 counts it as distribution, so it waits for the repository to
+become public.
+
+What the development machine DID do (2026-10-21 — see the build record above):
+the installer was compiled, executed ONCE locally with
+`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=<dir> /LOG` (exit 0; the
+log records "Installation process succeeded"), its payload was verified in
+place (the VST3 bundle and the Common Files `onnxruntime.dll`; the Standalone
+exe, its `onnxruntime.dll` and the licence payload in the install dir), and it
+was then uninstalled with the installer's own uninstaller (exit 0) — the removal
+was verified item by item, so **nothing is installed here any more**. A local
+install is NOT the R4 step: it proves that the installer runs and cleans up
+after itself, not that it installs onto a clean machine.
 
 What to copy/install:
 
@@ -279,6 +364,11 @@ Results table (leave NOT-RUN; the human records machine, date, outcome):
 | Windows: installer + files + host load + model regen + uninstall | (vm) | NOT-RUN | NOT-RUN |
 | macOS: pkg + auval + host load | (mac) | NOT-RUN | NOT-RUN |
 
+The Windows row stays **NOT-RUN**: the local install of 2026-10-21 (installed
+into a temp dir, payload verified in place, then uninstalled and the removal
+verified — see the build record above) is a self-check on the development
+machine, not the R4 clean-machine install.
+
 ## 6. Signing plan (stub — not implemented)
 
 - **Windows (Authenticode):** obtain a code-signing certificate, sign
@@ -310,6 +400,11 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 
 ## 8. Known limitations / open items
 
+- Windows installer: **compiled 2026-10-21** (8.3 MB, sha256
+  `4E771BB7…D2E2`, in the git-ignored `build-full/` tree, not committed) and
+  installed + uninstalled once locally on the development machine (the removal
+  was verified item by item). The **clean-machine install (R4) is still
+  NOT-RUN** — it is the owner's step, and §4 counts it as distribution (§5).
 - macOS AU + pkg: **never executed** on a Mac (§3).
 - macOS inference: offline stub only; the ONNX Runtime delivery is win-x64 only.
 - Licence notice: present (`packaging/LICENSE-JUCE-NOTICE.txt`, R1 resolved §4);
