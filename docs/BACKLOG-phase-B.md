@@ -359,23 +359,27 @@ change arrangement behaviour.
 
 **Where it lives.**
 
-- `src/inference/candidates.cpp:153` and `src/inference/candidates.cpp:155` —
+- `src/inference/candidates.cpp:157` and `src/inference/candidates.cpp:159` —
   the runner-stage seed for candidate `i`:
   `material_from_runner_with(feed, static_cast<unsigned>(p.seed + i), ...)` /
   `material_from_runner(feed, static_cast<unsigned>(p.seed + i))`.
-- `src/inference/candidate_model.cpp:167` and `:169` — the same additive
+- `src/inference/candidate_model.cpp:168` and `:170` — the same additive
   pattern on the sampler-side greedy fallback.
-- `src/inference/candidate_model.cpp:191-192` — the `sseed` initializer:
+- `src/inference/candidate_model.cpp:199-200` — the `sseed` initializer:
   ```cpp
   const std::uint64_t sseed =
       static_cast<std::uint64_t>(static_cast<unsigned>(p.seed + index));
   ```
   (this is the site the C2059 quirk of B7 attaches to).
 - The contrasting, *hashed* derivation for the composer's own RNG is
-  `stream_seed(p, index)` at `src/inference/candidates.cpp:47-55`, consumed
-  at `src/inference/candidates.cpp:121` (`Pcg32 rng(stream_seed(p, i))`).
+  `stream_seed(p, index)` at `src/inference/candidates.cpp:51-59`, consumed
+  at `src/inference/candidates.cpp:125` (`Pcg32 rng(stream_seed(p, i))`).
   So the runner/sampler seed is the one place where the seed is a plain
   addition while every other per-candidate stream is a hash.
+
+(Line numbers above are the pre-B3 ones, at base `aab98db`; the B3 refactor
+has since moved these sites — see the B3 status note below for the current
+locations.)
 
 **What exactly is deferred.** Changing *what value* the runner/sampler
 receives — e.g. routing `p.seed + i` through the same hashing discipline as
@@ -397,7 +401,7 @@ re-bank the pin, not a cleanup.
 - The seed handed to the runner/sampler for candidate `i` is a named,
   single-source derivation (one function, one call site per consumer), not
   an inline `p.seed + i` at three separate places
-  (`src/inference/candidates.cpp:153,155`, `src/inference/candidate_model.cpp:167,169,192`).
+  (`src/inference/candidates.cpp:157,159`, `src/inference/candidate_model.cpp:168,170,199-200`).
 - The value change is recorded in the golden manifest (the
   `s4b sampler index-seed binding` record at
   `tests/golden_manifest.json:111-122` is re-banked with a `recapture_reason`
@@ -462,10 +466,23 @@ today's bytes cannot move:
   `(s+3,i+3)` receive the same additive seed is arithmetically off
   (`s+i` vs `s+i+6`); the real collision is the overlapping-window pair
   `(s,i)` vs `(s+1,i-1)` (e.g. `(s,3)` vs `(s+3,0)`). The test pins the
-  real pair; the ruling text above is left as written.
-- Advisory `tools/check_bodies.py` moved **13 -> 23 FAIL** in this change,
-  all disclosed and expected: the `fnv1a`/`stream_seed` range and body
-  deltas, the facade body, and the B3 test/probe additions. The step is
+  real pair; the ruling text above is left as written (only its stale
+  line-number citations were corrected).
+- Advisory `tools/check_bodies.py` fails the **SAME 23 checks before and
+  after** this change: base `aab98db` -> 23 FAIL, head `51d82ed` -> 23 FAIL
+  (the printed output is 28 lines at base and 30 at head, counting the
+  one-line summary; still 23 FAIL after the fix round that corrected this
+  note, which touched no `src/` file). The failing SET is unchanged - the
+  same 23 function names fail before and after - so no count moved; what
+  moved are the REASONS and the line ranges. Two checks gained a second
+  "normalized bodies differ" reason: `material_via_sampler_or_greedy` (the
+  facade body now calls `runner_seed`) and `fnv1a` (its parameter became
+  `std::string_view`); 17 checks report shifted new-file line ranges (e.g.
+  `stream_seed` 51-59 -> 190-198, `fnv1a` 37-44 -> 41-48).
+  `check_bodies` inspects ONLY the functions listed in
+  `tools/check_bodies_s3.json` (all under `src/inference` and
+  `src/core/music`): it never looks at `tests/` or at the probe, so the B3
+  test/probe additions are NOT part of its delta. The step is
   `continue-on-error: true` in CI and is not a gate.
 - `tools/c2059_probe/probe_c2059.py` is re-anchored on the new `sseed`
   initializer (same shape variants over `runner_seed(p, index)`; labels
@@ -513,8 +530,26 @@ from `stream_seed`; and the `(s,i)` vs `(s+3,i+3)` and adjacent
      those are the properties the flip must preserve.
    - If the flip is instead done by deleting `runner_seed`, replace every
      `runner_seed(` reference in this file with `runner_seed_domain(`,
-     delete the header declaration, and keep the same relation checks; the
-     rest of this procedure is unchanged.
+     delete the header declaration, and keep the same relation checks.
+   - Update the two comments that state the CURRENT (additive) contract in
+     the same change - they become stale after the flip:
+     - `src/inference/seed_derivation.h:23-31` - the `runner_seed` doc
+       comment says "TODAY'S value is the additive form ... preserved
+       verbatim"; after the flip it must state the domain value.
+     - `src/inference/candidates.cpp:200-203` - the comment above the
+       definition says "TODAY'S runner/sampler seed value, verbatim ..." and
+       "this body MUST NOT change without the full re-bank procedure"; after
+       the flip it must describe the domain derivation.
+   - If `runner_seed` is DELETED (the variant above), re-anchor
+     `tools/c2059_probe/probe_c2059.py` in the same change: its
+     `SITE_STATEMENT_RE` anchor and its variant texts (`ONE_LINE`,
+     `ONE_LINE_INNER`, `TWO_STATEMENT` and the four `MALFORMED` repro
+     forms) all name `runner_seed(`. With the function gone the anchor
+     stops matching the site and the probe exits PROBE-BROKEN (3) - a LOUD
+     CI failure under `--require-msvc`. Re-point the anchor and every
+     variant at the surviving name (`runner_seed_domain(`). (Keeping the
+     seam - flipping only the BODY of `runner_seed` - leaves the probe
+     untouched: its anchor still matches `runner_seed(p, index)`.)
 3. Build both configs and run `test_s4b_seed_binding`: it MUST go RED.
    Capture the 12 new per-index digests from the failure diff (or a
    temporary INFO dump) on the clean tree, double-confirmed, and re-run the
@@ -546,8 +581,10 @@ from `stream_seed`; and the `(s,i)` vs `(s+3,i+3)` and adjacent
 7. Run the full gate set: `lint_golden_manifest.py`, `lint_golden_pin.py`,
    `gen_map.py --check`, `check_layers.py --strict`, `rt_scan.py --strict`,
    `lint_ccn.py --strict`, `lint_file_size.py`, plus the pytest/unittest
-   suites. The advisory `check_bodies` count will move again with the
-   test/probe edits and is disclosed, not gating.
+   suites. The advisory `check_bodies` step reads only the functions listed
+   in `tools/check_bodies_s3.json` (all under `src/inference` and
+   `src/core/music`), so the test/probe edits cannot move it; only `src/`
+   edits can, and its FAIL count and reasons are disclosed, not gating.
 
 The cube baseline and every existing golden value are untouched by this
 commit; only the named derivation, its tests, the probe anchor and this note

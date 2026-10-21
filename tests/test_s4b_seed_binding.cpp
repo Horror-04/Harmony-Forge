@@ -4,8 +4,8 @@
 //
 // WHAT: `generate_candidates` with the sampler engaged (mock weights +
 // `use_sampling`) must hand candidate `i` the sampler seed `p.seed+i`
-// (bound at `candidate_model.cpp:191-192`, consumed at the single
-// `sample_continue` call-site `:197`). This test pins the exact per-index
+// (bound at `candidate_model.cpp:200-201`, consumed at the single
+// `sample_continue` call-site `:206`). This test pins the exact per-index
 // output bytes at seed 0 (the first seed in 0-63 where permuting the
 // per-candidate sampler seeds moves output bytes — see the sweep table in
 // the task report), so a binding corruption (e.g. `p.seed+(index+1)%4`,
