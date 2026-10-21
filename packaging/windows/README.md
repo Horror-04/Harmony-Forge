@@ -61,11 +61,93 @@ Machine-wide install (`PrivilegesRequired=admin`); a desktop shortcut is offered
   if the VST3 module, the Standalone exe or `onnxruntime.dll` (R5) is missing,
   or if `LICENSE-JUCE-NOTICE.txt` / the root `LICENSE` is absent (`#error`).
 
-## DO NOT run the installer on this machine
+## Build record (2026-10-21) — what actually ran
 
-Running it writes into the system VST3 folder — a system side effect reserved
-for the human's clean-machine test (see the R4 checklist in
-`docs/DISTRIBUTION.md`). Compiling the installer is safe; executing it is not.
+Every number below is measured; nothing in this section is a plan. The one
+exception is flagged inline: a recollection, not a measured artefact.
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Release rebuild | `cmake --build build-full --config Release` | incremental, 2.2 min, exit 0 |
+| Test suite | `ctest -C Release` (in `build-full/`) | **273/273 passed, 0 failed** (23.8 s) |
+| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
+| Installer compile | `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss` | **Successful compile** |
+
+The 15 result rows the preflight prints: **8 static checks** (the version sync
+— CMake `0.1.0` == the `.iss` `0.1.0`; the `.iss` build dir resolving to the
+checked tree; `docs\SPEC.md` NOT referenced by the `.iss`; the root `LICENSE`
+shipping to `{app}`; the shipped `LICENSE` being byte-identical to the root
+one (sha256 `E0EEDBA615D5CD1B986AFB6C5B3A4B1AE33713E7E9DC74D19DAEC5E3221F9D2E`);
+`packaging\LICENSE-JUCE-NOTICE.txt` existing; the `.iss` showing + shipping the
+notice; the ISPP `#error` preflight that refuses to build without the notice),
+**4 artefact-existence checks** (the VST3 module, the VST3 `moduleinfo.json`
+manifest, the Standalone exe, `onnxruntime.dll`) and **3 `.iss`-reference
+drift guards** (the `.iss` references `VST3\Harmony Forge.vst3`,
+`Standalone\Harmony Forge.exe` and `onnxruntime.dll`).
+
+Artefact: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
+— 8,713,903 bytes (8.3 MiB), SHA256
+`4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`, built
+2026-10-21 from the current `master`. It lives inside the git-ignored
+`build-full/` tree, so it is **not committed**; and it is **not distributable**
+yet — the repository is still private by the owner's deliberate decision
+(`docs/DISTRIBUTION.md` §4).
+
+Its composition is evidenced by a SURVIVING artefact, not by the console: the
+Inno Setup install log of the local run, committed as
+`docs/measurements/installer-install-2026-10-21.log` (the original
+`%TEMP%\Setup Log 2026-10-21 #001.txt`). Its file entries are exactly the six
+payload items — `moduleinfo.json`, `Harmony Forge.vst3` (x86_64-win),
+`onnxruntime.dll`, `Harmony Forge.exe`, `LICENSE-JUCE-NOTICE.txt` and the root
+`LICENSE` — with `onnxruntime.dll` appearing twice (next to the bundle and next
+to the exe), plus the uninstaller. The `iscc` compile log listed the same six;
+it only went to the console, so the committed log is the durable evidence.
+
+The installer was also **executed once, locally**, and then removed again:
+
+```powershell
+Start-Process -FilePath ".\build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe" `
+  -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/DIR=<dir>','/LOG' -Wait
+```
+
+- the bare `/LOG` form is the one that works — `/LOG=<path>` (unquoted) is an
+  invalid command line and the setup aborts before it opens its log (the
+  earlier attempts hit exactly that: no log survives for them, so the exit
+  codes they produced are a recollection, not a measured artefact);
+- the run returned exit 0; the Inno log (6.7.3) — committed as
+  `docs/measurements/installer-install-2026-10-21.log`, whose own
+  `Setup command line:` line is the proof of the command line — records "User
+  privileges: Administrative", "Administrative install mode: Yes",
+  "Installation process succeeded", "Need to restart Windows? No";
+- verified in place: `C:\Program Files\Common Files\VST3\Harmony Forge.vst3`
+  (bundle, `moduleinfo.json`, the x86_64-win module) and
+  `C:\Program Files\Common Files\VST3\onnxruntime.dll`; in the install dir
+  `Harmony Forge.exe`, `onnxruntime.dll`, the `LICENSE` (byte-identical to the
+  root `LICENSE`, sha256
+  `E0EEDBA615D5CD1B986AFB6C5B3A4B1AE33713E7E9DC74D19DAEC5E3221F9D2E`) and
+  `LICENSE-JUCE-NOTICE.txt`; plus the Start Menu shortcut, the desktop shortcut
+  and the uninstall registry key;
+- uninstalled immediately with the installer's own uninstaller (exit 0); the
+  removal was verified item by item — the VST3 bundle, the Common Files
+  `onnxruntime.dll`, both shortcuts, the uninstall registry key and the install
+  directory are all gone. **The plugin is not installed on this machine.**
+
+The **clean-machine install (R4)** is still **NOT-RUN**: it is an install on a
+machine that has never had the plugin, it counts as distribution
+(`docs/DISTRIBUTION.md` §4), and it is the owner's step.
+
+## Running the installer
+
+- Compiling the installer is safe; **executing it is a system side effect**
+  (it writes into `C:\Program Files\Common Files\VST3`). The local run of
+  2026-10-21 above was deliberate, verified and fully uninstalled — the machine
+  is back to its prior state: nothing installed, nothing registered.
+- If it has to be verified locally again: use the full command line
+  `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=<dir> /LOG` — the bare
+  `/LOG`, not `/LOG=<path>` — verify the payload in place, and remove it with
+  the installer's own uninstaller afterwards.
+- The clean-machine test (R4) remains the human's step — see the R4 checklist
+  in `docs/DISTRIBUTION.md`.
 
 ## Rebuild notes
 

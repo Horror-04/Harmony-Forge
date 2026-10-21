@@ -6,9 +6,19 @@
 ; Build:  iscc packaging\windows\harmony_forge.iss        (run from the repo root)
 ; Output: build-full\installer-output\HarmonyForge-<version>-windows-x64-setup.exe
 ;
-; NEVER run the produced installer on a development machine: it writes into the
-; system VST3 folder ({commoncf}\VST3). Installation is a HUMAN step on a clean
-; machine -- see docs\DISTRIBUTION.md (R4 checklist) and packaging\windows\README.md.
+; The R4 clean-machine install is a HUMAN step: it installs onto a machine
+; that has never had the plugin, and it counts as distribution -- see the R4
+; checklist in docs\DISTRIBUTION.md and packaging\windows\README.md.
+;
+; RECORD (2026-10-21): a LOCAL install DID run once on the development
+; machine: the payload was verified in place and then removed with the
+; installer's own uninstaller, and the removal was verified -- nothing is
+; installed and nothing is registered now. The working command line is
+;   /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=<dir> /LOG
+; -- the bare /LOG, NOT /LOG=<path>: an unquoted /LOG=<path> is an invalid
+; command line and the setup aborts before it opens its log. Executing the
+; installer writes into the system VST3 folder ({commoncf}\VST3), so it is a
+; system side effect: run it only where you can undo it.
 ;
 ; Payload (all taken from a Release build of build-full):
 ;   * VST3 bundle   -> {commoncf}\VST3\Harmony Forge.vst3
