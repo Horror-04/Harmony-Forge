@@ -4,8 +4,11 @@ Branch `refactor/s3-0`. Stage lines: `s3-0-stage-order.md` §1.
 Guard predictions: `s3-0-legs-stages.md` §4. Protocol: predict → corrupt →
 rebuild (build-off Debug ONLY) → units + spot → record → revert
 (`git checkout -- <file>`) before the next. ONE corruption live at a time.
-Full per-corruption evidence: `.superpowers/sdd/2026-10-18-refactor-s30/task-2-report.md`
-(git-ignored work notes; this table is the committed record).
+Full per-corruption evidence: this table — the COMMITTED record (the slice's
+per-corruption work notes were agent scratch under the git-ignored
+`.superpowers/` tree and are NOT in this repository; the durable record is
+this file, committed at `e83c8ef`, plus the tracked companions
+`s3-0-legs-stages.md` §4 and `s3-0-stage-order.md`).
 
 **DATED (2026-10-21) — this table describes the `refactor/s3-0` tree, not
 today's.** The `file:line` pointers are as they were verified then;

@@ -18,12 +18,16 @@ Rules:
   (`tools/lint_golden_pin.py`), and the sealed-grep CI step enforce only:
   banned tokens + layer includes + golden pin + sealed-split isolation.
   **None of them is a STYLE gate.** The style gates are SEPARATE CI steps
-  in the `gates` job: the file-size gate (`ci.yml:150`), the Editor
-  total-budget gate (`:172`), the UTF-8 gate (`:182`), the max-CCN gate
-  (`:197`) and the off-golden literal census (`:208`) — the line numbers
-  are this branch's `.github/workflows/ci.yml`. `master`'s CI carries one
-  more of them, the repo-hygiene gate (`tools/lint_repo_hygiene.py` — an
-  ignored path may not be TRACKED), added by the H1 change.
+  in the `gates` job: the file-size gate (`ci.yml:151`), the Editor
+  total-budget gate (`:173`), the UTF-8 gate (`:183`), the max-CCN gate
+  (`:211`) and the off-golden literal census (`:222`) — the line numbers
+  are THIS tree's `.github/workflows/ci.yml` (the `run:` line of each
+  step). The `gates` job carries one more gate of the isolation family
+  besides the FIVE style gates named above it — the file-size, the Editor
+  total-budget, the UTF-8, the max-CCN and the off-golden-census steps:
+  the repo-hygiene gate (`:196`,
+  `tools/lint_repo_hygiene.py` — an ignored path may not be TRACKED), added
+  by the H1 change.
 - `src/core` stays JUCE-free (pure standard C++20); `src/inference` stays
   free of plugin/JUCE-GUI headers. Audio-path (`processBlock` callees) code
   takes no locks, allocates nothing, and performs no I/O or inference.

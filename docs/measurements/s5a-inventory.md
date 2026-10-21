@@ -6,8 +6,11 @@ no redesign, no fixes. Frame: `AGENTS.md` RT constraints + `THREADING_MODEL.md`.
 Method: static source read of all 20 files (headers in full; PluginEditor.cpp,
 PatternDocument.cpp, async_generate.cpp, job_queue.cpp in teardown-relevant
 regions) + targeted grep. NO build executed; `build-plugdbg` left
-configured-but-unbuilt (counting needs no binaries). Wall time: carried in the
-slice report (`.superpowers/sdd/2026-10-18-refactor-s5a/task-1-report.md`).
+configured-but-unbuilt (counting needs no binaries). Wall time: NOT carried
+into this record — the slice's own report was agent scratch under the
+git-ignored `.superpowers/` tree, was never committed, and no wall-time
+figure was transcribed into this file (none is stated below either). This
+file (committed at `618c14a`) is the durable record of the slice.
 
 **DATED (2026-10-21) — the `file:line` pointers below are as of the
 `refactor/s5a` tree.** One of them no longer resolves: the editor's
@@ -469,11 +472,12 @@ Append-only note; no existing text above was rewritten. Probes were scratch
 binaries (since removed); only the B12 bounds guard was kept as
 `tests/probe_b12_bounds.cpp`. Numbers below are transcribed from the probe
 report's stdout, quoted verbatim at measurement time. **The report itself
-was scratch**: it lived at `.superpowers/sdd-tmp/probe-u2u3-b12-report.md`,
-which is gitignored and NOT part of the tree, so it is not cited as a
-source here — **this addendum is the durable copy of those numbers**, and
-the probe report is cited only as the (untracked) place the numbers were
-first transcribed from. The one probe that survived is tracked at
+was scratch**: it lived under the git-ignored `.superpowers/` scratch tree
+and is NOT part of this repository, so it is cited NOWHERE in this tree —
+**this addendum is the durable copy of those numbers** (the numbers were
+transcribed from the report's stdout at measurement time; the report is not
+a citable source here, because it is not in the repository). The one probe
+that survived is tracked at
 `tests/probe_b12_bounds.cpp` with its golden at
 `tests/golden/b12_editor_bounds.json` and its manifest record at
 `tests/golden_manifest.json`; the guard's post-extraction verdict is

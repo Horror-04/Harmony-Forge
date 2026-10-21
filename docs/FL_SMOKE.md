@@ -23,7 +23,7 @@ render-hash tripwire.
   `write_smf1` deterministic (format-1 header, track count, 480 PPQ);
   `test_selection.cpp` — smf1 round-trip + hostile-clamp + read-back
   (`test_midi_read`, INV-5); CLI `render_midi --seed 7 --bars 8 --multi` =
-  72 notes / 697 bytes, sha256 `5da18593…a16187` identical across runs (a PRE-Pcg32 hash — see the dated note at the end of this file).
+  72 notes / 697 bytes, sha256 `5da18593…a16187` identical across runs (a PRE-Pcg32 hash; the CURRENT 8-bar/multitrack hash is **UNVERIFIED — no build ran in this wave**, so it was not re-measured — see the dated note at the end of this file).
 - Host-compat proxy: pluginval strictness-5 `SUCCESS`
   (`docs/measurements/s5-pluginval.log`, seed 0x3e23d5d, exit 0).
 
@@ -32,7 +32,7 @@ render-hash tripwire.
 - FL Studio 21+ (licenced), empty project, 4/4, 120 BPM.
 - Plugin built from `phase-2-stabilization` (or later):
   `build-full\src\plugin\HarmonyForge_artefacts\Release\VST3\Harmony Forge.vst3`
-  (pluginval strictness-5 SUCCESS — see task report).
+  (pluginval strictness-5 SUCCESS — `docs/measurements/s5-pluginval.log`).
 - Companion script `src/companion/fl_dispatcher.py` at hand.
 
 ## Setup (every case)
@@ -102,7 +102,8 @@ files a bug with the `.mid` attached (reproducible via
   determinism baseline is `docs/measurements/s0-sha-matrix-v3.csv` (936 rows);
   its current seed-7 single-track render hash is `ea7650b3…` (170 bytes).
   The 8-bar/multitrack hash was NOT re-measured here (this pass ran no
-  build) — re-measure it before quoting it.
+  build) — it is **UNVERIFIED pending a build**; re-measure it before
+  quoting it.
 - The `file:line` pointers were re-pointed at the current tree on 2026-10-21
   (the DnD path moved when the S9.3 layout extraction landed, and the
   Pattern→bytes encode moved into the JUCE-free `src/app` controller):

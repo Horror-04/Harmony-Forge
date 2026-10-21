@@ -330,6 +330,18 @@ int main(int argc, char** argv) {
   }
 
   namespace fs = std::filesystem;
+  // The diagnostic dumps go to a SCRATCH directory (`.superpowers/` is
+  // git-ignored): they are throwaway output, NOT a durable record. The
+  // durable record is the tracked golden `tests/golden/b12_editor_bounds.json`
+  // plus its record in `tests/golden_manifest.json` - nothing here points at
+  // a path that is not in this repository.
+  // QUALIFICATION: that golden is the durable record of the LAST capture,
+  // not a current truth - the phase-B backlog (docs/BACKLOG-phase-B.md, the
+  // B12 block, "OPEN FOLLOW-UP (B12 bounds golden re-capture)") flags it
+  // STALE since the B2 wave (the ArrangeBar gained two widgets) and tracks
+  // the post-build re-capture there; the pinned descendant-component count
+  // must GROW and its exact value comes from that re-capture. The probe is
+  // neither ctest-registered nor in CI, so the staleness breaks no gate.
   const fs::path outdir = ".superpowers/sdd-tmp/probe-b12-dumps";
   std::error_code ec;
   fs::create_directories(outdir, ec);

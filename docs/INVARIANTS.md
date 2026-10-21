@@ -244,7 +244,7 @@ build, tests/CMakeLists.txt); tags are inert Catch2 metadata that travel
 with the case wherever it builds, and the lint is source-level, so no
 per-suite presence is required of full-only cases.
 
-## DECLARED GAPS (NOT invariants — open, owned, tracked in the phase-B record)
+## DECLARED GAPS (NOT invariants — none open here; GAP-1 RESOLVED, owned, tracked in the phase-B record)
 
 **What this section is, and what it is not.** The five sections above
 (INV-1..INV-5) are the repo's invariants: each binds to named ctest binaries
@@ -255,9 +255,66 @@ instead of being silently assumed. Nothing in this section is bound to a test
 or to a gate: the `[inv1]`-`[inv5]` tag set above is unchanged (29 bindings
 over 5 invariants, `tools/lint_inv_tags.py`) and no CI step enforces a gap.
 A gap is closed by the work item named in its entry, and the entry is deleted
-when that work lands.
+when that work lands. **GAP-1 below is RESOLVED** — its work item (B10)
+landed in phase-B tranche G — so its entry is kept as the historical record
+of a CLOSED gap, not as an open one; there is no open gap in this section.
 
-### GAP-1 — the ORT logits provider has NO slot-range guard
+### GAP-1 — the ORT logits provider's slot-range guard — **RESOLVED** (closed by phase-B tranche G, item B10)
+
+**Status (2026-10-21): CLOSED — this is NOT an open gap.** The slot-range
+guard is at the ORT boundary and the product-level pin on the committed
+sidecar landed with it. **The durable record is** `docs/BACKLOG-phase-B.md`
+item **B10** — its resolution note "RESOLVED 2026-10-19 (phase-B tranche G,
+branch `refactor/phase-b-b10`, commits `1a37a36` + `57f850c` + `f2ed70d` +
+`ab5ce0d` + `dc2ec04` + `ec4b0c4`)" and the owner rulings **D-B10.1**
+(rejection, not a mask) and **D-B10.2** (the pin covers the logits values
+AND the sidecar's sha256) — together with `docs/measurements/s10-final.md`
+§11 ("the ORT slot-range gap of §4 is CLOSED"). That tranche's per-task
+reports were agent scratch and are **not** in this repository; nothing here
+cites them.
+
+**What the guard is now.** `OrtLogitsProvider::get_logits`
+(`src/inference/ort_logits.cpp:222-274`) calls
+`prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`;
+the helper at `:83-89`) and returns `false` for a prefix that violates a
+slot range, BEFORE the model runs. The guard is **domain-explicit** (ruling
+R-B10-1): the slot-checked id domain is the DEFAULT (the 3-arg overload at
+`:215-220` passes `LogitsIdDomain::kSlotChecked`), so production is
+fail-closed (`production_sampler_cfg()` always sets `fsm_mask=true`); the
+sampler's UNMASKED diagnostic mode (`fsm_mask=false`) runs in the
+raw-vocabulary domain, where the slot ranges do not apply (there the ids are
+raw vocabulary ids, not slot-encoded ones).
+
+**What the pin is now.** `tests/golden/ort_logits_values.txt` — a `gen:`-form
+record in `tests/golden_manifest.json` (24 records: capture=16 / gen=7 /
+mixed=1), written by the real capture tool
+`tools/capture_ort_logits_golden.py` — holds the 256 logits values, the
+sidecar's own sha256 and the argmax. The C++ side pins the IDENTITY (the
+sidecar sha256) and the DECISION (the argmax) exactly and compares the
+VALUES within the documented 1e-04 tolerance (the capture ran on
+onnxruntime 1.31.0 and the provider on the pinned 1.22.0, so the values are
+not bit-exact across ORT versions — the golden says so in its own header).
+
+**Tests.** The guard is pinned by the three B10 cases in
+`tests/test_ort_logits.cpp` — "ort logits rejects a prefix that violates a
+named slot range" (`:353`), "ort logits accepts every legal prefix (the
+slot-range guard is a no-op)" (`:395`) and "ort logits reproduces the
+committed sidecar's pinned logits values" (`:451`) — all inside the
+`#ifdef HARMONY_FORGE_WITH_ONNX` block, which is why the off configuration's
+ctest count did not move. The `[inv1]`-`[inv5]` tag set is unchanged (29
+bindings over 5 invariants, `tools/lint_inv_tags.py` PASS): the guard was a
+DECLARED GAP, never a bound invariant, so closing it adds no binding.
+
+**Counters.** The three new ORT-only cases moved the PINNED ctest pair from
+the S9-close 251/221 to **254/221**; the growth reason (ORT-only cases add
+to the FULL configuration only) is recorded in
+`docs/measurements/ratchet.md` (the G10 row, `:61`, and the §7 counter
+table, `:361-364`) and in `docs/measurements/s10-final.md` §11.
+
+**What was recorded at the S10 close (2026-10-19) — kept byte-untouched as
+history.** The four blocks below are the gap as it stood then. Their
+`file:line` pointers are the S10-close ones and NO LONGER RESOLVE (the
+provider's `get_logits` moved when the guard landed).
 
 **The gap.** The slot-range guard for the ORT logits provider is **ABSENT**.
 `src/inference/ort_logits.cpp:42` sets

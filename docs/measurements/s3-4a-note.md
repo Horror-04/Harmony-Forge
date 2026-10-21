@@ -1,8 +1,9 @@
 # S3 slice 4a record: `candidate_model` move (commit `0d2eec9`)
 
-Controller-verified close-out (implementer report in
-`.superpowers/sdd/2026-10-18-refactor-s3/task-4-report.md`, git-ignored;
-this note is the tracked record).
+Controller-verified close-out (the implementer's report was agent scratch
+under the git-ignored `.superpowers/` tree and is NOT in this repository;
+this note is the tracked record — the durable one — and the move itself is
+commit `0d2eec9`, named in the title above).
 
 ## 1. Model-group table (moved byte-identically, old rev `880bb15`)
 

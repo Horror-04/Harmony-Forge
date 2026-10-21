@@ -3,8 +3,10 @@
 Proves every corruption probe run across S4b-main T1–T7 reddened exactly its
 pinned test(s) with green neighbors, and was reverted. Dated 2026-10-19,
 branch `refactor/s4b-main` @ `362496ffab2589738e59c9c160b76caf21a2a68b`.
-Sources: per-task reports in `.superpowers/sdd/2026-10-19-refactor-s4b-main/`
-(not re-run — all reverted + green). Standing: CLEAR = target/mutation/reds/
+Sources: this tracked rollup — the durable record (committed at `9705b18`);
+the per-task work notes were agent scratch under the git-ignored
+`.superpowers/` tree and are NOT in this repository (not re-run — all
+reverted + green). Standing: CLEAR = target/mutation/reds/
 revert all parse; AMBIGUOUS = flagged, never smoothed.
 
 | # | src | target (file / cell) | mutation | exactly red | revert status | standing |
