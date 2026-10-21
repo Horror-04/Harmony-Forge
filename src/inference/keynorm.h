@@ -40,6 +40,24 @@ int keynorm_canonical_pc(const std::string& scale) noexcept;
 // Never throws.
 int keynorm_canonical_shift(int tonic, const std::string& scale) noexcept;
 
+// Named canonical-anchor selection step (phase-B B1, owner decision D-B1).
+//   ScaleFamily     the EXISTING anchor above: "major" -> 0, else 9.
+//   FirstChordRoot  the ADDITIVE anchor: pitch class of THIS record's FIRST
+//                   chord root (`first_chord_root`, MIDI 0..127), selected
+//                   per record with no corpus-global pass. A negative root
+//                   (no chord) falls back to ScaleFamily.
+// ScaleFamily remains the DEFAULT inference/training view; selecting
+// FirstChordRoot is a caller opt-in and changes no existing path. Never
+// throws.
+enum class KeynormAnchor { ScaleFamily = 0, FirstChordRoot = 1 };
+
+int keynorm_anchor_pc(const std::string& scale, int first_chord_root,
+                      KeynormAnchor anchor) noexcept;
+
+// Minimal signed shift in -6..+5 taking `tonic` pc to `anchor_pc`; the shift
+// counterpart of the anchor step (same wrap rule as above). Never throws.
+int keynorm_anchor_shift(int tonic, int anchor_pc) noexcept;
+
 // Flat-codec transpose to the canonical key ([count, 6-tuples]); writes
 // exactly `n` words to `out`, `shift` receives the applied transpose.
 // False on bad buffers (nulls, short cap, length/count mismatch); never

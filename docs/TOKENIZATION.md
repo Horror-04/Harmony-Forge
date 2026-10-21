@@ -55,13 +55,41 @@ Cross-language parity pins for the canonical transpose
 (`training/keynorm.py` ↔ `src/inference/keynorm.{h,cpp}`), read from BOTH
 sides (`tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`).
 
-- **Format**: JSON object with `note_parity` and `chord_parity` sections
-  plus a `known_divergence` note. Each section carries its `provenance`
-  (the exact producer call), integer inputs + expected outputs, and the
-  `shift`. C++ has no JSON lib (R3), so the C++ reader parses INT FIELDS
-  ONLY (minimal strict scanner in `test_keynorm.cpp` — any shape deviation
-  fails loudly); scale/type NAMES stay in-test spec constants on the C++
-  side, while Python (`json` stdlib) checks the full object including names.
+- **Format**: JSON object with `note_parity`, `chord_parity` and
+  `chord_root_anchor` sections plus a `known_divergence` note. Each section
+  carries its `provenance` (the exact producer call), integer inputs +
+  expected outputs, and the `shift`. C++ has no JSON lib (R3), so the C++
+  reader parses INT FIELDS ONLY (minimal strict scanner in
+  `keynorm_golden_reader.h`, included by `test_keynorm.cpp` — any shape
+  deviation fails loudly); scale/type NAMES stay in-test spec constants on
+  the C++ side, while Python (`json` stdlib) checks the full object
+  including names.
+- **Anchor rule (phase-B B1, owner decision D-B1)**: the canonical tonic is
+  chosen by ONE named anchor-selection step per language —
+  `keynorm_anchor_pc(scale, first_chord_root, KeynormAnchor)` in
+  `src/inference/keynorm.{h,cpp}` and
+  `anchor_pc(scale, first_chord_root, *, anchor=...)` in
+  `training/keynorm.py` — mirrored selector ids `ScaleFamily = 0` /
+  `FirstChordRoot = 1` (`ANCHOR_SCALE_FAMILY` / `ANCHOR_FIRST_CHORD_ROOT`).
+  The python selector is KEYWORD-ONLY (as is `mode`): the C++ entry point
+  takes the selector as its third argument, so a naive positional port
+  (`anchor_pc("major", 55, 1)`) must fail loudly (`TypeError`) instead of
+  binding the selector id into another slot and silently answering the
+  scale-family anchor (9) instead of the chord-root anchor (7).
+  `ScaleFamily` is the EXISTING rule and the DEFAULT view: `"major"` → C
+  (pc 0), every other scale → A (pc 9), mode preserved. `FirstChordRoot` is
+  the ADDITIVE D-B1 rule: the anchor is the **pitch class of the record's
+  FIRST chord root**, selected **per record** (no corpus-global pass);
+  `anchor_shift` / `keynorm_anchor_shift` applies the same minimal signed
+  shift in -6..+5. It is OFF the default view — `normalized_view` and the
+  inference default keep the scale-family anchor (wiring it in needs a
+  retrain the owner has not run). An absent first chord (negative root /
+  `None`) and an unknown selector fall back to `ScaleFamily`. The rule is
+  pinned cross-language over `#chord_root_anchor` (10 records, including
+  the existing `#note_parity` / `#chord_parity` inputs) by
+  `tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`; the
+  capture record for those vectors is
+  `docs/measurements/b1-chord-root-anchor.md`.
 - **Units**: flat-codec word arrays (`[count, (bar, sub, track, pitch, dur,
   vel)*]`, MIDI pitches 0..127, drums = track 5 never transposed);
   `shift` in semitones, minimal signed in -6..+5 (major → C/pc 0, every

@@ -64,6 +64,25 @@ int keynorm_canonical_shift(int tonic, const std::string& scale) noexcept {
   }
 }
 
+int keynorm_anchor_pc(const std::string& scale, int first_chord_root,
+                      KeynormAnchor anchor) noexcept {
+  try {
+    if (anchor == KeynormAnchor::FirstChordRoot && first_chord_root >= 0)
+      return mod12(first_chord_root);
+    return keynorm_canonical_pc(scale);
+  } catch (...) {
+    return 9;
+  }
+}
+
+int keynorm_anchor_shift(int tonic, int anchor_pc) noexcept {
+  try {
+    return mod12(mod12(anchor_pc) - mod12(tonic) + 6) - 6;
+  } catch (...) {
+    return 0;
+  }
+}
+
 bool keynorm_to_canonical(const int* ids, size_t n, int tonic,
                           const std::string& scale, int* out, size_t cap,
                           int& shift) noexcept {

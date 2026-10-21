@@ -276,6 +276,117 @@ def check_golden_parity_vectors() -> None:
           "(enriched chord shape preserved on both sides)")
 
 
+def check_chord_root_anchor_vectors() -> None:
+    """D-B1: named chord-root anchor step, selected per record, both sides.
+
+    The existing scale-family anchor is untouched and remains the DEFAULT
+    view; the chord-root selector is additive (OFF the default view). The
+    vector file pins the new step from BOTH sides (here +
+    tests/test_keynorm.cpp 'chord-root anchor selection matches python
+    parity').
+    """
+    import keynorm as K
+    path = os.path.join(HERE, "..", "..", "tests", "golden",
+                        "keynorm_vectors.json")
+    with open(path) as f:
+        gold = json.load(f)
+    sec = gold["chord_root_anchor"]
+    assert sec["anchor"] == K.ANCHOR_FIRST_CHORD_ROOT == 1, \
+        "the golden selector id must be the FIRST_CHORD_ROOT anchor"
+    n = len(sec["scales"])
+    assert n == 10, f"expected 10 chord-root vectors, got {n}"
+    for key in ("tonics", "first_chord_roots", "want_anchor_pcs",
+                "want_shifts", "want_scale_family_anchor_pcs",
+                "want_scale_family_shifts"):
+        assert len(sec[key]) == n, f"{key} must carry {n} values"
+    for i in range(n):
+        scale = sec["scales"][i]
+        tonic = sec["tonics"][i]
+        root = sec["first_chord_roots"][i]
+        # NEW capability: the canonical anchor is the pitch class of the
+        # FIRST chord's root of THIS record (no corpus-global pass).
+        pc = K.anchor_pc(scale, root, anchor=K.ANCHOR_FIRST_CHORD_ROOT)
+        assert pc == sec["want_anchor_pcs"][i], \
+            f"vector {i}: chord-root anchor {pc} != {sec['want_anchor_pcs'][i]}"
+        # The C++ side computes mod12(first_chord_root) - the SAME value,
+        # pinned here independently of the golden file.
+        assert pc == root % 12, \
+            f"vector {i}: chord-root anchor {pc} != the C++ mod12(root)"
+        shift = K.anchor_shift(tonic, pc)
+        assert shift == sec["want_shifts"][i], \
+            f"vector {i}: chord-root shift {shift} != {sec['want_shifts'][i]}"
+        # EXISTING capability: the scale-family branch is exactly
+        # canonical_pc/canonical_shift - the default view is unchanged.
+        sf_pc = K.anchor_pc(scale, root, anchor=K.ANCHOR_SCALE_FAMILY)
+        assert sf_pc == sec["want_scale_family_anchor_pcs"][i]
+        assert sf_pc == K.canonical_pc(scale)
+        sf_shift = K.anchor_shift(tonic, sf_pc)
+        assert sf_shift == sec["want_scale_family_shifts"][i]
+        assert sf_shift == K.canonical_shift(tonic, scale)
+    # Degenerate inputs are total: no chord (None / negative) and an unknown
+    # selector fall back to the existing scale-family anchor.
+    assert K.anchor_pc("major", None, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 0
+    assert K.anchor_pc("dorian", -1, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 9
+    assert K.anchor_pc("major", 55, anchor=99) == 0
+    # ADDITIVE / OFF the default view: normalized_view still selects the
+    # scale-family anchor (G major -> +5), never the first-chord root. The
+    # fixture REUSES the file-backed #note_parity ids/tonic (no new pin).
+    note = gold["note_parity"]
+    chord = {"root": note["tonic"], "type": "maj"}
+    rec = {"ids": note["ids"], "tonic": note["tonic"],
+           "scale": note["scale"], "chords": [chord]}
+    view = K.normalized_view(rec)
+    assert view["keynorm_shift"] == 5, \
+        "normalized_view must keep the scale-family anchor (additive B1)"
+    print("PASS chord-root anchor (D-B1) matches golden vectors + python "
+          "scale-family default unchanged")
+
+
+def check_anchor_selector_positional_safety() -> None:
+    """The anchor selector is KEYWORD-ONLY: a naive C++-shaped POSITIONAL
+    call fails LOUDLY instead of silently returning the wrong anchor.
+
+    The C++ entry point is ``keynorm_anchor_pc(scale, first_chord_root,
+    KeynormAnchor anchor)`` - the selector is the THIRD argument. With a
+    positional python selector a direct port ``anchor_pc("major", 55, 1)``
+    bound ``1`` into the ``mode`` slot and returned 9 (the scale-family
+    anchor) instead of 7 (the chord-root anchor): a silently wrong anchor
+    inside a cross-language parity contract. The failure mode is asserted
+    EXPLICITLY below (TypeError), never smoothed.
+    """
+    import keynorm as K
+    # 1. The naive C++-shaped positional call must NOT answer with a value.
+    raised = False
+    try:
+        naive = K.anchor_pc("major", 55, 1)
+    except TypeError:
+        raised = True
+        naive = None
+    assert raised, (
+        "anchor_pc must reject a positional selector: the naive C++ port "
+        f"call returned {naive!r} instead of raising TypeError")
+    # 2. The keyword form is the API, and it returns the C++ value (55 -> 7).
+    assert K.anchor_pc("major", 55, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 7
+    assert K.anchor_pc("major", 55, anchor=K.ANCHOR_SCALE_FAMILY) == 0
+    # 3. `mode` is keyword-only too - the third positional slot is GONE, so
+    #    no value at all can land in the wrong parameter.
+    raised = False
+    try:
+        K.anchor_pc("major", 55, "dorian")
+    except TypeError:
+        raised = True
+    assert raised, "anchor_pc must reject a positional mode argument"
+    # 4. The keyword form of `mode` still reaches the scale-family branch.
+    assert K.anchor_pc("major", None, mode="dorian") == 9
+    assert K.anchor_pc("major", None, mode="dorian",
+                        anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 9
+    # 5. The degenerate fallbacks are unchanged (total, never raising).
+    assert K.anchor_pc("major", None, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 0
+    assert K.anchor_pc("dorian", -1, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 9
+    print("PASS the anchor selector is keyword-only (a naive positional "
+          "C++ port raises TypeError instead of answering 9)")
+
+
 def main() -> int:
     check_roundtrip_corpus()
     check_canonical_tonic()
@@ -285,6 +396,8 @@ def main() -> int:
     check_chords_meta()
     check_report_numbers()
     check_golden_parity_vectors()
+    check_chord_root_anchor_vectors()
+    check_anchor_selector_positional_safety()
     print("ALL keynorm tests PASS")
     return 0
 

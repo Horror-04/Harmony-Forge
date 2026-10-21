@@ -28,5 +28,17 @@
       "want_tensions": [7, -1]
     }
   },
+  "chord_root_anchor": {
+    "provenance": "training/keynorm.py anchor_pc(scale, first_chord_root, anchor=ANCHOR_FIRST_CHORD_ROOT) + anchor_shift(tonic, anchor_pc), one call per record; record 0 is the #note_parity input (tonic 55 / major, first chord root 55) and record 1 carries the #chord_parity first root (55), so the existing inputs are re-pinned under the new step too",
+    "rule": "D-B1: the canonical anchor is the pitch class of the FIRST chord root of THIS record (selected per record, no corpus-global pass). want_shift is the minimal signed shift in -6..+5 taking the tonic pitch class to that anchor. The existing scale-family anchor (major -> 0, every other scale -> 9) is unchanged and remains the DEFAULT view; ANCHOR_FIRST_CHORD_ROOT / KeynormAnchor::FirstChordRoot is additive and OFF the default view.",
+    "anchor": 1,
+    "scales": ["major", "major", "major", "natural_minor", "dorian", "mixolydian", "major", "natural_minor", "major", "major"],
+    "tonics": [55, 60, 60, 57, 50, 55, 61, 69, 55, 0],
+    "first_chord_roots": [55, 55, 60, 64, 50, 62, 0, 69, 60, 6],
+    "want_anchor_pcs": [7, 7, 0, 4, 2, 2, 0, 9, 0, 6],
+    "want_shifts": [0, -5, 0, -5, 0, -5, -1, 0, 5, -6],
+    "want_scale_family_anchor_pcs": [0, 0, 0, 9, 9, 9, 0, 9, 0, 0],
+    "want_scale_family_shifts": [5, 0, 0, 0, -5, 2, -1, 0, 5, 0]
+  },
   "known_divergence": "NONE - healed in phase-B tranche E B11 (owner decision D-B11): the C++ shift_chords_to/from_canonical and the python shift_chords now agree on the chord SHAPE - only `root` moves (clamped 0..127) and every other key of the input chord dict (type/inversion/tension/name) is preserved as-is. Pinned from BOTH sides over the enriched vector in #chord_parity.enriched; the corpus-level parity on {root, type} chords is unchanged."
 }
