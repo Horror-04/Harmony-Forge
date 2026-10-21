@@ -6,6 +6,9 @@
 // and cannot be instantiated headless - only their pure logic is pinned).
 //
 // - ArrangeBar::countTextFor: live-count text (plural/singular/zero).
+//   (The ArrangeBar mode control model moved to the REGISTERED binary
+//   tests/test_arrange_mode_model.cpp: this binary is deliberately not
+//   ctest-registered, so a proof that lives here never runs in CI.)
 // - ExplainView wrap: narrowing the view grows contentHeight (rows wrap
 //   instead of clipping); widening restores it (no accumulation); two wide
 //   widths agree (fully unwrapped == legacy single-line stack); a narrow

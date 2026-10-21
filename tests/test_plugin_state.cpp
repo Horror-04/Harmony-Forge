@@ -63,3 +63,76 @@ TEST_CASE("useSampling sanitise fills a missing property with the default", "[pl
   // A second sanitise is a no-op (stable fixpoint, canonical bool stored).
   CHECK_FALSE(hf::plugin::sanitiseState(t));
 }
+
+TEST_CASE("ArrangeMode defaults to Strict in a fresh tree", "[plugin_state][b2]") {
+  const auto t = hf::plugin::createDefaultState();
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Strict);
+  CHECK(t.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Strict");
+  // An invalid tree reads the same default (same policy as the other
+  // accessors: a missing property is never a guess).
+  CHECK(hf::plugin::arrangeMode(juce::ValueTree{}) == hf::infer::GenMode::Strict);
+}
+
+TEST_CASE("ArrangeMode setter is undoable and canonical", "[plugin_state][b2]") {
+  auto t = hf::plugin::createDefaultState();
+  juce::UndoManager undo;
+  hf::plugin::setArrangeMode(t, hf::infer::GenMode::Creative, &undo);
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Creative);
+  CHECK(t.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Creative");
+  REQUIRE(undo.canUndo());
+  undo.undo();
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Strict);
+  REQUIRE(undo.canRedo());
+  undo.redo();
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Creative);
+  // The arrange axis has no Experimental value: it stores Strict (D-B2).
+  hf::plugin::setArrangeMode(t, hf::infer::GenMode::Experimental, &undo);
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Strict);
+  CHECK(t.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Strict");
+}
+
+TEST_CASE("ArrangeMode survives an XML save/load round-trip", "[plugin_state][b2]") {
+  auto t = hf::plugin::createDefaultState();
+  juce::UndoManager undo;
+  hf::plugin::setArrangeMode(t, hf::infer::GenMode::Creative, &undo);
+  // Mirror PluginProcessor::get/setStateInformation: XML out, fromXml +
+  // sanitiseState back in.
+  auto xml = t.createXml();
+  REQUIRE(xml.get() != nullptr);
+  auto restored = juce::ValueTree::fromXml(*xml);
+  REQUIRE(restored.isValid());
+  hf::plugin::sanitiseState(restored);  // one canonicalising pass (XML types)
+  CHECK(hf::plugin::arrangeMode(restored) == hf::infer::GenMode::Creative);
+  CHECK(restored.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Creative");
+  CHECK_FALSE(hf::plugin::sanitiseState(restored));  // stable fixpoint
+  // And the Strict default round-trips too (an untouched project).
+  auto f = hf::plugin::createDefaultState();
+  auto fxml = f.createXml();
+  REQUIRE(fxml.get() != nullptr);
+  auto frestored = juce::ValueTree::fromXml(*fxml);
+  REQUIRE(frestored.isValid());
+  hf::plugin::sanitiseState(frestored);
+  CHECK(hf::plugin::arrangeMode(frestored) == hf::infer::GenMode::Strict);
+}
+
+TEST_CASE("ArrangeMode sanitise fills missing and canonicalises known values",
+          "[plugin_state][b2]") {
+  auto t = hf::plugin::createDefaultState();
+  juce::UndoManager undo;
+  hf::plugin::setArrangeMode(t, hf::infer::GenMode::Creative, &undo);
+  t.removeProperty(hf::plugin::StateID::kArrangeMode, &undo);
+  REQUIRE_FALSE(t.hasProperty(hf::plugin::StateID::kArrangeMode));
+  CHECK(hf::plugin::sanitiseState(t));
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Strict);
+  CHECK_FALSE(hf::plugin::sanitiseState(t));  // stable fixpoint
+
+  // Lowercase/foreign spellings never reach the generator uncanonicalised.
+  t.setProperty(hf::plugin::StateID::kArrangeMode, "creative", nullptr);
+  CHECK(hf::plugin::sanitiseState(t));
+  CHECK(t.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Creative");
+  CHECK_FALSE(hf::plugin::sanitiseState(t));
+  t.setProperty(hf::plugin::StateID::kArrangeMode, "Experimental", nullptr);
+  CHECK(hf::plugin::sanitiseState(t));
+  CHECK(hf::plugin::arrangeMode(t) == hf::infer::GenMode::Strict);
+  CHECK(t.getProperty(hf::plugin::StateID::kArrangeMode).toString() == "Strict");
+}

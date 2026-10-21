@@ -60,7 +60,9 @@ class PatternDocument : public juce::ChangeBroadcaster {
   static hf::infer::GenParams makeParamsWithModel(int seed, int bars, int tonic,
                                                   const std::string& scale,
                                                   const std::string& model_path,
-                                                  bool use_sampling = false);
+                                                  bool use_sampling = false,
+                                                  hf::infer::GenMode mode =
+                                                      hf::infer::GenMode::Strict);
 
   // Selection + view state (undoable where it changes data; pure view state
   // like trackShown/auditionIndex broadcasts without undo entries).

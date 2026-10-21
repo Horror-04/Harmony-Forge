@@ -20,6 +20,11 @@
 //   UseSampling (bool, default true since the Phase 10 Task 4 ON verdict;
 //   undoable sampling
 //   flag wired into GenParams.use_sampling for Regenerate).
+//   ArrangeMode (String, default "Strict"; phase-B B2, D-B2): the
+//   ARRANGEMENT-WIDE generation mode. Only "Strict"/"Creative" are
+//   expressible on this axis (energy still owns the Strict->Creative
+//   ornament blend); anything else reads/writes as Strict, so an untouched
+//   project generates byte-identical arrangements.
 //
 // Policy: every mutation from the UI goes through these helpers with a
 // non-null UndoManager so undo/redo works in the editor. Initial defaults
@@ -38,6 +43,7 @@ static constexpr const char* kSeed = "Seed";
 static constexpr const char* kBars = "Bars";
 static constexpr const char* kModelPath = "ModelPath";
 static constexpr const char* kUseSampling = "UseSampling";
+static constexpr const char* kArrangeMode = "ArrangeMode";
 }  // namespace StateID
 
 struct StateDefaults {
@@ -50,6 +56,7 @@ struct StateDefaults {
   static constexpr int bars = 4;
   static constexpr const char* modelPath = "";
   static constexpr bool useSampling = true;  // Phase 10 Task 4 ON verdict
+  static constexpr const char* arrangeMode = "Strict";  // B2: D-B2 default
 };
 
 // Builds a fresh default tree (undo == nullptr: no history entries).
@@ -92,10 +99,26 @@ void setModelPath(juce::ValueTree tree, const juce::String& v, juce::UndoManager
 bool useSampling(const juce::ValueTree& tree);
 void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo);
 
+// Phase-B B2 (D-B2): arrangement-wide generation mode, persisted with the
+// state so it survives save/load and undo/redo. Only Strict/Creative are
+// expressible (the arrange axis; energy keeps owning the Strict->Creative
+// ornament blend). A missing or unknown value reads/writes as Strict, so a
+// pre-B2 project reconstructs the exact bytes it had.
+hf::infer::GenMode arrangeMode(const juce::ValueTree& tree);
+void setArrangeMode(juce::ValueTree tree, hf::infer::GenMode v, juce::UndoManager* undo);
+
 // S7: shared GenParams builder over the four editor call sites
 // (doRegenerate, doRegenerateSelection, submitPreviewExport,
 // doBuildArrangement). Bundles the four state reads above with explicit
-// seed/bars args — pure forward, no new semantics.
-hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars);
+// seed/bars args — pure forward, no new semantics. The optional `mode`
+// (B2) is the CALLER's generation mode and defaults to Strict: the plain
+// generate path cannot inherit the Arrange tab's persisted mode.
+hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars,
+                                     hf::infer::GenMode mode = hf::infer::GenMode::Strict);
+
+// B2: the arrangement-build params. The state seed/bars are unused
+// placeholders (sections own seeds and bars); the mode is the persisted
+// ArrangeMode read back from the state.
+hf::infer::GenParams arrangeParamsFromState(const juce::ValueTree& state);
 
 }  // namespace hf::plugin

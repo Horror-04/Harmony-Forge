@@ -241,7 +241,6 @@ core::Pattern build_section(const Section& s, const hf::infer::GenParams& base,
   int bar_off = 0, chunk_idx = 0;
   for (int left = bars; left > 0; left -= kMaxGenBars, ++chunk_idx) {
     hf::infer::GenParams p = base;
-    p.mode = hf::infer::GenMode::Strict;  // energy owns the Strict->Creative axis
     p.bars = std::min(left, kMaxGenBars);
     p.seed = static_cast<int>(mix32(s.seed, static_cast<uint64_t>(chunk_idx)));
     const auto cands = hf::infer::generate_candidates(p);

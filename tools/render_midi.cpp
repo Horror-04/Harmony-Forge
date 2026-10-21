@@ -32,7 +32,7 @@ void usage(const char* argv0) {
   std::printf("  %s --seed N --bars B --out file.mid [--multi]\n", argv0);
   std::printf("         [--mode Strict|Creative] [--keynorm off|on] [--sampling off|on]\n");
   std::printf("  %s --arrange SPEC --out file.mid [--multi]\n", argv0);
-  std::printf("         [--mode Strict] [--keynorm off|on] [--sampling off|on]\n");
+  std::printf("         [--mode Strict|Creative] [--keynorm off|on] [--sampling off|on]\n");
   std::printf("arrange SPEC format: Type:bars:energy:variation:seed,... e.g.\n");
   std::printf("  Intro:4:0.3:0.2:7,Verse:8:0.5:0.3:7,Chorus:8:0.9:0.4:8\n");
   std::printf("  Types: Intro Verse PreChorus Chorus Bridge Breakdown Buildup Drop Outro\n");
@@ -40,8 +40,8 @@ void usage(const char* argv0) {
   std::printf("melody by default, SMF-1 multitrack with --multi. Same args ->\n");
   std::printf("byte-identical file (deterministic generation + writers).\n");
   std::printf("--mode/--keynorm/--sampling pass straight through to GenParams\n");
-  std::printf("(defaults Strict/off/off == the historical invocation); --arrange\n");
-  std::printf("is Strict-only (non-Strict --mode with --arrange is rejected);\n");
+  std::printf("(defaults Strict/off/off == the historical invocation); for --arrange\n");
+  std::printf("--mode is the arrangement-wide mode (energy still blends ornaments);\n");
   std::printf("--keynorm/--sampling flow through to each section build.\n");
 }
 
@@ -132,15 +132,10 @@ int main(int argc, char** argv) {
       std::printf("render_midi: bad --arrange spec (see usage)\n");
       return 2;
     }
-    // S2 entry: --arrange is Strict-only (build_section forces Strict;
-    // energy owns the Strict->Creative axis). A non-Strict mode flag is
-    // rejected instead of silently aliasing Strict bytes.
-    if (mode != hf::infer::GenMode::Strict) {
-      std::printf("render_midi: --arrange is Strict-only (--mode %s rejected)\n",
-                  mode_name.c_str());
-      return 2;
-    }
+    // B2 (D-B2): --mode reaches the arrangement build: base.mode is the
+    // arrangement-wide axis, and energy still blends the ornaments on top.
     hf::arr::ArrangeParams ap;
+    ap.base.mode = mode;
     ap.base.seed = 0;
     ap.base.bars = 4;
     ap.base.tonic = 60;

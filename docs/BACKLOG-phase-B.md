@@ -139,7 +139,7 @@ state, and the item's own block carries the evidence.
 | id | title (the ORIGINAL name) | area | status (the ruling + the implementation state) | result (one line — the outcome) | risk if deferred (the residual that is still true) |
 |---|---|---|---|---|---|
 | B1 | Chord-root-anchored keynorm | inference / training | **RESOLVED — additive selector only** (phase-B B1; see the resolution note in the B1 block) | the named **first-chord-root anchor** (`KeynormAnchor::FirstChordRoot` / `ANCHOR_FIRST_CHORD_ROOT`) now exists in both languages and is pinned cross-language on a new vector set; it is ADDITIVE and OFF the default view (scale-family anchor untouched, no retrain) | the canonical training/inference view is still scale-family-anchored only; wiring the chord-root anchor into it (and the retrain) remains a separate product-grade task |
-| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
+| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **RESOLVED** — see the resolution note "RESOLVED 2026-10-21 (backlog wave B2, branch `refactor/b2-arrange-mode`, commit `b488ec0`)" in the B2 block below | per D-B2 the mode is an **arrangement-wide switch** in `ArrangeParams.base` (persisted as the root property `ArrangeMode`), **energy keeps owning** the Strict→Creative blend, and the default Strict leaves untouched projects byte-identical; both forced-Strict sites are gone | residual: the mode is **arrangement-global only** (no per-section field, no SPEC-format change — D-B2's explicit trade) and only Strict/Creative are expressible, so an `Experimental` base reads and writes as Strict |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
 | B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b DECIDED — NOT IMPLEMENTED (product-grade)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`, commits `587dd6e` + `09eab98`) — B4a only" in the B4 block below | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b** (the strong-beat predicate unification) stays product-grade: the three sites compute DIFFERENT things, so unifying them is a semantics change | residual (B4b): the strong-beat rule is still stated in 3 different computations — a fix in one place can silently miss the others; plus the 4 duplicated pitch-class NAME tables (`kNames`/`kPcNames`) |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
@@ -149,7 +149,7 @@ state, and the item's own block carries the evidence.
 | B9 | Three CCN 16/30/30 functions were never split | inference | **RESOLVED** (phase-B tranche C) | `apply_mode` **30 → 3** and `apply_candidate_transform` **30 → 5** (pure moves); `compose_base` (16) stays pinned per D-B9 | residual: the **cube leg is structurally blind to 6 of the 7 new stages**; the in-repo pins carry them (accounted per stage below) |
 | B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | **RESOLVED (phase-B tranche G)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche G, branch `refactor/phase-b-b10`)" in the B10 block below | an out-of-range id is **REJECTED** at the ORT boundary (the provider returns `false`, in the slot-checked id domain per D-B10.1); the sidecar pin covers **both** the logits values and the sidecar sha256 (`tests/golden/ort_logits_values.txt`, written by the real capture tool) | residual: the pinned values are **not bit-exact** across ORT versions (the C++ provider runs ORT 1.22.0, the capture ran 1.31.0; 217 of 256 values differ in the last bits, max \|Δ\| 2.86e-06 against a documented tolerance of 1e-4), so a sidecar swap is caught by the sha256 + the exact argmax, not by the values alone |
 | B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | **RESOLVED** (phase-B tranche E) | the divergence is **HEALED**: python preserves every key of the input chord dict, the C++ shape is authoritative; parity pinned on BOTH sides over a new enriched vector | residual: the C++ side is **ints-only** (`ChordSymbol` has no name field), so the name stays an in-test spec constant |
-| B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work) |
+| B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work); the bounds golden `tests/golden/b12_editor_bounds.json` is **stale since the B2 wave** (the ArrangeBar gained two widgets) and awaits the re-capture tracked as "OPEN FOLLOW-UP (B12 bounds golden re-capture)" in the B12 block below |
 
 
 ---
@@ -365,12 +365,55 @@ Strict→Creative axis, or should the explicit mode control replace it?
 > already reached that verdict ("no cleanup item — enabling Creative
 > arrangements would be a feature").
 
-**Risk / impact of leaving it deferred.** Arrangements remain Strict-only
-by construction, with no user-visible mode axis, and the two forced-Strict
-sites stay invisible coupling between the editor and the generator: a future
-change to `makeParamsWithModel` (which is shared with the non-arrange
-generate path, `src/plugin/state/PluginState.cpp:166-170`) can silently
-change arrangement behaviour.
+**Residual risk after the resolution.** The mode is arrangement-global: a
+per-section mode still needs the SPEC/parser change D-B2 deferred, and only
+Strict/Creative are expressible on this axis. `paramsFromState` deliberately
+keeps its own Strict default so the Arrange tab's mode cannot leak into
+Regenerate/Preview/Export; a caller that forgets the trailing mode argument
+gets Strict, not the persisted value.
+
+> **RESOLVED 2026-10-21 (backlog wave B2, branch `refactor/b2-arrange-mode`,
+> commit `b488ec0`).** The ruling above is now implemented as ruled.
+> **Where the mode lives:** `ArrangeParams.base.mode` is the one
+> arrangement-wide axis; no `Section` field and no SPEC-format change (the
+> 5-field arrange spec is untouched). The plugin persists the selection as
+> the root-state property `StateID::kArrangeMode` (`"ArrangeMode"`, String,
+> default `"Strict"`), read back by `hf::plugin::arrangeMode` and written by
+> `setArrangeMode`; only Strict/Creative are expressible, and anything else
+> (including Experimental) reads and writes as Strict. `build_section` no
+> longer assigns `GenMode::Strict`, so the caller's `base.mode` reaches the
+> generator.
+> **The UI:** the Arrange tab carries a visible `Mode (arrangement)` combo
+> (Strict/Creative) on the section-button row; `onModeChanged` commits the
+> value undoably and `valueTreePropertyChanged` reflects load/undo/redo.
+> **Default preservation:** `paramsFromState` keeps its Strict default (via
+> a new trailing mode argument) so Regenerate/Preview/Export cannot inherit
+> the Arrange tab's mode; `arrangeParamsFromState` is the only arrange
+> reader. A test pins `ArrangeParams{}` == explicit Strict bytes, and
+> Creative moves the bytes for the same seed at e = 1.0.
+> **Energy:** `apply_energy` / `ornament_slots` untouched; e = 0 adds no
+> ornaments whatever the mode, and energy monotonicity is re-pinned on a
+> Creative base.
+> **Gates:** the fast gates are green (`check_layers`, `rt_scan`,
+> `lint_ccn`, `lint_file_size` 807 pinned, `lint_editor_budget`
+> 1100 <= 1102, `lint_off_golden`, `gen_map --check` FRESH) and the editor
+> .cpp stayed at 807 lines (24 added / 24 removed). No local
+> build/ctest per the wave rules; 170 pytest cases pass and 17 fail only
+> on missing optional torch/onnx/onnxruntime in this environment.
+> **Known follow-up:** `tests/golden/b12_editor_bounds.json` is stale: the
+> ArrangeBar gained two widgets (`modeBox_`, `modeLabel_`), so the pinned
+> descendant-component count 136 no longer describes the editor tree. The
+> NEW count is a MEASUREMENT, not an arithmetic (JUCE's `ComboBox` also
+> installs an internal `Label` child), so the probe must MEASURE it after a
+> build: the count must GROW (>= 138) and the exact value comes from the
+> post-build re-capture. That re-capture is tracked as an explicit item in
+> the **B12** block below ("OPEN FOLLOW-UP (B12 bounds golden re-capture)"),
+> which carries the exact commands; the probe is neither ctest-registered
+> nor in CI, so no gate breaks. `docs/INVARIANTS.md`'s ctest counts were
+> the B10 measurement (254/221); this branch EXPECTS 264/224 (B2 adds 9
+> registered cases - 3 in both configurations, 6 plugin-ON - plus 1
+> plugin-ON case in the new `test_arrange_mode_model` binary) and they are
+> re-derived with `ctest -N` after the first green build.
 
 ---
 
@@ -1676,6 +1719,35 @@ measured in S9 and has not been re-measured since.
 > The "Where it lives" block above is the **pre-extraction snapshot** and
 > is superseded by this resolution and by
 > `docs/measurements/s9-0.md` Appendix D.
+
+> **OPEN FOLLOW-UP (B12 bounds golden re-capture — tracked here, explicit
+> item).** The B12 bounds guard (`tests/probe_b12_bounds.cpp` +
+> `tests/golden/b12_editor_bounds.json`) is **knowingly stale** since the B2
+> wave (`refactor/b2-arrange-mode`): the ArrangeBar gained two widgets
+> (`modeBox_`, `modeLabel_`), so the pinned descendant-component count
+> **136** (and the dump byte counts / sha256s that go with it) no longer
+> describe the editor tree. **The new count is a MEASUREMENT, not an
+> arithmetic** — JUCE's `ComboBox` also installs an internal `Label` child,
+> so the delta is not the widget count — and the probe must MEASURE it: the
+> count must GROW (**>= 138**), and the exact value comes from the
+> post-build re-capture below. **The probe is neither ctest-registered nor
+> in CI** (ruling S93-3), so no gate breaks; the first person who runs it
+> by hand will see the mismatch.
+> Re-capture procedure (Debug, `build-plugdbg`, run from the repo root):
+>
+> 1. `cmake --build build-plugdbg --config Debug --target probe_b12_bounds`
+> 2. `build-plugdbg/tests/Debug/probe_b12_bounds.exe --write <temp copy>`
+>    (the manifest's `how` requires the temp-copy path: never write the
+>    golden in place)
+> 3. byte-compare the temp copy with `tests/golden/b12_editor_bounds.json`,
+>    then replace the golden with the temp copy
+> 4. update the `in_test` record in `tests/golden_manifest.json`: the
+>    canonical sha256 of the new golden, the `pins` prose (the measured
+>    component count) and the `commit` provenance
+> 5. re-run `python tools/lint_golden_manifest.py` and the probe (exit 0)
+>
+> Owner: whoever builds the branch next. Until then the guard is RED by
+> hand and green nowhere — stated, not glossed.
 
 ---
 

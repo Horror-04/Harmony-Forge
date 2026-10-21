@@ -209,6 +209,11 @@ HarmonyForgeEditor::HarmonyForgeEditor(HarmonyForgeProcessor& p)
   };
   candidateBar.setSeedAndBars(hf::plugin::seed(proc.state()), hf::plugin::bars(proc.state()));
 
+  arrangeBar.setMode(hf::plugin::arrangeMode(proc.state()));
+  arrangeBar.onModeChanged = [this](hf::infer::GenMode m) {
+    proc.undo().beginNewTransaction("Arrange mode");
+    hf::plugin::setArrangeMode(proc.state(), m, &proc.undo());
+  };
   arrangeBar.onBuild = [this](const std::vector<hf::arr::Section>& sections) {
     doBuildArrangement(sections);
   };
@@ -338,6 +343,7 @@ void HarmonyForgeEditor::valueTreePropertyChanged(juce::ValueTree& tree,
   // Phase 10 Task 2: undo/redo of the sampling flag reflects in the toggle
   // (no feedback: dontSendNotification never re-enters onClick).
   samplingButton.setToggleState(hf::plugin::useSampling(tree), juce::dontSendNotification);
+  arrangeBar.setMode(hf::plugin::arrangeMode(tree));
 }
 
 void HarmonyForgeEditor::changeListenerCallback(juce::ChangeBroadcaster*) {
@@ -383,8 +389,7 @@ void HarmonyForgeEditor::mouseDown(const juce::MouseEvent& e) {
 void HarmonyForgeEditor::mouseUp(const juce::MouseEvent& e) {
   // Phase 6 Task 1 item C: an aborted dragButton press (released off-button)
   // produces no onClick — clear the stale arm so a later keyboard activation
-  // is not skipped. A release on-button keeps the arm for the follow-up
-  // onClick to consume.
+  // is not skipped; a release on-button keeps the arm for the follow-up click.
   if (e.eventComponent == &dragButton &&
       !dragButton.getLocalBounds().contains(e.getPosition()))
     dragMouseArmed_ = false;
@@ -413,12 +418,11 @@ int HarmonyForgeEditor::schedulePattern(const hf::core::Pattern& pat, int prefer
 }
 
 void HarmonyForgeEditor::startPreview() {
-  // Message thread: the working pattern when present, else the Safe
-  // candidate for the current state (Sprint 4 behaviour, now with
-  // state seed/bars). Phase 3 Task 4 item B: with a model configured and
-  // no working pattern yet, generation goes through the async queue
-  // (progress UI, supersede-safe); the empty-path sync call below is
-  // byte-identical to before (tripwire).
+  // Message thread: the working pattern when present, else the Safe candidate
+  // for the current state (Sprint 4, now with state seed/bars). Phase 3 Task
+  // 4 item B: with a model configured and no working pattern yet, generation
+  // goes through the async queue (progress UI, supersede-safe); the
+  // empty-path sync call below is byte-identical to before (tripwire).
   if (hf::core::pattern_note_count(doc.pattern()) > 0) {
     cancelPendingPreviewExport();
     const int n = schedulePattern(doc.pattern(), doc.trackShown());
@@ -455,8 +459,8 @@ void HarmonyForgeEditor::auditionCandidate(int i) {
 void HarmonyForgeEditor::doRegenerate() {
   // Message thread: persist seed/bars undoably, then submit generation to
   // the background queue (non-blocking). The timerCallback poll applies the
-  // candidates when ready; a second Regenerate supersedes by job id. Frozen
-  // regions of the working pattern merge into every candidate.
+  // candidates when ready; a second Regenerate supersedes by job id, and
+  // frozen regions of the working pattern merge into every candidate.
   const int seed = candidateBar.seedValue();
   const int bars = candidateBar.barsValue();
   proc.undo().beginNewTransaction("Seed/bars");
@@ -467,10 +471,9 @@ void HarmonyForgeEditor::doRegenerate() {
 }
 
 void HarmonyForgeEditor::doRegenerateSelection() {
-  // Task 4 vertical slice: same seed/bars persistence and GenParams build
-  // as doRegenerate (one undoable transaction), but only the selected
-  // region regenerates — the document freezes everything outside the
-  // selection at submit time. Message thread only; processBlock untouched.
+  // Task 4 vertical slice: same seed/bars persistence and GenParams build as
+  // doRegenerate (one undoable transaction), but only the selection
+  // regenerates; message thread only, processBlock untouched (rest frozen).
   const int seed = candidateBar.seedValue();
   const int bars = candidateBar.barsValue();
   proc.undo().beginNewTransaction("Seed/bars");
@@ -487,14 +490,12 @@ void HarmonyForgeEditor::doKeep(int i) {
 void HarmonyForgeEditor::doBuildArrangement(const std::vector<hf::arr::Section>& sections) {
   // Message thread: build_arrangement is CPU-bound but fast (tens of ms for
   // a 150-bar arrangement - measured, see the Task 5 report), so it runs
-  // synchronously here with a status readout instead of a chunked progress
-  // flow. Never touches audio state; the result commits undoably and
-  // previews through the existing working-pattern path.
+  // synchronously with a status readout. Never touches audio state; the
+  // result commits undoably and previews through the working-pattern path.
   hf::arr::Arrangement arr;
   arr.sections = sections;
-  // Per-section seeds/bars rule generation and layout; the state seed/bars
-  // below are unused placeholders (bars is clamped by makeParamsWithModel).
-  const auto gp = hf::plugin::paramsFromState(proc.state(), hf::plugin::seed(proc.state()), 4);
+  // Per-section seeds/bars rule layout; the state seed/bars are placeholders.
+  const auto gp = hf::plugin::arrangeParamsFromState(proc.state());
   hf::arr::ArrangeParams ap;
   ap.base = gp;
   const auto t0 = juce::Time::getMillisecondCounter();
@@ -518,10 +519,9 @@ void HarmonyForgeEditor::stopPreview() {
 void HarmonyForgeEditor::startMidiDrag() {
   // Message thread file I/O is fine (never the audio thread). Drags the
   // working pattern as multitrack MIDI (all tracks, correct channels); with
-  // no pattern yet, the Safe candidate for the current state.
-  // Phase 3 Task 4 item B proviso: drag stays synchronous even with a model
-  // configured (documented fallback in PluginEditor.h — the OS drag must
-  // start inside this mouseDown gesture). Empty path is byte-identical.
+  // no pattern yet, the Safe candidate for the current state. Phase 3 Task 4
+  // item B proviso: drag stays synchronous even with a model configured (the
+  // OS drag must start inside this mouseDown gesture); empty path identical.
   if (hf::core::pattern_note_count(doc.pattern()) > 0) {
     finishDrag(doc.pattern());
     return;

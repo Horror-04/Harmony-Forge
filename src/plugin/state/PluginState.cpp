@@ -18,6 +18,7 @@ juce::ValueTree createDefaultState() {
   t.setProperty(StateID::kBars, StateDefaults::bars, nullptr);
   t.setProperty(StateID::kModelPath, StateDefaults::modelPath, nullptr);
   t.setProperty(StateID::kUseSampling, StateDefaults::useSampling, nullptr);
+  t.setProperty(StateID::kArrangeMode, StateDefaults::arrangeMode, nullptr);
   return t;
 }
 
@@ -71,6 +72,15 @@ bool sanitiseState(juce::ValueTree tree) {
   if (!tree.hasProperty(StateID::kUseSampling) ||
       !tree.getProperty(StateID::kUseSampling).isBool()) {
     tree.setProperty(StateID::kUseSampling, sampling, nullptr);
+    changed = true;
+  }
+  // ArrangeMode (B2): missing/unknown resets to Strict and a known value is
+  // stored in its canonical spelling (only Strict/Creative are expressible:
+  // the arrange axis has no Experimental value).
+  const juce::String mode = juce::String(hf::infer::gen_mode_name(arrangeMode(tree)));
+  if (!tree.hasProperty(StateID::kArrangeMode) ||
+      tree.getProperty(StateID::kArrangeMode).toString() != mode) {
+    tree.setProperty(StateID::kArrangeMode, mode, nullptr);
     changed = true;
   }
   return changed;
@@ -163,10 +173,31 @@ void setUseSampling(juce::ValueTree tree, bool v, juce::UndoManager* undo) {
   tree.setProperty(StateID::kUseSampling, v, undo);
 }
 
-hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars) {
+hf::infer::GenMode arrangeMode(const juce::ValueTree& tree) {
+  const juce::String raw =
+      tree.getProperty(StateID::kArrangeMode, StateDefaults::arrangeMode).toString();
+  // Only Creative is honoured; Strict, Experimental and every foreign string
+  // read as Strict (the arrange axis is Strict/Creative by D-B2).
+  return hf::infer::gen_mode_from_name(raw.toStdString()) == hf::infer::GenMode::Creative
+             ? hf::infer::GenMode::Creative
+             : hf::infer::GenMode::Strict;
+}
+
+void setArrangeMode(juce::ValueTree tree, hf::infer::GenMode v, juce::UndoManager* undo) {
+  const auto mode = v == hf::infer::GenMode::Creative ? hf::infer::GenMode::Creative
+                                                      : hf::infer::GenMode::Strict;
+  tree.setProperty(StateID::kArrangeMode, juce::String(hf::infer::gen_mode_name(mode)), undo);
+}
+
+hf::infer::GenParams paramsFromState(const juce::ValueTree& state, int seed, int bars,
+                                     hf::infer::GenMode mode) {
   return PatternDocument::makeParamsWithModel(
       seed, bars, rootKey(state), scaleName(state).toLowerCase().toStdString(),
-      modelPath(state).toStdString(), useSampling(state));
+      modelPath(state).toStdString(), useSampling(state), mode);
+}
+
+hf::infer::GenParams arrangeParamsFromState(const juce::ValueTree& state) {
+  return paramsFromState(state, seed(state), 4, arrangeMode(state));
 }
 
 }  // namespace hf::plugin

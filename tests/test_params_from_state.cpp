@@ -74,3 +74,29 @@ TEST_CASE("paramsFromState on an empty tree pins reader defaults",
   CHECK(gp.use_sampling);  // StateDefaults::useSampling == true
   CHECK_FALSE(gp.keynorm_use_canonical);
 }
+
+TEST_CASE("paramsFromState honours an explicit mode (B2)", "[params_from_state][b2]") {
+  const auto state = hf::plugin::createDefaultState();
+  const hf::infer::GenParams gp =
+      hf::plugin::paramsFromState(state, 3, 4, hf::infer::GenMode::Creative);
+  CHECK(gp.mode == hf::infer::GenMode::Creative);
+  // The 3-arg form keeps the Strict default (every non-arrange caller).
+  CHECK(hf::plugin::paramsFromState(state, 3, 4).mode == hf::infer::GenMode::Strict);
+}
+
+TEST_CASE("the persisted arrange mode never leaks into the plain generate path",
+          "[params_from_state][b2]") {
+  auto state = hf::plugin::createDefaultState();
+  juce::UndoManager undo;
+  hf::plugin::setArrangeMode(state, hf::infer::GenMode::Creative, &undo);
+
+  // Regenerate/Preview/Export use the 3-arg helper: still Strict even while
+  // the Arrange tab's persisted mode is Creative (D-B2: arrangement-wide).
+  CHECK(hf::plugin::paramsFromState(state, 3, 4).mode == hf::infer::GenMode::Strict);
+  // The arrangement build helper is the one place that reads it.
+  const hf::infer::GenParams arr = hf::plugin::arrangeParamsFromState(state);
+  CHECK(arr.mode == hf::infer::GenMode::Creative);
+  CHECK(arr.bars == 4);  // placeholder, clamped by makeParamsWithModel
+  CHECK(arr.tonic == hf::plugin::rootKey(state));
+  CHECK(arr.scale == "major");
+}

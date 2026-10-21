@@ -92,9 +92,10 @@ PatternDocument::PatternDocument(juce::UndoManager* undo)
 hf::infer::GenParams PatternDocument::makeParamsWithModel(int seed, int bars, int tonic,
                                                  const std::string& scale,
                                                  const std::string& model_path,
-                                                 bool use_sampling) {
+                                                 bool use_sampling,
+                                                 hf::infer::GenMode mode) {
   hf::infer::GenParams gp;
-  gp.mode = hf::infer::GenMode::Strict;
+  gp.mode = mode;  // default Strict: every non-arrange caller keeps today's bytes
   gp.seed = seed;
   gp.bars = std::clamp(bars, 1, 16);
   gp.tonic = std::clamp(tonic, 0, 127);

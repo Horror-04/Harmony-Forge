@@ -18,6 +18,11 @@ namespace {
 
 constexpr int kBarTicks = 480 * 4;  // 1920, PPQ 480, 4/4
 
+hf::arr::Section section(hf::arr::SectionType t, int bars, float energy, float variation,
+                         unsigned seed) {
+  return {t, bars, energy, variation, seed};
+}
+
 hf::arr::ArrangeParams strict_base() {
   hf::arr::ArrangeParams ap;
   ap.base.mode = hf::infer::GenMode::Strict;
@@ -229,6 +234,53 @@ TEST_CASE("arrangement variation carries the bar-0 motif", "[arrangement]") {
     }
     CHECK(carried > 0);  // seed 7 keeps surviving template notes in every bar
   }
+}
+
+TEST_CASE("arrangement mode comes from ArrangeParams.base (no Strict override)",
+          "[arrangement][b2]") {
+  hf::arr::Arrangement arr;
+  arr.sections.push_back(
+      section(hf::arr::SectionType::Intro, 4, 0.5f, 0.2f, 7));
+  arr.sections.push_back(
+      section(hf::arr::SectionType::Chorus, 4, 0.6f, 0.3f, 8));
+
+  // An untouched ArrangeParams is Strict (GenParams default) and
+  // build_section no longer overrides it, so the default reproduces the
+  // historical (forced-Strict) bytes exactly.
+  const auto untouched = hf::arr::build_arrangement(arr, hf::arr::ArrangeParams{});
+  const auto strict = hf::arr::build_arrangement(arr, strict_base());
+  CHECK(hf::ser::encode_pattern(untouched) == hf::ser::encode_pattern(strict));
+
+  // The caller's mode reaches the generator: Creative changes the bytes for
+  // the same sections/seeds. Energy 1.0 keeps every generated note, so the
+  // mode's own passing tones stay observable.
+  hf::arr::Arrangement loud = arr;
+  for (auto& s : loud.sections) s.energy = 1.0f;
+  auto creative_base = strict_base();
+  creative_base.base.mode = hf::infer::GenMode::Creative;
+  const auto strict_loud = hf::arr::build_arrangement(loud, strict_base());
+  const auto creative = hf::arr::build_arrangement(loud, creative_base);
+  CHECK(hf::ser::encode_pattern(creative) != hf::ser::encode_pattern(strict_loud));
+}
+
+TEST_CASE("energy still owns the ornament blend on a Creative base", "[arrangement][b2]") {
+  // apply_energy/ornament_slots are untouched by B2: the blend is nested in
+  // e for a fixed seed whatever base.mode generated the material.
+  auto make = [](float e) {
+    hf::arr::Arrangement arr;
+    arr.sections.push_back({hf::arr::SectionType::Verse, 8, e, 0.3f, 7});
+    return arr;
+  };
+  auto ap = strict_base();
+  ap.base.mode = hf::infer::GenMode::Creative;
+  const auto lo = hf::arr::build_arrangement(make(0.2f), ap);
+  const auto hi = hf::arr::build_arrangement(make(0.9f), ap);
+  CHECK(melody_count(hi) >= melody_count(lo));
+  const auto* mel_lo = find_track(lo, hf::core::TrackType::Melody);
+  const auto* mel_hi = find_track(hi, hf::core::TrackType::Melody);
+  REQUIRE(mel_lo != nullptr);
+  REQUIRE(mel_hi != nullptr);
+  CHECK(pitch_range(*mel_hi) >= pitch_range(*mel_lo));
 }
 
 TEST_CASE("arrange spec parsing round-trips", "[arrangement]") {

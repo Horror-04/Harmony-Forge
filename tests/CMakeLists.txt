@@ -180,6 +180,27 @@ if(HARMONY_FORGE_BUILD_PLUGIN)
   target_compile_features(test_visual_polish PRIVATE cxx_std_20)
   hf_copy_ort_runtime(test_visual_polish)
 endif()
+# B2 (backlog wave B2): the ArrangeBar mode CONTROL MODEL - the visible
+# Strict/Creative combo's item labels, its combo ids and the id -> mode
+# mapping. Links the real ArrangeBar.cpp (JUCE), so it only builds where the
+# plugin is configured. The ArrangeBar owns widgets (no headless
+# construction), so only its PURE static model is pinned here - and unlike
+# test_visual_polish (deliberately unregistered: its paint cases crash the
+# headless process at teardown) this binary IS catch_discover_tests-
+# registered, so the visible-control proof runs in CI. No widget, no paint,
+# no font, no message loop: headless-clean.
+if(HARMONY_FORGE_BUILD_PLUGIN)
+  add_executable(test_arrange_mode_model test_arrange_mode_model.cpp
+    ../src/plugin/ui/ArrangeBar.cpp)
+  target_link_libraries(test_arrange_mode_model PRIVATE
+    harmony_forge_core harmony_forge_inference
+    juce::juce_gui_basics
+    Catch2::Catch2WithMain)
+  target_include_directories(test_arrange_mode_model PRIVATE ${CMAKE_SOURCE_DIR}/src/plugin)
+  target_compile_features(test_arrange_mode_model PRIVATE cxx_std_20)
+  hf_copy_ort_runtime(test_arrange_mode_model)
+  catch_discover_tests(test_arrange_mode_model)
+endif()
 # Phase 6 Task 3: non-color note cues. Links the real
 # PianoRoll.cpp + PatternDocument.cpp (JUCE), plugin-ON only. Headless:
 # roll.paint(g) into an Image; exact-ARGB pins (fill colours byte-identical,

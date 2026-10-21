@@ -23,6 +23,25 @@ ArrangeBar::ArrangeBar() {
   typeLabel_.setText("Type", juce::dontSendNotification);
   addAndMakeVisible(typeLabel_);
 
+  // B2 (D-B2): arrangement-wide Strict/Creative mode. Ids and labels come
+  // from the pure helpers the registered plugin-ON pin asserts
+  // (tests/test_arrange_mode_model.cpp); energy below still owns the
+  // ORNAMENT blend, so a Creative arrangement at e = 0 adds no ornaments
+  // (the generator's own chromatic passing tones are a different thing).
+  constexpr hf::infer::GenMode kModes[] = {hf::infer::GenMode::Strict,
+                                           hf::infer::GenMode::Creative};
+  for (const auto m : kModes) modeBox_.addItem(modeItemText(m), modeItemId(m));
+  modeBox_.setSelectedId(modeItemId(mode_), juce::dontSendNotification);
+  modeBox_.onChange = [this] {
+    setMode(modeFromItemId(modeBox_.getSelectedId()));
+    if (onModeChanged) onModeChanged(mode_);
+  };
+  addAndMakeVisible(modeBox_);
+  // The mode is ARRANGEMENT-wide, but the control sits on the section-button
+  // row: the label says so, so it cannot be read as a per-section field.
+  modeLabel_.setText("Mode (arrangement)", juce::dontSendNotification);
+  addAndMakeVisible(modeLabel_);
+
   barsBox_.setInputRestrictions(3, "0123456789");
   barsBox_.onTextChange = [this] { applyEditors(); };
   addAndMakeVisible(barsBox_);
@@ -94,7 +113,8 @@ ArrangeBar::ArrangeBar() {
   // Phase 7 Task 4 (B): field labels are 11 px kTextMuted captions for
   // their controls; the live-count status doubles as the bar's section
   // header (13 px bold kTextBright). Positions/sizes untouched.
-  for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_}) {
+  for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_,
+                  &modeLabel_}) {
     l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
     l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
   }
@@ -107,6 +127,23 @@ juce::String ArrangeBar::countTextFor(int nSections, int totalBars) {
   return "Arrange: " + juce::String(nSections) +
          (nSections == 1 ? " section, " : " sections, ") + juce::String(totalBars) +
          (totalBars == 1 ? " bar" : " bars");
+}
+
+juce::String ArrangeBar::modeItemText(hf::infer::GenMode m) {
+  return juce::String(hf::infer::gen_mode_name(modeFromItemId(modeItemId(m))));
+}
+
+int ArrangeBar::modeItemId(hf::infer::GenMode m) {
+  return m == hf::infer::GenMode::Creative ? 2 : 1;
+}
+
+hf::infer::GenMode ArrangeBar::modeFromItemId(int id) {
+  return id == 2 ? hf::infer::GenMode::Creative : hf::infer::GenMode::Strict;
+}
+
+void ArrangeBar::setMode(hf::infer::GenMode m) {
+  mode_ = modeFromItemId(modeItemId(m));
+  modeBox_.setSelectedId(modeItemId(mode_), juce::dontSendNotification);
 }
 
 void ArrangeBar::setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
@@ -159,13 +196,27 @@ void ArrangeBar::resized() {
   variationSlider_.setBounds(row2.removeFromLeft(each));
   mid.removeFromTop(4);
   auto row3 = mid.removeFromTop(28);
-  addButton_.setBounds(row3.removeFromLeft(60));
+  // B2: the section buttons give the arrangement-wide mode label room on
+  // the same row (the Arrange tab has no spare row). Widths: the four
+  // buttons carry "Add"/"Del"/"Up"/"Down" at the 13 px body font (text
+  // 23/19/16/33 px + the 4 px inset per side), so 40/38/38/48 keep 10-17 px
+  // of slack (Add and Del gave 4 px each to the label); the label takes
+  // 108 px for "Mode (arrangement)" at the 11 px caption font (Arial
+  // metrics: ~100 px of text, so the last character cannot be clipped);
+  // the combo takes the rest (~76 px at the 960 px editor minimum, enough
+  // for "Creative" + the arrow). The combo is visible next to the buttons,
+  // never a hidden default.
+  addButton_.setBounds(row3.removeFromLeft(40));
   row3.removeFromLeft(4);
-  removeButton_.setBounds(row3.removeFromLeft(60));
+  removeButton_.setBounds(row3.removeFromLeft(38));
   row3.removeFromLeft(4);
-  upButton_.setBounds(row3.removeFromLeft(50));
+  upButton_.setBounds(row3.removeFromLeft(38));
   row3.removeFromLeft(4);
-  downButton_.setBounds(row3.removeFromLeft(60));
+  downButton_.setBounds(row3.removeFromLeft(48));
+  row3.removeFromLeft(8);
+  modeLabel_.setBounds(row3.removeFromLeft(108));
+  row3.removeFromLeft(6);
+  modeBox_.setBounds(row3);
   auto right = r;
   buildButton_.setBounds(right.removeFromTop(34));
   right.removeFromTop(4);
