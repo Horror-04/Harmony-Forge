@@ -22,10 +22,13 @@
 //   Chunk i uses seed mix32(section.seed, i). Chunk starts are multiples of
 //   16 bars and therefore 4-bar-phase aligned with the I-V-vi-IV loop, so
 //   the section progression below matches the generated harmony exactly.
-// - The base generation always uses GenMode::Strict and the Safe candidate
-//   (index 0). ArrangeParams.base.mode is overridden to Strict: the energy
-//   parameter below owns the Strict->Creative axis. tonic/scale/model_path
-//   come from base.
+// - The base generation uses the caller's GenMode (ArrangeParams.base.mode,
+//   Strict by default) and the Safe candidate (index 0). The mode is
+//   arrangement-wide and lives only in ArrangeParams.base (D-B2: the 5-field
+//   arrange SPEC is unchanged, so there is no per-section mode). Energy below
+//   still owns the Strict->Creative ornament blend on top of whatever mode
+//   generated the material: e = 0 adds no ornaments, whatever the mode.
+//   tonic/scale/model_path come from base.
 // - Each section restarts the I-V-vi-IV progression loop (section-local bar
 //   phase; see arrangement_progression).
 //
@@ -48,7 +51,7 @@
 //   rest (dropped); bass notes outside [42-h, 42+h] with h = 6+round(18e)
 //   rest. At e = 1 the windows are [60, 84] / [18, 66], which contain the
 //   whole generator ranges, so the stage is a no-op.
-// - Strict-vs-Creative blend: e = 0 is pure Strict. For e > 0 the first
+// - Strict-vs-Creative blend: e = 0 adds no ornaments. For e > 0 the first
 //   floor(e * N) deterministic passing-tone ornaments are added, where N is
 //   the number of Creative-rule slots (same-bar note pairs with pitch gap
 //   >= 3 whose midpoint lands on a weak 16th-grid tick; semitone approach
@@ -57,7 +60,9 @@
 //   (out-of-register approaches are not slots), and are exempt from
 //   thinning. A larger e therefore always keeps a superset of the notes.
 //   Note: ornaments are weak-beat chromaticism by design (the Creative
-//   character), so the full in-scale guarantee holds at e = 0 only.
+//   character), so the full in-scale guarantee holds at e = 0 only. The
+//   blend is independent of base.mode (B2): Creative material can carry
+//   both the generator's own passing tones and these ornaments.
 //
 // Section transitions get a 1-bar fill treatment: the last bar of every
 // non-final section carries 8 eighth-note Drums hits (pitch 38, velocity
@@ -122,6 +127,11 @@ struct Arrangement {
 };
 
 struct ArrangeParams {
+  // base.mode is the arrangement-wide generation mode (D-B2). Strict is the
+  // default, so an untouched ArrangeParams reproduces the pre-B2 bytes;
+  // Creative/Experimental come straight from the caller (nothing overrides
+  // them). Energy (per section) keeps blending the Creative ornaments on top,
+  // independent of this mode.
   hf::infer::GenParams base;
 };
 

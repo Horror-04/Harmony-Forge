@@ -10,12 +10,43 @@
 // (their headers only forward-declare `GenParams`).
 #pragma once
 
+#include <cctype>
+#include <optional>
 #include <string>
+#include <string_view>
 
 namespace hf::infer {
 
 // Generation modes (SPEC §5.1).
 enum class GenMode { Strict, Creative, Experimental };
+
+// Canonical display/persistence name ("Strict", "Creative", "Experimental").
+// Phase-B B2: the arrange state stores the mode by this name, so the UI
+// label, the saved property and the GenParams value cannot drift apart.
+inline const char* gen_mode_name(GenMode m) {
+  switch (m) {
+    case GenMode::Strict:
+      return "Strict";
+    case GenMode::Creative:
+      return "Creative";
+    case GenMode::Experimental:
+      return "Experimental";
+  }
+  return "Strict";
+}
+
+// Case-insensitive parse of the canonical names; nullopt for anything else
+// (callers clamp, never guess). Empty/all-whitespace input is not a mode.
+inline std::optional<GenMode> gen_mode_from_name(std::string_view name) {
+  std::string lower;
+  lower.reserve(name.size());
+  for (const char c : name)
+    lower.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+  if (lower == "strict") return GenMode::Strict;
+  if (lower == "creative") return GenMode::Creative;
+  if (lower == "experimental") return GenMode::Experimental;
+  return std::nullopt;
+}
 
 struct GenParams {
   GenMode mode = GenMode::Strict;

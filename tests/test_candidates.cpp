@@ -230,3 +230,17 @@ TEST_CASE("8-bar end-to-end generation carries Chord+Bass+Melody in budget", "[c
     check_codec_caps(c, params.bars);
   }
 }
+
+TEST_CASE("GenMode canonical names parse case-insensitively", "[candidates][b2]") {
+  // Phase-B B2: the arrange state persists the mode by this name, so the UI
+  // label, the saved property and GenParams cannot drift apart.
+  CHECK(std::string(hf::infer::gen_mode_name(hf::infer::GenMode::Strict)) == "Strict");
+  CHECK(std::string(hf::infer::gen_mode_name(hf::infer::GenMode::Creative)) == "Creative");
+  CHECK(std::string(hf::infer::gen_mode_name(hf::infer::GenMode::Experimental)) ==
+        "Experimental");
+  CHECK(hf::infer::gen_mode_from_name("creative") == hf::infer::GenMode::Creative);
+  CHECK(hf::infer::gen_mode_from_name("STRICT") == hf::infer::GenMode::Strict);
+  CHECK(hf::infer::gen_mode_from_name("Experimental") == hf::infer::GenMode::Experimental);
+  CHECK_FALSE(hf::infer::gen_mode_from_name("polka").has_value());
+  CHECK_FALSE(hf::infer::gen_mode_from_name("").has_value());
+}

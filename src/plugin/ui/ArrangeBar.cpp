@@ -23,6 +23,21 @@ ArrangeBar::ArrangeBar() {
   typeLabel_.setText("Type", juce::dontSendNotification);
   addAndMakeVisible(typeLabel_);
 
+  // B2 (D-B2): arrangement-wide Strict/Creative mode. Ids and labels come
+  // from the pure helpers the headless pin asserts; energy below still owns
+  // the ornament blend, so a Creative arrangement at e = 0 adds nothing.
+  constexpr hf::infer::GenMode kModes[] = {hf::infer::GenMode::Strict,
+                                           hf::infer::GenMode::Creative};
+  for (const auto m : kModes) modeBox_.addItem(modeItemText(m), modeItemId(m));
+  modeBox_.setSelectedId(modeItemId(mode_), juce::dontSendNotification);
+  modeBox_.onChange = [this] {
+    setMode(modeFromItemId(modeBox_.getSelectedId()));
+    if (onModeChanged) onModeChanged(mode_);
+  };
+  addAndMakeVisible(modeBox_);
+  modeLabel_.setText("Mode", juce::dontSendNotification);
+  addAndMakeVisible(modeLabel_);
+
   barsBox_.setInputRestrictions(3, "0123456789");
   barsBox_.onTextChange = [this] { applyEditors(); };
   addAndMakeVisible(barsBox_);
@@ -94,7 +109,8 @@ ArrangeBar::ArrangeBar() {
   // Phase 7 Task 4 (B): field labels are 11 px kTextMuted captions for
   // their controls; the live-count status doubles as the bar's section
   // header (13 px bold kTextBright). Positions/sizes untouched.
-  for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_}) {
+  for (auto* l : {&typeLabel_, &barsLabel_, &seedLabel_, &energyLabel_, &variationLabel_,
+                  &modeLabel_}) {
     l->setFont(juce::Font(juce::FontOptions(hf::ui::UITokens::kFontCaption)));
     l->setColour(juce::Label::textColourId, juce::Colour(hf::ui::UITokens::kTextMuted));
   }
@@ -107,6 +123,23 @@ juce::String ArrangeBar::countTextFor(int nSections, int totalBars) {
   return "Arrange: " + juce::String(nSections) +
          (nSections == 1 ? " section, " : " sections, ") + juce::String(totalBars) +
          (totalBars == 1 ? " bar" : " bars");
+}
+
+juce::String ArrangeBar::modeItemText(hf::infer::GenMode m) {
+  return juce::String(hf::infer::gen_mode_name(modeFromItemId(modeItemId(m))));
+}
+
+int ArrangeBar::modeItemId(hf::infer::GenMode m) {
+  return m == hf::infer::GenMode::Creative ? 2 : 1;
+}
+
+hf::infer::GenMode ArrangeBar::modeFromItemId(int id) {
+  return id == 2 ? hf::infer::GenMode::Creative : hf::infer::GenMode::Strict;
+}
+
+void ArrangeBar::setMode(hf::infer::GenMode m) {
+  mode_ = modeFromItemId(modeItemId(m));
+  modeBox_.setSelectedId(modeItemId(mode_), juce::dontSendNotification);
 }
 
 void ArrangeBar::setStatus(const juce::String& s) { status_.setText(s, juce::dontSendNotification); }
@@ -166,6 +199,12 @@ void ArrangeBar::resized() {
   upButton_.setBounds(row3.removeFromLeft(50));
   row3.removeFromLeft(4);
   downButton_.setBounds(row3.removeFromLeft(60));
+  // B2: arrangement-wide mode sits with the section buttons (the Arrange tab
+  // has no spare row; the combo is visible next to them, never a hidden
+  // default). 88 px at the 960 px editor minimum, flexing wider.
+  row3.removeFromLeft(8);
+  modeLabel_.setBounds(row3.removeFromLeft(36));
+  modeBox_.setBounds(row3);
   auto right = r;
   buildButton_.setBounds(right.removeFromTop(34));
   right.removeFromTop(4);

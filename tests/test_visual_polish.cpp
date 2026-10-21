@@ -65,6 +65,24 @@ TEST_CASE("arrange live count text is honest", "[polish][task5]") {
   CHECK(ArrangeBar::countTextFor(1, 1) == "Arrange: 1 section, 1 bar");
 }
 
+TEST_CASE("arrange mode control is Strict/Creative only", "[polish][b2]") {
+  ensure_juce();
+  // The ArrangeBar owns widgets (no headless construction), so the control's
+  // model is pinned through its pure helpers: the two visible item labels,
+  // their combo ids, and the id -> mode mapping the onChange handler uses.
+  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Strict) == "Strict");
+  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Creative) == "Creative");
+  // Experimental is not an arrange item (D-B2: energy owns the blend); a
+  // stray value maps onto Strict instead of inventing a third item.
+  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Experimental) == "Strict");
+  CHECK(ArrangeBar::modeItemId(hf::infer::GenMode::Strict) == 1);
+  CHECK(ArrangeBar::modeItemId(hf::infer::GenMode::Creative) == 2);
+  CHECK(ArrangeBar::modeFromItemId(1) == hf::infer::GenMode::Strict);
+  CHECK(ArrangeBar::modeFromItemId(2) == hf::infer::GenMode::Creative);
+  CHECK(ArrangeBar::modeFromItemId(0) == hf::infer::GenMode::Strict);
+  CHECK(ArrangeBar::modeFromItemId(99) == hf::infer::GenMode::Strict);
+}
+
 TEST_CASE("explain empty state has a legacy single-line height", "[polish][task5]") {
   ensure_juce();
   juce::UndoManager undo;
