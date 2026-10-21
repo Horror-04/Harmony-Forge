@@ -8,8 +8,9 @@ caught, and — stated plainly — what was NOT compiled in this wave.
 
 Dated 2026-10-21. Branch `refactor/b1-chord-root-anchor`, capture commit
 `0643017` (the section landed there), manifest registration commit
-`a8f6171`. Sources: the B1 brief/report in
-`.superpowers/backlog-wave/B1-{brief,report}.md`; the rule itself is stated
+`a8f6171`. Sources: the two commits above (the B1 brief/report were agent
+scratch under the git-ignored `.superpowers/` tree and are NOT in this
+repository); the rule itself is stated
 in `docs/TOKENIZATION.md` ("Anchor rule (phase-B B1, owner decision
 D-B1)") — this file is the CAPTURE record the manifest cites, not the rule.
 

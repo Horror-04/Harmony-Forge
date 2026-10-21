@@ -42,9 +42,13 @@ WHAT THIS LINT DOES NOT CHECK - do not read more into it than it proves:
     JUCE. This gate compares PATHS and COUNTS only: a tracked file whose
     bytes were modified locally would still PASS it. The upstream
     provenance (all 47 tracked blobs byte-identical to JUCE 9.0.3) was
-    verified ONCE and is recorded in the wave report
-    (.superpowers/sdd-tmp/ci-fix2-report.md); it is a one-off
-    verification, NOT a gate, and it is not re-checked here.
+    verified ONCE, when the tree was TRACKED, and the durable record is
+    that commit - `7cef8e7`, whose message states the byte-exactness and
+    the `-text` .gitattributes rule that keeps it - together with the
+    tracked tree itself. The wave report that carried the verification was
+    agent scratch under the git-ignored `.superpowers/` tree and is NOT in
+    this repository. It is a one-off verification, NOT a gate, and it is
+    not re-checked here.
   * It covers the `JUCE/extras/Build` tree only.
 
 The pin is a ratchet in the same spirit as tools/lint_file_size.py: when

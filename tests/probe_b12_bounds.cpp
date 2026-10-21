@@ -330,6 +330,11 @@ int main(int argc, char** argv) {
   }
 
   namespace fs = std::filesystem;
+  // The diagnostic dumps go to a SCRATCH directory (`.superpowers/` is
+  // git-ignored): they are throwaway output, NOT a durable record. The
+  // durable record is the tracked golden `tests/golden/b12_editor_bounds.json`
+  // plus its record in `tests/golden_manifest.json` - nothing here points at
+  // a path that is not in this repository.
   const fs::path outdir = ".superpowers/sdd-tmp/probe-b12-dumps";
   std::error_code ec;
   fs::create_directories(outdir, ec);

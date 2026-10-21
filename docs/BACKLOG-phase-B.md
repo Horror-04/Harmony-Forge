@@ -729,22 +729,22 @@ changed.
 
 *Same rule, three implementations.*
 
-- `src/inference/sampler.cpp:78-114` — `strict_core` (NLOC 35, **CCN 16**):
-  the sampler-side Strict mask over pre-resolved tables. Its own comment
-  at `src/inference/sampler.cpp:86-87` says the strong-beat predicate is
-  "the same predicate as constraints.cpp/ranking.cpp".
-- `src/inference/ranking.cpp:80-94` — `strict_compliance` (NLOC 15, CCN 7):
+**DATED (2026-10-21): the analysis-time map (before B4a/B4b); the pointers below are re-pointed at the live lines and the NLOC/CCN figures re-measured with the pinned lizard 1.24.1.**
+
+- `src/inference/sampler.cpp:82-118` — `strict_core` (NLOC 35, **CCN 16**):
+  the sampler-side Strict mask over pre-resolved tables; its own comment
+  at `src/inference/sampler.cpp:90-91` names the shared strong-beat predicate.
+- `src/inference/ranking.cpp:59-73` — `strict_compliance` (NLOC 15, CCN 7):
   the ranking-side Strict-compliance fraction.
-- `src/inference/ranking.cpp:25-42` — `strong_beat_rub` (NLOC 18, CCN 8):
-  the strong-beat minor-2nd test used by the ranking side.
-- `src/inference/constraints.cpp:63-105` — `resolve_harmonic_conflicts`
-  (NLOC 37, **CCN 19**): the note-repair side of the same rule.
-- `src/core/music/voice_leading.cpp:20-23` — the "single project-wide
+- `strong_beat_rub` — the ranking side's strong-beat minor-2nd test: a
+  TU-local copy at `src/inference/ranking.cpp:25-42` (NLOC 18, CCN 8), MOVED
+  by B4b to `src/inference/strong_beat.h:153-164` (NLOC 12, CCN 6).
+- `src/inference/constraints.cpp:55-95` — `resolve_harmonic_conflicts`
+  (NLOC 33, **CCN 14**): the note-repair side of the same rule.
+- `src/core/music/voice_leading.cpp:19-22` — the "single project-wide
   strong-beat definition" comment: "every quarter-note line at 480 PPQ",
-  which the three sites above each restate in their own way
-  (`src/inference/sampler.cpp:88` uses the codec's `sub % 4 == 0`;
-  `src/inference/ranking.cpp:27` uses `start_tick % 480 == 0`;
-  `src/inference/constraints.cpp:74` uses `start_tick % kStrongBeatMod != 0`).
+  restated in three ways by the sites above (the codec grid at
+  `sampler.cpp:92`, the rub at `ranking.cpp:39`, the target at `constraints.cpp:69`).
 
 *TU-local small helpers.*
 
@@ -1428,7 +1428,7 @@ advisory in CI …)". Verified in the current tree:
   and "normalized bodies differ"; `apply_candidate_transform` and
   `apply_mode` report "normalized bodies differ" (the `std::mt19937&` →
   `Pcg32&` parameter change).
-- The CI step is explicitly advisory: `.github/workflows/ci.yml:162-167`,
+- The CI step is explicitly advisory: `.github/workflows/ci.yml:345-350`,
   "S3 body-identity check (advisory) … `continue-on-error: true`".
 
 So there is **no automated guard** on these three functions' shape or CCN
@@ -1590,7 +1590,7 @@ regardless of the slot.
    committed sidecar produces for it, recorded as a golden artifact and
    registered in `tests/golden_manifest.json` with a `gen:`/`capture:`
    producer of the form the manifest lint enforces
-   (`.github/workflows/ci.yml:35-54`).
+   (`.github/workflows/ci.yml:82-101`).
 
 **Why it was deferred.** Item 1 is cheap but touches the production
 sampling path, whose bytes are pinned (see B5/B9). Item 2 is a genuine
@@ -1598,7 +1598,7 @@ larger piece of work: the sidecar is a binary artifact produced outside
 the repo's golden pipeline, so the manifest would need a `capture:`
 producer (the form the lint's WRITER registry does not cover — the lint
 requires either a registered writer or a capture pointer with a quoted
-anchor, `.github/workflows/ci.yml:41-51`), and the capture would have to
+anchor, `.github/workflows/ci.yml:91-95`), and the capture would have to
 be re-bankable after any model change.
 
 **Acceptance criteria (observable).**
@@ -2014,7 +2014,7 @@ nobody re-checks them.
 
 4. **The S3 text guard as a live gate — RETIRED.** `tools/check_bodies.py`
    is RED on this base (`check_bodies: 13 FAIL`, measured) and its CI step
-   is advisory (`.github/workflows/ci.yml:162-167`). The retirement is
+   is advisory (`.github/workflows/ci.yml:345-350`). The retirement is
    recorded in `docs/measurements/s3-4b-note.md:84-90`. B9 states this; it
    is not a separate deferred item because the guard's own re-baselining is
    explicitly named as part of B9's owner decision.

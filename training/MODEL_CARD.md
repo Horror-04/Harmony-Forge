@@ -210,7 +210,11 @@
   repo/weights found (only third-party wrappers), no verifiable licence.
 - Consequence: self-distillation remains the standing approach (Task 2 ran on it and
   was shelved on the gate with WIP preserved in history, not shipped); no external
-  teacher enters the loop. Full evidence table: `.superpowers/sdd/2026-10-13-phase-8/task-3-report.md`.
+  teacher enters the loop. Full evidence table: this section's list above
+  (the durable record — the phase-8 task report was agent scratch under the
+  git-ignored `.superpowers/` tree and is NOT in this repository; the
+  tracked plan is `docs/superpowers/plans/2026-10-13-phase-8.md`, the
+  section landed in commit `59149ea`).
 
 ## v2 candidate (Phase 9 Task 6 — SHELVED on the gate, weights NOT shipped)
 
@@ -242,7 +246,9 @@
   model→MIDI driver exists; `render_midi` binary unbuilt); interval
   memo version not built; val composed split is 4 records (noisy
   selection signal — procedure followed literally, no hedging).
-  Full numbers: `.superpowers/sdd/2026-10-14-phase-9/task-6-report.md`,
+  Full numbers: commit `1e43b94` (the phase-9 Task-6 verdict + the evidence
+  JSONs; the task report itself was agent scratch under the git-ignored
+  `.superpowers/` tree and is NOT in this repository),
   evidence `training/eval_v2_s*.json` + `training/eval_v2val_s*.json`.
 
 ## v2 retry (Phase 11 — SHELVED on the gate, weights NOT shipped, HELD)
@@ -285,8 +291,10 @@
   corpus coverage, no direct evidence in this failure); schedule change
   (single-stage already tried as lever B — proxy-middling 0.7510, no
   generation evidence).
-- Full numbers: `.superpowers/sdd/2026-10-15-phase-11/task-2-report.md`
-  (finalists) + `task-3-report.md` (verdict), evidence
+- Full numbers: commits `d5e1a17` (finalists) + `75176cd` (verdict) — the
+  task reports were agent scratch under the git-ignored `.superpowers/` tree
+  and are NOT in this repository, so the commits are the durable record,
+  evidence
   `training/eval_v2b_s*.json`.
 
 ## v2 decode-time pressure (Phase 12 — HELD on the gate, weights NOT shipped)
@@ -332,8 +340,10 @@
   soft-lam late (moves draws but dismantles the mask that produces the
   0.987 — contradicts the mechanism finding); data-mixture change
   (untried, no direct evidence).
-- Full numbers: `.superpowers/sdd/2026-10-16-phase-12/task-1-report.md` +
-  `task-2-report.md` + `task-3-report.md`, evidence
+- Full numbers: commits `172d9ad` (task 1) + `60f4d9b` (task 2) +
+  `58a5ff7` (task 3) — the task reports were agent scratch under the
+  git-ignored `.superpowers/` tree and are NOT in this repository, so the
+  commits are the durable record, evidence
   `tools/task12_metrics.json` +
   `training/baseline_scores_test_locked.json`.
 
@@ -402,8 +412,10 @@ full table `tools/task4_metrics.json`; blind score sheet
   post-inverse-shift absolute re-check during generation (cheaper but
   keeps the absolute basis); interval-hash memo rebuild (new artifact,
   leakage surface).
-- Full numbers: `.superpowers/sdd/2026-10-16-phase-13/task-1-report.md`
-  (grid + mechanism) + `task-2-report.md` (verdict), evidence
+- Full numbers: commits `1f39fcb` (grid + mechanism) + `a7e729f` (verdict)
+  — the task reports were agent scratch under the git-ignored `.superpowers/`
+  tree and are NOT in this repository, so the commits are the durable record,
+  evidence
   `tools/task13_metrics.json` + `tools/task13_shas.txt`.
 
 Rule application (fixed a priori in the Task-4 brief, no tuning):
@@ -455,8 +467,11 @@ columns (by construction); sampler does not claim to beat it.
   measurement — keep as diagnostic only); full-val FP pool expansion
   (n=4 weakness noted, test_locked/train untouchable — accepted
   limitation).
-- Full numbers: `.superpowers/sdd/2026-10-16-phase-14/task-1-report.md`
-  (measurement) + `task-2-report.md` (verdict), evidence
+- Full numbers: commit `8605d0d` (the verdict; the measurement report was
+  agent scratch under the git-ignored `.superpowers/` tree and is NOT in this
+  repository, so the commit + the tracked plan
+  `docs/superpowers/plans/2026-10-16-phase-14-interval-memo.md` are the
+  durable record), evidence
   `tools/interval_memo_report.json`.
 
 ## gate v3 adoption + v2b evidence verdict (Phase 15 — VERDICT: GO to v2c/data-scale)
@@ -503,14 +518,21 @@ columns (by construction); sampler does not claim to beat it.
   scorer + WIRED_CFG, looks row BEFORE, paired CIs, same-run anchors);
   (4) blind A/B ≥60 pairs vs v1+sampler, non-loss rule, gates ship;
   (5) DF-audit carried as monitoring.
-- Full numbers: `.superpowers/sdd/2026-10-16-phase-15/task-2-report.md`
-  (evidence) + `task-3-report.md` (verdict).
+- Full numbers: commit `60c53ad` (the verdict; the evidence report was agent
+  scratch under the git-ignored `.superpowers/` tree and is NOT in this
+  repository, so the commit + the tracked plans
+  `docs/superpowers/plans/2026-10-16-phase-15-instrument.md` and
+  `docs/superpowers/plans/2026-10-16-gate-v3-amendment.md` are the durable
+  record).
 
 ## Causal entropy experiment (Phase 17 Task 3 — VERDICT: all levers NO-GO, AFFIRM-PROGRAM-STOP)
 
 - Design (pre-registered BEFORE training, rule + folds frozen in
-  `.superpowers/sdd/2026-10-16-phase-17/task-3-report.md`, control
-  `training/causal_control.json` hash-pinned `e974390d…f082`): 5 arms ×
+  `training/causal_control.json` (hash-pinned `e974390d…f082`) and in the
+  tracked plan `docs/superpowers/plans/2026-10-16-phase-17-causal-entropy.md`
+  — the task report was agent scratch under the git-ignored `.superpowers/`
+  tree and is NOT in this repository, so the control file + the plan are the
+  durable record): 5 arms ×
   5 folds group-CV by piece over the 79-record human-composed pool
   (0.73M arch, short schedule, identical folds); each arm EXACTLY ONE
   lever vs frozen T6-recipe control (CTRL fixed-bank repetition; A
@@ -529,7 +551,11 @@ columns (by construction); sampler does not claim to beat it.
   the data-entropy program stops absent new evidence. Nothing shipped;
   `training/model.onnx` + quant + `checkpoints/best.pt` +
   `memo_index.bin` all still v1-frozen. No weights committed here.
-- Full numbers: `.superpowers/sdd/2026-10-16-phase-17/task-3-report.md`,
+- Full numbers: commit `b116d1c` (the phase-17 Task-3 runs + the verdict;
+  the task report was agent scratch under the git-ignored `.superpowers/`
+  tree and is NOT in this repository, so the commit + the tracked plan
+  `docs/superpowers/plans/2026-10-16-phase-17-causal-entropy.md` are the
+  durable record),
   evidence `training/causal_results.json`.
 
 ## causal entropy screen (Phase 17 Task 3 -- VERDICT: ALL NO-GO, program-stop affirmed, weights NOT shipped)
@@ -556,4 +582,7 @@ columns (by construction); sampler does not claim to beat it.
   6.7x larger, pressuring both memo lenses mechanically (k-eidetic down,
   absolute up 8.44 vs 6.49) -- a retest needs size-matched references;
   C's NLL win rides with a decodability collapse (mechanism = follow-up).
-- Full numbers: .superpowers/sdd/2026-10-16-phase-17/task-3-report.md.
+- Full numbers: commit `b116d1c` + the tracked plan
+  docs/superpowers/plans/2026-10-16-phase-17-causal-entropy.md (the task
+  report was agent scratch under the git-ignored .superpowers/ tree and is
+  NOT in this repository), evidence training/causal_results.json.
