@@ -65,23 +65,23 @@
 //
 // SITES THAT STAY OUT OF THIS HEADER (by design, not by oversight)
 // ----------------------------------------------------------------
-// The census below is COMPLETE: every strong-beat site in the tree is
-// either one of the projections above or listed here, so a future fix to
-// the rule cannot silently miss a site.
+// The census is COMPLETE: every strong-beat site in the tree -- the C++
+// tree this header compiles into (listed below) AND the PYTHON / TOOL-SIDE
+// mirrors of the same rule (listed at the END of this file) -- is either
+// one of the projections above or named in one of the two lists, so a
+// future fix to the rule cannot silently miss a site.
 //
-//   - src/core/music/voice_leading.cpp keeps its own `kStrongBeatMod = 480`:
-//     src/core must not include src/inference (AGENTS.md section 2), and its
-//     audit is the same 480 gate over the same chord mapping.
-//   - src/core/model/selection.cpp `classify_note` (the piano-roll colour
-//     class): the same 480 gate and the same distance-1 test, but on a
-//     caller-supplied chord and a pre-resolved tone list, answering a
-//     colour class rather than a repair; core may not include inference.
-//   - training/theory.py `_strong_beat_rub` mirrors projection 2 for the
-//     Python side (it says so at its definition); a rule fix must move it
-//     too, and it is not compiled here.
-//   - src/inference/candidate_modes.cpp's `% 480 == 0` checks are not rub
-//     predicates (they skip notes already on a beat), so they are not
-//     projections of this rule.
+//   - src/core/music/voice_leading.cpp:26 `validate_voice_leading` (the
+//     gate at :80) keeps its own `kStrongBeatMod = 480`: src/core must not
+//     include src/inference (AGENTS.md section 2), and its audit is the
+//     same 480 gate over the same chord mapping.
+//   - src/core/model/selection.cpp:259 `classify_note` (the piano-roll
+//     colour class): the same 480 gate (at :269) and the same distance-1
+//     test on a caller-supplied chord and a pre-resolved tone list, but it
+//     answers a colour class, not a repair; core may not include inference.
+//   - src/inference/candidate_modes.cpp:96,122's `% 480 == 0` checks are
+//     not rub predicates (they skip notes already on a beat), so they are
+//     not projections of this rule.
 //
 // Header-only and `inline`, so there is no TU and no link change (the same
 // shape as core/music/pitch_class.h and core/music/ranges.h).
@@ -171,3 +171,56 @@ inline const core::ChordSymbol* strong_beat_repair_target(
 }
 
 }  // namespace hf::infer
+
+// ---------------------------------------------------------------------------
+// CENSUS, PART 2: THE PYTHON AND TOOL-SIDE MIRRORS OF THE SAME RULE
+// ---------------------------------------------------------------------------
+// The rule is ALSO implemented in the Python training/decode tree and in two
+// tools-side mirrors. They are Python, not C++: they are not compiled into
+// the plugin and cannot include this header, so there is nothing to fold
+// onto -- but they implement the SAME rule, so a fix to the rule must move
+// them in lockstep. They are named here so that the census above is
+// exhaustive over the WHOLE repository, not just over the C++ tree:
+//
+//   - training/theory.py:79 `_strong_beat_rub` -- the direct mirror of
+//     projection 2: the `start_tick % 480 == 0` gate, the bar index, and
+//     the `min(d, 12 - d) == 1` test over the bar chord's tones; it is the
+//     training-time `strict_compliance` judge. NOT FOLDED: it is Python, so
+//     a rule fix must move it in lockstep with this header.
+//   - training/train.py:121 `_norub_ok` -- the distance-1 test over the
+//     chord tones, vectorised into a per-pitch mask; it is the shared
+//     arithmetic of the Python side WITHOUT the beat gate (its callers add
+//     it). NOT FOLDED: Python.
+//   - training/train.py:413 `compliance_penalty` (the gate itself at :455) --
+//     the training-time mirror of the rule's BEAT GATE (`sub % 4 == 0`, the
+//     codec's 16th grid) over the bar-indexed chord, consuming `_norub_ok`.
+//     NOT FOLDED: Python.
+//   - training/evaluate.py:439 `teacher_forced_metrics` (the gate at :492) --
+//     the same `sub % 4 == 0` gate and the same `_norub_ok` mask for the
+//     measurement pass. NOT FOLDED: Python (measurement only, no product
+//     behaviour).
+//   - training/decode.py:114 `_strict_safe_set` (the gate at :127) -- the
+//     decoder's Strict mask: the same `sub % 4 == 0` gate with a bar-indexed
+//     chord, fed by `train._norub_ok` (its docstring says so). NOT FOLDED:
+//     Python.
+//   - training/baselines.py:124 `_rub_pcs` (with `_snap_pitch` at :133, the
+//     gate at :139) -- the banned-pitch-class form of the same distance-1
+//     test (a pitch class is banned when it is a minor 2nd from a chord
+//     tone) plus the same `sub % 4 == 0` gate, used to re-snap generated
+//     pitches. NOT FOLDED: Python.
+//   - tools/engine_fresh.py:196 `engine_transform` (the gate at :228) -- the
+//     mirror of projection 3: the same `start_tick % 480 == 0` gate over the
+//     bar-indexed chord and the same distance-1 test, repairing the pitch
+//     to the nearest chord tone (weak beats, bars without a chord and
+//     unknown chord types untouched). NOT FOLDED: a tools-side mirror that
+//     must move in lockstep with the C++ rule.
+//   - tools/step1_table.py:192 `_legal_pitches` (the gate at :200) -- the
+//     same `sub % 4 == 0` gate and the banned-pitch-class test, enumerating
+//     the legal pitch set of the randomized table generator. NOT FOLDED: a
+//     tools-side mirror that must move in lockstep with the C++ rule.
+//
+// NOT a site of this rule (checked, so the census stays honest): the
+// chord-tone GENERATORS in training/dataset.py:151, training/distill.py:190
+// and training/ingest/smart_proc.py:152 pick pitches from chord tones (they
+// never test a minor 2nd), and training/ingest/smart_proc.py:198's
+// "strong-beat quarters" is a rhythm comment, not the rule.

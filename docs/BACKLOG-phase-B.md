@@ -141,7 +141,7 @@ state, and the item's own block carries the evidence.
 | B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
 | B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
-| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b RESOLVED (backlog wave)** — see the resolution notes in the B4 block below ("RESOLVED 2026-10-19 … — B4a only" and "RESOLVED 2026-10-21 … — B4b") | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b**: the strong-beat rule has ONE home, `src/inference/strong_beat.h`, as three named projections of the same rule (sampler codec grid, ranking rub, constraints repair target) plus one name table (`hf::music::pitch_class_name`); the plugin's chord-replace rub folds onto the repair projection, and every remaining strong-beat site is listed in the header's out-of-scope census; both are pure moves, so 0 pinned byte moved | residual: the three projections still DIFFER on purpose (a degenerate bar length is UNSAFE for the ranker and KEEP for the repairer; the sampler reads the codec grid, not ticks) — unifying their SEMANTICS is a product decision and is the only part still deferred |
+| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b RESOLVED (backlog wave)** — see the resolution notes in the B4 block below ("RESOLVED 2026-10-19 … — B4a only" and "RESOLVED 2026-10-21 … — B4b") | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b**: the strong-beat rule has ONE home, `src/inference/strong_beat.h`, as three named projections of the same rule (sampler codec grid, ranking rub, constraints repair target) plus one name table (`hf::music::pitch_class_name`); the plugin's chord-replace rub folds onto the repair projection, and every remaining strong-beat site (C++, Python and tool-side mirrors alike) is named in the header's out-of-scope census; both are pure moves, so 0 pinned byte moved | residual: the three projections still DIFFER on purpose (a degenerate bar length is UNSAFE for the ranker and KEEP for the repairer; the sampler reads the codec grid, not ticks) — unifying their SEMANTICS is a product decision and is the only part still deferred |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
 | B6 | Piano-roll undo logic + the second history stack | plugin/ui | **RESOLVED** (phase-B tranche E) | per D-B6 `SeedHistory` stays an **append-only audit log**, deliberately not rewound; the contract is now stated at the class, at the use site and in one UI tooltip | the undo still stores whole-pattern snapshots per step (the snapshot design was NOT changed) |
 | B7 | MSVC C2059 quirk has no permanent guard | toolchain / build | **RESOLVED** (phase-B tranche A) | the cause IS established (a stray closing paren, **not** a toolchain quirk); the permanent guard is the **compiler probe** `tools/c2059_probe/probe_c2059.py`, now a CI step | residual: a different toolchain issue would be caught — the probe asserts the balanced one-line form compiles on the REAL TU |
@@ -613,11 +613,26 @@ than fail.
 > `harmony_forge_inference`), and the body-equality census pins the old local
 > predicate against the shared projection. With that fold the header's
 > out-of-scope census is COMPLETE — every strong-beat site in the tree is
-> either one of the three projections or listed there (`voice_leading.cpp`
-> and `selection.cpp`'s `classify_note` in `src/core`, which may not include
-> `src/inference`; `training/theory.py`, the Python mirror; and
-> `candidate_modes.cpp`, whose `% 480` checks are not rub predicates) — so a
-> future fix to the rule cannot silently miss a site.
+> either one of the three projections or named in the header's census, so a
+> future fix to the rule cannot silently miss a site. The census covers the
+> WHOLE repository, not just the C++ tree:
+>
+> * **C++** — `voice_leading.cpp` and `selection.cpp`'s `classify_note` in
+>   `src/core`, which may not include `src/inference`, and
+>   `candidate_modes.cpp`, whose `% 480` checks are not rub predicates;
+> * **Python (the training/decode tree)** — `theory.py`'s `_strong_beat_rub`
+>   (the projection-2 mirror), `train.py`'s `_norub_ok` (the distance-1 test
+>   over the chord tones, vectorised) and `compliance_penalty` (the
+>   `sub % 4 == 0` gate over the bar-indexed chord),
+>   `evaluate.py`'s `teacher_forced_metrics`, `decode.py`'s
+>   `_strict_safe_set`, and `baselines.py`'s `_rub_pcs`/`_snap_pitch` (the
+>   banned-pitch-class form);
+> * **tools-side mirrors** — `engine_fresh.py`'s `engine_transform` (the
+>   projection-3 repair mirror) and `step1_table.py`'s `_legal_pitches`.
+>
+> None of the Python/tool mirrors can include the C++ header, so they are
+> not folded — they are named so that a rule fix moves them in lockstep with
+> the C++ one.
 >
 > The shared arithmetic is `is_minor_2nd_rub` (one distance-1 test, moved
 > byte-for-byte from `constraints.cpp`). The three projections still DIFFER

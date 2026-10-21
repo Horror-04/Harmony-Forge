@@ -198,10 +198,11 @@ Table (qualified name | file:lines | CCN | reason class):
 | `hf::infer::check_model_compatible` | `src/inference/model_manifest.cpp:288-339` | 16 | S0 baseline |
 | `hf::infer::strict_core` | `src/inference/sampler.cpp:82-118` | 16 | S0 baseline |
 
-**Line ranges re-derived 2026-10-20 (the final phase fix wave).** 8 of the
-22 rows carried a stale range (the tree moved under them); every row above is
-now the lizard 1.24.1 range of the named function, and the tool
-(`tools/lint_ccn.py`) carries the same numbers in the SAME commit. The
+**Line ranges re-derived 2026-10-20 (the final phase fix wave) — HISTORICAL;
+partly superseded by the 2026-10-21 refresh below.** 8 of the
+22 rows carried a stale range (the tree moved under them); every row above
+was, ON THAT DATE, the lizard 1.24.1 range of the named function, and the
+tool (`tools/lint_ccn.py`) carried the same numbers in the SAME commit. The
 ranges are **INDICATIVE**: the gate keys on (file, name) and the pinned CCN,
 never on the range (the range only decorates the failure message), so no
 gate verdict changed — `lint_ccn --strict` still reports "22 pinned
@@ -210,7 +211,8 @@ functions, 22 functions over the target". The moved rows:
 162-257, `recognize_chord` 46-110 → 45-109, `freeze_complement_of_selection`
 298-343 → 301-346, `resolve_harmonic_conflicts` 63-105 → 66-108,
 `get_logits` 150-193 → 222-274, `detect_key` 26-70 → 25-69, `strict_core`
-78-114 → 81-117.
+78-114 → 81-117 (`strict_core` was re-derived once more afterwards — it is
+82-118 today; see the next paragraph).
 
 **Line ranges refreshed 2026-10-21 (backlog wave B4b, fix round 1).** The
 B4b extraction added one `#include` line above `strict_core`, so its pinned
