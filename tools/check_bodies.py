@@ -2,6 +2,12 @@
 # (modulo whitespace/comments plus an explicit allowlist) between the pinned
 # pre-cut revision and its new translation unit. STDLIB ONLY.
 #
+# A config entry may pin the OLD body under one signature and the NEW body
+# under a DIFFERENT one with the optional "new_sig" key (the B4b fix round
+# uses it to compare the plugin's `bool is_replace_rub` against the shared
+# `const core::ChordSymbol* strong_beat_repair_target` projection). Without
+# "new_sig" the entry's "sig" is used on both sides, as before.
+#
 # Usage: py -3 tools/check_bodies.py [--root DIR] [--config FILE]
 # Exit 0 when every mapped function matches, 1 otherwise (prints the first
 # divergence with line context). No repo writes, ever.
@@ -93,13 +99,14 @@ def main():
     failed = 0
     for name, m in cfg["functions"].items():
         sig = m["sig"]
+        new_sig = m.get("new_sig", sig)
         old = m["old"]
         new = m["new"]
         old_text = repo_text_at_rev(git_root, old["rev"], old["path"])
         with open(os.path.join(args.root, new["path"]), encoding="utf-8") as f:
             new_text = f.read()
         eo = extract(old_text, sig)
-        en = extract(new_text, sig)
+        en = extract(new_text, new_sig)
         if eo is None:
             print("FAIL %s: signature not found in %s:%s" % (name, old["rev"], old["path"]))
             failed += 1

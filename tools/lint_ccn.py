@@ -108,7 +108,7 @@ _PIN_TABLE = [
     ("hf::music::detect_key", "src/core/music/key_detect.cpp", 25, 69, 16),
     ("hf::infer::compose_base", "src/inference/candidate_base.cpp", 38, 94, 16),
     ("hf::infer::check_model_compatible", "src/inference/model_manifest.cpp", 288, 339, 16),
-    ("hf::infer::strict_core", "src/inference/sampler.cpp", 81, 117, 16),
+    ("hf::infer::strict_core", "src/inference/sampler.cpp", 82, 118, 16),
 ]
 
 # The remaining S3 candidate function carries the owner's reason verbatim.

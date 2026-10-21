@@ -45,6 +45,15 @@
 //      ON PURPOSE: the ranker must never call an unjudgeable pattern safe,
 //      the repairer must never invent a chord.
 //
+// A FOURTH consumer shares projection 3 and needs no function of its own:
+// `src/plugin/ui/PatternDocument.cpp` `is_replace_rub` (the chord-replace
+// rule -- only a strong-beat rub may move on a chord replace, SPEC 3.1) is
+// a thin adapter over `strong_beat_repair_target`: a non-null answer is
+// exactly its old "this note rubs" answer, every KEEP case included. It
+// folded onto this projection in the B4b fix round (the plugin target
+// already links `harmony_forge_inference`), so the plugin and the repairer
+// can no longer disagree about which notes may move.
+//
 // THE SHARED ARITHMETIC UNDER (2) AND (3)
 // ---------------------------------------
 // `is_minor_2nd_rub` is the one distance-1 test both projections use: the
@@ -56,9 +65,17 @@
 //
 // SITES THAT STAY OUT OF THIS HEADER (by design, not by oversight)
 // ----------------------------------------------------------------
+// The census below is COMPLETE: every strong-beat site in the tree is
+// either one of the projections above or listed here, so a future fix to
+// the rule cannot silently miss a site.
+//
 //   - src/core/music/voice_leading.cpp keeps its own `kStrongBeatMod = 480`:
 //     src/core must not include src/inference (AGENTS.md section 2), and its
 //     audit is the same 480 gate over the same chord mapping.
+//   - src/core/model/selection.cpp `classify_note` (the piano-roll colour
+//     class): the same 480 gate and the same distance-1 test, but on a
+//     caller-supplied chord and a pre-resolved tone list, answering a
+//     colour class rather than a repair; core may not include inference.
 //   - training/theory.py `_strong_beat_rub` mirrors projection 2 for the
 //     Python side (it says so at its definition); a rule fix must move it
 //     too, and it is not compiled here.

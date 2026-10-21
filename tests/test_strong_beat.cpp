@@ -14,6 +14,11 @@
 // diff of these tables instead of a silent divergence between the mask, the
 // score and the repair.
 //
+// The plugin's chord-replace rule is NOT a fourth projection: it folded
+// onto the repair projection (B4b fix round 1), so its truth table is the
+// repair projection's truth table -- restated in the plugin's own boolean
+// form in the case below.
+//
 // The expected values below are derived by hand from the rule, NOT by
 // re-running the production expression: that is what makes them a pin.
 #include <catch2/catch_test_macros.hpp>
@@ -173,6 +178,41 @@ TEST_CASE("B4b projection 3: the repairer's target", "[strong_beat][b4b]") {
   CHECK(hf::infer::strong_beat_repair_target(0, -kBar, maj, 61) == nullptr);
 
   // Negative ticks share the ranker's truncation: -480 is bar 0 and rubs.
+  CHECK(hf::infer::strong_beat_repair_target(-480, kBar, maj, 61) != nullptr);
+}
+
+TEST_CASE("B4b: the plugin's chord-replace rub IS the repair projection",
+          "[strong_beat][b4b]") {
+  // src/plugin/ui/PatternDocument.cpp `is_replace_rub` is a thin adapter over
+  // projection 3: "may this note move on a chord replace?" is exactly "does
+  // the repairer have a target for this note?". The adapter asks the same
+  // question the plugin asked before the fold, so the plugin's rule IS
+  // projection 3's truth table -- restated here in the plugin's boolean form
+  // (a rub note MAY move; every other note KEEPS its grid/register).
+  const auto maj = c_maj();
+  const auto two = c_maj_am7();
+  const auto unknown = c_unknown();
+  const auto empty = c_empty();
+
+  // The bar length the plugin's adapter computes and passes through.
+  CHECK(4 * 480 == kBar);
+
+  // A rub note may move on a chord replace.
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, maj, 61) != nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, maj, 71) != nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(kBar, kBar, two, 61) != nullptr);
+
+  // Everything else keeps its grid/register: no rub, weak beat, no bar in
+  // the progression, unknown chord type, empty progression, degenerate bar.
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, maj, 60) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, maj, 64) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(120, kBar, maj, 61) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(kBar, kBar, maj, 61) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, unknown, 61) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(0, kBar, empty, 61) == nullptr);
+  CHECK(hf::infer::strong_beat_repair_target(0, 0, maj, 61) == nullptr);
+
+  // The truncation the old local predicate had: -480 is bar 0 and rubs.
   CHECK(hf::infer::strong_beat_repair_target(-480, kBar, maj, 61) != nullptr);
 }
 

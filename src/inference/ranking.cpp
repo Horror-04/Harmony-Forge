@@ -5,8 +5,6 @@
 
 #include <algorithm>
 
-#include "core/music/chord.h"
-#include "core/music/pitch_class.h"
 #include "core/music/ranges.h"
 #include "core/music/scale.h"
 #include "strong_beat.h"
