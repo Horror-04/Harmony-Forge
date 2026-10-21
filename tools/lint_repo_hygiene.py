@@ -24,18 +24,52 @@ THE JUNK THIS GATE REMOVES
     * the junk is sticky: `git status` hides an ignored path from the
       ordinary flows, so nobody notices it is still in the index.
 
+TWO IGNORE SOURCES, NOT ONE (why the message names both)
+  The detection is `git ls-files -ci --exclude-standard`, and
+  `--exclude-standard` honours THREE sources: the repository's
+  `.gitignore`, `.git/info/exclude` and the user's GLOBAL excludes file
+  (`core.excludesFile` - by default `$XDG_CONFIG_HOME/git/ignore` or
+  `~/.gitignore_global`). A tracked path can therefore be flagged
+  because of a DEVELOPER'S OWN global ignore: a hit that exists only on
+  that machine (a local RED with a green CI). The violation message
+  names BOTH sources and says so - ".gitignore ignores it" alone would
+  be a lie on such a machine.
+
 WHAT THIS GATE CHECKS (all of them must hold):
 
-  1. no TRACKED path is ignored by `.gitignore`, EXCEPT the ALLOWLIST
-     below - and every allowlist entry carries a REASON (the repo's
-     convention: no exception without a reason; an entry with an EMPTY
-     reason is itself a violation);
+  1. no TRACKED path is ignored, EXCEPT the ALLOWLIST below - and every
+     allowlist entry carries a REASON (the repo's convention: no
+     exception without a reason; an entry with an EMPTY reason is
+     itself a violation);
   2. no TRACKED path matches a junk pattern: a `__pycache__/` or
      `.pytest_cache/` directory component, a `*.pyc`, `*.orig`, `*.rej`,
      `*~` or `*.bak` file, or any path under a TOP-LEVEL `build*`
      directory (a build tree is generated output, never an input);
   3. the ALLOWLIST is not EMPTY (an empty allowlist would silently
-     accept every future exception).
+     accept every future exception);
+  4. no allowlist entry is STALE: an entry whose path is no longer
+     TRACKED (or whose directory prefix covers no tracked file any more)
+     is a FAILURE, not a note - an exception must not outlive its
+     reason, or the gate would stay green while an unjustified
+     exception survives in the tree.
+
+THE REPO ROOT IS RESOLVED BY THE TOOL (never by the caller)
+  `git ls-files` prints paths relative to the CURRENT DIRECTORY, so a
+  `--root` that pointed at a SUBDIRECTORY would key the allowlist wrongly
+  (the allowlist is repo-root-relative) AND would hide every path
+  outside that subdirectory - a silent false green (the 12
+  tracked-but-ignored paths of this repo are invisible from
+  `tools/`). The tool therefore resolves the REPO ROOT itself
+  (`git -C <root> rev-parse --show-toplevel`) and keys every path and
+  every allowlist entry against it. When the root cannot be determined
+  the gate FAILS CLOSED: an unproven tree is not a green one.
+
+THE ALLOWLIST IS DATA, JUDGED AGAINST THE TREE
+  The ALLOWLIST below is THIS repository's exception list, and the gate
+  judges it against the tree it was given (rule 4). A caller that
+  judges a FOREIGN tree passes its own allowlist
+  (`evaluate(root, allowlist=...)`); the CLI always judges with the
+  shipped one.
 
 WHAT THIS GATE DOES NOT CHECK - do not read more into it than it proves:
 
@@ -46,13 +80,15 @@ WHAT THIS GATE DOES NOT CHECK - do not read more into it than it proves:
     `JUCE/` tree nor our own sources. It looks at PATHS only. The
     vendored build-support tree's own gate is
     `tools/lint_juce_build_support.py` (paths + a pinned count).
-  * It does NOT decide whether an allowlist entry is still NEEDED: an
-    entry that currently covers nothing is reported as a NOTE (a stale
-    entry is the owner's to prune), never a failure.
   * It does NOT re-judge `.gitignore`'s RULES: it never says a rule is
     wrong, only that a tracked path CONTRADICTS one.
   * It does NOT check the untracked working tree for junk: a junk file
     that was never committed is harmless.
+  * It does NOT decide whether an allowlist entry is still NEEDED beyond
+    the STALE case: an entry whose path is TRACKED but covered by no
+    ignore rule any more is reported as a NOTE (it covers nothing
+    today), while an entry whose path is no longer TRACKED AT ALL is a
+    FAILURE (the exception has outlived its reason).
 
 THE ALLOWLIST (path -> reason). A key that ends with "/" is a DIRECTORY
 PREFIX; every other key is an EXACT path. The allowlist is a PATH
@@ -156,11 +192,31 @@ JUNK_PATTERNS: tuple[tuple[str, "re.Pattern[str]"], ...] = (
 
 
 def _git_ls_files(root: str, extra: list[str]) -> list[str] | None:
-    """`git ls-files` output (repo-relative paths), or None when git cannot
-    answer (no git, not a repository, ...)."""
+    """`git ls-files` output (REPO-ROOT-relative paths), or None when git
+    cannot answer (no git, not a repository, no resolvable repo root).
+
+    The paths are REPO-ROOT-relative BY CONSTRUCTION: `git ls-files`
+    prints paths relative to the CURRENT DIRECTORY, so the call is made
+    from the REPO ROOT, which the tool resolves itself (`git -C <root>
+    rev-parse --show-toplevel`). A `--root` that points at a
+    SUBDIRECTORY would otherwise key the allowlist wrongly (the allowlist
+    is repo-root-relative) and hide every path outside that subdirectory -
+    a silent false green. When the root cannot be determined this returns
+    None and the gate FAILS CLOSED.
+    """
     try:
-        proc = subprocess.run(["git", "ls-files"] + extra + ["-z"], cwd=root,
-                              capture_output=True)
+        proc = subprocess.run(["git", "-C", root, "rev-parse",
+                               "--show-toplevel"], capture_output=True)
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    repo_root = proc.stdout.decode("utf8", "replace").strip()
+    if not repo_root:
+        return None
+    try:
+        proc = subprocess.run(["git", "ls-files"] + extra + ["-z"],
+                              cwd=repo_root, capture_output=True)
     except OSError:
         return None
     if proc.returncode != 0:
@@ -169,17 +225,17 @@ def _git_ls_files(root: str, extra: list[str]) -> list[str] | None:
     return files
 
 
-def allowlist_key(rel: str) -> str | None:
+def allowlist_key(rel: str, allowlist: dict[str, str]) -> str | None:
     """The allowlist entry that covers `rel`, or None when none does.
 
     An exact key covers exactly that path; a key that ends with "/" covers
     the whole subtree. The LONGEST matching prefix wins, so the answer is
     deterministic.
     """
-    if rel in ALLOWLIST:
+    if rel in allowlist:
         return rel
     best = None
-    for key in ALLOWLIST:
+    for key in allowlist:
         if not key.endswith("/") or not rel.startswith(key):
             continue
         if best is None or len(key) > len(best):
@@ -195,17 +251,45 @@ def junk_label(rel: str) -> str | None:
     return None
 
 
-def evaluate(root: str) -> tuple[list[str], list[str]]:
-    """Return (violations, notes) for the tree at `root`."""
+def evaluate(root: str,
+             allowlist: dict[str, str] | None = None) -> tuple[list[str], list[str]]:
+    """Return (violations, notes) for the tree at `root`.
+
+    Every path and every allowlist entry is keyed against the REPO ROOT
+    of `root` (resolved by the tool itself), never against `root` itself:
+    `git ls-files` prints paths relative to the current directory, so
+    keying against a subdirectory would both mis-key the allowlist and
+    hide the rest of the tree.
+
+    `allowlist` defaults to the shipped ALLOWLIST (this repository's
+    exception list); a caller that judges a FOREIGN tree passes its own.
+    """
     failures: list[str] = []
     notes: list[str] = []
+    entries = ALLOWLIST if allowlist is None else allowlist
 
     tracked = _git_ls_files(root, [])
     ignored = _git_ls_files(root, ["-ci", "--exclude-standard"])
     if tracked is None or ignored is None:
-        failures.append(
-            "git could not list the tracked files (is this a git repository, "
-            "and is git on PATH?) - the tracked state is UNPROVEN")
+        # Fail CLOSED: without the tracked set nothing is proven. The
+        # reason must be truthful, so the repo root is probed once more.
+        try:
+            probe = subprocess.run(["git", "-C", root, "rev-parse",
+                                    "--show-toplevel"], capture_output=True)
+            root_ok = probe.returncode == 0
+        except OSError:
+            root_ok = False
+        if root_ok:
+            failures.append(
+                "git could not list the tracked files of %s (is git on "
+                "PATH?) - the tracked state is UNPROVEN" % root)
+        else:
+            failures.append(
+                "the REPO ROOT of %s could not be determined (`git rev-parse "
+                "--show-toplevel` failed: not a git repository, or git is "
+                "not on PATH) - every path and every allowlist entry is "
+                "keyed against the repo root, so the tracked state is "
+                "UNPROVEN and the gate FAILS CLOSED" % root)
         return failures, notes
 
     tracked_set = set(tracked)
@@ -213,12 +297,12 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
     # (1) the allowlist's own hygiene: it must not be empty, and every
     #     entry must carry a REASON.
-    if not ALLOWLIST:
+    if not entries:
         failures.append(
             "the ALLOWLIST is EMPTY - an empty allowlist silently accepts "
             "every future exception; the repo's rule is that an exception "
             "never exists without a reason")
-    for key, reason in sorted(ALLOWLIST.items()):
+    for key, reason in sorted(entries.items()):
         if not reason.strip():
             failures.append(
                 "%s: allowlist entry WITHOUT a reason - the repo's convention "
@@ -226,14 +310,20 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
     # (2) an ignored-but-tracked path is the violation this gate exists
     #     for; the allowlist is the ONLY exemption.
-    covered: dict[str, list[str]] = {key: [] for key in ALLOWLIST}
+    covered: dict[str, list[str]] = {key: [] for key in entries}
     for rel in sorted(ignored_set):
-        key = allowlist_key(rel)
+        key = allowlist_key(rel, entries)
         if key is None:
             failures.append(
-                "%s: TRACKED in git although .gitignore ignores it - an "
-                "ignored path is not part of the repository (untrack it, or "
-                "add it to the ALLOWLIST in this tool WITH a reason)" % rel)
+                "%s: TRACKED in git although an ignore rule covers it - the "
+                "rule comes from the repo's .gitignore OR from a GLOBAL "
+                "excludes file (core.excludesFile / $HOME/.gitignore): "
+                "`git ls-files -ci --exclude-standard` honours BOTH, so a "
+                "hit that appears only on THIS machine can come from the "
+                "developer's own global excludes file (a local-only RED "
+                "with a green CI). An ignored path is not part of the "
+                "repository (untrack it, or add it to the ALLOWLIST in "
+                "this tool WITH a reason)" % rel)
         else:
             covered[key].append(rel)
 
@@ -245,27 +335,41 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
                 "%s: TRACKED junk pattern - %s; generated output and merge "
                 "residue never belong in the index" % (rel, label))
 
-    # (4) the allowlist's coverage, reported so a stale or a purely
-    #     defensive entry stays visible.
-    for key in sorted(ALLOWLIST):
+    # (4) the allowlist's freshness: an exception must not outlive the
+    #     path it exempts. A STALE entry (the path is no longer TRACKED)
+    #     is a FAILURE - the gate would otherwise stay green while an
+    #     unjustified exception survives in the tree.
+    for key in sorted(entries):
         hits = covered.get(key, [])
         if key.endswith("/"):
             under = sum(1 for p in tracked_set if p.startswith(key))
-            notes.append(
-                "allowlist %s: %d tracked file(s) under the prefix, %d "
-                "currently flagged as ignored%s"
-                % (key, under, len(hits),
-                   "" if hits else " - the allowance covers NOTHING today "
-                                  "(defensive)"))
+            if under == 0:
+                failures.append(
+                    "%s: STALE allowlist entry - no TRACKED file is under the "
+                    "prefix any more, so the exception has outlived its "
+                    "reason; REMOVE it from the ALLOWLIST (an exception "
+                    "that covers nothing is a silent drift)" % key)
+            else:
+                notes.append(
+                    "allowlist %s: %d tracked file(s) under the prefix, %d "
+                    "currently flagged as ignored%s"
+                    % (key, under, len(hits),
+                       "" if hits else " - the allowance covers NOTHING today "
+                                     "(defensive)"))
+        elif key not in tracked_set:
+            failures.append(
+                "%s: STALE allowlist entry - the path is no longer TRACKED, "
+                "so the exception has outlived its reason; REMOVE it from "
+                "the ALLOWLIST (an exception that covers nothing is a "
+                "silent drift)" % key)
         elif hits:
             notes.append("allowlist %s: %d currently flagged path(s): %s"
                          % (key, len(hits), ", ".join(hits)))
-        elif key in tracked_set:
-            notes.append(
-                "allowlist %s: the path is TRACKED but .gitignore does not "
-                "ignore it any more - the entry is STALE (owner-prune)" % key)
         else:
-            notes.append("allowlist %s: not present in the tree" % key)
+            notes.append(
+                "allowlist %s: the path is TRACKED but no ignore rule covers "
+                "it any more - the exception is IDLE today (owner-prune)"
+                % key)
 
     notes.append("tracked file(s): %d; tracked-but-ignored: %d"
                  % (len(tracked_set), len(ignored_set)))
@@ -278,9 +382,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--root", default=_REPO)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
     failures, notes = evaluate(args.root)
-    print("repo-hygiene gate: no path that .gitignore ignores may be TRACKED "
-          "(except the reasoned allowlist), and no junk pattern may be "
-          "tracked")
+    print("repo-hygiene gate: no path that an ignore rule covers (the "
+          "repo's .gitignore OR a global excludes file) may be TRACKED "
+          "(except the reasoned allowlist), no junk pattern may be "
+          "tracked, and no allowlist entry may be stale")
     for note in notes:
         print(f"NOTE: {note}")
     for msg in failures:
