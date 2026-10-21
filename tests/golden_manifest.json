@@ -124,13 +124,15 @@
     },
     {
       "test": "b12 editor-layout bounds guard headless (tests/probe_b12_bounds.cpp, explicit probe binary run from the repo root; NOT ctest-registered)",
-      "pins": "tests/golden/b12_editor_bounds.json: per window size (960x600, 1024x876, 1280x800, 2048x1752) expected descendant-component count 136 + canonical dump byte count + SHA256 of the canonical bounds-dump text — GOLDEN class (run-captured headless: no peer, no paint; Debug build-plugdbg). D-B12 entry-condition guard for the S9.3 Editor extraction.",
-      "how": "build-plugdbg/tests/Debug/probe_b12_bounds.exe run from the repo root (exit 0 means all pins hold); regenerate only via --write into a temp copy byte-compared with this file",
-      "commit": "617a5bb refactor/probes-u2u3-b12 BASE (dumps measured on this tree; probe sources uncommitted scratch at measurement time)",
+      "pins": "tests/golden/b12_editor_bounds.json: per window size (960x600, 1024x876, 1280x800, 2048x1752) expected descendant-component count 139 + canonical dump byte count + SHA256 of the canonical bounds-dump text — GOLDEN class (run-captured headless: no peer, no paint; Release build-full, 2026-10-21, on the master tree at 0f131ba). D-B12 entry-condition guard for the S9.3 Editor extraction.",
+      "how": "build-full/tests/Release/probe_b12_bounds.exe run from the repo root (exit 0 means all pins hold); regenerate only via --write into a temp copy byte-compared with this file",
+      "bytes": 974,
+      "commit": "0f131ba master (the tree the re-capture ran on; the re-captured golden, the probe's provenance constant and this record land in this tranche's B12 re-capture commit)",
       "kind": "in_test",
-      "produced_by": "gen: cmake --build build-plugdbg --config Debug --target probe_b12_bounds && build-plugdbg/tests/Debug/probe_b12_bounds.exe --write tests/golden/b12_editor_bounds.json (writer source: tests/probe_b12_bounds.cpp)",
+      "produced_by": "gen: cmake --build build-full --config Release --target probe_b12_bounds && build-full/tests/Release/probe_b12_bounds.exe --write tests/golden/b12_editor_bounds.json (writer source: tests/probe_b12_bounds.cpp)",
+      "recapture_reason": "the golden was RE-CAPTURED on 2026-10-21 (the phase-B backlog's B12-block follow-up item 'B12 bounds golden re-capture' - now RESOLVED 2026-10-21): the B2 wave (refactor/b2-arrange-mode) added two ArrangeBar widgets (modeBox_, modeLabel_), so the pinned descendant-component count 136 (and the dump byte counts / sha256s that go with it) no longer described the editor tree. The new count is a MEASUREMENT, not an arithmetic (139 at every window size - JUCE's ComboBox also installs an internal Label child, so the widget count does not predict it), and the file's LF-canonical sha256 + byte count (974) are re-banked for it. The golden's own doc line records the capture date, the headless mode and the tree it was captured on.",
       "files": {
-        "tests/golden/b12_editor_bounds.json": "f9248c2ed3827028fe42feb90ad11b568a832034f498475eed7ca4c7821c549a"
+        "tests/golden/b12_editor_bounds.json": "cd1f3e14e77ed0154380d2e3773e95592aac67cf24c1223bb1538458f1a47b41"
       }
     },
     {
