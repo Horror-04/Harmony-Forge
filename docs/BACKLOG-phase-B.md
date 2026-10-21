@@ -139,7 +139,7 @@ state, and the item's own block carries the evidence.
 | id | title (the ORIGINAL name) | area | status (the ruling + the implementation state) | result (one line — the outcome) | risk if deferred (the residual that is still true) |
 |---|---|---|---|---|---|
 | B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
-| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
+| B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **RESOLVED** — see the resolution note "RESOLVED 2026-10-21 (backlog wave B2, branch `refactor/b2-arrange-mode`, commit `b488ec0`)" in the B2 block below | per D-B2 the mode is an **arrangement-wide switch** in `ArrangeParams.base` (persisted as the root property `ArrangeMode`), **energy keeps owning** the Strict→Creative blend, and the default Strict leaves untouched projects byte-identical; both forced-Strict sites are gone | residual: the mode is **arrangement-global only** (no per-section field, no SPEC-format change — D-B2's explicit trade) and only Strict/Creative are expressible, so an `Experimental` base reads and writes as Strict |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
 | B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b DECIDED — NOT IMPLEMENTED (product-grade)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`, commits `587dd6e` + `09eab98`) — B4a only" in the B4 block below | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b** (the strong-beat predicate unification) stays product-grade: the three sites compute DIFFERENT things, so unifying them is a semantics change | residual (B4b): the strong-beat rule is still stated in 3 different computations — a fix in one place can silently miss the others; plus the 4 duplicated pitch-class NAME tables (`kNames`/`kPcNames`) |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
@@ -346,12 +346,47 @@ Strict→Creative axis, or should the explicit mode control replace it?
 > already reached that verdict ("no cleanup item — enabling Creative
 > arrangements would be a feature").
 
-**Risk / impact of leaving it deferred.** Arrangements remain Strict-only
-by construction, with no user-visible mode axis, and the two forced-Strict
-sites stay invisible coupling between the editor and the generator: a future
-change to `makeParamsWithModel` (which is shared with the non-arrange
-generate path, `src/plugin/state/PluginState.cpp:166-170`) can silently
-change arrangement behaviour.
+**Residual risk after the resolution.** The mode is arrangement-global: a
+per-section mode still needs the SPEC/parser change D-B2 deferred, and only
+Strict/Creative are expressible on this axis. `paramsFromState` deliberately
+keeps its own Strict default so the Arrange tab's mode cannot leak into
+Regenerate/Preview/Export; a caller that forgets the trailing mode argument
+gets Strict, not the persisted value.
+
+> **RESOLVED 2026-10-21 (backlog wave B2, branch `refactor/b2-arrange-mode`,
+> commit `b488ec0`).** The ruling above is now implemented as ruled.
+> **Where the mode lives:** `ArrangeParams.base.mode` is the one
+> arrangement-wide axis; no `Section` field and no SPEC-format change (the
+> 5-field arrange spec is untouched). The plugin persists the selection as
+> the root-state property `StateID::kArrangeMode` (`"ArrangeMode"`, String,
+> default `"Strict"`), read back by `hf::plugin::arrangeMode` and written by
+> `setArrangeMode`; only Strict/Creative are expressible, and anything else
+> (including Experimental) reads and writes as Strict. `build_section` no
+> longer assigns `GenMode::Strict`, so the caller's `base.mode` reaches the
+> generator.
+> **The UI:** the Arrange tab carries a visible `Mode` combo
+> (Strict/Creative) on the section-button row; `onModeChanged` commits the
+> value undoably and `valueTreePropertyChanged` reflects load/undo/redo.
+> **Default preservation:** `paramsFromState` keeps its Strict default (via
+> a new trailing mode argument) so Regenerate/Preview/Export cannot inherit
+> the Arrange tab's mode; `arrangeParamsFromState` is the only arrange
+> reader. A test pins `ArrangeParams{}` == explicit Strict bytes, and
+> Creative moves the bytes for the same seed at e = 1.0.
+> **Energy:** `apply_energy` / `ornament_slots` untouched; e = 0 adds no
+> ornaments whatever the mode, and energy monotonicity is re-pinned on a
+> Creative base.
+> **Gates:** the fast gates are green (`check_layers`, `rt_scan`,
+> `lint_ccn`, `lint_file_size` 807 pinned, `lint_editor_budget`
+> 1100 <= 1102, `lint_off_golden`, `gen_map --check` FRESH) and the editor
+> .cpp stayed at 807 lines (24 added / 24 removed). No local
+> build/ctest per the wave rules; 170 pytest cases pass and 17 fail only
+> on missing optional torch/onnx/onnxruntime in this environment.
+> **Known follow-up:** `tests/golden/b12_editor_bounds.json` is stale (two
+> new widgets, 136 -> 138 components) and must be re-captured with
+> `probe_b12_bounds.exe --write tests/golden/b12_editor_bounds.json` after
+> a build; the probe is not in ctest/CI. `docs/INVARIANTS.md`'s 254/221
+> ctest counts are the B10 measurement and need re-measuring after this
+> branch builds (B2 adds 9 registered cases, 6 of them plugin-ON).
 
 ---
 
