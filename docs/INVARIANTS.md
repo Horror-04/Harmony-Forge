@@ -8,8 +8,20 @@ build-off/tests/Debug holds 8 of 9 (test_preview_synth is plugin-ON
 gated and has no off build -- stated, not fudged). Suite totals
 re-verified via `ctest -N` at **phase-B B10 (2026-10-20): 254 tests
 (build-full/Release), 221 tests (build-off/Debug)**
-(docs/measurements/ratchet.md, the G10 row + the §7 counter table --
-the growth over the S10 close (2026-10-19: 251/221) is the 3 new B10
+(docs/measurements/ratchet.md, the G10 row + the §7 counter table).
+**The B2 wave (`refactor/b2-arrange-mode`) adds 9 registered cases -- 3 in
+BOTH configurations (tests/test_arrangement.cpp +2,
+tests/test_candidates.cpp +1) and 6 plugin-ON only
+(tests/test_plugin_state.cpp +4, tests/test_params_from_state.cpp +2) --
+plus 1 plugin-ON case in the new tests/test_arrange_mode_model.cpp binary
+(the ArrangeBar mode-control model, moved out of the unregistered
+test_visual_polish so it actually runs in CI). This branch therefore
+EXPECTS **264 tests (build-full/Release)** and **224 tests
+(build-off/Debug)**: 254 + 9 + 1 and 221 + 3. Those two numbers are an
+ARITHMETIC EXPECTATION, **to be confirmed by the first green CI run**
+(`ctest -N`); the per-case indices quoted below move with them and must be
+re-derived from `ctest -N` at that point.
+(The growth over the S10 close (2026-10-19: 251/221) is the 3 new B10
 ORT-only cases in tests/test_ort_logits.cpp, which live in an
 `#ifdef HARMONY_FORGE_WITH_ONNX` block and therefore move the full
 configuration only). The **S0 baseline** for the same two
@@ -63,18 +75,25 @@ byte-identity)` (render_midi seed-7 twice + binary compare).
 
 ## INV-3: Both suites stay fully green (refactor behavior gate)
 
-`ctest` passes **254/254 in build-full/Release** and **221/221 in
-build-off/Debug** (measured 2026-10-20 at phase-B B10 --
-docs/measurements/ratchet.md, the G10 row + the §7 counter table; the
-growth over the S10 close's 251/221 is the 3 new B10 ORT-only cases in
+`ctest` passes **264/264 in build-full/Release** and **224/224 in
+build-off/Debug** on this branch -- EXPECTED, to be confirmed by the first
+green CI run (the arithmetic: the B10 measurement was 254/221, and the B2
+wave adds 9 registered cases -- 3 in both configurations
+(tests/test_arrangement.cpp +2, tests/test_candidates.cpp +1) and 6
+plugin-ON only (tests/test_plugin_state.cpp +4,
+tests/test_params_from_state.cpp +2) -- plus 1 plugin-ON case in the new
+tests/test_arrange_mode_model.cpp binary: 254 + 9 + 1 and 221 + 3). The
+B10 measurement itself was 2026-10-20 -- docs/measurements/ratchet.md, the
+G10 row + the §7 counter table; the growth over the S10 close's 251/221
+is the 3 new B10 ORT-only cases in
 tests/test_ort_logits.cpp, which are compiled out of the off
 configuration by their `#ifdef HARMONY_FORGE_WITH_ONNX` block). The
-33-test delta is option-gated only: the plugin-ON families contribute 28
+40-test delta is option-gated only: the plugin-ON families contribute 35
 (test_chordtrack_pin 2, test_keyboard_moves 9, test_focus_resize 4,
-test_preview_synth 2, test_plugin_state 4, test_params_from_state 2,
-test_vertical_slice 1, test_rt_violation_counter 3, test_rt_soak 1) and
-the ONNX option a net 5 (6 real cases in test_ort_logits vs the 1
-offline-stub case). Release-vs-Debug contributes zero: the only
+test_preview_synth 2, test_plugin_state 8, test_params_from_state 4,
+test_vertical_slice 1, test_rt_violation_counter 3, test_rt_soak 1,
+test_arrange_mode_model 1) and the ONNX option a net 5 (6 real cases in
+test_ort_logits vs the 1 offline-stub case). Release-vs-Debug contributes zero: the only
 `#ifndef NDEBUG` blocks in the test tree (4 sites, in
 tests/test_rt_violation_counter.cpp and tests/test_rt_soak.cpp) sit in
 plugin-ON-only binaries whose `#else` branches assert the same things,
@@ -87,6 +106,10 @@ Deliberately unregistered binaries are NOT part of this gate:
 test_note_cues and test_visual_polish (headless drawText teardown crash,
 see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag)
 -- re-verified at the S10 close: 3 / 5 / 1 cases in source, 0 registered.
+The B2 arrange-mode control-model case was MOVED OUT of
+test_visual_polish (which never runs in CI) into the registered plugin-ON
+binary tests/test_arrange_mode_model.cpp, so test_visual_polish keeps its
+5 in-source cases and the ArrangeBar control model is now CI-covered.
 
 | binary (binding) | suites |
 |---|---|
@@ -95,10 +118,14 @@ see tests/CMakeLists.txt) and test_memo_e2e (nightly-only `[.]` tag)
 | test_arrangement | full + off |
 
 Spot-check: "keynorm flag-off generate path is bit-identical to
-pre-task output" (full #217 / off #194 -- re-derived from `ctest -N` on
-2026-10-20, after the 3 new B10 ORT-only cases moved the full
-configuration's indices by 3; the off configuration is unchanged). Also
-covered: "arrangement build is deterministic".
+pre-task output" (full #217 / off #194 -- the B10 indices, re-derived from
+`ctest -N` on 2026-10-20, after the 3 new B10 ORT-only cases moved the full
+configuration's indices by 3; the off configuration is unchanged). **The
+B2 wave moves these indices again** (+1 in tests/test_candidates.cpp, +2 in
+tests/test_arrangement.cpp, +1 in the plugin-ON tests/test_arrange_mode_model
+binary), so the numbers must be re-derived from `ctest -N` after this
+branch's first green build; the case STRING is the binding, not the index.
+Also covered: "arrangement build is deterministic".
 
 CI: `build-test-validate`, step `Test`.
 
@@ -171,7 +198,7 @@ a blocking step in the `gates` and `build-test-validate` CI jobs.
 | inv2 | "model path threads into generation deterministically" — configured model path still yields identical outputs incl. async == sync |
 | inv2 | "memo filter is deterministic" — same Pattern + same index gives identical results (shared with inv4) |
 | inv3 | "keynorm flag-off generate path is bit-identical to pre-task output" — spot-check; refactor left default-path bytes unchanged |
-| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 254/254 full + 221/221 off) |
+| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 264/264 full + 224/224 off — expected on this branch, to be confirmed by the first green CI run) |
 | inv4 | "verbatim run is truncated at the offending window" — spot-check; first >= 4-window run is cut before the completing token |
 | inv4 | "clean generation passes through byte-identical" — clean input untouched |
 | inv4 | "missing index file loads nullopt and never throws" — empty/missing index is a safe no-op, never throws |

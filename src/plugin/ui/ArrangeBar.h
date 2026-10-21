@@ -25,7 +25,9 @@
 // editing is per-section sliders — a full curve widget is out of scope. The
 // MODE is arrangement-wide and persisted by the editor in the plugin state
 // (onModeChanged), not section state: the 5-field arrange SPEC has no mode
-// slot (D-B2), and energy keeps owning the Strict->Creative blend.
+// slot (D-B2), and energy keeps owning the Strict->Creative blend. Its
+// label says so ("Mode (arrangement)"): the control sits on the
+// section-button row, so it must not read as a per-section field.
 // Message thread only; never touches audio state.
 class ArrangeBar : public juce::Component {
  public:
@@ -40,16 +42,17 @@ class ArrangeBar : public juce::Component {
   // and cannot be instantiated headless; see test_focus_resize.cpp NOTE).
   static juce::String countTextFor(int nSections, int totalBars);
 
-  // B2: the mode control's pure model (labels + combo ids), pinned in the
-  // same headless test. Ids 1/2 are the only selectable modes.
+  // B2: the mode control's pure model (labels + combo ids), pinned by the
+  // registered plugin-ON binary tests/test_arrange_mode_model.cpp. Ids 1/2
+  // are the only selectable modes.
   static juce::String modeItemText(hf::infer::GenMode m);
   static int modeItemId(hf::infer::GenMode m);
   static hf::infer::GenMode modeFromItemId(int id);
 
-  // Current mode. Default Strict == an untouched project's bytes.
-  hf::infer::GenMode mode() const { return mode_; }
   // Reflects the persisted state (load/undo/redo); does NOT fire
-  // onModeChanged (no feedback loop).
+  // onModeChanged (no feedback loop). The current mode is NOT exposed as a
+  // getter: nothing reads it (the editor reads the persisted state, not the
+  // widget), so a getter would be a second source of truth.
   void setMode(hf::infer::GenMode m);
 
   void setStatus(const juce::String& s);

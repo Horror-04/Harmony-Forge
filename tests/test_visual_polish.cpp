@@ -6,6 +6,9 @@
 // and cannot be instantiated headless - only their pure logic is pinned).
 //
 // - ArrangeBar::countTextFor: live-count text (plural/singular/zero).
+//   (The ArrangeBar mode control model moved to the REGISTERED binary
+//   tests/test_arrange_mode_model.cpp: this binary is deliberately not
+//   ctest-registered, so a proof that lives here never runs in CI.)
 // - ExplainView wrap: narrowing the view grows contentHeight (rows wrap
 //   instead of clipping); widening restores it (no accumulation); two wide
 //   widths agree (fully unwrapped == legacy single-line stack); a narrow
@@ -63,24 +66,6 @@ TEST_CASE("arrange live count text is honest", "[polish][task5]") {
   CHECK(ArrangeBar::countTextFor(1, 4) == "Arrange: 1 section, 4 bars");
   CHECK(ArrangeBar::countTextFor(0, 0) == "Arrange: 0 sections, 0 bars");
   CHECK(ArrangeBar::countTextFor(1, 1) == "Arrange: 1 section, 1 bar");
-}
-
-TEST_CASE("arrange mode control is Strict/Creative only", "[polish][b2]") {
-  ensure_juce();
-  // The ArrangeBar owns widgets (no headless construction), so the control's
-  // model is pinned through its pure helpers: the two visible item labels,
-  // their combo ids, and the id -> mode mapping the onChange handler uses.
-  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Strict) == "Strict");
-  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Creative) == "Creative");
-  // Experimental is not an arrange item (D-B2: energy owns the blend); a
-  // stray value maps onto Strict instead of inventing a third item.
-  CHECK(ArrangeBar::modeItemText(hf::infer::GenMode::Experimental) == "Strict");
-  CHECK(ArrangeBar::modeItemId(hf::infer::GenMode::Strict) == 1);
-  CHECK(ArrangeBar::modeItemId(hf::infer::GenMode::Creative) == 2);
-  CHECK(ArrangeBar::modeFromItemId(1) == hf::infer::GenMode::Strict);
-  CHECK(ArrangeBar::modeFromItemId(2) == hf::infer::GenMode::Creative);
-  CHECK(ArrangeBar::modeFromItemId(0) == hf::infer::GenMode::Strict);
-  CHECK(ArrangeBar::modeFromItemId(99) == hf::infer::GenMode::Strict);
 }
 
 TEST_CASE("explain empty state has a legacy single-line height", "[polish][task5]") {

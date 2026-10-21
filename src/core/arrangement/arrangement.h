@@ -26,9 +26,12 @@
 //   Strict by default) and the Safe candidate (index 0). The mode is
 //   arrangement-wide and lives only in ArrangeParams.base (D-B2: the 5-field
 //   arrange SPEC is unchanged, so there is no per-section mode). Energy below
-//   still owns the Strict->Creative ornament blend on top of whatever mode
-//   generated the material: e = 0 adds no ornaments, whatever the mode.
-//   tonic/scale/model_path come from base.
+//   still owns the Strict->Creative ORNAMENT blend on top of whatever mode
+//   generated the material: e = 0 adds no ORNAMENTS, whatever the mode.
+//   That is exactly what the ruling's "e = 0 -> pure Strict" means - it is
+//   a statement about the ORNAMENTS, NOT about the generator's mode: a
+//   Creative base generates Creative material at e = 0 too (see the in-scale
+//   note below). tonic/scale/model_path come from base.
 // - Each section restarts the I-V-vi-IV progression loop (section-local bar
 //   phase; see arrangement_progression).
 //
@@ -59,10 +62,22 @@
 //   pre-energy melody (identical for all e), respect the Melody register
 //   (out-of-register approaches are not slots), and are exempt from
 //   thinning. A larger e therefore always keeps a superset of the notes.
-//   Note: ornaments are weak-beat chromaticism by design (the Creative
-//   character), so the full in-scale guarantee holds at e = 0 only. The
-//   blend is independent of base.mode (B2): Creative material can carry
-//   both the generator's own passing tones and these ornaments.
+//   Note: the ORNAMENTS are weak-beat chromaticism by design (the Creative
+//   character), so they take the full in-scale guarantee away from every
+//   e > 0. The ORNAMENT blend is independent of base.mode (B2): a Creative
+//   base can carry both the generator's own chromatic passing tones and
+//   these ornaments.
+//
+// In-scale guarantee, stated exactly (STRICT vs CREATIVE base):
+// - On a STRICT base the material is in scale at e = 0 ONLY: the generator
+//   adds no chromaticism of its own, so e = 0 (no ornaments) is in scale,
+//   and every e > 0 is not (the ornaments are chromatic by design).
+// - On a CREATIVE base the material is OUTSIDE the scale at EVERY e, e = 0
+//   included: the generator itself inserts chromatic passing tones
+//   (insert_chromatic_passing_tones, src/inference/candidate_modes.cpp)
+//   and those are present regardless of the energy.
+// The ruling's "e = 0 -> pure Strict" is a statement about the ORNAMENTS
+// (e = 0 adds no ornaments), NOT about the generator's mode.
 //
 // Section transitions get a 1-bar fill treatment: the last bar of every
 // non-final section carries 8 eighth-note Drums hits (pitch 38, velocity
@@ -130,8 +145,10 @@ struct ArrangeParams {
   // base.mode is the arrangement-wide generation mode (D-B2). Strict is the
   // default, so an untouched ArrangeParams reproduces the pre-B2 bytes;
   // Creative/Experimental come straight from the caller (nothing overrides
-  // them). Energy (per section) keeps blending the Creative ornaments on top,
-  // independent of this mode.
+  // them). Energy (per section) keeps blending the Creative ORNAMENTS on top,
+  // independent of this mode; on a Creative base the material is outside the
+  // scale at every e (the generator's own chromatic passing tones), whatever
+  // the energy.
   hf::infer::GenParams base;
 };
 

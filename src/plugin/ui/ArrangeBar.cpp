@@ -24,8 +24,10 @@ ArrangeBar::ArrangeBar() {
   addAndMakeVisible(typeLabel_);
 
   // B2 (D-B2): arrangement-wide Strict/Creative mode. Ids and labels come
-  // from the pure helpers the headless pin asserts; energy below still owns
-  // the ornament blend, so a Creative arrangement at e = 0 adds nothing.
+  // from the pure helpers the registered plugin-ON pin asserts
+  // (tests/test_arrange_mode_model.cpp); energy below still owns the
+  // ORNAMENT blend, so a Creative arrangement at e = 0 adds no ornaments
+  // (the generator's own chromatic passing tones are a different thing).
   constexpr hf::infer::GenMode kModes[] = {hf::infer::GenMode::Strict,
                                            hf::infer::GenMode::Creative};
   for (const auto m : kModes) modeBox_.addItem(modeItemText(m), modeItemId(m));
@@ -35,7 +37,9 @@ ArrangeBar::ArrangeBar() {
     if (onModeChanged) onModeChanged(mode_);
   };
   addAndMakeVisible(modeBox_);
-  modeLabel_.setText("Mode", juce::dontSendNotification);
+  // The mode is ARRANGEMENT-wide, but the control sits on the section-button
+  // row: the label says so, so it cannot be read as a per-section field.
+  modeLabel_.setText("Mode (arrangement)", juce::dontSendNotification);
   addAndMakeVisible(modeLabel_);
 
   barsBox_.setInputRestrictions(3, "0123456789");
@@ -192,18 +196,24 @@ void ArrangeBar::resized() {
   variationSlider_.setBounds(row2.removeFromLeft(each));
   mid.removeFromTop(4);
   auto row3 = mid.removeFromTop(28);
-  addButton_.setBounds(row3.removeFromLeft(60));
+  // B2: the section buttons give the arrangement-wide mode label room on
+  // the same row (the Arrange tab has no spare row). Widths: the four
+  // buttons carry "Add"/"Del"/"Up"/"Down" at the 13 px body font (text
+  // 23/19/16/33 px + the 4 px inset per side), so 44/42/38/48 keep 10-15 px
+  // of slack; the label needs ~96 px for "Mode (arrangement)" at the 11 px
+  // caption font; the combo takes the rest (~76 px at the 960 px editor
+  // minimum, enough for "Creative" + the arrow). The combo is visible next
+  // to the buttons, never a hidden default.
+  addButton_.setBounds(row3.removeFromLeft(44));
   row3.removeFromLeft(4);
-  removeButton_.setBounds(row3.removeFromLeft(60));
+  removeButton_.setBounds(row3.removeFromLeft(42));
   row3.removeFromLeft(4);
-  upButton_.setBounds(row3.removeFromLeft(50));
+  upButton_.setBounds(row3.removeFromLeft(38));
   row3.removeFromLeft(4);
-  downButton_.setBounds(row3.removeFromLeft(60));
-  // B2: arrangement-wide mode sits with the section buttons (the Arrange tab
-  // has no spare row; the combo is visible next to them, never a hidden
-  // default). 88 px at the 960 px editor minimum, flexing wider.
+  downButton_.setBounds(row3.removeFromLeft(48));
   row3.removeFromLeft(8);
-  modeLabel_.setBounds(row3.removeFromLeft(36));
+  modeLabel_.setBounds(row3.removeFromLeft(100));
+  row3.removeFromLeft(6);
   modeBox_.setBounds(row3);
   auto right = r;
   buildButton_.setBounds(right.removeFromTop(34));
