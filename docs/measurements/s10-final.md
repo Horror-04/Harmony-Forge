@@ -210,8 +210,8 @@ pending)"), so the pointer above used to dangle.
 | # | superseded artifact / baseline | replaced by | where the old one still lives |
 |---|---|---|---|
 | 1 | **Cube determinism matrix v2** — `docs/measurements/s0-sha-matrix.csv` (360 data rows at the S0 bank commit `acef4de`; 1896 rows in its final, still-current form — a 4-stage aggregate, irreproducible at any revision ≥ P^ — `docs/measurements/cube-baseline-v3.md:169-190`) | **v3** — `docs/measurements/s0-sha-matrix-v3.csv` (936 rows, sha256 `219EAB5E…C4175F9`), recorded in `docs/measurements/cube-baseline-v3.md` | the v2 CSV is still in the tree with **unchanged bytes** (`cube-baseline-v3.md:172-174`), under the tag `refactor/cube-baseline-v2`; the supersession is recorded at `cube-baseline-v3.md:7` and `docs/measurements/master-health.md:25-32`. The v2 CSV is deliberately **not** sha-pinned (it is LF-in-blob / CRLF-in-worktree — `cube-baseline-v3.md:167`) |
-| 2 | **S4b-era ctest counters 204/181** — `docs/measurements/s4b-ratchet.md:8-9` | the S9-close pair **251/251** (full) and **221/221** (off), pinned in `docs/measurements/ratchet.md:61` (the G10 row) + `:358-363` (the §7 counter table) (banked at `docs/measurements/s9-0.md:159` and `docs/INVARIANTS.md:84-96`) | the 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the full pair history (204/181 → 222/194 → 221/195 → 249/219 → 251/221 → 254/221 → 273/233) is tabulated in `docs/measurements/ratchet.md:410-418` |
-| 3 | **The retired S3 text guard** `tools/check_bodies.py` (+ `tools/check_bodies_s3.json`) — retired as a gate after the Pcg32 change (`docs/measurements/s3-4b-note.md:84-90`); it is RED by design and its CI step is advisory (`continue-on-error: true`) | the **live** replacements: the CCN ratchet `tools/lint_ccn.py --strict` (which pins the three S3 candidates with the owner's reason verbatim — `docs/measurements/ratchet.md:174-199`) and the other S10.1 gates | the script is still in the tree, still advisory; its retirement is recorded in `docs/BACKLOG-phase-B.md` (item B9 and "Items NOT carried" #4, `docs/BACKLOG-phase-B.md:1141-1146`) and in `docs/measurements/master-health.md:33-34` |
+| 2 | **S4b-era ctest counters 204/181** — `docs/measurements/s4b-ratchet.md:8-9` | the S9-close pair **251/251** (full) and **221/221** (off) — a row of the pair-history table (`docs/measurements/ratchet.md:410-418`, the S9-close row at `:416`), banked at `docs/measurements/s9-0.md:159` (the 251/251 full half); it is **no longer the PINNED pair**: the G10 row (`docs/measurements/ratchet.md:61`) and the §7 counter table (`:358-363`) carry the PINNED pair 254/221, and the wave tree's pair is 273/233 (`:61`, `:418`). `docs/INVARIANTS.md` quoted this pair at the time — its copy was superseded by the B10 re-pin and reads 273/233 today (`:84-96`), naming the 251/221 pair at `:99-100` | the 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the full pair history (204/181 → 222/194 → 221/195 → 249/219 → 251/221 → 254/221 → 273/233) is tabulated in `docs/measurements/ratchet.md:410-418` |
+| 3 | **The retired S3 text guard** `tools/check_bodies.py` (+ `tools/check_bodies_s3.json`) — retired as a gate after the Pcg32 change (`docs/measurements/s3-4b-note.md:84-90`); it is RED by design and its CI step is advisory (`continue-on-error: true`) | the **live** replacements: the CCN ratchet `tools/lint_ccn.py --strict` (which pins the ONE remaining S3 candidate, `compose_base` (`docs/measurements/ratchet.md:197`), with the owner's reason verbatim — `docs/measurements/ratchet.md:240-249`; the other two S3 candidates, `apply_mode` and `apply_candidate_transform`, were pruned on 2026-10-19 — `docs/measurements/ratchet.md:256-261`) and the other S10.1 gates | the script is still in the tree, still advisory; its retirement is recorded in `docs/BACKLOG-phase-B.md` (item B9 and "Items NOT carried" #4, `docs/BACKLOG-phase-B.md:1141-1146`) and in `docs/measurements/master-health.md:33-34` |
 | 4 | **The S3 re-export shims** in `src/inference/candidates.h` (the four candidate-TU re-exports plus the params re-export) | direct includes: `src/inference/candidates.cpp` names the four modules it calls, and `tests/test_s4b_mode_shape.cpp` names `candidate_modes.h` (S10.2, commit `4ece820`) | git history: the shimmed header is at `2f40fa3` and below; the shim's retirement is recorded in the S10.2 task report and in the header comments rewritten in the same commit |
 | 5 | **The S4b-era off-golden census TOTAL** `0/12/275(3290)/35/80` — `docs/measurements/s4b-0-census.md:157` | the S10.1 census pins: `digest64=0 hex16+=0 vectors=258(1956) strings=61(306) assert>=1000=16 toler=80`, per-file + total, in `tools/off_golden_ratchet.py` (`docs/measurements/ratchet.md:302-319`) | the S4b census record stays in `docs/measurements/s4b-0-census.md` (its §7 re-baseline line included). Note the tool was UPGRADED in S10.1 (hard zeros for `digest64`/`hex16+`, a new `strings` class), so the two totals are **not shape-comparable** |
 | 6 | **The S9.0 Editor line numbers** 298 + 975 = 1273 (`docs/measurements/s9-0.md:21-22`, `:144`, `:301`) | the corrected python counts **324 + 1046 = 1370** — `docs/measurements/s9-0.md` Appendix B (`:272-369`, the correction at `:299-303`) | the retracted numbers stay inside `s9-0.md`'s history sections (the file says so itself at `:274-278`); the correction is in the same file, below them |
@@ -613,7 +613,7 @@ landed with it.
 | the §4 claim | the tree today |
 |---|---|
 | "the slot-range guard for the ORT logits provider is **ABSENT**" | **FALSE** — `OrtLogitsProvider::get_logits` (`src/inference/ort_logits.cpp:222-274`) calls `prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`, helper at `:83-85`) and returns `false` for a prefix that violates a slot range, BEFORE the model runs. The 3-arg form (`:215-220`) is the fail-closed default (`LogitsIdDomain::kSlotChecked`); the RAW domain (the sampler's UNMASKED mode) is deliberately NOT range-checked — there the ids are raw vocabulary ids, not slot-encoded ones. |
-| "the provider is the one boundary that does not use them" | **FALSE** — the provider now consults `kVocabSlotLo` / `kVocabSlotHi` (`src/core/serialization/vocab_layout.gen.h:30-31`), like the decode side (`src/core/serialization/tokenizer.cpp:80-85`), the sampler's FSM mask (`src/inference/sampler.cpp:140-155`) and the model-manifest check (`src/inference/model_manifest.cpp:268-272`). |
+| "the provider is the one boundary that does not use them" | **FALSE** — the provider now consults `kVocabSlotLo` / `kVocabSlotHi` (`src/core/serialization/vocab_layout.gen.h:30-31`), like the decode side (`src/core/serialization/tokenizer.cpp:80-85`), the sampler's FSM mask (`src/inference/sampler.cpp:144-159`, the table read at `:156-157`) and the model-manifest check (`src/inference/model_manifest.cpp:268-272`). |
 | "the sidecar's output is pinned by no artifact in this repository" | **FALSE** — the pin exists: `tests/golden/ort_logits_values.txt`, a `gen:`-form record in `tests/golden_manifest.json` (24 records — capture=16 / gen=7 / mixed=1), produced by `tools/capture_ort_logits_golden.py`. It carries the 256 logits values, the sidecar's own sha256 and the argmax; the C++ side pins the IDENTITY (the sidecar sha256) and the DECISION (the argmax) exactly and compares the VALUES within the documented 1e-04 tolerance (the capture ran on onnxruntime 1.31.0, the provider on the pinned 1.22.0, so the values are not bit-exact across ORT versions — `docs/BACKLOG-phase-B.md:206`). |
 | "No test binds it ... and no gate covers it" | **SUPERSEDED** — the guard is pinned by the three B10 cases in `tests/test_ort_logits.cpp` (`"ort logits rejects a prefix that violates a named slot range"` `:353`, `"ort logits accepts every legal prefix (the slot-range guard is a no-op)"` `:395`, `"ort logits reproduces the committed sidecar's pinned logits values"` `:451`), all inside the `#ifdef HARMONY_FORGE_WITH_ONNX` block — which is why the off configuration's ctest count did not move. |
 
@@ -632,4 +632,33 @@ in this wave and is not edited here; this section is the correction for it.
 `tests/golden/ort_logits_values.txt`, `tests/golden_manifest.json` and
 `docs/BACKLOG-phase-B.md:206` — no `ctest`, no pluginval and no gate run
 happened for it.
+
+## 12. Fix round 1 (2026-10-21) — three locators re-pointed, one claim scoped
+
+This round changed **no measurement** and no verdict. Three `file:line`
+locators that no longer held their claim were re-pointed at the current
+tree (a locator is not a measurement), and one sentence that read as a
+general claim was re-scoped. The corrections are listed here so the §6 and
+§11 edits above are traceable.
+
+- **§6, row 2** (the S4b-era 204/181 counters, the "replaced by" cell): the
+  S9-close pair 251/221 is a row of the pair-history table
+  (`docs/measurements/ratchet.md:410-418`, the S9-close row at `:416`) — it
+  is **not** what the G10 row (`:61`) or the §7 counter table (`:358-363`)
+  carry today (the PINNED pair 254/221; the wave pair 273/233). The
+  `docs/INVARIANTS.md` citation was re-scoped: that file's copy was
+  superseded by the B10 re-pin, reads 273/233 today (`:84-96`) and names
+  the 251/221 pair at `:99-100`.
+- **§6, row 3** (the retired S3 text guard, the "live replacements" cell):
+  the CCN ratchet pins **one** remaining S3 candidate — `compose_base`
+  (`docs/measurements/ratchet.md:197`) — with the owner's reason verbatim
+  (`:240-249`). `apply_mode` and `apply_candidate_transform` were pruned on
+  2026-10-19 (`:256-261`); the old range `:174-199` was the whole 21-row
+  pin table and never held the "three S3 candidates" claim.
+- **§11** (the "provider is the one boundary that does not use them" row):
+  the sampler's FSM mask is `src/inference/sampler.cpp:144-159`, and the
+  `kVocabSlotLo` / `kVocabSlotHi` table read is at `:156-157` — the old
+  `:140-155` stopped one line short of the read.
+
+No build, no configure, no `ctest` and no pluginval ran for this round.
 

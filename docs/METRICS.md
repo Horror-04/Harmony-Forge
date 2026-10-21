@@ -17,12 +17,18 @@ and the MVP goal: the user keeps ≥ 1 of 4 variants in > 50% of sessions.
 > `build-full/tools/Release/render_midi.exe` remains directly runnable).
 > Keep Rate logging below is unchanged.
 
-1. Render a batch. The `--seeds/--bars` CLI of `tools/render_batch.py` is
-   RETIRED — that tool is now the 4-condition blind A/B batcher (`--conditions`,
-   `--out`, `--key`, `--metrics`, `--sampling-seed`, `--limit`), so the
-   listening batch is rendered with the renderer directly:
+1. Render one file per seed. The `--seeds/--bars` CLI of
+   `tools/render_batch.py` is RETIRED — that tool is now the 4-condition
+   blind A/B batcher (`--conditions`, `--out`, `--key`, `--metrics`,
+   `--sampling-seed`, `--limit`), so the listening files are rendered with
+   the renderer directly, ONE FILE PER RUN:
    `build-full\tools\Release\render_midi.exe --seed 7 --bars 4 --out tools\batch\melody.mid`
-   (add `--multi` for a multitrack version).
+   (add `--multi` for a multitrack version). The retired command rendered
+   seeds 7 AND 8 in ONE run; the loop that replaces it is the SAME renderer
+   run once per seed, each run with its own `--out` path — e.g. `--seed 7
+   --bars 4 --out tools\batch\7-4.mid`, then `--seed 8 --bars 4 --out
+   tools\batch\8-4.mid` (the retired tool named its outputs
+   `<seed>-<bars>.mid`). There is no batch flag on `render_midi.exe`.
 2. Listen to each file; score it with `tools/score_sheet.md` (one row per file).
 3. In a real plugin session, keeping a variant calls
    `SeedHistory::mark_latest_kept(candidate)` (`src/core/model/selection.h`),
