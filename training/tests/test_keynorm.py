@@ -276,6 +276,68 @@ def check_golden_parity_vectors() -> None:
           "(enriched chord shape preserved on both sides)")
 
 
+def check_chord_root_anchor_vectors() -> None:
+    """D-B1: named chord-root anchor step, selected per record, both sides.
+
+    The existing scale-family anchor is untouched and remains the DEFAULT
+    view; the chord-root selector is additive (OFF the default view). The
+    vector file pins the new step from BOTH sides (here +
+    tests/test_keynorm.cpp 'chord-root anchor selection matches python
+    parity').
+    """
+    import keynorm as K
+    path = os.path.join(HERE, "..", "..", "tests", "golden",
+                        "keynorm_vectors.json")
+    with open(path) as f:
+        gold = json.load(f)
+    sec = gold["chord_root_anchor"]
+    assert sec["anchor"] == K.ANCHOR_FIRST_CHORD_ROOT == 1, \
+        "the golden selector id must be the FIRST_CHORD_ROOT anchor"
+    n = len(sec["scales"])
+    assert n == 10, f"expected 10 chord-root vectors, got {n}"
+    for key in ("tonics", "first_chord_roots", "want_anchor_pcs",
+                "want_shifts", "want_scale_family_anchor_pcs",
+                "want_scale_family_shifts"):
+        assert len(sec[key]) == n, f"{key} must carry {n} values"
+    for i in range(n):
+        scale = sec["scales"][i]
+        tonic = sec["tonics"][i]
+        root = sec["first_chord_roots"][i]
+        # NEW capability: the canonical anchor is the pitch class of the
+        # FIRST chord's root of THIS record (no corpus-global pass).
+        pc = K.anchor_pc(scale, root, anchor=K.ANCHOR_FIRST_CHORD_ROOT)
+        assert pc == sec["want_anchor_pcs"][i], \
+            f"vector {i}: chord-root anchor {pc} != {sec['want_anchor_pcs'][i]}"
+        shift = K.anchor_shift(tonic, pc)
+        assert shift == sec["want_shifts"][i], \
+            f"vector {i}: chord-root shift {shift} != {sec['want_shifts'][i]}"
+        # EXISTING capability: the scale-family branch is exactly
+        # canonical_pc/canonical_shift - the default view is unchanged.
+        sf_pc = K.anchor_pc(scale, root, anchor=K.ANCHOR_SCALE_FAMILY)
+        assert sf_pc == sec["want_scale_family_anchor_pcs"][i]
+        assert sf_pc == K.canonical_pc(scale)
+        sf_shift = K.anchor_shift(tonic, sf_pc)
+        assert sf_shift == sec["want_scale_family_shifts"][i]
+        assert sf_shift == K.canonical_shift(tonic, scale)
+    # Degenerate inputs are total: no chord (None / negative) and an unknown
+    # selector fall back to the existing scale-family anchor.
+    assert K.anchor_pc("major", None, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 0
+    assert K.anchor_pc("dorian", -1, anchor=K.ANCHOR_FIRST_CHORD_ROOT) == 9
+    assert K.anchor_pc("major", 55, anchor=99) == 0
+    # ADDITIVE / OFF the default view: normalized_view still selects the
+    # scale-family anchor (G major -> +5), never the first-chord root. The
+    # fixture REUSES the file-backed #note_parity ids/tonic (no new pin).
+    note = gold["note_parity"]
+    chord = {"root": note["tonic"], "type": "maj"}
+    rec = {"ids": note["ids"], "tonic": note["tonic"],
+           "scale": note["scale"], "chords": [chord]}
+    view = K.normalized_view(rec)
+    assert view["keynorm_shift"] == 5, \
+        "normalized_view must keep the scale-family anchor (additive B1)"
+    print("PASS chord-root anchor (D-B1) matches golden vectors + python "
+          "scale-family default unchanged")
+
+
 def main() -> int:
     check_roundtrip_corpus()
     check_canonical_tonic()
@@ -285,6 +347,7 @@ def main() -> int:
     check_chords_meta()
     check_report_numbers()
     check_golden_parity_vectors()
+    check_chord_root_anchor_vectors()
     print("ALL keynorm tests PASS")
     return 0
 

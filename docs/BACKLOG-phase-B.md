@@ -138,7 +138,7 @@ state, and the item's own block carries the evidence.
 
 | id | title (the ORIGINAL name) | area | status (the ruling + the implementation state) | result (one line — the outcome) | risk if deferred (the residual that is still true) |
 |---|---|---|---|---|---|
-| B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
+| B1 | Chord-root-anchored keynorm | inference / training | **RESOLVED — additive selector only** (phase-B B1; see the resolution note in the B1 block) | the named **first-chord-root anchor** (`KeynormAnchor::FirstChordRoot` / `ANCHOR_FIRST_CHORD_ROOT`) now exists in both languages and is pinned cross-language on a new vector set; it is ADDITIVE and OFF the default view (scale-family anchor untouched, no retrain) | the canonical training/inference view is still scale-family-anchored only; wiring the chord-root anchor into it (and the retrain) remains a separate product-grade task |
 | B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
 | B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b DECIDED — NOT IMPLEMENTED (product-grade)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`, commits `587dd6e` + `09eab98`) — B4a only" in the B4 block below | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b** (the strong-beat predicate unification) stays product-grade: the three sites compute DIFFERENT things, so unifying them is a semantics change | residual (B4b): the strong-beat rule is still stated in 3 different computations — a fix in one place can silently miss the others; plus the 4 duplicated pitch-class NAME tables (`kNames`/`kPcNames`) |
@@ -253,6 +253,25 @@ or per corpus? Until that is decided, no implementation should be started
 > `training/eval_*.json`, `training/keynorm_report.json` and the cube
 > baseline v3, and it **needs a retrain** to be meaningful. The phase-B
 > cycle was scoped to behaviour-preserving moves, so nothing was started.
+
+> **RESOLVED 2026-10-21 (backlog wave B1, branch
+> `refactor/b1-chord-root-anchor`) — the ADDITIVE selector only.** The named
+> anchor-selection step now exists in both implementations:
+> `hf::infer::keynorm_anchor_pc` + `KeynormAnchor` (`ScaleFamily = 0` /
+> `FirstChordRoot = 1`) in `src/inference/keynorm.{h,cpp}` and
+> `anchor_pc` + `ANCHOR_SCALE_FAMILY` / `ANCHOR_FIRST_CHORD_ROOT` in
+> `training/keynorm.py`, with `keynorm_anchor_shift` / `anchor_shift` as the
+> matching minimal-shift rule. `FirstChordRoot` takes the pitch class of the
+> record's FIRST chord root, per record (D-B1). The existing scale-family
+> anchor is byte-for-byte unchanged and remains the DEFAULT: the inference
+> default and `training/keynorm.py:normalized_view` never select the new
+> anchor, so no eval/keynorm-report/cube number or pinned byte moves. The
+> cross-language contract is pinned over the new `#chord_root_anchor` vector
+> set (10 records, including the existing `#note_parity` / `#chord_parity`
+> inputs) in `tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`,
+> and the rule is stated in `docs/TOKENIZATION.md` (the B1 acceptance
+> criterion). **Still product-grade/deferred:** wiring `FirstChordRoot` into
+> the training view and re-banking the retrain-dependent numbers.
 
 **Risk / impact of leaving it deferred.** The keynorm family can only ever
 concentrate data onto two canonical keys (C and A). Any hypothesis that

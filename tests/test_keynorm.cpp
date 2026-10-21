@@ -18,8 +18,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -28,6 +26,7 @@
 #include "core/serialization/tokenizer.h"
 #include "inference_runner.h"
 #include "keynorm.h"
+#include "keynorm_golden_reader.h"
 #include "sampler.h"
 
 #ifndef HARMONY_FORGE_KEYNORM_GOLDEN
@@ -58,94 +57,9 @@ hf::infer::GenParams gmajor_params() {
   return p;
 }
 
-// Minimal strict reader for tests/golden/keynorm_vectors.json (format
-// contract: docs/TOKENIZATION.md; R3: no JSON lib in C++ — ints only;
-// scale/type NAMES stay in-test spec constants, not golden values).
-// Every shape deviation returns false (fails loudly, never throws).
-bool kn_is_ws(char c) {
-  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-}
-
-std::string kn_read_file(const char* path) {
-  std::ifstream f(path, std::ios::binary);
-  if (!f) return {};
-  std::ostringstream ss;
-  ss << f.rdbuf();
-  return ss.str();
-}
-
-bool kn_section(const std::string& text, const char* name, size_t& pos) {
-  const std::string q = std::string("\"") + name + "\"";
-  const size_t at = text.find(q);
-  if (at == std::string::npos) return false;
-  pos = at + q.size();
-  return true;
-}
-
-bool kn_key_colon(const std::string& text, size_t& pos, const char* key) {
-  const std::string q = std::string("\"") + key + "\"";
-  const size_t at = text.find(q, pos);
-  if (at == std::string::npos) return false;
-  pos = at + q.size();
-  while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
-  if (pos >= text.size() || text[pos] != ':') return false;
-  ++pos;
-  while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
-  return pos < text.size();
-}
-
-bool kn_parse_int(const std::string& text, size_t& pos, int& out) {
-  bool neg = false;
-  if (pos < text.size() && text[pos] == '-') {
-    neg = true;
-    ++pos;
-  }
-  if (pos >= text.size() || text[pos] < '0' || text[pos] > '9') return false;
-  int v = 0;
-  while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') {
-    v = v * 10 + (text[pos] - '0');
-    ++pos;
-  }
-  out = neg ? -v : v;
-  return true;
-}
-
-bool kn_int_after(const std::string& text, size_t sec, const char* key,
-                  int& out) {
-  size_t pos = sec;
-  if (!kn_key_colon(text, pos, key)) return false;
-  return kn_parse_int(text, pos, out);
-}
-
-bool kn_ints_after(const std::string& text, size_t sec, const char* key,
-                   std::vector<int>& out) {
-  size_t pos = sec;
-  if (!kn_key_colon(text, pos, key)) return false;
-  if (pos >= text.size() || text[pos] != '[') return false;
-  ++pos;
-  out.clear();
-  while (true) {
-    while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
-    if (pos >= text.size()) return false;
-    if (text[pos] == ']') {
-      ++pos;
-      return true;
-    }
-    int v = 0;
-    if (!kn_parse_int(text, pos, v)) return false;
-    out.push_back(v);
-    while (pos < text.size() && kn_is_ws(text[pos])) ++pos;
-    if (pos < text.size() && text[pos] == ',') {
-      ++pos;
-      continue;
-    }
-    if (pos < text.size() && text[pos] == ']') {
-      ++pos;
-      return true;
-    }
-    return false;
-  }
-}
+// The minimal strict ints-only reader lives in keynorm_golden_reader.h
+// (extracted in phase-B B1 to keep this TU under the file-size gate).
+namespace kn = kn_golden;
 
 }  // namespace
 
@@ -177,16 +91,16 @@ TEST_CASE("keynorm python parity vectors are byte-identical", "[keynorm]") {
   // (provenance: training/keynorm.py to_canonical(..., 55, 'major'));
   // this case pins the C++ mirror against the file, not an inline literal.
   // Scale/type names stay in-test spec constants (contract TOKENIZATION.md).
-  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  const std::string gtext = kn::read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
   REQUIRE(!gtext.empty());
   size_t gsec = 0;
-  REQUIRE(kn_section(gtext, "note_parity", gsec));
+  REQUIRE(kn::section(gtext, "note_parity", gsec));
   std::vector<int> ids, want;
   int Hodgson = 0, gtonic = 0;
-  REQUIRE(kn_ints_after(gtext, gsec, "ids", ids));
-  REQUIRE(kn_ints_after(gtext, gsec, "want", want));
-  REQUIRE(kn_int_after(gtext, gsec, "shift", Hodgson));
-  REQUIRE(kn_int_after(gtext, gsec, "tonic", gtonic));
+  REQUIRE(kn::ints_after(gtext, gsec, "ids", ids));
+  REQUIRE(kn::ints_after(gtext, gsec, "want", want));
+  REQUIRE(kn::int_after(gtext, gsec, "shift", Hodgson));
+  REQUIRE(kn::int_after(gtext, gsec, "tonic", gtonic));
   std::vector<int> out(ids.size(), -1);
   int shift = 0;
   REQUIRE(hf::infer::keynorm_to_canonical(ids.data(), ids.size(), gtonic,
@@ -262,15 +176,15 @@ TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]
   // Roots live in tests/golden/keynorm_vectors.json#chord_parity
   // (provenance: training/keynorm.py shift_chords(..., 5)); types stay
   // in-test spec constants (contract: docs/TOKENIZATION.md).
-  const std::string gtext = kn_read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  const std::string gtext = kn::read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
   REQUIRE(!gtext.empty());
   size_t gsec = 0;
-  REQUIRE(kn_section(gtext, "chord_parity", gsec));
+  REQUIRE(kn::section(gtext, "chord_parity", gsec));
   std::vector<int> groots, gwant;
   int gshift = 0;
-  REQUIRE(kn_ints_after(gtext, gsec, "roots", groots));
-  REQUIRE(kn_ints_after(gtext, gsec, "want_roots", gwant));
-  REQUIRE(kn_int_after(gtext, gsec, "shift", gshift));
+  REQUIRE(kn::ints_after(gtext, gsec, "roots", groots));
+  REQUIRE(kn::ints_after(gtext, gsec, "want_roots", gwant));
+  REQUIRE(kn::int_after(gtext, gsec, "shift", gshift));
   REQUIRE(groots.size() == 2);
   REQUIRE(gwant.size() == 2);
   hf::core::ChordProgression prog;
@@ -301,16 +215,16 @@ TEST_CASE("keynorm chord roots shift identically with python parity", "[keynorm]
   // ENRICHED vector (#chord_parity.enriched) pins that from BOTH sides.
   // Capture procedure: the output of training/keynorm.py shift_chords.
   size_t esec = 0;
-  REQUIRE(kn_section(gtext, "enriched", esec));
+  REQUIRE(kn::section(gtext, "enriched", esec));
   std::vector<int> eroots, einv, eten, ewroot, ewinv, ewten;
   int eshift = 0;
-  REQUIRE(kn_ints_after(gtext, esec, "roots", eroots));
-  REQUIRE(kn_ints_after(gtext, esec, "inversions", einv));
-  REQUIRE(kn_ints_after(gtext, esec, "tensions", eten));
-  REQUIRE(kn_ints_after(gtext, esec, "want_roots", ewroot));
-  REQUIRE(kn_ints_after(gtext, esec, "want_inversions", ewinv));
-  REQUIRE(kn_ints_after(gtext, esec, "want_tensions", ewten));
-  REQUIRE(kn_int_after(gtext, esec, "shift", eshift));
+  REQUIRE(kn::ints_after(gtext, esec, "roots", eroots));
+  REQUIRE(kn::ints_after(gtext, esec, "inversions", einv));
+  REQUIRE(kn::ints_after(gtext, esec, "tensions", eten));
+  REQUIRE(kn::ints_after(gtext, esec, "want_roots", ewroot));
+  REQUIRE(kn::ints_after(gtext, esec, "want_inversions", ewinv));
+  REQUIRE(kn::ints_after(gtext, esec, "want_tensions", ewten));
+  REQUIRE(kn::int_after(gtext, esec, "shift", eshift));
   REQUIRE(eroots.size() == 2);
   // Type names stay in-test spec constants (the golden holds them for the
   // python side only); the tension list is flattened to one int per chord
@@ -496,4 +410,65 @@ TEST_CASE("keynorm flag-on echo keeps G-major candidates pc-equivalent",
       }
     }
   }
+}
+
+TEST_CASE("chord-root anchor selection matches python parity", "[keynorm]") {
+  // D-B1 (phase-B B1): the canonical anchor may be the pitch class of THIS
+  // record's FIRST chord root, selected per record. Vectors live in
+  // tests/golden/keynorm_vectors.json#chord_root_anchor (provenance:
+  // training/keynorm.py anchor_pc/anchor_shift). Scale names stay in-test
+  // spec constants (the C++ reader is ints-only). The existing scale-family
+  // anchor is unchanged and remains the default view.
+  const std::string gtext = kn::read_file(HARMONY_FORGE_KEYNORM_GOLDEN);
+  REQUIRE(!gtext.empty());
+  size_t gsec = 0;
+  REQUIRE(kn::section(gtext, "chord_root_anchor", gsec));
+  int gsel = -1;
+  REQUIRE(kn::int_after(gtext, gsec, "anchor", gsel));
+  std::vector<int> tonics, roots, want_pc, want_shift, sf_pc, sf_shift;
+  REQUIRE(kn::ints_after(gtext, gsec, "tonics", tonics));
+  REQUIRE(kn::ints_after(gtext, gsec, "first_chord_roots", roots));
+  REQUIRE(kn::ints_after(gtext, gsec, "want_anchor_pcs", want_pc));
+  REQUIRE(kn::ints_after(gtext, gsec, "want_shifts", want_shift));
+  REQUIRE(kn::ints_after(gtext, gsec, "want_scale_family_anchor_pcs", sf_pc));
+  REQUIRE(kn::ints_after(gtext, gsec, "want_scale_family_shifts", sf_shift));
+  // Record 0 is the #note_parity input; record 1 carries the #chord_parity
+  // first root. The remaining records are the new chord-root vector set.
+  // Scale names stay in-test spec constants (ints-only C++ reader).
+  REQUIRE(tonics.size() == 10);
+  REQUIRE(roots.size() == tonics.size());
+  REQUIRE(want_pc.size() == tonics.size());
+  REQUIRE(want_shift.size() == tonics.size());
+  REQUIRE(sf_pc.size() == tonics.size());
+  REQUIRE(sf_shift.size() == tonics.size());
+  CHECK(static_cast<int>(hf::infer::KeynormAnchor::FirstChordRoot) == gsel);
+  for (size_t i = 0; i < tonics.size(); ++i) {
+    // Golden order: 3/7 natural_minor, 4 dorian, 5 mixolydian, rest major.
+    const char* scale = "major";
+    if (i == 3 || i == 7) scale = "natural_minor";
+    else if (i == 4) scale = "dorian";
+    else if (i == 5) scale = "mixolydian";
+    const int pc = hf::infer::keynorm_anchor_pc(
+        scale, roots[i], hf::infer::KeynormAnchor::FirstChordRoot);
+    CHECK(pc == want_pc[i]);
+    CHECK(hf::infer::keynorm_anchor_shift(tonics[i], pc) == want_shift[i]);
+    // EXISTING anchor: byte-identical to keynorm_canonical_pc/_shift.
+    const int sf = hf::infer::keynorm_anchor_pc(
+        scale, roots[i], hf::infer::KeynormAnchor::ScaleFamily);
+    CHECK(sf == sf_pc[i]);
+    CHECK(sf == hf::infer::keynorm_canonical_pc(scale));
+    CHECK(hf::infer::keynorm_anchor_shift(tonics[i], sf) == sf_shift[i]);
+    CHECK(hf::infer::keynorm_anchor_shift(tonics[i], sf) ==
+          hf::infer::keynorm_canonical_shift(tonics[i], scale));
+  }
+  // Degenerate inputs are total: no chord (negative root) and an unknown
+  // selector fall back to the existing scale-family anchor.
+  CHECK(hf::infer::keynorm_anchor_pc("major", -1,
+                                     hf::infer::KeynormAnchor::FirstChordRoot) ==
+        0);
+  CHECK(hf::infer::keynorm_anchor_pc("dorian", -1,
+                                     hf::infer::KeynormAnchor::FirstChordRoot) ==
+        9);
+  CHECK(hf::infer::keynorm_anchor_pc(
+            "major", 55, static_cast<hf::infer::KeynormAnchor>(99)) == 0);
 }
