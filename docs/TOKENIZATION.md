@@ -68,9 +68,14 @@ sides (`tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`).
   chosen by ONE named anchor-selection step per language —
   `keynorm_anchor_pc(scale, first_chord_root, KeynormAnchor)` in
   `src/inference/keynorm.{h,cpp}` and
-  `anchor_pc(scale, first_chord_root, anchor=...)` in
+  `anchor_pc(scale, first_chord_root, *, anchor=...)` in
   `training/keynorm.py` — mirrored selector ids `ScaleFamily = 0` /
   `FirstChordRoot = 1` (`ANCHOR_SCALE_FAMILY` / `ANCHOR_FIRST_CHORD_ROOT`).
+  The python selector is KEYWORD-ONLY (as is `mode`): the C++ entry point
+  takes the selector as its third argument, so a naive positional port
+  (`anchor_pc("major", 55, 1)`) must fail loudly (`TypeError`) instead of
+  binding the selector id into another slot and silently answering the
+  scale-family anchor (9) instead of the chord-root anchor (7).
   `ScaleFamily` is the EXISTING rule and the DEFAULT view: `"major"` → C
   (pc 0), every other scale → A (pc 9), mode preserved. `FirstChordRoot` is
   the ADDITIVE D-B1 rule: the anchor is the **pitch class of the record's
@@ -82,7 +87,9 @@ sides (`tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`).
   `None`) and an unknown selector fall back to `ScaleFamily`. The rule is
   pinned cross-language over `#chord_root_anchor` (10 records, including
   the existing `#note_parity` / `#chord_parity` inputs) by
-  `tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`.
+  `tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`; the
+  capture record for those vectors is
+  `docs/measurements/b1-chord-root-anchor.md`.
 - **Units**: flat-codec word arrays (`[count, (bar, sub, track, pitch, dur,
   vel)*]`, MIDI pitches 0..127, drums = track 5 never transposed);
   `shift` in semitones, minimal signed in -6..+5 (major → C/pc 0, every

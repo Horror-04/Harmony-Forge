@@ -28,14 +28,18 @@ Rules (mirrored EXACTLY by ``src/inference/keynorm.h``):
   ``inversion``, ``tension``, ``name``, ...) is preserved as-is - the C++
   ``shift_chords_to/from_canonical`` shape is authoritative (phase-B B11,
   owner decision D-B11). The ``scale`` name NEVER changes.
-- ``anchor_pc(scale, first_chord_root, anchor=...)`` is the NAMED
-  anchor-selection step (phase-B B1, owner decision D-B1). The DEFAULT
-  ``ANCHOR_SCALE_FAMILY`` keeps the rule above. The ADDITIVE
+- ``anchor_pc(scale, first_chord_root, *, mode=None, anchor=...)`` is the
+  NAMED anchor-selection step (phase-B B1, owner decision D-B1). The
+  DEFAULT ``ANCHOR_SCALE_FAMILY`` keeps the rule above. The ADDITIVE
   ``ANCHOR_FIRST_CHORD_ROOT`` anchors the record on the pitch class of its
   FIRST chord root, selected PER RECORD (no corpus-global pass); it is OFF
   the default training view - ``normalized_view`` keeps the scale-family
   anchor until the owner wires it and retrains. ``anchor_shift(tonic,
-  anchor)`` is the matching minimal-shift rule.
+  anchor)`` is the matching minimal-shift rule. The selector is
+  KEYWORD-ONLY (as is ``mode``): the C++ entry point takes the selector as
+  its third argument, so a naive positional port must fail loudly
+  (``TypeError``) instead of binding the selector id into another slot and
+  silently returning the scale-family anchor.
 
 Wrap caveat (documented, tested): the minimal-signed shift wraps at +-6,
 so two exact transpositions a fourth/fifth apart can normalize an octave
@@ -80,7 +84,7 @@ ANCHOR_FIRST_CHORD_ROOT = 1
 
 
 def anchor_pc(scale: str, first_chord_root: int | None = None,
-              mode: str | None = None,
+              *, mode: str | None = None,
               anchor: int = ANCHOR_SCALE_FAMILY) -> int:
     """Named canonical-anchor selection step (D-B1) for ONE record.
 
@@ -92,6 +96,19 @@ def anchor_pc(scale: str, first_chord_root: int | None = None,
     A record with no first chord (``None`` or a negative root) and an unknown
     selector are total: both fall back to the scale-family anchor. Never
     raises on those inputs; stdlib only.
+
+    KEYWORD-ONLY ``anchor`` (and ``mode``) - deliberate, not incidental.
+    The C++ entry point is ``keynorm_anchor_pc(scale, first_chord_root,
+    KeynormAnchor anchor)``: the selector is the THIRD argument. With a
+    positional python selector a direct port ``anchor_pc("major", 55, 1)``
+    binds ``1`` into the ``mode`` slot and silently returns the
+    scale-family anchor (9) instead of the chord-root anchor (7) - a wrong
+    anchor inside a cross-language parity contract, invisible to any test
+    that only calls the keyword form. Making BOTH trailing parameters
+    keyword-only removes the third positional slot entirely, so that call
+    raises ``TypeError`` (loud, testable) instead of returning a wrong
+    anchor. Callers always name the selector: ``anchor_pc(scale, root,
+    anchor=ANCHOR_FIRST_CHORD_ROOT)``.
     """
     if anchor == ANCHOR_FIRST_CHORD_ROOT and first_chord_root is not None \
             and first_chord_root >= 0:

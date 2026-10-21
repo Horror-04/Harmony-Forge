@@ -3,12 +3,12 @@
   "in_test": [
     {
       "test": "s4b keynorm note parity vectors byte-identical (tests/test_keynorm.cpp, [keynorm] 'python parity vectors are byte-identical' + training/tests/test_keynorm.py check_golden_parity_vectors)",
-      "pins": "tests/golden/keynorm_vectors.json#note_parity ids (19 words: 3 notes incl. drums pitch 38) + want (72/53 transposed) + tonic 55 / scale major / shift 5 — GOLDEN class (script-generated: captured from training/keynorm.py to_canonical on the clean tree; Release+Debug identical). Scale/type names stay in-test spec constants on the C++ side (no JSON lib in C++; ints-only reader, contract docs/TOKENIZATION.md). Round-trip/c-g/abs-ids/reject fixtures stay in-test (parameter/relational inputs, not pins). The golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched) — the note-parity values above are unchanged; the file sha is re-banked for the extension (see recapture_reason).",
+      "pins": "tests/golden/keynorm_vectors.json#note_parity ids (19 words: 3 notes incl. drums pitch 38) + want (72/53 transposed) + tonic 55 / scale major / shift 5 — GOLDEN class (script-generated: captured from training/keynorm.py to_canonical on the clean tree; Release+Debug identical). Scale/type names stay in-test spec constants on the C++ side (no JSON lib in C++; ints-only reader, contract docs/TOKENIZATION.md). Round-trip/c-g/abs-ids/reject fixtures stay in-test (parameter/relational inputs, not pins). The golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched) AND in phase-B B1 (the #chord_root_anchor section was added) — the note-parity values above are unchanged; the file sha is re-banked for the extensions (see recapture_reason).",
       "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; values verified against the training/keynorm.py producer call in provenance before banking",
       "commit": "30178ab phase-B tranche E B11 BASE (the golden file is EXTENDED and its sha re-banked in this tranche's B11 commit; the note-parity values are unchanged - they were captured at 164bba4) + 164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
       "produced_by": "capture: training/keynorm.py to_canonical note-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"python parity vectors are byte-identical\"",
-      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section), so the recorded file sha is re-banked; the note-parity values themselves are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
+      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section) AND in phase-B B1 (the #chord_root_anchor section was added and is registered as its own record in this section), so the recorded file sha is re-banked for BOTH extensions; the note-parity values themselves are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
       "files": {
         "tests/golden/keynorm_vectors.json": "9b0a3a76c64ed7954c0d222f306363ca3ecf404d7ef0d71826c0099ab5e0aac0"
       }
@@ -20,7 +20,7 @@
       "commit": "30178ab phase-B tranche E B11 BASE (the golden file is EXTENDED and its sha re-banked in this tranche's B11 commit; the {root, type} values above are unchanged - they were captured at 164bba4) + 164bba4 S4b-main T1 phase-1 (golden file + dual-reader checks) + phase-2 (literal removal; shas recorded in .superpowers/sdd/2026-10-19-refactor-s4b-main/task-1-report.md)",
       "kind": "in_test",
       "produced_by": "capture: training/keynorm.py shift_chords chord-parity vectors@164bba4 (no in-repo writer) - docs/measurements/s4b-corruption-pins.md \"chord roots shift identically with python parity\"",
-      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section), so the recorded file sha is re-banked; the {root, type} values above are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
+      "recapture_reason": "the golden file was EXTENDED in phase-B tranche E B11 (the enriched-chord vector was added to #chord_parity.enriched and is registered as its own record in this section) AND in phase-B B1 (the #chord_root_anchor section was added and is registered as its own record in this section), so the recorded file sha is re-banked for BOTH extensions; the {root, type} values above are unchanged and were NOT re-captured (the capture at 164bba4 still describes them).",
       "files": {
         "tests/golden/keynorm_vectors.json": "9b0a3a76c64ed7954c0d222f306363ca3ecf404d7ef0d71826c0099ab5e0aac0"
       }
@@ -147,10 +147,10 @@
     {
       "test": "b1 keynorm chord-root anchor vectors (tests/test_keynorm.cpp, [keynorm] 'chord-root anchor selection matches python parity' + training/tests/test_keynorm.py check_chord_root_anchor_vectors)",
       "pins": "tests/golden/keynorm_vectors.json#chord_root_anchor scales/tonics/first_chord_roots/want_anchor_pcs/want_shifts + want_scale_family_anchor_pcs/want_scale_family_shifts (10 records: the FIRST-chord-root anchor per D-B1, selected per record; records 0-1 re-pin the existing #note_parity / #chord_parity inputs) — GOLDEN class (script-generated from training/keynorm.py anchor_pc/anchor_shift). Selector ids: ScaleFamily = 0 (the existing DEFAULT rule, unchanged) and FirstChordRoot = 1 (ADDITIVE, OFF the default view). The C++ reader is ints-only, so scale names stay in-test spec constants there; python reads them from the file.",
-      "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; both readers read the same #chord_root_anchor vectors",
+      "how": "ctest -R keynorm (build-full Release + build-off Debug) + training/.venv/Scripts/python training/tests/test_keynorm.py; both readers read the same #chord_root_anchor vectors (capture record: docs/measurements/b1-chord-root-anchor.md)",
       "commit": "0643017 B1 - the chord-root vectors land here (the selector in src/inference/keynorm.{h,cpp} + training/keynorm.py, the dual readers, and the new #chord_root_anchor section)",
       "kind": "in_test",
-      "produced_by": "capture: training/keynorm.py anchor_pc/anchor_shift chord-root-anchor vectors@0643017 (no in-repo writer) - docs/TOKENIZATION.md \"Anchor rule (phase-B B1, owner decision D-B1)\"",
+      "produced_by": "capture: training/keynorm.py anchor_pc/anchor_shift chord-root-anchor vectors@0643017 (no in-repo writer) - docs/measurements/b1-chord-root-anchor.md \"chord-root anchor vectors\"",
       "files": {
         "tests/golden/keynorm_vectors.json": "9b0a3a76c64ed7954c0d222f306363ca3ecf404d7ef0d71826c0099ab5e0aac0"
       }
