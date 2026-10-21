@@ -31,7 +31,7 @@ never a requirement), and when to open it. On conflict, NORMATIVE wins.
 
 | path | what it is | class | read it when |
 |---|---|---|---|
-| [measurements/](measurements/) | 42 dated measurement records (S0 to S10): the ctest registration matrix (193 tests build-full/Release vs 170 build-off/Debug, the delta fully option-gated), the gate ratchet, the cycle's final table, the banked determinism baseline. | RECORD | you need the evidence behind a number, not a rule. |
+| [measurements/](measurements/) | 43 dated measurement records (S0 to S10, plus the 2026-10-21 installer-build install log): the ctest registration matrix (193 tests build-full/Release vs 170 build-off/Debug, the delta fully option-gated), the gate ratchet, the cycle's final table, the banked determinism baseline. | RECORD | you need the evidence behind a number, not a rule. |
 | [measurements/s0-test-matrix.md](measurements/s0-test-matrix.md) | The S0 ctest registration matrix: 193 tests build-full/Release vs 170 build-off/Debug, the 23-test delta fully attributed to the CMake options. | RECORD | you need the S0 test-count baseline. |
 | [measurements/s0-tests-release.txt](measurements/s0-tests-release.txt) | The full `ctest -N` case-name list, build-full (Release). | RECORD | you need a registered case name or its index. |
 | [measurements/s0-tests-debug.txt](measurements/s0-tests-debug.txt) | The full `ctest -N` case-name list, build-off (Debug). | RECORD | you need a case name in the off build. |
@@ -74,6 +74,7 @@ never a requirement), and when to open it. On conflict, NORMATIVE wins.
 | [measurements/s6-0-composition.md](measurements/s6-0-composition.md) | The S6.0 composition decision: the Explain / reference-import / MIDI-export extraction boundaries (read-only analysis). | RECORD | you plan a UI extraction. |
 | [measurements/s8-skip.md](measurements/s8-skip.md) | The S8-SKIP record: three safety properties closed as a documented SKIP, with their numbers. | RECORD | you need what S8 did and did not prove. |
 | [measurements/s9-0.md](measurements/s9-0.md) | The S9.0 Editor measurement (no code): the per-function table, the totals, and the Appendices the D-B12 budget is derived from. | RECORD | you measure the Editor or the D-B12 ceiling. |
+| [measurements/installer-install-2026-10-21.log](measurements/installer-install-2026-10-21.log) | The Inno Setup 6.7.3 log of the 2026-10-21 local installer run (the evidence `DISTRIBUTION.md` cites for that install): the exact setup command line, the administrative install mode, every file and icon entry it wrote, the uninstaller it created and the uninstall key it wrote, and the final "Installation process succeeded". | RECORD | you need the evidence behind the 2026-10-21 install record. |
 
 ## `docs/superpowers/` — finished plans, designs, the looks log
 
