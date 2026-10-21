@@ -9,18 +9,20 @@ gated and has no off build -- stated, not fudged). Suite totals
 re-verified via `ctest -N` at **phase-B B10 (2026-10-20): 254 tests
 (build-full/Release), 221 tests (build-off/Debug)**
 (docs/measurements/ratchet.md, the G10 row + the §7 counter table).
-**The B2 wave (`refactor/b2-arrange-mode`) adds 9 registered cases -- 3 in
-BOTH configurations (tests/test_arrangement.cpp +2,
-tests/test_candidates.cpp +1) and 6 plugin-ON only
-(tests/test_plugin_state.cpp +4, tests/test_params_from_state.cpp +2) --
-plus 1 plugin-ON case in the new tests/test_arrange_mode_model.cpp binary
-(the ArrangeBar mode-control model, moved out of the unregistered
-test_visual_polish so it actually runs in CI). This branch therefore
-EXPECTS **264 tests (build-full/Release)** and **224 tests
-(build-off/Debug)**: 254 + 9 + 1 and 221 + 3. Those two numbers are an
-ARITHMETIC EXPECTATION, **to be confirmed by the first green CI run**
-(`ctest -N`); the per-case indices quoted below move with them and must be
-re-derived from `ctest -N` at that point.
+**The merged backlog wave (B1 + B2 + B3 + B4b) adds 19 registered cases --
+12 in BOTH configurations and 7 plugin-ON only.** The 12 both-config cases:
+B1 +1 (tests/test_keynorm.cpp), B2 +3 (tests/test_arrangement.cpp +2,
+tests/test_candidates.cpp +1), B3 +2 (the new tests/test_b3_runner_seed.cpp
+binary) and B4b +6 (the new tests/test_strong_beat.cpp binary). The 7
+plugin-ON-only cases are all B2's: tests/test_plugin_state.cpp +4,
+tests/test_params_from_state.cpp +2 and the new
+tests/test_arrange_mode_model.cpp binary +1 (the ArrangeBar mode-control
+model, moved out of the unregistered test_visual_polish so it actually runs
+in CI). This tree therefore EXPECTS **273 tests (build-full/Release)** and
+**233 tests (build-off/Debug)**: 254 + 12 + 7 and 221 + 12. Those two
+numbers are an ARITHMETIC EXPECTATION, **to be confirmed by the first green
+CI run of the merged wave** (`ctest -N`); the per-case indices quoted below
+move with them and must be re-derived from `ctest -N` at that point.
 (The growth over the S10 close (2026-10-19: 251/221) is the 3 new B10
 ORT-only cases in tests/test_ort_logits.cpp, which live in an
 `#ifdef HARMONY_FORGE_WITH_ONNX` block and therefore move the full
@@ -75,16 +77,19 @@ byte-identity)` (render_midi seed-7 twice + binary compare).
 
 ## INV-3: Both suites stay fully green (refactor behavior gate)
 
-`ctest` passes **264/264 in build-full/Release** and **224/224 in
-build-off/Debug** on this branch -- EXPECTED, to be confirmed by the first
-green CI run (the arithmetic: the B10 measurement was 254/221, and the B2
-wave adds 9 registered cases -- 3 in both configurations
-(tests/test_arrangement.cpp +2, tests/test_candidates.cpp +1) and 6
-plugin-ON only (tests/test_plugin_state.cpp +4,
-tests/test_params_from_state.cpp +2) -- plus 1 plugin-ON case in the new
-tests/test_arrange_mode_model.cpp binary: 254 + 9 + 1 and 221 + 3). The
-B10 measurement itself was 2026-10-20 -- docs/measurements/ratchet.md, the
-G10 row + the §7 counter table; the growth over the S10 close's 251/221
+`ctest` passes **273/273 in build-full/Release** and **233/233 in
+build-off/Debug** on this tree -- EXPECTED, to be confirmed by the first
+green CI run of the merged wave (the arithmetic: the B10 measurement was
+254/221, and the merged backlog wave adds 19 registered cases -- 12 in both
+configurations (B1 +1 in tests/test_keynorm.cpp, B2 +3 in
+tests/test_arrangement.cpp and tests/test_candidates.cpp, B3 +2 in the new
+tests/test_b3_runner_seed.cpp binary, B4b +6 in the new
+tests/test_strong_beat.cpp binary) and 7 plugin-ON only (all B2's:
+tests/test_plugin_state.cpp +4, tests/test_params_from_state.cpp +2 and the
+new tests/test_arrange_mode_model.cpp binary +1): 254 + 12 + 7 and
+221 + 12). The B10 measurement itself was 2026-10-20 --
+docs/measurements/ratchet.md, the G10 row + the §7 counter table; the
+growth over the S10 close's 251/221
 is the 3 new B10 ORT-only cases in
 tests/test_ort_logits.cpp, which are compiled out of the off
 configuration by their `#ifdef HARMONY_FORGE_WITH_ONNX` block). The
@@ -198,7 +203,7 @@ a blocking step in the `gates` and `build-test-validate` CI jobs.
 | inv2 | "model path threads into generation deterministically" — configured model path still yields identical outputs incl. async == sync |
 | inv2 | "memo filter is deterministic" — same Pattern + same index gives identical results (shared with inv4) |
 | inv3 | "keynorm flag-off generate path is bit-identical to pre-task output" — spot-check; refactor left default-path bytes unchanged |
-| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 264/264 full + 224/224 off — expected on this branch, to be confirmed by the first green CI run) |
+| inv3 | "arrangement build is deterministic" — arrangement output stable across the refactor (the full registered set itself is the rest of this gate: `ctest` 273/273 full + 233/233 off — expected on this tree, to be confirmed by the first green CI run of the merged wave) |
 | inv4 | "verbatim run is truncated at the offending window" — spot-check; first >= 4-window run is cut before the completing token |
 | inv4 | "clean generation passes through byte-identical" — clean input untouched |
 | inv4 | "missing index file loads nullopt and never throws" — empty/missing index is a safe no-op, never throws |

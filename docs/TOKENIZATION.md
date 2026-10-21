@@ -68,7 +68,7 @@ sides (`tests/test_keynorm.cpp` + `training/tests/test_keynorm.py`).
   chosen by ONE named anchor-selection step per language —
   `keynorm_anchor_pc(scale, first_chord_root, KeynormAnchor)` in
   `src/inference/keynorm.{h,cpp}` and
-  `anchor_pc(scale, first_chord_root, *, anchor=...)` in
+  `anchor_pc(scale, first_chord_root, *, mode=None, anchor=...)` in
   `training/keynorm.py` — mirrored selector ids `ScaleFamily = 0` /
   `FirstChordRoot = 1` (`ANCHOR_SCALE_FAMILY` / `ANCHOR_FIRST_CHORD_ROOT`).
   The python selector is KEYWORD-ONLY (as is `mode`): the C++ entry point

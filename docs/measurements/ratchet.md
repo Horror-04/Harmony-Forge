@@ -51,17 +51,17 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 |---|---|---|---|---|---|---|
 | G1 | file size | `python tools/lint_file_size.py` | tracked `.h/.cpp/.py` under `src/ tests/ tools/` | RATCHET (pinned counts) + HARD (the set may not grow) | 8 files over 500 lines, all pinned | yes (`gates` job) |
 | G2 | UTF-8 | `python tools/lint_utf8.py` | every tracked file except `JUCE/` `external/` (NUL-bearing = binary, skipped) | HARD | 0 violations, 2 allowlisted paths, 12 binary files skipped | yes (`gates` job) |
-| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 22 functions over CCN 15, all pinned | yes (`gates` job, after `pip install lizard==1.24.1`) |
+| G3 | CCN | `python tools/lint_ccn.py --strict` | `src/` (production code), lizard 1.24.1 | RATCHET (pinned CCN) + HARD (ceiling 20 for an unpinned function) | 21 functions over CCN 15, all pinned (the B4b prune of `resolve_harmonic_conflicts` took the set from 22 to 21) | yes (`gates` job, after `pip install lizard==1.24.1`) |
 | G4 | off-golden literals | `python tools/lint_off_golden.py` | `tests/*.cpp` + `training/tests/*.py` | HARD (`digest64`, `hex16+` = 0) + RATCHET (per-file + TOTAL) | `digest64=0 hex16+=0 vectors=258(elems=1956) strings=61(elems=306) assert>=1000=16 toler=80` | yes (`gates` job) |
 | G5 | layers | `python tools/check_layers.py --strict` | `src/core` / `src/inference` / `src/app` | HARD | CLEAN (0 JUCE includes in `src/core`, 0 plugin/GUI includes in `src/inference`) | yes |
 | G6 | RT | `python tools/rt_scan.py --strict` | the audio-path scope of `src/plugin/audio/` | HARD | CLEAN (0 banned tokens; scope = 46 + 58 + 39 + 127 = 270 lines) | yes |
 | G7 | golden pin | `python tools/lint_golden_pin.py` | `tests/golden/slot_bitmap.txt` + `tests/golden/manifest.json` | HARD | PASS, canonical sha `d66faabfd2a25139dd787bc6d823a2be6195f944e5e744700cd2417547854f58` | yes (both jobs) |
 | G8 | invariant tags | `python tools/lint_inv_tags.py` | the `[inv1]`..`[inv5]`-tagged TEST_CASEs | HARD | PASS, 29 bindings / 5 invariants | yes (both jobs) |
 | G9 | golden manifest | `python tools/lint_golden_manifest.py` | `tests/golden_manifest.json` + `tests/golden/**` + `tests/fixtures/**` | HARD | PASS, 24 records (capture=16, gen=7, mixed=1) | yes |
-| G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block) | yes (the test job) |
+| G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** — the PINNED pair, i.e. the last MEASURED one (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block). The merged backlog wave ran no build, so the pinned counters stay here; the wave's EXPECTED pair is **273 (build-full) / 233 (build-off)** — see §7 for the derivation and `docs/measurements/s10-final.md` §10.1 | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 | G12 | Editor total budget | `python tools/lint_editor_budget.py` | the Editor's OWN file set — `src/plugin/audio/PluginEditor.h` + `src/plugin/audio/PluginEditor.cpp` (the set `docs/measurements/s9-0.md` Appendix D measures for the D-B12 ceiling) | RATCHET (a pinned file SET + a pinned ceiling: **1102** = the recorded budget 1050 + the D-B12 +5 % tolerance; 1050 × 1.05 = 1102.5 → 1102 for integer line counts) | **1100** physical lines (293 + 807) → **2 lines of headroom**; the tolerance IS exercised (1100 > the recorded 1050) | yes (`gates` job) |
-| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **274 files, 1355 symbols** (42722 bytes), regenerated + verified in the final-review fix commit (the map last moved at the D merge `9eb31a3`: 273 files / 1355 symbols, 42678 bytes; the D-branch record below §11 was 272 / 1348, measured WITHOUT task A's `tools/ci_encoding.py`) | yes (`gates` job) |
+| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **280 files, 1384 symbols** (44270 bytes). The map was regenerated at each of the four backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b` (277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384, the LAST regeneration) — and verified FRESH at the doc-truth commit (`python tools/gen_map.py --check` → "gen_map: FRESH (44270 bytes)"; the counts are `docs/MAP.md:6`) | yes (`gates` job) |
 
 **The P-series (P1-P5) — the two runtime probes and the three CI steps added
 by the phase-B tranches.** They sit OUTSIDE the G-series on purpose: the
@@ -182,7 +182,7 @@ Table (qualified name | file:lines | CCN | reason class):
 | `hf::ser::read_smf` | `src/core/serialization/midi_read.cpp:146-257` | 30 | S0 baseline |
 | `hf::ser::decode_tokens` | `src/core/serialization/tokenizer.cpp:69-103` | 23 | S0 baseline |
 | `PianoRoll::paint` | `src/plugin/ui/PianoRoll.cpp:214-302` | 22 | S0 baseline |
-| `hf::arr::parse_arrange_spec` | `src/core/arrangement/arrangement.cpp:442-484` | 21 | S0 baseline |
+| `hf::arr::parse_arrange_spec` | `src/core/arrangement/arrangement.cpp:441-483` | 21 | S0 baseline |
 | `hf::ser::encode_pattern` | `src/core/serialization/tokenizer.cpp:37-67` | 21 | S0 baseline |
 | `hf::music::recognize_chord` | `src/core/music/chord_detect.cpp:45-109` | 20 | S0 baseline |
 | `hf::infer::load_impl` | `src/inference/memo_filter.cpp:54-86` | 20 | S0 baseline |
@@ -205,8 +205,11 @@ was, ON THAT DATE, the lizard 1.24.1 range of the named function, and the
 tool (`tools/lint_ccn.py`) carried the same numbers in the SAME commit. The
 ranges are **INDICATIVE**: the gate keys on (file, name) and the pinned CCN,
 never on the range (the range only decorates the failure message), so no
-gate verdict changed — `lint_ccn --strict` still reports "22 pinned
-functions, 22 functions over the target". The moved rows:
+gate verdict changed — on THAT DATE `lint_ccn --strict` reported "22 pinned
+functions, 22 functions over the target" (it reports "21 pinned functions,
+21 functions over the target" today, after the B4b prune of
+`resolve_harmonic_conflicts` — see the G3 row and the 2026-10-21 refresh
+below). The moved rows:
 `validate_voice_leading` 27-102 → 26-101, `merge_with_frozen` 159-254 →
 162-257, `recognize_chord` 46-110 → 45-109, `freeze_complement_of_selection`
 298-343 → 301-346, `resolve_harmonic_conflicts` 63-105 → 66-108,
@@ -221,6 +224,16 @@ two files carry the same numbers in the SAME commit, as the ratchet
 requires). The ranges are INDICATIVE (the gate keys on (file, name) and the
 pinned CCN), so no gate verdict changed: `strict_core` is still CCN 16 and
 still pinned.
+
+**One more row's range re-derived 2026-10-21 (the doc-truth pass).** The
+B2 wave moved one line above `parse_arrange_spec`, so its MEASURED range is
+now **441-483** (the table above carries the measured value; `lint_ccn
+--strict` prints `src/core/arrangement/arrangement.cpp:441-483`). The pin
+range inside `tools/lint_ccn.py` still reads 442-484 — the tool is outside
+this doc-only pass, and the range is INDICATIVE (the gate keys on (file,
+name) and the pinned CCN 21), so no gate verdict changed either way. The
+next wave that edits the pin table should re-pin that row in the tool and
+the document in the SAME commit, as the ratchet requires.
 
 **Exception reasons (verbatim, as the owner stated them).**
 
@@ -389,6 +402,7 @@ recorded full-config/off-config pair, oldest first:
 | S7 (2026-10-19) | 249/249 | 219/219 | `docs/measurements/master-health.md:52` (S7 addendum) |
 | **S9 close (2026-10-19) — THE PINNED PAIR** | **251/251** | **221/221** | `docs/measurements/s9-0.md:159` (the S9-close record; `docs/INVARIANTS.md` quoted this pair at the time — its copy was superseded by the B10 re-pin and now reads 254/254 at `docs/INVARIANTS.md:66-72,174`) |
 | **phase-B B10 (2026-10-20) — the pair after the 3 new ORT-only cases** | **254/254** | **221/221** | this document (the G10 row + the counter table above); the growth reason: the 3 new B10 cases in `tests/test_ort_logits.cpp` are ORT-only (`#ifdef HARMONY_FORGE_WITH_ONNX`), so the off configuration does not move |
+| **backlog wave (2026-10-21) — the EXPECTED pair, NOT yet measured** | **273/273** | **233/233** | the static census in §7 (the wave ran no build): 254 + 12 + 7 and 221 + 12 — to be confirmed by the first green CI run of the merged wave; the PINNED pair stays 254/221 until then |
 
 **Read the two "221"s apart.** The 2026-10-18 run had 221 tests in the
 FULL (build-full) configuration and 195 in the off configuration
@@ -399,36 +413,44 @@ value: **221 is the build-OFF (Debug) count; the build-FULL (Release)
 count is 254.**
 
 **Static cross-check (no build).** Verified against `tests/CMakeLists.txt`
-at HEAD: the tree holds **274 `TEST_CASE` macros** in 46 test binaries.
-**41 binaries are registered** with `catch_discover_tests` (directly, or
+at HEAD: the tree holds **283 `TEST_CASE` macros** in 48 test binaries.
+**43 binaries are registered** with `catch_discover_tests` (directly, or
 through the `hf_add_test` helper); **5 are deliberately NOT registered**:
 `test_visual_polish` (5 cases), `test_note_cues` (3), `test_memo_e2e`
 (1) and the two plain-`main()` probes (`probe_b12_bounds`,
 `probe_s93_tab_wiring` — no cases) — 9 unregistered cases in total. The
 one hidden (`[.]`) case in the tree lives in `test_memo_e2e`, i.e. inside
 the unregistered group, so it never reaches `ctest` either. That leaves
-**265 registered cases**: 230 in the binaries that build in BOTH
+**274 registered cases**: 239 in the binaries that build in BOTH
 configurations and 35 in the plugin-ON-only families
 (`test_chordtrack_pin` 2, `test_vertical_slice` 1,
 `test_keyboard_moves` 9, `test_focus_resize` 4, `test_preview_synth` 2,
 `test_rt_violation_counter` 3, `test_rt_soak` 1, `test_plugin_state` 8,
 `test_params_from_state` 4, `test_arrange_mode_model` 1). The static
-proxy at HEAD therefore reads **265 (build-full) / 230 (build-off)** —
-eleven and nine cases ABOVE the pinned 254/221: the ten cases B2 added
-(registered: 3 in both configurations — `test_arrangement` +2,
-`test_candidates` +1 — and 7 in the plugin-ON-only families —
-`test_plugin_state` +4, `test_params_from_state` +2,
-`test_arrange_mode_model` +1), the one-case gap is the S10.1 census's own,
-the three-case gap is the historical one, and the three B10 cases are
-counted by the proxy but compiled OUT of the off configuration (they live
-in an `#ifdef HARMONY_FORGE_WITH_ONNX` block) — the MEASURED pair is
-therefore still 254/221 (the ratchet is "must not drop"). The static
-count is a PROXY, not a measurement: the EXPECTED pair once B2 is built
-and run is **264 (build-full) / 224 (build-off)** — 254 + 10 and 221 + 3,
-the ten registered cases B2 added (3 of them in both configurations) — to
-be confirmed by the first green CI run in both configurations; the B2
-branch itself ran no build, so the pinned counters stay at the recorded
-254/221 (they may only grow).
+proxy at HEAD therefore reads **274 (build-full) / 239 (build-off)** —
+twenty and eighteen cases ABOVE the pinned 254/221, and the gap is fully
+accounted for:
+- the **19 registered cases the merged backlog wave added** (B1 +1 in both
+  configurations — `test_keynorm`; B2 +3 in both configurations —
+  `test_arrangement` +2, `test_candidates` +1 — and 7 plugin-ON-only, all
+  B2's — `test_plugin_state` +4, `test_params_from_state` +2,
+  `test_arrange_mode_model` +1; B3 +2 in both configurations — the new
+  `test_b3_runner_seed` binary; B4b +6 in both configurations — the new
+  `test_strong_beat` binary): 254 + 12 + 7 in the full configuration and
+  221 + 12 in the off one (the plugin-ON-only families do not build there);
+- the **one case the proxy counts in both configurations but only the OFF
+  one compiles** — the `#else` offline stub of `tests/test_ort_logits.cpp`;
+- the **six cases the proxy counts in both configurations but only the FULL
+  one compiles** — the six `#ifdef HARMONY_FORGE_WITH_ONNX` cases of
+  `tests/test_ort_logits.cpp` (this file is the ONLY configuration-dependent
+  one in the tree: 3 cases always compiled + 6 ORT-only + 1 offline stub =
+  10 macros, i.e. 9 in the full configuration and 4 in the off one).
+
+So the proxy's 274/239 corresponds to the EXPECTED MEASURED pair **273
+(build-full) / 233 (build-off)** — 254 + 12 + 7 and 221 + 12 — to be
+confirmed by the first green CI run of the merged wave in both
+configurations; the wave itself ran no build, so the PINNED counters stay
+at the recorded 254/221 (the ratchet is "must not drop").
 
 ---
 
@@ -593,14 +615,22 @@ grow and no exception list.
 `docs/AGENT_PERMISSIONS.md` is the permission record, and the map's own
 header repeats it.
 
-**Current value.** FRESH — **274 files, 1355 symbols** (42722 bytes),
-regenerated and verified in the final-review fix commit (G13). That
-commit moved the map by ONE file: the console-hardening test class moved
-out of `tools/tests/test_git_locale_independence.py` into its own
+**Current value.** FRESH — **280 files, 1384 symbols** (44270 bytes), the
+counts are `docs/MAP.md:6`. The map was regenerated at each of the four
+backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b`
+(277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384, the
+LAST regeneration) — and verified FRESH at the doc-truth commit
+(`python tools/gen_map.py --check` → "gen_map: FRESH (44270 bytes)").
+
+**Provenance of the pre-wave merged tree (HISTORICAL).** Before the
+backlog wave the merged tree was **274 files, 1355 symbols** (42722 bytes),
+regenerated and verified in the final-review fix commit (G13). That commit
+moved the map by ONE file: the console-hardening test class moved out of
+`tools/tests/test_git_locale_independence.py` into its own
 `tools/tests/test_console_encoding.py` (+1 file, the symbol count
 unchanged).
 
-**Provenance of the merged tree.** Before that split the merged tree was
+**Provenance before that split.** Before that split the merged tree was
 **273 files, 1355 symbols** (42678 bytes), regenerated and verified in the
 D **merge** (`9eb31a3`) — not in the G12 commit. The delta from the base
 the D record was computed on (`8b51c9e`: 270 files / 1340 symbols) to

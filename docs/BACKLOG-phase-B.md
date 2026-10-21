@@ -45,33 +45,39 @@ applies to; entries are never re-pointed at a location that was not re-read.
 - **Base revision** — all locations and numbers below were measured on
   branch `refactor/s10-backlog` at base commit `4704631`.
 
-Current aggregates for the files this record touches (measured):
+Current aggregates for the files this record touches (measured; **re-measured
+2026-10-21 on the merged backlog-wave tree** — lizard 1.24.1 over `src/`,
+the same tool, version and column order as the base measurement below):
 
 ```
 file,functions,nloc_total,ccn_max,ccn_mean,ccn_gt10,ccn_gt15
-src/inference/candidates.cpp,9,115,9,3.44,0,0
+src/inference/candidates.cpp,11,123,9,3.0,0,0
 src/inference/candidate_base.cpp,2,58,16,9.0,1,1
 src/inference/candidate_transforms.cpp,5,88,13,6.8,1,0
 src/inference/candidate_modes.cpp,7,81,11,6.86,1,0
-src/inference/constraints.cpp,4,69,19,8.5,1,1
-src/inference/ranking.cpp,6,67,8,4.83,0,0
+src/inference/constraints.cpp,3,56,14,8.67,1,0
+src/inference/ranking.cpp,5,49,8,4.2,0,0
 src/inference/sampler.cpp,20,310,16,6.7,3,1
 src/inference/ort_logits.cpp,12,155,18,4.75,1,1
-src/inference/keynorm.cpp,14,121,6,3.29,0,0
+src/inference/keynorm.cpp,16,138,6,3.25,0,0
 src/plugin/ui/PianoRoll.cpp,24,389,22,5.62,4,3
-src/plugin/ui/PatternDocument.cpp,36,373,13,3.92,1,0
-src/core/arrangement/arrangement.cpp,23,398,21,6.83,6,3
-src/plugin/audio/PluginEditor.cpp,43,574,13,3.02,1,0
+src/plugin/ui/PatternDocument.cpp,36,363,13,3.72,1,0
+src/core/arrangement/arrangement.cpp,23,397,21,6.83,6,3
+src/plugin/audio/PluginEditor.cpp,43,579,13,3.02,1,0
 src/plugin/ui/EditorLayout.cpp,4,203,4,1.75,0,0
 ```
 
-> **Phase delta note (re-measured 2026-10-20, the final phase fix wave;
-> authority for NOW values: `docs/measurements/s10-final.md` §9 — the HEAD
-> re-measurement — with §8 as the post-phase correction section; NOT §1).**
-> The table above was measured at base `4704631`; it has been re-measured on
-> the tree this wave commits (lizard 1.24.1 over `src/`, the same tool,
-> version and column order). Seven rows moved, two rows were added, and the
-> rest are explicitly unchanged:
+> **Phase delta note (re-measured 2026-10-20, the final phase fix wave, and
+> AGAIN 2026-10-21 on the merged backlog-wave tree; authority for NOW
+> values: `docs/measurements/s10-final.md` §9 **and §10** — the HEAD
+> re-measurements — with §8 as the post-phase correction section; NOT §1).**
+> The table above now carries the CURRENT measurement (lizard 1.24.1 over
+> `src/`, the same tool, version and column order), taken on the merged
+> backlog-wave tree (B1 + B2 + B3 + B4b) on 2026-10-21. The delta list
+> below is the record of the 2026-10-20 wave — measured at base `4704631`
+> and re-measured on the tree that wave committed: seven rows moved, two
+> rows were added, and the rest are explicitly unchanged. The backlog
+> wave's own deltas follow it:
 >
 > - `src/inference/sampler.cpp` `12,271,68,10.25,2,2` → `20,310,16,6.7,3,1`
 >   — B5 dissected `sample_continue` (68 → 12) into nine named stages, so
@@ -113,6 +119,56 @@ src/plugin/ui/EditorLayout.cpp,4,203,4,1.75,0,0
 >   **45 → 48** over 4 files. Every one of those values, with its
 >   measurement method and its source, is in `docs/measurements/s10-final.md`
 >   §8.1-§8.2 and §9 (the HEAD re-measurement).
+> - **The merged backlog wave (B1 + B2 + B3 + B4b) — re-measured
+>   2026-10-21** (the rows that moved again, and the tree-level numbers
+>   with them):
+>   - `src/inference/candidates.cpp` `9,115,9,3.44,0,0` →
+>     `11,123,9,3.0,0,0` — B3 added `runner_seed` and `runner_seed_domain`
+>     to the file (the named single-source seed derivation; a pure move, no
+>     behaviour change).
+>   - `src/inference/constraints.cpp` `4,69,19,8.5,1,1` →
+>     `3,56,14,8.67,1,0` — B4b moved the distance-1 test and the repair
+>     predicate into `src/inference/strong_beat.h`, so the file lost one
+>     function and its max-CCN fell **19 → 14** (the G3 pin was pruned in
+>     the same commit; `resolve_harmonic_conflicts` is no longer over the
+>     target).
+>   - `src/inference/ranking.cpp` `6,67,8,4.83,0,0` → `5,49,8,4.2,0,0` —
+>     B4b moved `strong_beat_rub` into the shared header; the file's
+>     max-CCN is unchanged at 8.
+>   - `src/inference/keynorm.cpp` `14,121,6,3.29,0,0` →
+>     `16,138,6,3.25,0,0` — B1 added `keynorm_anchor_pc` and
+>     `keynorm_anchor_shift` (the additive, default-off chord-root
+>     anchor).
+>   - `src/plugin/ui/PatternDocument.cpp` `36,373,13,3.92,1,0` →
+>     `36,363,13,3.72,1,0` — B4b folded the plugin's chord-replace rub
+>     onto the shared repair projection (`is_replace_rub` is now a thin
+>     adapter).
+>   - `src/core/arrangement/arrangement.cpp` `23,398,21,6.83,6,3` →
+>     `23,397,21,6.83,6,3` and `src/plugin/audio/PluginEditor.cpp`
+>     `43,574,13,3.02,1,0` → `43,579,13,3.02,1,0` — B2's arrangement-wide
+>     mode: one NLOC out of the arrangement TU, five into the Editor (the
+>     mode combo and its label). Every CCN maximum is unchanged.
+>   - `src/inference` physical lines: **4222** at the 2026-10-20 wave →
+>     **4573 over 38 files** NOW (python newline count over the tracked
+>     `.h`/`.cpp`, measured on the tree as this doc-truth commit leaves it):
+>     the wave added `src/inference/seed_derivation.h` (B3, 46 lines) and
+>     `src/inference/strong_beat.h` (B4b, 226 lines) and grew the existing
+>     TUs by 67 more lines; the doc-truth pass's comment-only edit to
+>     `strong_beat.h` adds the last 12 of those lines (no function, NLOC or
+>     CCN moved).
+>   - the tree-level numbers: tree max-CCN **68 → 36** (unchanged),
+>     functions with CCN > 15 **26 → 22 → 21** (B4b's prune), golden
+>     registry records **20 → 23 → 24** (B1 registered the chord-root
+>     anchor vectors), `src/` LOC **12357 over 104 files → 12892 over 107
+>     files → 13417 over 109 files** (core 2937 → 2982 → **3036 over 34
+>     files**, inference 3903 → 4222 → **4573 over 38 files**, plugin
+>     5361 → 5532 → **5652 over 32 files**; the LOC rows include this
+>     doc-truth pass's 23 comment-only lines), and the Editor
+>     **324+1046=1370 → 293+807=1100** with its max-CCN **16 → 13** and its
+>     function count **45 → 48** over 4 files (unchanged by the wave; total
+>     CCN still 140). Every one of those values, with its measurement method
+>     and its source, is in `docs/measurements/s10-final.md` §8.1-§8.2, §9
+>     and §10 (the HEAD re-measurements).
 
 
 ---
@@ -140,7 +196,7 @@ state, and the item's own block carries the evidence.
 |---|---|---|---|---|---|
 | B1 | Chord-root-anchored keynorm | inference / training | **RESOLVED — additive selector only** (phase-B B1; see the resolution note in the B1 block) | the named **first-chord-root anchor** (`KeynormAnchor::FirstChordRoot` / `ANCHOR_FIRST_CHORD_ROOT`) now exists in both languages and is pinned cross-language on a new vector set; it is ADDITIVE and OFF the default view (scale-family anchor untouched, no retrain) | the canonical training/inference view is still scale-family-anchored only; wiring the chord-root anchor into it (and the retrain) remains a separate product-grade task |
 | B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **RESOLVED** — see the resolution note "RESOLVED 2026-10-21 (backlog wave B2, branch `refactor/b2-arrange-mode`, commit `b488ec0`)" in the B2 block below | per D-B2 the mode is an **arrangement-wide switch** in `ArrangeParams.base` (persisted as the root property `ArrangeMode`), **energy keeps owning** the Strict→Creative blend, and the default Strict leaves untouched projects byte-identical; both forced-Strict sites are gone | residual: the mode is **arrangement-global only** (no per-section field, no SPEC-format change — D-B2's explicit trade) and only Strict/Creative are expressible, so an `Experimental` base reads and writes as Strict |
-| B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
+| B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — REFACTOR LANDED; VALUE change still gated** — see the status note "Status (B3 refactor landed 2026-10-21; VALUE change still gated)" in the B3 block below | the named single source **`runner_seed(p, i)`** now EXISTS in `src/inference/seed_derivation.h` and is called from all three sites (plus the domain-separated `runner_seed_domain` candidate, called by no production path): the REFACTOR is a pure move, so today's bytes are unchanged and no pin moved | the seed VALUE is still the plain addition `p.seed + i`: adopting the domain-separated value moves the seed-binding digests, the cube baseline v3 rows and the golden MIDI seeds, so the byte-level re-bank is still deferred |
 | B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b RESOLVED (backlog wave)** — see the resolution notes in the B4 block below ("RESOLVED 2026-10-19 … — B4a only" and "RESOLVED 2026-10-21 … — B4b") | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b**: the strong-beat rule has ONE home, `src/inference/strong_beat.h`, as three named projections of the same rule (sampler codec grid, ranking rub, constraints repair target) plus one name table (`hf::music::pitch_class_name`); the plugin's chord-replace rub folds onto the repair projection, and every remaining strong-beat site (C++, Python and tool-side mirrors alike) is named in the header's out-of-scope census; both are pure moves, so 0 pinned byte moved | residual: the three projections still DIFFER on purpose (a degenerate bar length is UNSAFE for the ranker and KEEP for the repairer; the sampler reads the codec grid, not ticks) — unifying their SEMANTICS is a product decision and is the only part still deferred |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
 | B6 | Piano-roll undo logic + the second history stack | plugin/ui | **RESOLVED** (phase-B tranche E) | per D-B6 `SeedHistory` stays an **append-only audit log**, deliberately not rewound; the contract is now stated at the class, at the use site and in one UI tooltip | the undo still stores whole-pattern snapshots per step (the snapshot design was NOT changed) |
@@ -410,10 +466,10 @@ gets Strict, not the persisted value.
 > the **B12** block below ("OPEN FOLLOW-UP (B12 bounds golden re-capture)"),
 > which carries the exact commands; the probe is neither ctest-registered
 > nor in CI, so no gate breaks. `docs/INVARIANTS.md`'s ctest counts were
-> the B10 measurement (254/221); this branch EXPECTS 264/224 (B2 adds 9
-> registered cases - 3 in both configurations, 6 plugin-ON - plus 1
-> plugin-ON case in the new `test_arrange_mode_model` binary) and they are
-> re-derived with `ctest -N` after the first green build.
+> the B10 measurement (254/221); the merged backlog wave EXPECTS 273/233
+> (12 registered cases in both configurations - B1 +1, B2 +3, B3 +2, B4b +6
+> - and 7 plugin-ON-only ones, all B2's) and they are re-derived with
+> `ctest -N` after the first green build of the merged wave.
 
 ---
 
@@ -439,9 +495,10 @@ gets Strict, not the persisted value.
   So the runner/sampler seed is the one place where the seed is a plain
   addition while every other per-candidate stream is a hash.
 
-(Line numbers above are the pre-B3 ones, at base `aab98db`; the B3 refactor
-has since moved these sites — see the B3 status note below for the current
-locations.)
+(Every line number in this block is the PRE-B3 one, at base `aab98db` —
+the ones above AND the ones in the acceptance criteria below: the B3
+refactor has since moved these sites — see the B3 status note below for
+the current locations.)
 
 **What exactly is deferred.** Changing *what value* the runner/sampler
 receives — e.g. routing `p.seed + i` through the same hashing discipline as
@@ -463,7 +520,8 @@ re-bank the pin, not a cleanup.
 - The seed handed to the runner/sampler for candidate `i` is a named,
   single-source derivation (one function, one call site per consumer), not
   an inline `p.seed + i` at three separate places
-  (`src/inference/candidates.cpp:157,159`, `src/inference/candidate_model.cpp:168,170,199-200`).
+  (`src/inference/candidates.cpp:157,159`, `src/inference/candidate_model.cpp:168,170,199-200`
+  — PRE-B3 line numbers; the current ones are in the status note below).
 - The value change is recorded in the golden manifest (the
   `s4b sampler index-seed binding` record at
   `tests/golden_manifest.json:111-122` is re-banked with a `recapture_reason`
@@ -517,7 +575,14 @@ today's bytes cannot move:
   inline expressions (`candidates.cpp` greedy runner stage x2,
   `candidate_model.cpp` greedy fallback x2 + `sseed`) resolve through it at
   **three call sites** (`candidates.cpp`, `candidate_model.cpp` greedy, and
-  `candidate_model.cpp` `sseed`); each pair shares one call.
+  `candidate_model.cpp` `sseed`); each pair shares one call. The CURRENT
+  locations of those three call sites are `src/inference/candidates.cpp:154`
+  (the greedy runner stage), `src/inference/candidate_model.cpp:168` (the
+  greedy fallback) and `src/inference/candidate_model.cpp:201` (the `sseed`
+  initializer); the definitions themselves are
+  `src/inference/candidates.cpp:204` (`runner_seed`) and
+  `src/inference/candidates.cpp:210` (`runner_seed_domain`), declared in
+  `src/inference/seed_derivation.h:31,44`.
 - `runner_seed_domain` is domain-separated by the compile-time FNV-1a tag
   `"hf.runner_seed.v1"` (mix64 over seed, index, xor-fold; construction
   documented in the header). It is called by no production path.
@@ -858,6 +923,17 @@ than fail.
 > recorded in `docs/measurements/ratchet.md` G3); the new header functions
 > measure CCN 1/3/6/7 and `strict_core` stays at 16.
 >
+> **Known, accepted minor inefficiency (recorded, NOT fixed):** the folded
+> repair path derives the bar chord's intervals **twice per rub note** —
+> once inside `strong_beat_repair_target`
+> (`src/inference/strong_beat.h:167`) and once in the caller
+> (`src/inference/constraints.cpp:71`, right after the call at `:68-69`).
+> The two derivations are identical (the same `hf::music::chord_intervals`
+> over the same bar chord), so the RESULT cannot move; it is simply twice
+> the small-vector work on a background-thread path. The wave deliberately
+> left the code alone, and this sentence records the finding so a future
+> reader does not re-derive it.
+>
 > The B4a residual is closed in the same commit: the four duplicated
 > pitch-class **name** tables (`kPcNames` in `src/core/music/explain.cpp`;
 > `kNames` in `src/plugin/ui/ChordTrack.cpp`,
@@ -1109,12 +1185,18 @@ current pattern.
 - The quirk itself is recorded in `docs/measurements/s3-quirks.md` (55
   lines): title "S3 toolchain quirk: MSVC C2059 on additive edits inside the
   sseed initializer", status **CAUSE UNESTABLISHED** (`:3-7`).
-- The site it attaches to is `src/inference/candidate_model.cpp:191-192`
-  — the `sseed` initializer quoted in the record (`s3-quirks.md:11-15`),
-  which is the same statement as B3's `p.seed + index`.
+- The site it attaches to is the `sseed` initializer at
+  `src/inference/candidate_model.cpp:200-201` — the statement quoted in the
+  record (`s3-quirks.md:11-15`), which is the same statement as B3's
+  `p.seed + index` (B3 moved the initializer's body to `runner_seed(p,
+  index)`; the `191-192` the record names is where the site sat when the
+  record was written — the HISTORICAL record keeps its own line numbers,
+  this section points at the LIVE site).
 - The binding constraint recorded there (`s3-quirks.md:5-7`) is: "NO
   single-line inner-expression mutations at `candidate_model.cpp:191-192` in
-  future checks — use the two-statement form below" (`:27-30`).
+  future checks — use the two-statement form below" (`:27-30`) — a quote of
+  the record, whose line numbers are the historical ones; the live site is
+  `candidate_model.cpp:200-201`.
 - The repro list (`s3-quirks.md:16-20`) is four one-line mutations that
   produce `error C2059: syntax error: ')'` at the inner closing paren
   (col 78/79) under MSVC (Visual Studio 18 Community 18.10.3, x64
@@ -1158,7 +1240,7 @@ was not built.
 - The rule is enforced by something that runs automatically, not by prose
   alone. Acceptable shapes (any one is enough):
   - a lint/step that rejects a single-line `sseed` initializer at
-    `src/inference/candidate_model.cpp:191-192` (a text guard, like the
+    `src/inference/candidate_model.cpp:200-201` (a text guard, like the
     existing `tools/check_bodies.py` family), **or**
   - a comment-formatting hook (e.g. `clang-format` with the statement
     forced onto two lines) that makes the failing shape unreachable, **or**
@@ -1166,7 +1248,8 @@ was not built.
     the outcome, so a future MSVC change that *fixes* the quirk is noticed
     and the constraint can be retired.
 - The trigger is discoverable from the file itself (a comment at
-  `src/inference/candidate_model.cpp:191-192` naming `docs/measurements/s3-quirks.md`),
+  `src/inference/candidate_model.cpp:193-199`, immediately above the
+  initializer at `:200-201`, naming `docs/measurements/s3-quirks.md`),
   and `docs/measurements/s3-quirks.md` is updated with the guard's name.
 - If the cause is ever established, the record's status changes from
   "CAUSE UNESTABLISHED" to the established cause, and the guard is either
@@ -1189,7 +1272,7 @@ the most expensive to keep.
 
 **Risk / impact of leaving it deferred.** The constraint lives only in a
 measurement record. An agent or contributor that edits
-`src/inference/candidate_model.cpp:191-192` into the one-line form gets
+`src/inference/candidate_model.cpp:200-201` into the one-line form gets
 `error C2059: syntax error: ')'` with no pointer to the explanation — and
 the failure mode is especially confusing because the same edit is valid
 C++ and valid on other compilers.

@@ -63,15 +63,26 @@
 //   (out-of-register approaches are not slots), and are exempt from
 //   thinning. A larger e therefore always keeps a superset of the notes.
 //   Note: the ORNAMENTS are weak-beat chromaticism by design (the Creative
-//   character), so they take the full in-scale guarantee away from every
-//   e > 0. The ORNAMENT blend is independent of base.mode (B2): a Creative
+//   character), so the STRICT base's in-scale guarantee does not extend
+//   past e = 0 (the exact statement, and the two reasons it has holes, is
+//   below). The ORNAMENT blend is independent of base.mode (B2): a Creative
 //   base can carry both the generator's own chromatic passing tones and
 //   these ornaments.
 //
 // In-scale guarantee, stated exactly (STRICT vs CREATIVE base):
-// - On a STRICT base the material is in scale at e = 0 ONLY: the generator
-//   adds no chromaticism of its own, so e = 0 (no ornaments) is in scale,
-//   and every e > 0 is not (the ornaments are chromatic by design).
+// - On a STRICT base there is NO in-scale guarantee BEYOND e = 0. The
+//   generator adds no chromaticism of its own, so e = 0 (no ornaments) IS
+//   in scale; for e > 0 the material is in scale only BY LUCK, for two
+//   measured reasons:
+//     (a) the blend adds k = floor(e * N) ornaments, N = the number of
+//         Creative-rule slots (src/core/arrangement/arrangement.cpp:213-214),
+//         so for 0 < e < 1/N NO ornament is added at all and the material
+//         is STILL in scale;
+//     (b) an ornament is a semitone APPROACH to the next note, not a
+//         chromatic note: the C -> F approach lands on E, which IS in scale.
+//         "The ornaments are chromatic by design" (see the energy mapping
+//         above) therefore means "the ornaments are NOT GUARANTEED to be in
+//         scale", never "they always are out of it".
 // - On a CREATIVE base there is NO in-scale guarantee at ANY e: the
 //   generator MAY insert chromatic passing tones
 //   (insert_chromatic_passing_tones, src/inference/candidate_modes.cpp).

@@ -61,16 +61,28 @@
 // table loop in `strict_core` restates the same arithmetic over
 // `SamplerScratch` rows (it holds pre-resolved pitch classes, not
 // intervals) and is deliberately left byte-identical: only the BEAT GATE is
-// projected there, and touching that loop would move a pinned CCN.
+// projected there, and touching that loop would move a pinned CCN. That
+// restatement is named in the census below
+// (`src/inference/sampler.cpp:104-105`), so the census covers it too.
 //
 // SITES THAT STAY OUT OF THIS HEADER (by design, not by oversight)
 // ----------------------------------------------------------------
 // The census is COMPLETE: every strong-beat site in the tree -- the C++
-// tree this header compiles into (listed below) AND the PYTHON / TOOL-SIDE
-// mirrors of the same rule (listed at the END of this file) -- is either
-// one of the projections above or named in one of the two lists, so a
-// future fix to the rule cannot silently miss a site.
+// tree (the inference-side consumers of this header PLUS the two core-side
+// mirrors, which MAY NOT include it and are therefore named here; listed
+// below) AND the PYTHON / TOOL-SIDE mirrors of the same rule (listed at
+// the END of this file) -- is either one of the projections above or named
+// in one of the two lists, so a future fix to the rule cannot silently
+// miss a site.
 //
+//   - src/inference/sampler.cpp:104-105 `strict_core`'s flat-table
+//     distance-1 test is a RESTATEMENT of the same arithmetic, not a
+//     projection of it: it runs over `SamplerScratch`'s pre-resolved pitch
+//     classes (no interval set), so it cannot call `is_minor_2nd_rub`. Only
+//     the BEAT GATE is projected there (projection 1); the loop is
+//     deliberately left byte-identical, because touching it would move a
+//     pinned CCN (16). This is the same site the arithmetic block above
+//     describes -- it is named here so the census stays exhaustive.
 //   - src/core/music/voice_leading.cpp:26 `validate_voice_leading` (the
 //     gate at :80) keeps its own `kStrongBeatMod = 480`: src/core must not
 //     include src/inference (AGENTS.md section 2), and its audit is the

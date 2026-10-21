@@ -482,3 +482,107 @@ stale range; this section supersedes it** — the file is append-only, so the
 - `docs/BACKLOG-phase-B.md` — the aggregates table and the NOW-authority
   pointer, repointed at this section.
 
+---
+
+## 10. Correction — the backlog-wave re-measurement (2026-10-21)
+
+**Why this section exists.** §9 re-measured every value §8 claimed, on the
+tree at `13e9355`, and superseded §8 on the values that had moved. The tree
+then moved AGAIN: the **backlog wave** (B1 chord-root-anchored keynorm, B2
+an arrangement-wide Strict/Creative mode, B3 a named single-source runner
+seed, B4b one home for the strong-beat rule) merged into `master`, and the
+wave touched exactly the values this section re-measures. **This section
+supersedes §9 on exactly those values; every other value in §9 stands.**
+Nothing earlier in this document is rewritten: this document is append-only,
+so §1, §8 and §9 keep the bytes and the dates they were written with.
+
+**Method (unchanged from §0, §8 and §9).** Line counts: python newline count
+over the working-tree bytes of every tracked `.h`/`.cpp` under `src/`
+(`data.count(b"\n")` plus one for a trailing partial line) —
+`Measure-Object -Line` is **banned**. Complexity: lizard **1.24.1** over
+`src/` (the pinned version). Counts: the repo's own gates —
+`tools/lint_file_size.py`, `tools/lint_golden_manifest.py`,
+`tools/lint_ccn.py --strict`. The ctest counters are the **STATIC census**
+(`tests/CMakeLists.txt` + the `TEST_CASE` macros in `tests/*.cpp`): the wave
+ran no build, so the pair below is an ARITHMETIC EXPECTATION, to be
+confirmed by the first green CI run of the merged wave. The LOC rows are
+measured on the tree **as this doc-truth commit leaves it** (the wave's
+code plus this pass's comment-only edits — 11 lines in
+`src/core/arrangement/arrangement.h` and 12 in `src/inference/strong_beat.h`;
+no function, NLOC or CCN moved).
+
+### 10.1 The ctest pair — §9.1 is SUPERSEDED (an EXPECTED pair, not a measurement)
+
+| configuration | §9.1 said (measured 2026-10-20) | **NOW (the wave's EXPECTED pair)** | source |
+|---|---|---|---|
+| `build-full` (Release, plugin-ON) | 254 registered cases | **273 registered cases** | the static census: 283 `TEST_CASE` macros in 48 test binaries, 43 registered, 274 registered cases (239 in the both-configuration binaries + 35 plugin-ON-only), less the one `#else` offline stub the full configuration does not compile (the file compiles 9 of its 10 macros there) |
+| `build-off` (Debug, plugin-OFF) | 221 registered cases | **233 registered cases** | the same census, less the six `#ifdef HARMONY_FORGE_WITH_ONNX` cases the off configuration does not compile (the file compiles 4 of its 10 macros there) |
+
+**The 19 registered cases the wave added.** 12 in BOTH configurations — B1
++1 (`tests/test_keynorm.cpp`), B2 +3 (`tests/test_arrangement.cpp` +2,
+`tests/test_candidates.cpp` +1), B3 +2 (the new
+`tests/test_b3_runner_seed.cpp` binary), B4b +6 (the new
+`tests/test_strong_beat.cpp` binary) — and 7 plugin-ON-only, all B2's:
+`tests/test_plugin_state.cpp` +4, `tests/test_params_from_state.cpp` +2 and
+the new `tests/test_arrange_mode_model.cpp` binary +1. That is
+**254 + 12 + 7 = 273** (build-full) and **221 + 12 = 233** (build-off). The
+PINNED counters stay at the recorded **254/221** until the first green CI
+run of the merged wave (the G10 ratchet is "must not drop"); the gate values
+and the full derivation live in `docs/measurements/ratchet.md` §7 and in
+`docs/INVARIANTS.md`.
+
+### 10.2 The §9.2 rows that moved — re-measured on the merged wave tree
+
+| §9.2 row | metric | §9 said (2026-10-20) | **NOW (re-measured 2026-10-21)** | source |
+|---|---|---|---|---|
+| **3** | source LOC — `src/core` | 2982 over 34 files | **3036 over 34 files** (+54) | python newline count over the tracked `.h`/`.cpp` bytes of `src/core`; B4b's name table in `src/core/music/pitch_class.h` (+17), B2's arrangement mode (+42 in `arrangement.h`, −1 in `arrangement.cpp`, −4 in `explain.cpp`) and this pass's comment-only edit to `arrangement.h` (the last 11 of the +42) |
+| **4** | source LOC — `src/inference` | 4222 over 36 files | **4573 over 38 files** (+351 / +2 files) | same method; the wave added `src/inference/seed_derivation.h` (B3, 46 lines) and `src/inference/strong_beat.h` (B4b, 226 lines + this pass's 12 comment lines) and grew the existing TUs by 67 lines |
+| **6** | source LOC — `src/plugin` | 5532 over 32 files | **5652 over 32 files** (+120) | same method; B2's mode combo and label in the ArrangeBar |
+| **7** | source LOC — total `src/` | 12892 over 107 files | **13417 over 109 files** (+525 / +2 files) | 3036 + 4573 + 156 + 5652 = 13417 over 34 + 38 + 5 + 32 = 109 files |
+| **14** | functions with CCN > 15 | 22 | **21** | lizard 1.24.1; the gate prints "functions over the target: 21 (pinned 21)" — B4b pruned `resolve_harmonic_conflicts` (19 → 14). §9.3 quotes the tool's 2026-10-20 output ("PASS (22 pinned functions, 22 functions over the target)") — that is the HISTORY of that date, left byte-untouched by the append-only rule; the tool prints 21 today |
+| **20** | golden registry records | 23 records (capture=15, gen=7, mixed=1) | **24 records** (capture=16, gen=7, mixed=1) | `tools/lint_golden_manifest.py` (PASS); the new record is B1's chord-root anchor vector set (`tests/golden/keynorm_vectors.json`) |
+
+**What did NOT move.** Row 5 (`src/app` 156 over 5 files), rows 8-12, row 13
+(the tree's max-CCN is still **36** — `hf::music::validate_voice_leading`),
+row 15 (the off-golden census), row 16 (the file-size census is still 8
+pinned files, 0 new), rows 17-19, and rows 23-25 (the Editor is still
+**293 + 807 = 1100** physical lines, max-CCN 13, **48 functions over 4
+files**, total CCN **140** — re-measured: `PluginEditor.cpp` 43 functions /
+CCN 130, `EditorLayout.cpp` 4 / 7, `EditorLayout.h` 1 / 3). The layer / RT /
+UTF-8 / golden-pin / invariant-tag verdicts are unchanged.
+
+### 10.3 The per-file aggregate rows that moved (`docs/BACKLOG-phase-B.md`)
+
+The same census, in the documented column order
+(`file,functions,nloc_total,ccn_max,ccn_mean,ccn_gt10,ccn_gt15`), lizard
+1.24.1 over `src/`; **the table in `docs/BACKLOG-phase-B.md` now carries
+these values**:
+
+| file | at the 2026-10-20 wave | **NOW** | what moved |
+|---|---|---|---|
+| `src/inference/candidates.cpp` | 9,115,9,3.44,0,0 | **11,123,9,3.0,0,0** | B3: `runner_seed` + `runner_seed_domain` |
+| `src/inference/candidate_base.cpp` | 2,58,16,9.0,1,1 | **2,58,16,9.0,1,1** | — |
+| `src/inference/candidate_transforms.cpp` | 5,88,13,6.8,1,0 | **5,88,13,6.8,1,0** | — |
+| `src/inference/candidate_modes.cpp` | 7,81,11,6.86,1,0 | **7,81,11,6.86,1,0** | — |
+| `src/inference/constraints.cpp` | 4,69,19,8.5,1,1 | **3,56,14,8.67,1,0** | B4b: the rule moved out (max-CCN 19 → 14) |
+| `src/inference/ranking.cpp` | 6,67,8,4.83,0,0 | **5,49,8,4.2,0,0** | B4b: `strong_beat_rub` moved out |
+| `src/inference/sampler.cpp` | 20,310,16,6.7,3,1 | **20,310,16,6.7,3,1** | — |
+| `src/inference/ort_logits.cpp` | 12,155,18,4.75,1,1 | **12,155,18,4.75,1,1** | — |
+| `src/inference/keynorm.cpp` | 14,121,6,3.29,0,0 | **16,138,6,3.25,0,0** | B1: `keynorm_anchor_pc` + `keynorm_anchor_shift` |
+| `src/plugin/ui/PianoRoll.cpp` | 24,389,22,5.62,4,3 | **24,389,22,5.62,4,3** | — |
+| `src/plugin/ui/PatternDocument.cpp` | 36,373,13,3.92,1,0 | **36,363,13,3.72,1,0** | B4b: `is_replace_rub` folded onto the shared projection |
+| `src/core/arrangement/arrangement.cpp` | 23,398,21,6.83,6,3 | **23,397,21,6.83,6,3** | B2: −1 NLOC |
+| `src/plugin/audio/PluginEditor.cpp` | 43,574,13,3.02,1,0 | **43,579,13,3.02,1,0** | B2: +5 NLOC (the physical line count is unchanged at 807) |
+| `src/plugin/ui/EditorLayout.cpp` | 4,203,4,1.75,0,0 | **4,203,4,1.75,0,0** | — |
+
+### 10.4 Where the wave's values live
+
+- This section (§10) — the authority for the NOW values of the merged
+  backlog wave (the ctest EXPECTED pair, the per-layer LOC, the CCN count,
+  the golden record count and the per-file aggregate rows).
+- `docs/measurements/ratchet.md` — the live gate values (G10's ctest pair,
+  G3's CCN count and pin table, G13's MAP freshness) and §7's static census.
+- `docs/INVARIANTS.md` — the ctest pair as an invariant (273/233, expected).
+- `docs/BACKLOG-phase-B.md` — the aggregates table and the phase-delta note,
+  both re-measured and pointing at this section.
+

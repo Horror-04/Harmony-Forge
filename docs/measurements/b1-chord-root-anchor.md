@@ -63,7 +63,7 @@ sections stay green.
 
 | # | src | target (file / cell) | mutation | exactly red | revert status | standing |
 |---|---|---|---|---|---|---|
-| 1 | B1 | `tests/golden/keynorm_vectors.json`#chord_root_anchor `want_anchor_pcs[9]` | 6→7 | py `vector 9: chord-root anchor 6 != 7` (the other 9 vectors and all 8 pre-existing checks green) | value restored, re-ran, ALL PASS | CLEAR (python side MEASURED) |
+| 1 | B1 | `tests/golden/keynorm_vectors.json`#chord_root_anchor `want_anchor_pcs[9]` | 6→7 | py `vector 9: chord-root anchor 6 != 7` (the other 9 vectors and all 9 checks green — the pre-fix python file ran 9 check functions: the 8 pre-existing ones plus B1's own `check_chord_root_anchor_vectors`) | value restored, re-ran, ALL PASS | CLEAR (python side MEASURED) |
 | 2 | B1 | same file, any other `want_anchor_pcs[i]` / `want_shifts[i]` value | any one value | by construction the same per-index assertion on both sides (the C++ side is the same `CHECK(pc == want_pc[i])` loop) — NOT MEASURED, see §3 | — | UNVERIFIED (C++ side not compiled in this wave) |
 
 The python half of row 1 was actually run in the B1 wave (the mutation was
