@@ -461,12 +461,12 @@ gets Strict, not the persisted value.
 > the pinned descendant-component count 136 no longer described the editor
 > tree. The NEW count was a MEASUREMENT, not an arithmetic (JUCE's `ComboBox`
 > also installs an internal `Label` child), so the probe had to MEASURE it
-> after a build: the count GREW (>= 138) and the exact value came from the
-> post-build re-capture. That re-capture is **DONE** (2026-10-21): the
-> measured count is **139** at every window size, and the resolution note
-> lives in the **B12** block below ("RESOLVED 2026-10-21 (the B12 bounds
-> golden re-capture)"), which carries the exact commands. The probe is
-> neither ctest-registered nor in CI, so no gate breaks.
+> after a build: the count GREW to **139** (the MEASURED value) and the exact
+> value came from the post-build re-capture. That re-capture is **DONE**
+> (2026-10-21): the measured count is **139** at every window size, and the
+> resolution note lives in the **B12** block below ("RESOLVED 2026-10-21
+> (the B12 bounds golden re-capture)"), which carries the exact commands.
+> The probe is neither ctest-registered nor in CI, so no gate breaks.
 > `docs/INVARIANTS.md`'s ctest counts were
 > the B10 measurement (254/221); the merged backlog wave has 273/233
 > (12 registered cases in both configurations - B1 +1, B2 +3, B3 +2, B4b +6
