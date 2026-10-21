@@ -13,9 +13,6 @@
 namespace hf::music {
 namespace {
 
-constexpr const char* kPcNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
-                                      "F#", "G",  "G#", "A",  "A#", "B"};
-
 constexpr const char* kFunctions[7] = {"Tonic",     "Supertonic", "Mediant", "Subdominant",
                                        "Dominant",  "Submediant", "Leading"};
 constexpr const char* kMajorDeg[7] = {"I", "II", "III", "IV", "V", "VI", "VII"};
@@ -103,14 +100,13 @@ std::string chord_explain_line(const hf::core::ChordSymbol& ch, int tonic,
   const int root_pc = mod12(ch.root);
   const bool known = !chord_intervals(ch).empty();
   const int d = known ? ScaleDatabase::degree(ch.root, tonic, scale) : -1;
-  std::string line = std::string(kPcNames[static_cast<size_t>(root_pc)]) + " " + ch.type +
-                     " - " + degree_name(d, scale) + " - " +
-                     chord_function_name(ch, tonic, scale);
+  std::string line = std::string(pitch_class_name(root_pc)) + " " + ch.type + " - " +
+                     degree_name(d, scale) + " - " + chord_function_name(ch, tonic, scale);
   const int tgt = known ? secondary_target_degree(ch, tonic, scale) : -1;
   if (tgt >= 0) {
     const int target_pc = (root_pc - 7 + 12) % 12;
-    line += " - secondary dominant to " + std::string(kPcNames[static_cast<size_t>(target_pc)]) +
-            " (" + degree_name(tgt, scale) + ")";
+    line += " - secondary dominant to " + std::string(pitch_class_name(target_pc)) + " (" +
+            degree_name(tgt, scale) + ")";
   } else if (const std::string_view t = tension_note(ch.type); !t.empty()) {
     line += " - " + std::string(t);
   } else if (!known || d < 0) {

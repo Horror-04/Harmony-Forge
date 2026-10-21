@@ -50,9 +50,9 @@ juce::String trackName(hf::core::TrackType t) {
 
 // Phase 5 Task 2: reference-report text helper (message thread only).
 juce::String refKeyName(const hf::music::KeyEstimate& k) {
-  static const char* kNames[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+  // The 12 pitch-class names have ONE home (core/music/pitch_class.h).
   const int pc = hf::music::mod12(k.tonic);
-  return juce::String(kNames[static_cast<size_t>(pc)]) + " " + juce::String(k.scale);
+  return juce::String(hf::music::pitch_class_name(pc)) + " " + juce::String(k.scale);
 }
 
 }  // namespace

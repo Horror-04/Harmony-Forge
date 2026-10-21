@@ -14,6 +14,7 @@
 #include "core/music/pitch_class.h"
 #include "core/music/scale.h"
 #include "pcg.h"
+#include "strong_beat.h"
 
 namespace hf::infer {
 namespace {
@@ -86,9 +87,9 @@ int strict_core(const int* seq, size_t n, int tonic, const SamplerScratch& sc,
     const int sub = seq[n - 2];
     const int track = seq[n - 1];
     if (track != melody_id() && track != bass_id()) return -1;
-    // Strong beat on the 16th grid (start_tick % 480 == 0, same predicate as
-    // constraints.cpp/ranking.cpp; == sub % 4 == 0 on the corpus codec).
-    const bool strong = ((sub % 4) + 4) % 4 == 0;
+    // Projection 1 of the strong-beat rule (strong_beat.h): the codec grid
+    // proxy for start_tick % 480 == 0 (== sub % 4 == 0 on the corpus codec).
+    const bool strong = strong_beat_on_grid(sub);
     const bool use_rub =
         strong && bar >= 0 && bar < 16 && sc.chord_count[static_cast<size_t>(bar)] > 0;
     int count = 0;

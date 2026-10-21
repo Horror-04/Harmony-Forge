@@ -30,9 +30,8 @@ juce::Font headerFont() { return juce::Font(13.0f, juce::Font::bold); }
 juce::Font bodyFont() { return juce::Font(12.0f); }
 
 juce::String pcName(int pitch) {
-  static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
-                                   "F#", "G",  "G#", "A",  "A#", "B"};
-  return kNames[static_cast<size_t>(hf::music::mod12(pitch))];
+  // The 12 pitch-class names have ONE home (core/music/pitch_class.h).
+  return juce::String(hf::music::pitch_class_name(pitch));
 }
 
 }  // namespace

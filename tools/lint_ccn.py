@@ -25,9 +25,9 @@ Rule:
     violation (the owner prunes the list).
 
 The pinned list below is the census MEASURED at S10.1 with lizard 1.24.1
-(``lizard -C 15 src``): 22 functions with CCN > 15 (the S10.1 census was
-26, so FOUR rows have been pruned since — all four prunes happened on
-2026-10-19, each dropped its function below the target, so no pin is
+(``lizard -C 15 src``): 21 functions with CCN > 15 (the S10.1 census was
+26, so FIVE rows have been pruned since — four on 2026-10-19 and one on
+2026-10-21; each prune dropped its function below the target, so no pin is
 needed):
 
   1. ``HarmonyForgeEditor::HarmonyForgeEditor`` — the S9.3 layout
@@ -37,6 +37,8 @@ needed):
   2. ``hf::infer::apply_mode`` — the B9 dissection (30 -> 3).
   3. ``hf::infer::apply_candidate_transform`` — the B9 dissection (30 -> 5).
   4. ``hf::infer::sample_continue`` — the B5 dissection (68 -> 12).
+  5. ``hf::infer::resolve_harmonic_conflicts`` — the B4b strong-beat
+     extraction into ``src/inference/strong_beat.h`` (19 -> 14).
 
 Every entry records the qualified name, the file, the line range, the
 measured CCN and a reason. Each prune is recorded in
@@ -99,7 +101,6 @@ _PIN_TABLE = [
     ("PianoRoll::mouseDown", "src/plugin/ui/PianoRoll.cpp", 304, 375, 20),
     ("hf::arr::apply_energy", "src/core/arrangement/arrangement.cpp", 185, 228, 19),
     ("hf::core::freeze_complement_of_selection", "src/core/model/selection.cpp", 301, 346, 19),
-    ("hf::infer::resolve_harmonic_conflicts", "src/inference/constraints.cpp", 66, 108, 19),
     ("hf::infer::json_int", "src/inference/model_manifest.cpp", 155, 173, 18),
     ("hf::infer::OrtLogitsProvider::get_logits", "src/inference/ort_logits.cpp", 222, 274, 18),
     ("PianoRoll::keyPressed", "src/plugin/ui/PianoRoll.cpp", 441, 472, 18),

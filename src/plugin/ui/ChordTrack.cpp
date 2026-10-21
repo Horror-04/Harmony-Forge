@@ -47,10 +47,9 @@ std::vector<std::string> ChordTrack::chordTypes() {
 }
 
 std::string ChordTrack::chordName(const hf::core::ChordSymbol& ch) {
-  static const char* kNames[12] = {"C",  "C#", "D",  "D#", "E",  "F",
-                                   "F#", "G",  "G#", "A",  "A#", "B"};
+  // The 12 pitch-class names have ONE home (core/music/pitch_class.h).
   const int pc = hf::music::mod12(ch.root);
-  return std::string(kNames[static_cast<size_t>(pc)]) + " " + ch.type;
+  return std::string(hf::music::pitch_class_name(pc)) + " " + ch.type;
 }
 
 std::string ChordTrack::degreeName(const hf::core::ChordSymbol& ch, int tonic,

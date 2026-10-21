@@ -141,7 +141,7 @@ state, and the item's own block carries the evidence.
 | B1 | Chord-root-anchored keynorm | inference / training | **DECIDED (D-B1) — NOT IMPLEMENTED** | the anchor is the **first chord's root, selected per record**; implementation is a separate product-grade task (it changes the training view and needs a retrain) | the canonical key stays scale-family-anchored only; a chord-root view can never be trained or measured |
 | B2 | Strict is forced twice; no Arrange-UI mode | core/arrangement + plugin/ui | **DECIDED (D-B2) — NOT IMPLEMENTED** | an **arrangement-wide switch** in `ArrangeParams.base`, and **energy keeps owning** the Strict→Creative axis; implementation is a separate product-grade task (it is a feature) | arrangements are Strict-only with no user-visible mode axis; the forced-Strict points become invisible coupling |
 | B3 | `p.seed + i` seed-offset values | inference | **DECIDED (D-B3) — NOT IMPLEMENTED** | a dedicated **`runner_seed(p, i)`** with domain separation from `stream_seed`; implementation is a separate product-grade task (it moves pinned bytes) | the per-candidate runner seed stays a plain addition; changing it later is a byte-level re-bank |
-| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b DECIDED — NOT IMPLEMENTED (product-grade)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche F, branch `refactor/phase-b-b4`, commits `587dd6e` + `09eab98`) — B4a only" in the B4 block below | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b** (the strong-beat predicate unification) stays product-grade: the three sites compute DIFFERENT things, so unifying them is a semantics change | residual (B4b): the strong-beat rule is still stated in 3 different computations — a fix in one place can silently miss the others; plus the 4 duplicated pitch-class NAME tables (`kNames`/`kPcNames`) |
+| B4 | Duplicated strict/constraints/ranking logic + TU-local `mod12`/`octave_pull` | inference + core | **B4a RESOLVED (phase-B tranche F); B4b RESOLVED (backlog wave)** — see the resolution notes in the B4 block below ("RESOLVED 2026-10-19 … — B4a only" and "RESOLVED 2026-10-21 … — B4b") | **B4a**: the duplicated pitch-class helpers now have ONE home, `src/core/music/pitch_class.h` (12 `mod12`/`mod12int`/`pc_of` + 2 `octave_pull` + the register constants, folded in after a body-equality census; 0 pinned byte moved). **B4b**: the strong-beat rule has ONE home, `src/inference/strong_beat.h`, as three named projections of the same rule (sampler codec grid, ranking rub, constraints repair target) plus one name table (`hf::music::pitch_class_name`); both are pure moves, so 0 pinned byte moved | residual: the three projections still DIFFER on purpose (a degenerate bar length is UNSAFE for the ranker and KEEP for the repairer; the sampler reads the codec grid, not ticks) — unifying their SEMANTICS is a product decision and is the only part still deferred |
 | B5 | `src/inference/sampler.cpp` complexity hotspot (CCN 68) | inference | **RESOLVED** (phase-B tranche D) | `sample_continue` **68 → 12** — nine named stages, a pure move; the pinned cfg corner re-ran **129/129** equal to the banked shas | residual: **no direct unit test per new stage** (the tranche's touch set excluded `tests/`) — recorded in the resolution below |
 | B6 | Piano-roll undo logic + the second history stack | plugin/ui | **RESOLVED** (phase-B tranche E) | per D-B6 `SeedHistory` stays an **append-only audit log**, deliberately not rewound; the contract is now stated at the class, at the use site and in one UI tooltip | the undo still stores whole-pattern snapshots per step (the snapshot design was NOT changed) |
 | B7 | MSVC C2059 quirk has no permanent guard | toolchain / build | **RESOLVED** (phase-B tranche A) | the cause IS established (a stray closing paren, **not** a toolchain quirk); the permanent guard is the **compiler probe** `tools/c2059_probe/probe_c2059.py`, now a CI step | residual: a different toolchain issue would be caught — the probe asserts the balanced one-line form compiles on the REAL TU |
@@ -581,6 +581,55 @@ than fail.
 > Residual: the pitch-class **name** tables (`kNames`/`kPcNames`, 4 copies)
 > are still duplicated — they are name tables, not pitch-class helpers, and
 > are the obvious next consolidation.
+>
+> **RESOLVED 2026-10-21 (backlog wave, item B4b, branch
+> `refactor/b4b-strong-beat`) — one home for the rule + one home for the
+> names.** The strong-beat rule now lives in `src/inference/strong_beat.h`
+> as ONE comment block (what a strong beat means, and why the consumers
+> need three projections) plus three named, documented functions that keep
+> each site's EXACT computation — a pure move, no value changed:
+>
+> * `strong_beat_on_grid(sub_16th)` — the sampler's codec grid proxy
+>   (`strict_core`: four 16ths per quarter, so `sub % 4 == 0` with the
+>   pre-B4b double modulo for a negative sub); it cannot express ticks or
+>   another PPQ, which is why it is not the tick predicate;
+> * `strong_beat_rub(note, pattern, chords)` — the ranking side
+>   (`strict_compliance` and the `strong_safe` fraction): the
+>   `start_tick % 480 == 0` gate, the bar from
+>   `ticks_per_beat * beats_per_bar`, and the pitch-class-distance-1 test
+>   against the bar's chord. Its body moved byte-for-byte from
+>   `ranking.cpp`;
+> * `strong_beat_repair_target(start_tick, bar_ticks, chords, pitch)` — the
+>   constraints side: the same gate and the same rub test, but the answer is
+>   the chord to repair against (nullptr = keep the note).
+>
+> The shared arithmetic is `is_minor_2nd_rub` (one distance-1 test, moved
+> byte-for-byte from `constraints.cpp`). The three projections still DIFFER
+> on purpose in two documented places, and both are pinned as truth tables
+> in `tests/test_strong_beat.cpp`: a degenerate bar length (`bar_ticks <=
+> 0`) is a rub — UNSAFE — for the ranker but KEEP for the repairer, and the
+> sampler answers on the codec grid rather than on ticks. The extraction
+> also took `resolve_harmonic_conflicts` from **CCN 19 to 14** (pin pruned,
+> recorded in `docs/measurements/ratchet.md` G3); the new header functions
+> measure CCN 1/3/6/7 and `strict_core` stays at 16.
+>
+> The B4a residual is closed in the same commit: the four duplicated
+> pitch-class **name** tables (`kPcNames` in `src/core/music/explain.cpp`;
+> `kNames` in `src/plugin/ui/ChordTrack.cpp`,
+> `src/plugin/ui/ExplainView.cpp` and
+> `src/plugin/audio/PluginEditor.cpp`) were byte-identical and now resolve
+> to ONE table, `hf::music::kPitchClassNames`, behind the `constexpr`
+> accessor `hf::music::pitch_class_name(pc)` in
+> `src/core/music/pitch_class.h` (names only — `mod12` became `constexpr`
+> so the accessor can be one, its body unchanged; no pitch-class arithmetic
+> moved).
+>
+> **Still deferred — a product decision, NOT done here:** SEMANTIC
+> unification of the three projections (one predicate for all consumers:
+> one answer for a degenerate bar length, one coordinate system, one strict
+> policy). It changes behaviour, so it moves pinned bytes and needs an owner
+> ruling; it is now the ONLY part of B4 left open, and the truth-table test
+> makes such a change a visible diff instead of a silent divergence.
 
 ---
 

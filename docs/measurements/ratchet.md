@@ -171,7 +171,7 @@ The tests, the tools and the training tree are out of scope.
 lizard is missing the tool prints a SKIP line and exits 0; with `--strict`
 (the CI mode) it exits 1. CI installs the pinned version first.
 
-**Current value.** 22 functions with CCN > 15, all pinned, none grown.
+**Current value.** 21 functions with CCN > 15, all pinned, none grown.
 Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
@@ -189,7 +189,6 @@ Table (qualified name | file:lines | CCN | reason class):
 | `PianoRoll::mouseDown` | `src/plugin/ui/PianoRoll.cpp:304-375` | 20 | S0 baseline |
 | `hf::arr::apply_energy` | `src/core/arrangement/arrangement.cpp:185-228` | 19 | S0 baseline |
 | `hf::core::freeze_complement_of_selection` | `src/core/model/selection.cpp:301-346` | 19 | S0 baseline |
-| `hf::infer::resolve_harmonic_conflicts` | `src/inference/constraints.cpp:66-108` | 19 | S0 baseline |
 | `hf::infer::json_int` | `src/inference/model_manifest.cpp:155-173` | 18 | S0 baseline |
 | `hf::infer::OrtLogitsProvider::get_logits` | `src/inference/ort_logits.cpp:222-274` | 18 | S0 baseline |
 | `PianoRoll::keyPressed` | `src/plugin/ui/PianoRoll.cpp:441-472` | 18 | S0 baseline |
@@ -223,7 +222,7 @@ functions, 22 functions over the target". The moved rows:
   so these three functions have no automated shape guard today).
   (`apply_mode` and `apply_candidate_transform` left the set on
   2026-10-19 — see the prune record below.)
-* The other 21 entries carry the reason: "pre-existing at the S0 baseline
+* The other 20 entries carry the reason: "pre-existing at the S0 baseline
   (`docs/measurements/s0-lizard.csv`) — outside the S3 scope".
 * Pruned 2026-10-19 (S9.3 fix round 1): `HarmonyForgeEditor::
   HarmonyForgeEditor` — the S9.3 layout extraction dropped the constructor
@@ -252,6 +251,18 @@ functions, 22 functions over the target". The moved rows:
   gate (a new function over 15 must be pinned and may not grow) is the
   ratchet that keeps it from growing back. `strict_core` (16) stays pinned —
   D-B5 does NOT split it (that is item B4).
+* Pruned 2026-10-21 (backlog wave, item B4b):
+  `hf::infer::resolve_harmonic_conflicts` (19 -> 14) — the strong-beat rule
+  moved to ONE home, `src/inference/strong_beat.h`, as three named
+  projections (`strong_beat_on_grid`, `strong_beat_rub`,
+  `strong_beat_repair_target`) plus the shared `is_minor_2nd_rub`; the
+  constraints site keeps only `if (chord == nullptr) continue;`, so the gate
+  dropped below the target 15 and no pin is needed (the gate printed the
+  prune NOTE before the row was removed). The extraction is a PURE MOVE of
+  the predicate (`strong_beat_rub` is body-identical to the old
+  `ranking.cpp` local; `is_minor_2nd_rub` to the old `constraints.cpp`
+  local), pinned by `tests/test_strong_beat.cpp` truth tables. The new
+  header functions measure CCN 1/3/6/7 and `strict_core` stays at 16.
 
 ---
 
