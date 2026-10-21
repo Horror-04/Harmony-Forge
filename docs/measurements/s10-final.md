@@ -612,7 +612,7 @@ landed with it.
 
 | the §4 claim | the tree today |
 |---|---|
-| "the slot-range guard for the ORT logits provider is **ABSENT**" | **FALSE** — `OrtLogitsProvider::get_logits` (`src/inference/ort_logits.cpp:222-274`) calls `prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`, helper at `:83-85`) and returns `false` for a prefix that violates a slot range, BEFORE the model runs. The 3-arg form (`:215-220`) is the fail-closed default (`LogitsIdDomain::kSlotChecked`); the RAW domain (the sampler's UNMASKED mode) is deliberately NOT range-checked — there the ids are raw vocabulary ids, not slot-encoded ones. |
+| "the slot-range guard for the ORT logits provider is **ABSENT**" | **FALSE** — `OrtLogitsProvider::get_logits` (`src/inference/ort_logits.cpp:222-274`) calls `prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`, helper at `:83-89`) and returns `false` for a prefix that violates a slot range, BEFORE the model runs. The 3-arg form (`:215-220`) is the fail-closed default (`LogitsIdDomain::kSlotChecked`); the RAW domain (the sampler's UNMASKED mode) is deliberately NOT range-checked — there the ids are raw vocabulary ids, not slot-encoded ones. |
 | "the provider is the one boundary that does not use them" | **FALSE** — the provider now consults `kVocabSlotLo` / `kVocabSlotHi` (`src/core/serialization/vocab_layout.gen.h:30-31`), like the decode side (`src/core/serialization/tokenizer.cpp:80-85`), the sampler's FSM mask (`src/inference/sampler.cpp:144-159`, the table read at `:156-157`) and the model-manifest check (`src/inference/model_manifest.cpp:268-272`). |
 | "the sidecar's output is pinned by no artifact in this repository" | **FALSE** — the pin exists: `tests/golden/ort_logits_values.txt`, a `gen:`-form record in `tests/golden_manifest.json` (24 records — capture=16 / gen=7 / mixed=1), produced by `tools/capture_ort_logits_golden.py`. It carries the 256 logits values, the sidecar's own sha256 and the argmax; the C++ side pins the IDENTITY (the sidecar sha256) and the DECISION (the argmax) exactly and compares the VALUES within the documented 1e-04 tolerance (the capture ran on onnxruntime 1.31.0, the provider on the pinned 1.22.0, so the values are not bit-exact across ORT versions — `docs/BACKLOG-phase-B.md:206`). |
 | "No test binds it ... and no gate covers it" | **SUPERSEDED** — the guard is pinned by the three B10 cases in `tests/test_ort_logits.cpp` (`"ort logits rejects a prefix that violates a named slot range"` `:353`, `"ort logits accepts every legal prefix (the slot-range guard is a no-op)"` `:395`, `"ort logits reproduces the committed sidecar's pinned logits values"` `:451`), all inside the `#ifdef HARMONY_FORGE_WITH_ONNX` block — which is why the off configuration's ctest count did not move. |
@@ -663,6 +663,24 @@ general claim was re-scoped. The corrections are listed here so the §6 and
   the sampler's FSM mask is `src/inference/sampler.cpp:144-159`, and the
   `kVocabSlotLo` / `kVocabSlotHi` table read is at `:156-157` — the old
   `:140-155` stopped one line short of the read.
+
+No build, no configure, no `ctest` and no pluginval ran for this round.
+
+## 13. Fix round 2 (2026-10-21) — one helper locator re-pointed
+
+This round changed **no measurement** and no verdict: one `file:line` locator
+that no longer held its claim was re-pointed at the current tree.
+
+- **§11, row 1** (the "the slot-range guard for the ORT logits provider is
+  **ABSENT**" row): the `prefix_in_slot_ranges` helper is
+  `src/inference/ort_logits.cpp:83-89` (signature `:83-84`, body `:85-88`,
+  closing brace `:89`) — the old `:83-85` stopped inside the helper and did
+  not cover the closing brace. The call site (`:234`) and every other locator
+  in that row are unchanged, and the sentence's claim is unaffected: the
+  provider still calls the helper before the model runs and still returns
+  `false` for a prefix that violates a slot range. The same under-citation
+  had already been corrected in `docs/INVARIANTS.md` (`:83-89`); this row
+  now matches it.
 
 No build, no configure, no `ctest` and no pluginval ran for this round.
 
