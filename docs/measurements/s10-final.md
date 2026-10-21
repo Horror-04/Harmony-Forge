@@ -109,7 +109,7 @@ what was re-verified in this task.
 | T1 — firing proof (bound-5 scratch) | sha256 `c822c4b020bcaf472c72add58621f847dcf7fd1695c151dd3ec1ef6f2d0b6e15` | same file → `boundary.sha256_bound5_scratch`; `s4b-boundary-cell.md:68` | identical — `docs/measurements/s4b-ratchet.md:26-27` | none | no |
 | T1 — control (Gate-4, seed 7, fsm-ON Strict) | sha256 `4f369c1050ef9623b34c3fc4e83c48d5e3e7b9a74fec3dcf7911574166e2d1ea` | same file → `boundary.control.sha256_bound5_scratch`; `s4b-boundary-cell.md:69` | identical — `docs/measurements/s4b-ratchet.md:28` | none | no |
 | the 128-sha set | **128 rows**; the file's own sha256 is `3933dc5dc7c02bc333c988863423d10136dce0679f79256f6fa23d4e854cc8ed` | `docs/measurements/s2b-sampler-output-shas.json` → `rows` (the "128 frozen rows" of `s2b-step5-chain-proof.md` §5 item 3) | "128-sha **128/128** identical" — `docs/measurements/master-health.md:17` | none | the artifact was re-hashed here (sha256 above, unchanged) and `git log` shows only two commits ever touched the file (`1862ea3` banked the set, `47153b1` banked the T1 cell) — so it is byte-identical to the S5a-era file |
-| T2 — shape goldens G1/G2/G3 | registered in `tests/golden_manifest.json` as the `in_test` records **#7 (G1 tonics), #8 (G2 flips), #9 (G3 probes)** — 1-based positions; the 0-based indices `6/7/8` are how `docs/measurements/ratchet.md:322` names them. Capture anchors `1746ae0` (G1, G3) and `3589205` (G2) | the manifest is the registry (values live in `tests/test_s4b_mode_shape.cpp`); the pointer is `docs/measurements/ratchet.md:322` | the same classification pointer at `docs/measurements/s4b-ratchet.md:38-44`; the **pre-Pcg32** values are known-stale history (`docs/measurements/master-health.md:35`) | none in kind; the VALUES were re-banked exactly once (Pcg32, `3589205`) and that re-bank is recorded in the manifest (`recaptured_in` / `recapture_reason`) | **yes** — the three cases were run this task: `ctest --test-dir build-full -C Release -R "s4b Creative|s4b Experimental"` → 3/3 passed, and the INFO dumps reproduce the pinned values exactly: `tones (tick,pitch): (120,63) (360,66) (840,71) (2160,68)`, `flips (tick:old->new): (720:69->68) (1080:71->70)`, `probes (tick,pitch): (120,63) (360,68) (600,70)` — 94 assertions in 3 test cases, all passed |
+| T2 — shape goldens G1/G2/G3 | registered in `tests/golden_manifest.json` as the `in_test` records **#7 (G1 tonics), #8 (G2 flips), #9 (G3 probes)** — 1-based positions; the 0-based indices `6/7/8` are how `docs/measurements/ratchet.md:483` names them. Capture anchors `1746ae0` (G1, G3) and `3589205` (G2) | the manifest is the registry (values live in `tests/test_s4b_mode_shape.cpp`); the pointer is `docs/measurements/ratchet.md:483` | the same classification pointer at `docs/measurements/s4b-ratchet.md:38-44`; the **pre-Pcg32** values are known-stale history (`docs/measurements/master-health.md:35`) | none in kind; the VALUES were re-banked exactly once (Pcg32, `3589205`) and that re-bank is recorded in the manifest (`recaptured_in` / `recapture_reason`) | **yes** — the three cases were run this task: `ctest --test-dir build-full -C Release -R "s4b Creative|s4b Experimental"` → 3/3 passed, and the INFO dumps reproduce the pinned values exactly: `tones (tick,pitch): (120,63) (360,66) (840,71) (2160,68)`, `flips (tick:old->new): (720:69->68) (1080:71->70)`, `probes (tick,pitch): (120,63) (360,68) (600,70)` — 94 assertions in 3 test cases, all passed |
 
 **What was NOT re-run, and why (stated, not implied).** The 128-cell worker
 sweep and the boundary cell were not re-generated in this task: no tool is
@@ -147,6 +147,10 @@ both configurations. In short:
   0.30 s).
 
 ## 4. The known-open invariant gap (ORT slot-range guard)
+
+**SUPERSEDED (2026-10-21): the gap below was CLOSED by phase-B tranche G
+(item B10) — see §11. The text below is left byte-untouched as it was
+recorded at the S10 close.**
 
 **This is a declared GAP, not a bound invariant.** `docs/INVARIANTS.md` now
 carries it in a clearly-marked section that is explicitly outside the
@@ -206,10 +210,10 @@ pending)"), so the pointer above used to dangle.
 | # | superseded artifact / baseline | replaced by | where the old one still lives |
 |---|---|---|---|
 | 1 | **Cube determinism matrix v2** — `docs/measurements/s0-sha-matrix.csv` (360 data rows at the S0 bank commit `acef4de`; 1896 rows in its final, still-current form — a 4-stage aggregate, irreproducible at any revision ≥ P^ — `docs/measurements/cube-baseline-v3.md:169-190`) | **v3** — `docs/measurements/s0-sha-matrix-v3.csv` (936 rows, sha256 `219EAB5E…C4175F9`), recorded in `docs/measurements/cube-baseline-v3.md` | the v2 CSV is still in the tree with **unchanged bytes** (`cube-baseline-v3.md:172-174`), under the tag `refactor/cube-baseline-v2`; the supersession is recorded at `cube-baseline-v3.md:7` and `docs/measurements/master-health.md:25-32`. The v2 CSV is deliberately **not** sha-pinned (it is LF-in-blob / CRLF-in-worktree — `cube-baseline-v3.md:167`) |
-| 2 | **S4b-era ctest counters 204/181** — `docs/measurements/s4b-ratchet.md:8-9` | the S9-close pair **251/251** (full) and **221/221** (off), pinned in `docs/measurements/ratchet.md:246-249` (banked at `docs/measurements/s9-0.md:159` and `docs/INVARIANTS.md:166`) | the 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the full pair history (204/181 → 222/194 → 221/195 → 249/219 → 251/221) is tabulated in `docs/measurements/ratchet.md:272-281` |
-| 3 | **The retired S3 text guard** `tools/check_bodies.py` (+ `tools/check_bodies_s3.json`) — retired as a gate after the Pcg32 change (`docs/measurements/s3-4b-note.md:84-90`); it is RED by design and its CI step is advisory (`continue-on-error: true`) | the **live** replacements: the CCN ratchet `tools/lint_ccn.py --strict` (which pins the three S3 candidates with the owner's reason verbatim — `docs/measurements/ratchet.md:175-184`) and the other S10.1 gates | the script is still in the tree, still advisory; its retirement is recorded in `docs/BACKLOG-phase-B.md` (item B9 and "Items NOT carried" #4, `docs/BACKLOG-phase-B.md:1141-1146`) and in `docs/measurements/master-health.md:33-34` |
+| 2 | **S4b-era ctest counters 204/181** — `docs/measurements/s4b-ratchet.md:8-9` | the S9-close pair **251/251** (full) and **221/221** (off), pinned in `docs/measurements/ratchet.md:61` (the G10 row) + `:358-363` (the §7 counter table) (banked at `docs/measurements/s9-0.md:159` and `docs/INVARIANTS.md:84-96`) | the 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the full pair history (204/181 → 222/194 → 221/195 → 249/219 → 251/221 → 254/221 → 273/233) is tabulated in `docs/measurements/ratchet.md:410-418` |
+| 3 | **The retired S3 text guard** `tools/check_bodies.py` (+ `tools/check_bodies_s3.json`) — retired as a gate after the Pcg32 change (`docs/measurements/s3-4b-note.md:84-90`); it is RED by design and its CI step is advisory (`continue-on-error: true`) | the **live** replacements: the CCN ratchet `tools/lint_ccn.py --strict` (which pins the three S3 candidates with the owner's reason verbatim — `docs/measurements/ratchet.md:174-199`) and the other S10.1 gates | the script is still in the tree, still advisory; its retirement is recorded in `docs/BACKLOG-phase-B.md` (item B9 and "Items NOT carried" #4, `docs/BACKLOG-phase-B.md:1141-1146`) and in `docs/measurements/master-health.md:33-34` |
 | 4 | **The S3 re-export shims** in `src/inference/candidates.h` (the four candidate-TU re-exports plus the params re-export) | direct includes: `src/inference/candidates.cpp` names the four modules it calls, and `tests/test_s4b_mode_shape.cpp` names `candidate_modes.h` (S10.2, commit `4ece820`) | git history: the shimmed header is at `2f40fa3` and below; the shim's retirement is recorded in the S10.2 task report and in the header comments rewritten in the same commit |
-| 5 | **The S4b-era off-golden census TOTAL** `0/12/275(3290)/35/80` — `docs/measurements/s4b-0-census.md:157` | the S10.1 census pins: `digest64=0 hex16+=0 vectors=258(1956) strings=61(306) assert>=1000=16 toler=80`, per-file + total, in `tools/off_golden_ratchet.py` (`docs/measurements/ratchet.md:188-225`) | the S4b census record stays in `docs/measurements/s4b-0-census.md` (its §7 re-baseline line included). Note the tool was UPGRADED in S10.1 (hard zeros for `digest64`/`hex16+`, a new `strings` class), so the two totals are **not shape-comparable** |
+| 5 | **The S4b-era off-golden census TOTAL** `0/12/275(3290)/35/80` — `docs/measurements/s4b-0-census.md:157` | the S10.1 census pins: `digest64=0 hex16+=0 vectors=258(1956) strings=61(306) assert>=1000=16 toler=80`, per-file + total, in `tools/off_golden_ratchet.py` (`docs/measurements/ratchet.md:302-319`) | the S4b census record stays in `docs/measurements/s4b-0-census.md` (its §7 re-baseline line included). Note the tool was UPGRADED in S10.1 (hard zeros for `digest64`/`hex16+`, a new `strings` class), so the two totals are **not shape-comparable** |
 | 6 | **The S9.0 Editor line numbers** 298 + 975 = 1273 (`docs/measurements/s9-0.md:21-22`, `:144`, `:301`) | the corrected python counts **324 + 1046 = 1370** — `docs/measurements/s9-0.md` Appendix B (`:272-369`, the correction at `:299-303`) | the retracted numbers stay inside `s9-0.md`'s history sections (the file says so itself at `:274-278`); the correction is in the same file, below them |
 | 7 | **The pre-Pcg32 golden values** (C1-C6 guard shapes, wiring/binding/shape goldens) | the Pcg32 re-bank at `3589205` — the live values are the ones in `tests/golden_manifest.json` (each record carries its `commit`, `recaptured_in` and `recapture_reason`) | the pre-Pcg32 values are listed as known-stale history in `docs/measurements/master-health.md:35` ("do not delete") and in `docs/measurements/s4b-ratchet.md:46-48` |
 
@@ -416,7 +420,7 @@ values"` (`:451`). All three sit inside the `#ifdef HARMONY_FORGE_WITH_ONNX`
 block that spans `tests/test_ort_logits.cpp:299-490`, so they are **compiled
 out of the off configuration** — which is why the off counter is unchanged
 at 221. The B10 tranche re-pinned the pair and the growth reason in
-`docs/INVARIANTS.md:66-72` and in the G10 row of
+`docs/INVARIANTS.md:84-96` and in the G10 row of
 `docs/measurements/ratchet.md`; this section aligns the two measurement
 records with that already-cited pin.
 
@@ -478,7 +482,7 @@ stale range; this section supersedes it** — the file is append-only, so the
 - `docs/measurements/ratchet.md` — the live gate values (G10's ctest pair,
   G9's record count, the G3 pin table, G1's file-size pins) and the P1-P4
   rows.
-- `docs/INVARIANTS.md:66-72` — the ctest pair as an invariant.
+- `docs/INVARIANTS.md:84-96` (the INV-3 gate) — the ctest pair as an invariant.
 - `docs/BACKLOG-phase-B.md` — the aggregates table and the NOW-authority
   pointer, repointed at this section.
 
@@ -594,4 +598,38 @@ these values**:
   by CI run id `39625770936` on commit `1552665`; 233 off — still expected).
 - `docs/BACKLOG-phase-B.md` — the aggregates table and the phase-delta note,
   both re-measured and pointing at this section.
+
+## 11. Correction — the ORT slot-range gap of §4 is CLOSED (2026-10-21)
+
+**What §4 said.** The slot-range guard for the ORT logits provider was ABSENT
+(`src/inference/ort_logits.cpp:150-193` validating only the token count), the
+deferred work was `docs/BACKLOG-phase-B.md` item **B10**, and the gap was
+"knowingly open" at the S10 close (2026-10-19).
+
+**What is true now.** Item B10 is **RESOLVED** (phase-B tranche G —
+`docs/BACKLOG-phase-B.md:206`): the guard landed, and the sidecar product pin
+landed with it.
+
+| the §4 claim | the tree today |
+|---|---|
+| "the slot-range guard for the ORT logits provider is **ABSENT**" | **FALSE** — `OrtLogitsProvider::get_logits` (`src/inference/ort_logits.cpp:222-274`) calls `prefix_in_slot_ranges(seq, n, domain)` (`src/inference/ort_logits.cpp:234`, helper at `:83-85`) and returns `false` for a prefix that violates a slot range, BEFORE the model runs. The 3-arg form (`:215-220`) is the fail-closed default (`LogitsIdDomain::kSlotChecked`); the RAW domain (the sampler's UNMASKED mode) is deliberately NOT range-checked — there the ids are raw vocabulary ids, not slot-encoded ones. |
+| "the provider is the one boundary that does not use them" | **FALSE** — the provider now consults `kVocabSlotLo` / `kVocabSlotHi` (`src/core/serialization/vocab_layout.gen.h:30-31`), like the decode side (`src/core/serialization/tokenizer.cpp:80-85`), the sampler's FSM mask (`src/inference/sampler.cpp:140-155`) and the model-manifest check (`src/inference/model_manifest.cpp:268-272`). |
+| "the sidecar's output is pinned by no artifact in this repository" | **FALSE** — the pin exists: `tests/golden/ort_logits_values.txt`, a `gen:`-form record in `tests/golden_manifest.json` (24 records — capture=16 / gen=7 / mixed=1), produced by `tools/capture_ort_logits_golden.py`. It carries the 256 logits values, the sidecar's own sha256 and the argmax; the C++ side pins the IDENTITY (the sidecar sha256) and the DECISION (the argmax) exactly and compares the VALUES within the documented 1e-04 tolerance (the capture ran on onnxruntime 1.31.0, the provider on the pinned 1.22.0, so the values are not bit-exact across ORT versions — `docs/BACKLOG-phase-B.md:206`). |
+| "No test binds it ... and no gate covers it" | **SUPERSEDED** — the guard is pinned by the three B10 cases in `tests/test_ort_logits.cpp` (`"ort logits rejects a prefix that violates a named slot range"` `:353`, `"ort logits accepts every legal prefix (the slot-range guard is a no-op)"` `:395`, `"ort logits reproduces the committed sidecar's pinned logits values"` `:451`), all inside the `#ifdef HARMONY_FORGE_WITH_ONNX` block — which is why the off configuration's ctest count did not move. |
+
+**What did NOT change.** The `[inv1]`-`[inv5]` tag set is unchanged (29
+bindings over 5 invariants, `tools/lint_inv_tags.py` PASS): the guard was a
+DECLARED GAP, never a bound invariant, so closing it adds no binding.
+
+**Still open (reported, not edited).** `docs/INVARIANTS.md`'s "DECLARED GAPS"
+section still carries this gap as OPEN, with the pre-B10 line numbers
+(`src/inference/ort_logits.cpp:150-193` / `:154`) and the "the sidecar's output
+is pinned by no artifact" sentence. That file was re-derived by another change
+in this wave and is not edited here; this section is the correction for it.
+
+**This section ran no build.** It is a code read of
+`src/inference/ort_logits.{h,cpp}`, `tests/test_ort_logits.cpp`,
+`tests/golden/ort_logits_values.txt`, `tests/golden_manifest.json` and
+`docs/BACKLOG-phase-B.md:206` — no `ctest`, no pluginval and no gate run
+happened for it.
 

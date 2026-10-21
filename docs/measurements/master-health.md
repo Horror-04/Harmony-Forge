@@ -60,3 +60,17 @@ battery below. Binaries match HEAD (no src/ deltas pending).
 - Sampler/Python ratchets stand without re-run (S7 range touches
   `src/plugin` + `tests` only — zero `src/core`/`src/inference`/
   audio-path deltas; render paths share no changed code).
+
+## Dated annotation (2026-10-21) — the ratchets above are the S5a/S7-era ones
+
+This file is a dated record (Date 2026-10-18, HEAD `ea69e26`, plus the S7
+addendum of 2026-10-19). The numbers in "Ratchets in force at HEAD" are the
+values of THAT tree and are kept as they were measured. The LIVE ratchet
+values live in `docs/measurements/ratchet.md` §1 and §7 — the ctest pair is
+now **273 (build-full/Release)** / **233 (build-off/Debug)** (the build-full
+half MEASURED by CI run `39625770936` on commit `1552665`), the off-golden
+census is `digest64=0 hex16+=0 vectors=258(elems=1956) strings=61(elems=306)
+assert>=1000=16 toler=80`, and the deterministic baseline is the v3 cube
+(`docs/measurements/s0-sha-matrix-v3.csv`, 936 rows) — the v2 baseline the
+"Known-stale" section above names stays as history. Nothing here was
+re-measured by the 2026-10-21 annotation (no build ran for it).

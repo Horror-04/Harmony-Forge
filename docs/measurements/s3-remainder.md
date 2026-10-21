@@ -3,6 +3,17 @@
 Method: `py -3 -m lizard -l cpp` (1.24.1) + consumer grep this task.
 NLOC/CCN per function; consumers decide the TU, not size.
 
+**DATED (2026-10-21) — this inventory describes the `refactor/s3-0` tree, not
+today's.** The line ranges are as they were measured then;
+`src/inference/candidates.cpp` has since been dissected (256 lines now) and
+the composer RNG is now a **`Pcg32` stream**
+(`Pcg32 rng(stream_seed(p, i))`, `src/inference/candidates.cpp:124` — the
+Pcg32 change, commit `3589205`), NOT `std::mt19937`; the seed family now
+lives at `src/inference/candidates.cpp:41-48` (`fnv1a`), `:50-53` (`mix64`)
+and `:190-198` (`stream_seed`). See the dated note in
+`docs/measurements/s3-0-stage-order.md`. The record is kept as it was
+measured.
+
 ## Per-function table (current lines)
 
 | function | lines | NLOC/CCN | consumers (grep) | TU verdict |

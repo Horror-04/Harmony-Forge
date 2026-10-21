@@ -5,6 +5,16 @@ blind to it. This table proves the union of the new TUs' directives
 equals the old set. Source: `880bb15:src/inference/candidates.cpp`
 (23 `#`-lines, ALL `#include`, zero `#if` — independently dumped).
 
+**DATED (2026-10-21) — this map describes the `refactor/s3-0` tree, not
+today's.** The `880bb15` line numbers are as they were dumped then;
+`src/inference/candidates.cpp` has since been dissected (256 lines now) and
+the composer RNG is now a **`Pcg32` stream**
+(`Pcg32 rng(stream_seed(p, i))`, `src/inference/candidates.cpp:124` — the
+Pcg32 change, commit `3589205`), NOT `std::mt19937` (so the `<random>`
+include of that era is gone). See the dated note in
+`docs/measurements/s3-0-stage-order.md`. The record is kept as it was
+measured.
+
 ## Map: old directive → holders post-4a → 4b action
 
 | old `880bb15` line | directive | holders post-4a | 4b action on `candidates.cpp` |

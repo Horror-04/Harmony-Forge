@@ -4,6 +4,18 @@ Branch `refactor/s3-0`, base a80ce72. All line numbers verified this task
 against the working tree. No `src/` edits were made for this document
 (pure code reading). This table feeds (a) legs×stages and (d) CCN.
 
+**DATED (2026-10-21) — this table describes the `refactor/s3-0` tree (base
+`a80ce72`), not today's.** The `file:line` pointers and the stage split are
+as they were verified then; `src/inference/candidates.cpp` has since been
+dissected (it is 256 lines now; the pipeline body is `generate_candidates_impl`
+at `:113-181`, the facade at `:252-254`). Two statements are stale about
+today's code: the composer RNG is now a **`Pcg32` stream**
+(`Pcg32 rng(stream_seed(p, i))`, `src/inference/candidates.cpp:124`, seeded by
+`stream_seed()` at `:190-198` — the Pcg32 change, commit `3589205`), NOT
+`std::mt19937`; and the strong-beat rule now has ONE home
+(`src/inference/strong_beat.h`). The record itself is kept as it was
+measured.
+
 ## 1. Per-candidate pipeline (`generate_candidates_impl`, `src/inference/candidates.cpp:522-591`)
 
 One call builds 4 candidates; the loop body below runs once per index

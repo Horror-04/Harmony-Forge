@@ -6,6 +6,15 @@ in `candidate_transforms.cpp`; called also by modes/facade -> `detail/`
 as `inline`, bodies unchanged. This table is slice 3's contract: what the
 modes TU may call.
 
+**DATED (2026-10-21) — this table describes the `refactor/s3-0` tree, not
+today's.** The `file:line` pointers are as they were decided then;
+`src/inference/candidates.cpp` has since been dissected (256 lines now) and
+the composer RNG is now a **`Pcg32` stream**
+(`Pcg32 rng(stream_seed(p, i))`, `src/inference/candidates.cpp:124` — the
+Pcg32 change, commit `3589205`), NOT `std::mt19937`. See the dated note in
+`docs/measurements/s3-0-stage-order.md`. The record is kept as it was
+measured.
+
 ## Result: `apply_candidate_transform` moves ALONE
 
 The body (`candidates.cpp:153-231` post-slice-1 numbering, i.e. pre-cut

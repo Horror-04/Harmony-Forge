@@ -1,18 +1,18 @@
 # Harmony Forge docs map
 
-Map verified against commit `8bd4624` (docs tree unchanged since `51af5a0`;
-S1 adds only this file, `INVARIANTS.md`, an allowlist note in
-`measurements/s0-utf8-lint.md`, and a 2-line comment fix in
-`src/inference/memo_filter.h`). Every link below is relative and was
-link-checked (existence pass over all targets, recorded in the S1 task report).
-The v3 baseline rows were added on 2026-10-19 (cube baseline v3); their
-targets exist and their links are relative. The S10 close-out rows (the
+Map verified against commit `8bd4624` — the S1 link check (an existence
+pass over every link target, recorded in the S1 task report); S1 added this
+file, `INVARIANTS.md`, an allowlist note in `measurements/s0-utf8-lint.md`,
+and a 2-line comment fix in `src/inference/memo_filter.h`. Every link below
+is relative. The tree has grown since that check: the v3 baseline rows were
+added on 2026-10-19 (cube baseline v3) and the S10 close-out rows (the
 gates index, the phase-B deferred-work record, the final table, and the
-superseded/retired-baseline marks) were added on 2026-10-19; their targets
-exist and their links are relative.
+superseded/retired-baseline marks) on 2026-10-19; their targets exist and
+their links are relative. The 2026-10-21 doc-truth pass refreshed the
+counters and the pointers below and re-checked the targets it touched.
 
-Classes: **normative** (rules the code must obey), **evidentiary** (measured
-outputs backing a claim), **historical** (phase records; read-only context).
+Document status: **NORMATIVE** — a live index of the docs tree (true now). The classes used below are each
+document's own: **normative** (rules the code must obey), **evidentiary** (measured outputs backing a claim), **historical** (phase records; read-only context).
 
 ## Root specs (normative)
 
@@ -31,7 +31,7 @@ outputs backing a claim), **historical** (phase records; read-only context).
 
 | file | role |
 |---|---|
-| [measurements/s0-test-matrix.md](measurements/s0-test-matrix.md) | ctest registration matrix: 193 tests build-full/Release vs 170 build-off/Debug, delta fully attributed to CMake options |
+| [measurements/s0-test-matrix.md](measurements/s0-test-matrix.md) | ctest registration matrix: 193 tests build-full/Release vs 170 build-off/Debug (the S0 baseline), delta fully attributed to CMake options; the CURRENT pair is 273/233 — see `measurements/ratchet.md` §7 |
 | [measurements/s0-tests-release.txt](measurements/s0-tests-release.txt) | Full `ctest -N` name list, build-full |
 | [measurements/s0-tests-debug.txt](measurements/s0-tests-debug.txt) | Full `ctest -N` name list, build-off |
 | [measurements/s0-sha-matrix.csv](measurements/s0-sha-matrix.csv) | Determinism SHA matrix v2 (render_midi byte-identity evidence) - **SUPERSEDED by v3** |
@@ -57,7 +57,7 @@ outputs backing a claim), **historical** (phase records; read-only context).
 | artifact | status | what replaced it, and where the old one lives |
 |---|---|---|
 | [measurements/s0-sha-matrix.csv](measurements/s0-sha-matrix.csv) — cube determinism matrix **v2** (1896 rows) | **SUPERSEDED** | by **v3** — [measurements/s0-sha-matrix-v3.csv](measurements/s0-sha-matrix-v3.csv) (936 rows = 576 `render_midi` + 360 `render_model`; sha256 `219EAB5EA59871158E7B381A7396DA6A94E3B875BCF2ACBF0D0429F81C4175F9`), recorded in [measurements/cube-baseline-v3.md](measurements/cube-baseline-v3.md). v2 stays in the tree with **unchanged bytes** and under the tag `refactor/cube-baseline-v2` — it is history, not deleted |
-| the S4b-era ctest counters **204/181** — [measurements/s4b-ratchet.md](measurements/s4b-ratchet.md) | **HISTORY** | by the S9-close pair **251/251** (build-full/Release) and **221/221** (build-off/Debug), pinned in [measurements/ratchet.md](measurements/ratchet.md) §7. The 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the whole pair history is tabulated in `ratchet.md` §7 |
+| the S4b-era ctest counters **204/181** — [measurements/s4b-ratchet.md](measurements/s4b-ratchet.md) | **HISTORY** | by the CURRENT pair **273/273** (build-full/Release — MEASURED by CI run `39625770936` on commit `1552665`) and **233/233** (build-off/Debug — the static expectation, CI runs one configuration only), pinned in [measurements/ratchet.md](measurements/ratchet.md) §7. The 204/181 record stays in `s4b-ratchet.md` as S4b-era history; the whole pair history is tabulated in `ratchet.md` §7 |
 | the S3 text guard `tools/check_bodies.py` | **RETIRED — not a live gate** | retired as a gate after the Pcg32 change ([measurements/s3-4b-note.md](measurements/s3-4b-note.md) §7); it is RED by design and its CI step is advisory (`continue-on-error: true`). The live replacement is the CCN ratchet `tools/lint_ccn.py --strict` (see [measurements/ratchet.md](measurements/ratchet.md) §4). The retirement is also recorded in [BACKLOG-phase-B.md](BACKLOG-phase-B.md) item B9 |
 
 ## superpowers/ (historical phase records)

@@ -5,6 +5,12 @@ the licence decision, clean-machine verification and signing. Anything that was
 not executed on the development machine is marked **NOT-RUN** with the exact
 human steps.
 
+Document status: **NORMATIVE** for the rules it states (§1-§8: what is
+shipped, the licence obligations, the installer wiring, the runtime-library
+deployment rule) — those are true now. The "Status at a glance" table, the
+recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13);
+dated notes are added where a later change moved them.
+
 ## Status at a glance (local verification, 2026-10-12)
 
 | Item | Status |
@@ -21,11 +27,17 @@ Reproduce the Windows gates:
 
 ```powershell
 cmake --build build-full --config Release
-ctest --test-dir build-full -C Release          # 94/94
-ctest --test-dir build-off  -C Debug            # 94/94
+ctest --test-dir build-full -C Release          # 273/273 (CI-measured)
+ctest --test-dir build-off  -C Debug            # 233/233 (static expectation)
 powershell -File packaging\windows\check_payload.ps1
 & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss
 ```
+
+The ctest pair is the one `docs/measurements/ratchet.md` §7 owns: **273**
+(build-full/Release) is MEASURED (CI run `39625770936` on commit `1552665`),
+**233** (build-off/Debug) is still the static expectation — CI runs one
+configuration only. The block carried `94/94` when this file was written
+(2026-10-12); that was the count of that day.
 
 ## 1. What is shipped
 
@@ -62,6 +74,12 @@ the AU kind only on Darwin (`_juce_get_platform_plugin_kinds` in
   the older `817FDB02…1B20E` — the delta comes from the reviewed `write_smf0`
   byte-correctness fix (header track count + offs-aware cursor), not from a
   behavior regression; determinism is the property that matters.
+  **UPDATE (2026-10-21):** that hash is itself superseded — the Pcg32
+  re-bank changed every `render_midi` cell (`576/576 DIFF`,
+  `docs/measurements/cube-baseline-v3.md` §3), and the live determinism
+  baseline (`docs/measurements/s0-sha-matrix-v3.csv`) gives the current seed-7
+  single-track render hash `ea7650b3…` (170 bytes). The determinism property
+  is unchanged; only the bytes moved.
 
 Note: this was verified by re-configure + incremental rebuild on the existing
 `build-full` tree, not by a from-scratch build in a new directory. The AU/Windows
@@ -147,9 +165,14 @@ keeping licence notices intact (including JUCE's).
   (an outside reader can reconstruct the holdout and tune against it) and no
   licensing or user-data consequence. Keep the repository private until that
   trade is made deliberately.
-- The `TODO: repo URL` markers in `README.md`,
-  `packaging/LICENSE-JUCE-NOTICE.txt` and this section are replaced with the
-  URL above.
+- The repository URL is **filled in** — there is no `TODO: repo URL` marker
+  left to fill. `README.md`, `packaging/LICENSE-JUCE-NOTICE.txt` and this
+  section all carry `https://github.com/Horror-04/Harmony-Forge` (commits
+  `b89d1ce`, `f347a43`). The URL is load-bearing, not cosmetic: the notice's
+  repository-URL line is the AGPL §13 written offer of the complete
+  corresponding source, and the notice is HARD-required — the Inno Setup
+  preflight and the payload check both refuse a build/payload without it
+  (the next bullet spells the mechanism out).
 - The installers surface the notice AND the full licence text (AGPL §§4/6,
   fix round 1): the Windows `.iss` shows
   `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=`, installs it next
