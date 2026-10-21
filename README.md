@@ -67,6 +67,7 @@ JUCE/              vendored JUCE 9.0.3
   the model was trained and evaluated on.
 - **Trained sidecars** (`training/model*.onnx`) — the project's own exported
   models; the bulk checkpoints stay local (`.gitignore`).
+- **The documentation index** — `docs/README.md` maps every document in the repo to what it is (a rule you must obey, or a dated record) and when to read it.
 
 The "sealed" evaluation split (`training/corpus/sealed_test.jsonl`) is a
 *partition of that same corpus*, not a secret store: its rows are present in
