@@ -60,9 +60,10 @@ const char* kGoldenDoc =
     "B12 editor-layout bounds pins (probe_b12_bounds guard, D-B12 entry "
     "condition). Per window size: expected descendant-component count, "
     "canonical dump byte count, and SHA256 of the canonical bounds-dump text "
-    "(LF bytes). Captured 2026-10-19 headless (no peer, no paint) on the "
-    "refactor/probes-u2u3-b12 tree. Regenerate only via the probe --write "
-    "mode; any byte change here must move the same bytes the guard asserts.";
+    "(LF bytes). Captured 2026-10-21 headless (no peer, no paint) on the "
+    "master tree at 0f131ba (Release build). Regenerate only via the probe "
+    "--write mode; any byte change here must move the same bytes the guard "
+    "asserts.";
 
 // Size keys in fixed golden order (function, not a string table).
 const char* size_key(int i) {
@@ -335,13 +336,16 @@ int main(int argc, char** argv) {
   // durable record is the tracked golden `tests/golden/b12_editor_bounds.json`
   // plus its record in `tests/golden_manifest.json` - nothing here points at
   // a path that is not in this repository.
-  // QUALIFICATION: that golden is the durable record of the LAST capture,
-  // not a current truth - the phase-B backlog (docs/BACKLOG-phase-B.md, the
-  // B12 block, "OPEN FOLLOW-UP (B12 bounds golden re-capture)") flags it
-  // STALE since the B2 wave (the ArrangeBar gained two widgets) and tracks
-  // the post-build re-capture there; the pinned descendant-component count
-  // must GROW and its exact value comes from that re-capture. The probe is
-  // neither ctest-registered nor in CI, so the staleness breaks no gate.
+  // QUALIFICATION: that golden is the durable record of the LAST capture.
+  // It was RE-CAPTURED on 2026-10-21 - the phase-B backlog's "OPEN FOLLOW-UP
+  // (B12 bounds golden re-capture)" (docs/BACKLOG-phase-B.md, the B12 block)
+  // is CLOSED: the pin now holds the MEASURED post-B2 descendant-component
+  // count 139 at every window size (the ArrangeBar gained two widgets, and
+  // JUCE's ComboBox installs an internal Label child - the count is a
+  // measurement, never an arithmetic), together with the dump byte counts
+  // and sha256s that go with it. The probe is neither ctest-registered nor
+  // in CI, so a later layout change is caught by hand (RED until the next
+  // re-capture), never by a gate.
   const fs::path outdir = ".superpowers/sdd-tmp/probe-b12-dumps";
   std::error_code ec;
   fs::create_directories(outdir, ec);

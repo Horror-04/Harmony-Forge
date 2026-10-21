@@ -205,7 +205,7 @@ state, and the item's own block carries the evidence.
 | B9 | Three CCN 16/30/30 functions were never split | inference | **RESOLVED** (phase-B tranche C) | `apply_mode` **30 → 3** and `apply_candidate_transform` **30 → 5** (pure moves); `compose_base` (16) stays pinned per D-B9 | residual: the **cube leg is structurally blind to 6 of the 7 new stages**; the in-repo pins carry them (accounted per stage below) |
 | B10 | ORT provider has no slot-range guard (+ no product pin on `model.logits.onnx`) | inference / CI | **RESOLVED (phase-B tranche G)** — see the resolution note "RESOLVED 2026-10-19 (phase-B tranche G, branch `refactor/phase-b-b10`)" in the B10 block below | an out-of-range id is **REJECTED** at the ORT boundary (the provider returns `false`, in the slot-checked id domain per D-B10.1); the sidecar pin covers **both** the logits values and the sidecar sha256 (`tests/golden/ort_logits_values.txt`, written by the real capture tool) | residual: the pinned values are **not bit-exact** across ORT versions (the C++ provider runs ORT 1.22.0, the capture ran 1.31.0; 217 of 256 values differ in the last bits, max \|Δ\| 2.86e-06 against a documented tolerance of 1e-4), so a sidecar swap is caught by the sha256 + the exact argmax, not by the values alone |
 | B11 | Keynorm chord-shift shape diverges between C++ and Python (declared phase-B by the repo) | inference / training | **RESOLVED** (phase-B tranche E) | the divergence is **HEALED**: python preserves every key of the input chord dict, the C++ shape is authoritative; parity pinned on BOTH sides over a new enriched vector | residual: the C++ side is **ints-only** (`ChordSymbol` has no name field), so the name stays an in-test spec constant |
-| B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work); the bounds golden `tests/golden/b12_editor_bounds.json` is **stale since the B2 wave** (the ArrangeBar gained two widgets) and awaits the re-capture tracked as "OPEN FOLLOW-UP (B12 bounds golden re-capture)" in the B12 block below |
+| B12 | The Editor extraction (S9.3) was never done | plugin/ui | **RESOLVED** (the S9.3 extraction, `bf795f3`) | the layout lives in `src/plugin/ui/EditorLayout.{h,cpp}`; Editor **293+807=1100**, ctor **CCN 16→13**, the bounds guard and the tab-wiring probe are green | residual: the D-B12 **TOTAL** ceiling (≤1050, +5 % tolerance) is met at 1100 but is **not machine-enforced**; neither probe is in CI (S93-3: future work); the bounds golden `tests/golden/b12_editor_bounds.json` was **re-captured on 2026-10-21** — the measured descendant-component count is **139**, not the stale 136 (see the resolution note "RESOLVED 2026-10-21 (the B12 bounds golden re-capture)" in the B12 block below) |
 
 
 ---
@@ -456,16 +456,18 @@ gets Strict, not the persisted value.
 > .cpp stayed at 807 lines (24 added / 24 removed). No local
 > build/ctest per the wave rules; 170 pytest cases pass and 17 fail only
 > on missing optional torch/onnx/onnxruntime in this environment.
-> **Known follow-up:** `tests/golden/b12_editor_bounds.json` is stale: the
-> ArrangeBar gained two widgets (`modeBox_`, `modeLabel_`), so the pinned
-> descendant-component count 136 no longer describes the editor tree. The
-> NEW count is a MEASUREMENT, not an arithmetic (JUCE's `ComboBox` also
-> installs an internal `Label` child), so the probe must MEASURE it after a
-> build: the count must GROW (>= 138) and the exact value comes from the
-> post-build re-capture. That re-capture is tracked as an explicit item in
-> the **B12** block below ("OPEN FOLLOW-UP (B12 bounds golden re-capture)"),
-> which carries the exact commands; the probe is neither ctest-registered
-> nor in CI, so no gate breaks. `docs/INVARIANTS.md`'s ctest counts were
+> **Known follow-up (CLOSED 2026-10-21):** `tests/golden/b12_editor_bounds.json`
+> was stale: the ArrangeBar gained two widgets (`modeBox_`, `modeLabel_`), so
+> the pinned descendant-component count 136 no longer described the editor
+> tree. The NEW count was a MEASUREMENT, not an arithmetic (JUCE's `ComboBox`
+> also installs an internal `Label` child), so the probe had to MEASURE it
+> after a build: the count GREW (>= 138) and the exact value came from the
+> post-build re-capture. That re-capture is **DONE** (2026-10-21): the
+> measured count is **139** at every window size, and the resolution note
+> lives in the **B12** block below ("RESOLVED 2026-10-21 (the B12 bounds
+> golden re-capture)"), which carries the exact commands. The probe is
+> neither ctest-registered nor in CI, so no gate breaks.
+> `docs/INVARIANTS.md`'s ctest counts were
 > the B10 measurement (254/221); the merged backlog wave has 273/233
 > (12 registered cases in both configurations - B1 +1, B2 +3, B3 +2, B4b +6
 > - and 7 plugin-ON-only ones, all B2's). The build-full half (273) is now
@@ -1918,6 +1920,11 @@ measured in S9 and has not been re-measured since.
 >   / 2048x1752). No re-banking was needed and none was done. The verdict
 >   and the hashes are recorded durably in
 >   `docs/measurements/s9-0.md` Appendix D §D-1.
+>   *(Append-only note, 2026-10-21: this bullet is the S9.3-extraction
+>   record and its numbers stay as they were measured then. The golden was
+>   RE-CAPTURED later — 2026-10-21, on the master tree at `0f131ba` — after
+>   the B2 wave added two ArrangeBar widgets; the live pin is the measured
+>   **139** components, not 136. See the B12 block below.)*
 > - **The tab-wiring probe** (`tests/probe_s93_tab_wiring.cpp`, ruling
 >   S93-3) is **ALL-PASS (0 failures)** on the same tree — it is the
 >   guard for the wiring, which the bounds guard is blind to (§D-2).
@@ -1932,34 +1939,55 @@ measured in S9 and has not been re-measured since.
 > is superseded by this resolution and by
 > `docs/measurements/s9-0.md` Appendix D.
 
-> **OPEN FOLLOW-UP (B12 bounds golden re-capture — tracked here, explicit
-> item).** The B12 bounds guard (`tests/probe_b12_bounds.cpp` +
-> `tests/golden/b12_editor_bounds.json`) is **knowingly stale** since the B2
-> wave (`refactor/b2-arrange-mode`): the ArrangeBar gained two widgets
-> (`modeBox_`, `modeLabel_`), so the pinned descendant-component count
-> **136** (and the dump byte counts / sha256s that go with it) no longer
-> describe the editor tree. **The new count is a MEASUREMENT, not an
-> arithmetic** — JUCE's `ComboBox` also installs an internal `Label` child,
-> so the delta is not the widget count — and the probe must MEASURE it: the
-> count must GROW (**>= 138**), and the exact value comes from the
-> post-build re-capture below. **The probe is neither ctest-registered nor
-> in CI** (ruling S93-3), so no gate breaks; the first person who runs it
-> by hand will see the mismatch.
-> Re-capture procedure (Debug, `build-plugdbg`, run from the repo root):
+> **RESOLVED 2026-10-21 (the B12 bounds golden re-capture; branch
+> `refactor/b12-bounds-recapture`).** The follow-up item tracked here is
+> **CLOSED**: the golden `tests/golden/b12_editor_bounds.json` was
+> **re-captured** from a live headless run (no peer, no paint) of the REAL
+> editor on the **master tree at `0f131ba`**, built **Release** in
+> `build-full` (`ctest -C Release` on that tree: 273/273 green). The
+> staleness was real: since the B2 wave (`refactor/b2-arrange-mode`) the
+> ArrangeBar had gained two widgets (`modeBox_`, `modeLabel_`), so the
+> pinned descendant-component count **136** (and the dump byte counts /
+> sha256s that go with it) no longer described the editor tree — the probe
+> failed **12 checks** (count, byte count and sha256 at every window size).
+> The re-capture **measured** the tree instead of counting widgets:
+> **136 → 139 at every window size**, with the dump byte counts and sha256s
+> that go with it:
 >
-> 1. `cmake --build build-plugdbg --config Debug --target probe_b12_bounds`
-> 2. `build-plugdbg/tests/Debug/probe_b12_bounds.exe --write <temp copy>`
+> | window size | components | dump bytes | dump sha256 (canonical dump text) |
+> |---|---|---|---|
+> | 960x600 | 136 → **139** | 3826 → **3913** | `7f138f4b…` → `fe956981…` |
+> | 1024x876 | 136 → **139** | 3843 → **3931** | `c0442dc9…` → `2ac3e876…` |
+> | 1280x800 | 136 → **139** | 3850 → **3939** | `aa06bdb5…` → `dbad1f89…` |
+> | 2048x1752 | 136 → **139** | 3880 → **3969** | `8e29a702…` → `a0e63a6e…` |
+>
+> The "**>= 138**" arithmetic that this block carried is **wrong and is
+> corrected here**: the measured value is **139**. The backlog's own text
+> said the number must come from the probe, and it does — JUCE's `ComboBox`
+> also installs an internal `Label` child, so two new widgets moved the
+> count by three.
+> The golden's own `doc` line now states the truth of THIS capture (date
+> 2026-10-21, headless — no peer, no paint, the master tree at `0f131ba`);
+> the golden-manifest record was re-banked (LF-canonical sha256
+> `cd1f3e14…`, 974 bytes, the writer named as the probe's `--write` mode);
+> and the probe now reports **ALL-PASS (0 failures), exit 0** against the
+> committed pin.
+> **The probe is still neither ctest-registered nor in CI** (ruling S93-3):
+> the guard is green only where somebody runs it — a later layout change is
+> caught by hand, never by a gate.
+> Re-capture procedure (Release, `build-full`, run from the repo root) —
+> the one that was used, kept for the next time it is needed:
+>
+> 1. `cmake --build build-full --config Release --target probe_b12_bounds`
+> 2. `build-full/tests/Release/probe_b12_bounds.exe --write <temp copy>`
 >    (the manifest's `how` requires the temp-copy path: never write the
 >    golden in place)
 > 3. byte-compare the temp copy with `tests/golden/b12_editor_bounds.json`,
 >    then replace the golden with the temp copy
 > 4. update the `in_test` record in `tests/golden_manifest.json`: the
->    canonical sha256 of the new golden, the `pins` prose (the measured
->    component count) and the `commit` provenance
+>    canonical sha256 + byte count of the new golden, the `pins` prose (the
+>    measured component count) and the `commit` provenance
 > 5. re-run `python tools/lint_golden_manifest.py` and the probe (exit 0)
->
-> Owner: whoever builds the branch next. Until then the guard is RED by
-> hand and green nowhere — stated, not glossed.
 
 ---
 
