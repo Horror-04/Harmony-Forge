@@ -3,19 +3,18 @@
 #include "constraints.h"
 
 #include <algorithm>
-#include <cstdlib>
 #include <vector>
 
 #include "core/music/chord.h"
 #include "core/music/pitch_class.h"
 #include "core/music/quantizer.h"
 #include "core/music/ranges.h"
+#include "strong_beat.h"
 
 namespace hf::infer {
 namespace {
 
-constexpr int kStrongBeatMod = 480;  // every quarter-note line at 480 PPQ
-constexpr int kGrid = 120;           // 16th-note grid at 480 PPQ
+constexpr int kGrid = 120;  // 16th-note grid at 480 PPQ
 
 // The pitch-class residue has ONE tree-wide definition
 // (core/music/pitch_class.h, phase-B B4a); re-exported here.
@@ -33,16 +32,6 @@ int nearest_pc_pitch(int pitch, const std::vector<int>& pcs) {
     if (clamped - d >= 0 && wanted[mod12(clamped - d)]) return clamped - d;
   }
   return clamped;  // unreachable: a full pc cycle fits in +/-12
-}
-
-bool is_minor_2nd_rub(int pitch, const std::vector<int>& chord_intervals, int root_pc) {
-  const int pc = mod12(pitch);
-  for (int s : chord_intervals) {
-    const int tone_pc = mod12(root_pc + s);
-    const int d = std::abs(pc - tone_pc);
-    if (std::min(d, 12 - d) == 1) return true;
-  }
-  return false;
 }
 
 // Minimal move into register: clamp to 0..127, then to the part boundary
@@ -74,17 +63,15 @@ void resolve_harmonic_conflicts(core::Pattern& pattern,
       // 2. Register clamp (minimal move into register).
       n.pitch = clamp_to_register(t.type, n.pitch);
       // 3. Strong-beat minor-2nd resolution against the bar-indexed chord.
-      if (n.start_tick % kStrongBeatMod != 0) continue;  // weak beat: keep
-      if (bar_ticks <= 0) continue;
-      const int bar = n.start_tick / bar_ticks;
-      if (bar < 0 || bar >= static_cast<int>(chords.size())) continue;  // no chord: keep
-      const auto& chord = chords[static_cast<size_t>(bar)];
-      const std::vector<int> iv = hf::music::chord_intervals(chord);
-      if (iv.empty()) continue;  // unknown chord: leave bar untouched
-      if (!is_minor_2nd_rub(n.pitch, iv, mod12(chord.root))) continue;
+      //    Projection 3 of the rule (strong_beat.h) answers "which chord must
+      //    this note be repaired against?"; nullptr means keep the note.
+      const hf::core::ChordSymbol* chord =
+          strong_beat_repair_target(n.start_tick, bar_ticks, chords, n.pitch);
+      if (chord == nullptr) continue;  // weak beat / no bar chord / no rub: keep
+      const std::vector<int> iv = hf::music::chord_intervals(*chord);
       std::vector<int> tone_pcs;
       tone_pcs.reserve(iv.size());
-      for (int s : iv) tone_pcs.push_back(mod12(chord.root) + s);
+      for (int s : iv) tone_pcs.push_back(mod12(chord->root) + s);
       n.pitch = nearest_pc_pitch(n.pitch, tone_pcs);
       // Backstop: the nearest tone can sit just outside the part register
       // (e.g. Melody 60 -> 59). Octave shifts preserve pitch class, hence

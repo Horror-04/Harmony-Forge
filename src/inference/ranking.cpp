@@ -4,46 +4,22 @@
 #include "ranking.h"
 
 #include <algorithm>
-#include <cstdlib>
-#include <vector>
 
-#include "core/music/chord.h"
-#include "core/music/pitch_class.h"
 #include "core/music/ranges.h"
 #include "core/music/scale.h"
+#include "strong_beat.h"
 
 namespace hf::infer {
 namespace {
-
-// The pitch-class residue has ONE tree-wide definition
-// (core/music/pitch_class.h, phase-B B4a); re-exported here.
-using hf::music::mod12;
 
 bool is_pitched_counted(hf::core::TrackType t) {
   return t == hf::core::TrackType::Melody || t == hf::core::TrackType::Bass;
 }
 
-// Strong-beat rub check shared with resolve_harmonic_conflicts semantics:
-// start_tick % 480 == 0, bar-indexed chord, pitch-class distance 1.
-bool strong_beat_rub(const hf::core::Note& n, const core::Pattern& p,
-                     const core::ChordProgression& chords) {
-  if (n.start_tick % 480 != 0) return false;
-  const int bar_ticks = p.ticks_per_beat * p.beats_per_bar;
-  if (bar_ticks <= 0) return true;  // degenerate pattern: cannot judge safe
-  const int bar = n.start_tick / bar_ticks;
-  if (bar < 0 || bar >= static_cast<int>(chords.size())) return false;
-  const auto& chord = chords[static_cast<size_t>(bar)];
-  const std::vector<int> iv = hf::music::chord_intervals(chord);
-  if (iv.empty()) return false;  // unknown chord: cannot judge
-  const int pc = mod12(n.pitch);
-  const int root_pc = mod12(chord.root);
-  for (int s : iv) {
-    const int d = std::abs(pc - mod12(root_pc + s));
-    if (std::min(d, 12 - d) == 1) return true;
-  }
-  return false;
-}
-
+// The strong-beat rub check is projection 2 of the rule, which has ONE home
+// in strong_beat.h (phase-B B4b): start_tick % 480 == 0, bar-indexed chord,
+// pitch-class distance 1. Its body used to be a TU-local copy here and
+// moved byte-for-byte; both callers below keep their text.
 struct Fractions {
   float in_scale = 0.0f;
   float strong_safe = 0.0f;

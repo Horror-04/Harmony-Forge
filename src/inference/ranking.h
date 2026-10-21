@@ -15,6 +15,8 @@ namespace hf::infer {
 // minor-2nd rubs against the bar-indexed chord. Bars without a known chord
 // count as safe (consistent with resolve_harmonic_conflicts leaving them
 // untouched). Patterns with no Melody/Bass notes score 1.0 (vacuous).
+// The predicate is projection 2 of `inference/strong_beat.h`
+// (`strong_beat_rub`), the rule's one home since B4b.
 // Deterministic pure function; never throws.
 float strict_compliance(const core::Pattern& p, const core::ChordProgression& chords,
                         int tonic, const std::string& scale);

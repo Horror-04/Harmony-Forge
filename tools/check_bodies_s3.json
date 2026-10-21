@@ -149,6 +149,39 @@
       "old": {"rev": "880bb15", "path": "src/inference/candidates.cpp", "start": 626, "end": 628},
       "new": {"path": "src/inference/candidates.cpp", "start": 217, "end": 219},
       "allow": []
+    },
+    "strong_beat_rub": {
+      "sig": "bool strong_beat_rub",
+      "note": "B4b: the ranking-side projection moved from src/inference/ranking.cpp to the rule's one home src/inference/strong_beat.h. The allowlist is the complete set of deliberate edits: the literal 480 became the named constant kStrongBeatTicks (same value), static_cast<size_t> is a spelling, and the inlined distance-1 tail became the shared is_minor_2nd_rub call (that helper is itself pinned byte-identical to the old constraints.cpp local by the is_minor_2nd_rub entry below).",
+      "old": {"rev": "aab98db", "path": "src/inference/ranking.cpp", "start": 28, "end": 45},
+      "new": {"path": "src/inference/strong_beat.h", "start": 141, "end": 152},
+      "allow": [
+        {"old": "n.start_tick % 480 != 0", "new": "n.start_tick % kStrongBeatTicks != 0"},
+        {"old": "static_cast<size_t>(bar)", "new": "static_cast<std::size_t>(bar)"},
+        {"old": "  const int pc = mod12(n.pitch);\n  const int root_pc = mod12(chord.root);\n  for (int s : iv) {\n    const int d = std::abs(pc - mod12(root_pc + s));\n    if (std::min(d, 12 - d) == 1) return true;\n  }\n  return false;\n", "new": "  return is_minor_2nd_rub(n.pitch, iv, hf::music::mod12(chord.root));\n"}
+      ]
+    },
+    "is_minor_2nd_rub": {
+      "sig": "bool is_minor_2nd_rub",
+      "note": "B4b: the shared distance-1 test moved from src/inference/constraints.cpp to src/inference/strong_beat.h. The only edit is the qualification of mod12 (mod12( -> hf::music::mod12(), twice) inside namespace hf::infer.",
+      "old": {"rev": "aab98db", "path": "src/inference/constraints.cpp", "start": 38, "end": 46},
+      "new": {"path": "src/inference/strong_beat.h", "start": 113, "end": 121},
+      "allow": [{"old": "mod12(", "new": "hf::music::mod12("}]
+    },
+    "is_replace_rub": {
+      "sig": "bool is_replace_rub",
+      "new_sig": "const core::ChordSymbol* strong_beat_repair_target",
+      "note": "B4b fix round 1: the plugin's chord-replace rub (src/plugin/ui/PatternDocument.cpp) FOLDED onto the shared projection 3. The allowlist is the complete set of differences between the old local predicate and the shared projection, and every one of them is semantics-preserving: (1) the signature and the sentinel change (bool false/true <-> nullptr/&chord - the plugin adapter asks only 'is there a repair target?', and the old 'no rub' and the new 'keep' are the same decision); (2) the literal 480 became kStrongBeatTicks (same value) and the bar length is now computed by the adapter and passed through unchanged; (3) n.start_tick became the start_tick parameter; (4) static_cast<size_t> is a spelling; (5) the inlined distance-1 loop became the shared is_minor_2nd_rub call (pinned byte-identical to the old constraints.cpp local by the is_minor_2nd_rub entry) plus 'return &chord'. No arithmetic changed.",
+      "old": {"rev": "aab98db", "path": "src/plugin/ui/PatternDocument.cpp", "start": 29, "end": 46},
+      "new": {"path": "src/inference/strong_beat.h", "start": 160, "end": 171},
+      "allow": [
+        {"old": "bool is_replace_rub(const hf::core::Note& n, const hf::core::Pattern& p,\n                    const hf::core::ChordProgression& chords) {", "new": "const core::ChordSymbol* strong_beat_repair_target(\n    int start_tick, int bar_ticks, const core::ChordProgression& chords, int pitch) {"},
+        {"old": "  if (n.start_tick % 480 != 0) return false;\n  const int bar_ticks = p.ticks_per_beat * p.beats_per_bar;\n  if (bar_ticks <= 0) return false;\n  const int bar = n.start_tick / bar_ticks;", "new": "  if (start_tick % kStrongBeatTicks != 0) return nullptr;\n  if (bar_ticks <= 0) return nullptr;\n  const int bar = start_tick / bar_ticks;"},
+        {"old": "if (bar < 0 || bar >= static_cast<int>(chords.size())) return false;", "new": "if (bar < 0 || bar >= static_cast<int>(chords.size())) return nullptr;"},
+        {"old": "chords[static_cast<size_t>(bar)]", "new": "chords[static_cast<std::size_t>(bar)]"},
+        {"old": "if (iv.empty()) return false;", "new": "if (iv.empty()) return nullptr;"},
+        {"old": "  const int pc = mod12(n.pitch);\n  const int root_pc = mod12(chord.root);\n  for (int s : iv) {\n    const int d = std::abs(pc - mod12(root_pc + s));\n    if (std::min(d, 12 - d) == 1) return true;\n  }\n  return false;\n}", "new": "  if (!is_minor_2nd_rub(pitch, iv, hf::music::mod12(chord.root))) return nullptr;\n  return &chord;\n}"}
+      ]
     }
   }
 }

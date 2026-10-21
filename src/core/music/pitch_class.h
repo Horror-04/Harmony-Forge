@@ -20,8 +20,9 @@
 namespace hf::music {
 
 // Pitch class of a MIDI pitch: the residue class modulo 12, normalised to
-// 0..11 (negative inputs included).
-inline int mod12(int v) noexcept { return ((v % 12) + 12) % 12; }
+// 0..11 (negative inputs included). `constexpr` (phase-B B4b) so the name
+// accessor below can be a constant expression; the body is unchanged.
+constexpr int mod12(int v) noexcept { return ((v % 12) + 12) % 12; }
 
 // Nearest pitch to `pitch` that lies inside [lo, hi] and differs from it by
 // whole octaves.
@@ -36,5 +37,21 @@ constexpr int kMelodyLo = 60;  // C3 register floor
 constexpr int kMelodyHi = 84;
 constexpr int kBassLo = 24;
 constexpr int kBassHi = 60;  // C3 register ceiling
+
+// The 12 pitch-class NAMES, sharp spelling, C == 0 -- the ONE name table in
+// the tree (phase-B B4b; the B4a name-table residual). Before B4b the same
+// 12 strings were copy-pasted into four places
+// (`src/core/music/explain.cpp` kPcNames, `src/plugin/ui/ChordTrack.cpp`
+// kNames, `src/plugin/ui/ExplainView.cpp` kNames,
+// `src/plugin/audio/PluginEditor.cpp` kNames); all four copies were
+// byte-identical, so the fold changes no string. Names only: there is no
+// pitch-class arithmetic here beyond the accessor's normalisation.
+// Index THROUGH `pitch_class_name`, never the array: the accessor is what
+// normalises an out-of-range or negative pitch.
+inline constexpr const char* kPitchClassNames[12] = {
+    "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+
+// Name of `pc`'s pitch class, sharp spelling ("C", "C#", ... "B").
+constexpr const char* pitch_class_name(int pc) noexcept { return kPitchClassNames[mod12(pc)]; }
 
 }  // namespace hf::music

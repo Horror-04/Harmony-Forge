@@ -37,6 +37,10 @@ target_compile_definitions(test_vocab_layout PRIVATE
   HARMONY_FORGE_SLOT_BITMAP="${CMAKE_SOURCE_DIR}/tests/golden/slot_bitmap.txt")
 hf_add_test(test_candidates test_candidates.cpp)
 hf_add_test(test_constraints test_constraints.cpp)
+# Phase-B B4b: the strong-beat rule's three projections (src/inference/
+# strong_beat.h) pinned as truth tables + the one pitch-class name table.
+# JUCE-free (hf_add_test), so it builds in BOTH configs.
+hf_add_test(test_strong_beat test_strong_beat.cpp)
 hf_add_test(test_inference test_inference.cpp)
 target_compile_definitions(test_inference PRIVATE
   HARMONY_FORGE_MOCK_MODEL="${CMAKE_SOURCE_DIR}/training/model.onnx")

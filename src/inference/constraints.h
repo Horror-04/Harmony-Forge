@@ -23,6 +23,8 @@ namespace hf::infer {
 //   (including every beat line) are unaffected.
 // - Bars without a chord entry, and chords with unknown types (no known
 //   intervals), are left untouched. Drums tracks are fully untouched.
+// - The predicate itself is projection 3 of `inference/strong_beat.h`
+//   (`strong_beat_repair_target`), the rule's one home since B4b.
 // - Never throws; empty input is a no-op.
 void resolve_harmonic_conflicts(core::Pattern& pattern, const core::ChordProgression& chords);
 

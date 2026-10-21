@@ -171,7 +171,7 @@ The tests, the tools and the training tree are out of scope.
 lizard is missing the tool prints a SKIP line and exits 0; with `--strict`
 (the CI mode) it exits 1. CI installs the pinned version first.
 
-**Current value.** 22 functions with CCN > 15, all pinned, none grown.
+**Current value.** 21 functions with CCN > 15, all pinned, none grown.
 Table (qualified name | file:lines | CCN | reason class):
 
 | function | file:lines | CCN | reason |
@@ -189,7 +189,6 @@ Table (qualified name | file:lines | CCN | reason class):
 | `PianoRoll::mouseDown` | `src/plugin/ui/PianoRoll.cpp:304-375` | 20 | S0 baseline |
 | `hf::arr::apply_energy` | `src/core/arrangement/arrangement.cpp:185-228` | 19 | S0 baseline |
 | `hf::core::freeze_complement_of_selection` | `src/core/model/selection.cpp:301-346` | 19 | S0 baseline |
-| `hf::infer::resolve_harmonic_conflicts` | `src/inference/constraints.cpp:66-108` | 19 | S0 baseline |
 | `hf::infer::json_int` | `src/inference/model_manifest.cpp:155-173` | 18 | S0 baseline |
 | `hf::infer::OrtLogitsProvider::get_logits` | `src/inference/ort_logits.cpp:222-274` | 18 | S0 baseline |
 | `PianoRoll::keyPressed` | `src/plugin/ui/PianoRoll.cpp:441-472` | 18 | S0 baseline |
@@ -197,12 +196,13 @@ Table (qualified name | file:lines | CCN | reason class):
 | `hf::music::detect_key` | `src/core/music/key_detect.cpp:25-69` | 16 | S0 baseline |
 | `hf::infer::compose_base` | `src/inference/candidate_base.cpp:38-94` | 16 | **S3 candidate** |
 | `hf::infer::check_model_compatible` | `src/inference/model_manifest.cpp:288-339` | 16 | S0 baseline |
-| `hf::infer::strict_core` | `src/inference/sampler.cpp:81-117` | 16 | S0 baseline |
+| `hf::infer::strict_core` | `src/inference/sampler.cpp:82-118` | 16 | S0 baseline |
 
-**Line ranges re-derived 2026-10-20 (the final phase fix wave).** 8 of the
-22 rows carried a stale range (the tree moved under them); every row above is
-now the lizard 1.24.1 range of the named function, and the tool
-(`tools/lint_ccn.py`) carries the same numbers in the SAME commit. The
+**Line ranges re-derived 2026-10-20 (the final phase fix wave) — HISTORICAL;
+partly superseded by the 2026-10-21 refresh below.** 8 of the
+22 rows carried a stale range (the tree moved under them); every row above
+was, ON THAT DATE, the lizard 1.24.1 range of the named function, and the
+tool (`tools/lint_ccn.py`) carried the same numbers in the SAME commit. The
 ranges are **INDICATIVE**: the gate keys on (file, name) and the pinned CCN,
 never on the range (the range only decorates the failure message), so no
 gate verdict changed — `lint_ccn --strict` still reports "22 pinned
@@ -211,7 +211,16 @@ functions, 22 functions over the target". The moved rows:
 162-257, `recognize_chord` 46-110 → 45-109, `freeze_complement_of_selection`
 298-343 → 301-346, `resolve_harmonic_conflicts` 63-105 → 66-108,
 `get_logits` 150-193 → 222-274, `detect_key` 26-70 → 25-69, `strict_core`
-78-114 → 81-117.
+78-114 → 81-117 (`strict_core` was re-derived once more afterwards — it is
+82-118 today; see the next paragraph).
+
+**Line ranges refreshed 2026-10-21 (backlog wave B4b, fix round 1).** The
+B4b extraction added one `#include` line above `strict_core`, so its pinned
+range is now **82-118** in the table above and in `tools/lint_ccn.py` (the
+two files carry the same numbers in the SAME commit, as the ratchet
+requires). The ranges are INDICATIVE (the gate keys on (file, name) and the
+pinned CCN), so no gate verdict changed: `strict_core` is still CCN 16 and
+still pinned.
 
 **Exception reasons (verbatim, as the owner stated them).**
 
@@ -223,7 +232,7 @@ functions, 22 functions over the target". The moved rows:
   so these three functions have no automated shape guard today).
   (`apply_mode` and `apply_candidate_transform` left the set on
   2026-10-19 — see the prune record below.)
-* The other 21 entries carry the reason: "pre-existing at the S0 baseline
+* The other 20 entries carry the reason: "pre-existing at the S0 baseline
   (`docs/measurements/s0-lizard.csv`) — outside the S3 scope".
 * Pruned 2026-10-19 (S9.3 fix round 1): `HarmonyForgeEditor::
   HarmonyForgeEditor` — the S9.3 layout extraction dropped the constructor
@@ -252,6 +261,26 @@ functions, 22 functions over the target". The moved rows:
   gate (a new function over 15 must be pinned and may not grow) is the
   ratchet that keeps it from growing back. `strict_core` (16) stays pinned —
   D-B5 does NOT split it (that is item B4).
+* Pruned 2026-10-21 (backlog wave, item B4b):
+  `hf::infer::resolve_harmonic_conflicts` (19 -> 14) — the strong-beat rule
+  moved to ONE home, `src/inference/strong_beat.h`, as three named
+  projections (`strong_beat_on_grid`, `strong_beat_rub`,
+  `strong_beat_repair_target`) plus the shared `is_minor_2nd_rub`; the
+  constraints site keeps only `if (chord == nullptr) continue;`, so the gate
+  dropped below the target 15 and no pin is needed (the gate printed the
+  prune NOTE before the row was removed). The extraction is a PURE MOVE of
+  the predicate (`strong_beat_rub` is body-identical to the old
+  `ranking.cpp` local; `is_minor_2nd_rub` to the old `constraints.cpp`
+  local), pinned by `tests/test_strong_beat.cpp` truth tables. The new
+  header functions measure CCN 1/3/6/7 and `strict_core` stays at 16.
+* Folded 2026-10-21 (backlog wave, item B4b, fix round 1): the plugin's
+  `is_replace_rub` (`src/plugin/ui/PatternDocument.cpp`) folded onto the
+  shared repair projection, so its TU-local CCN 8 body is gone (the thin
+  adapter measures CCN 1). No pinned row changes, no new function is over the
+  target 15, and the census in `tools/check_bodies_s3.json` pins the old
+  local predicate against the shared projection (`is_replace_rub`, allowlist
+  6 — every difference is a sentinel/spelling/named-constant change, no
+  arithmetic).
 
 ---
 

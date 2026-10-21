@@ -11,38 +11,29 @@
 #include "constraints.h"
 #include "core/model/pattern_ops.h"
 #include "core/model/track_pattern.h"
-#include "core/music/chord.h"
-#include "core/music/pitch_class.h"
 #include "core/music/quantizer.h"
+#include "strong_beat.h"
 
 namespace {
 
-// The pitch-class residue has ONE tree-wide definition
-// (core/music/pitch_class.h, phase-B B4a); re-exported here.
-using hf::music::mod12;
-
-// Mirrors resolve_harmonic_conflicts step 3 (constraints.cpp): true when a
-// pre-resolve note sits on a strong beat (start_tick % 480 == 0) whose pitch
-// class is a minor 2nd from a tone of the bar's chord. Only such rub notes
-// may move on chord replace (SPEC §3.1); every other note keeps its
-// grid/register (see replaceChord below).
+// The chord-replace rule: only a pre-resolve note that sits on a strong beat
+// (start_tick % 480 == 0) whose pitch class is a minor 2nd from a tone of
+// the bar's chord may move on chord replace (SPEC §3.1); every other note
+// keeps its grid/register (see replaceChord below).
+//
+// This IS projection 3 of the strong-beat rule (src/inference/strong_beat.h,
+// phase-B B4b): the same predicate resolve_harmonic_conflicts uses, with the
+// same KEEP decisions, so the plugin and the repairer cannot drift apart.
+// `strong_beat_repair_target` answers "which chord must this note be
+// repaired against?"; a non-null answer is exactly the old "this note rubs"
+// answer (the body-equality census in tools/check_bodies_s3.json pins the
+// old local predicate against this shared projection).
 bool is_replace_rub(const hf::core::Note& n, const hf::core::Pattern& p,
                     const hf::core::ChordProgression& chords) {
-  if (n.start_tick % 480 != 0) return false;
   const int bar_ticks = p.ticks_per_beat * p.beats_per_bar;
-  if (bar_ticks <= 0) return false;
-  const int bar = n.start_tick / bar_ticks;
-  if (bar < 0 || bar >= static_cast<int>(chords.size())) return false;
-  const auto& chord = chords[static_cast<size_t>(bar)];
-  const std::vector<int> iv = hf::music::chord_intervals(chord);
-  if (iv.empty()) return false;
-  const int pc = mod12(n.pitch);
-  const int root_pc = mod12(chord.root);
-  for (int s : iv) {
-    const int d = std::abs(pc - mod12(root_pc + s));
-    if (std::min(d, 12 - d) == 1) return true;
-  }
-  return false;
+  const hf::core::ChordSymbol* target =
+      hf::infer::strong_beat_repair_target(n.start_tick, bar_ticks, chords, n.pitch);
+  return target != nullptr;
 }
 
 }  // namespace
