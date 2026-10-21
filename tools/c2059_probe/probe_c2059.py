@@ -15,9 +15,12 @@ WHAT THIS PROBE PINS (it compiles the REAL site file, not a copy of it):
 
   (a) the site TU compiles AS IT STANDS;
   (b) the well-formed ONE-LINE forms compile - the site's two lines joined
-      AND an inner-expression mutation on one line (`p.seed + index + 1`).
-      That is the fact that retired the old "no single-line
-      inner-expression mutations" constraint: either form is fine;
+      AND an inner-expression mutation on one line
+      (`runner_seed(p, index + 1)`). That is the fact that retired the old
+      "no single-line inner-expression mutations" constraint: either form is
+      fine. B3 moved the initializer from the inline additive expression to
+      `runner_seed(p, index)`; the shapes below track the new site while the
+      historical repro text stays in the record;
   (c) each of the four recorded MALFORMED forms fails to compile. Only
       the FAILURE is asserted: "C2059" is not a property of the compiler
       but of the typo, so the diagnostic text is printed, never pinned;
@@ -87,46 +90,46 @@ CL_FLAGS = ("/nologo", "/c", "/EHsc", "/std:c++20", "/utf-8", "/W3")
 # silently compiles an unmutated file and calls it a pass.
 SITE_STATEMENT_RE = re.compile(
     r"    const std::uint64_t sseed =\s*"
-    r"static_cast<std::uint64_t>\(static_cast<unsigned>\(p\.seed \+ index\)\);")
+    r"static_cast<std::uint64_t>\(runner_seed\(p, index\)\);")
 
 # The well-formed one-line form: the shape the old constraint forbade and
 # the probe proves to compile.
 ONE_LINE = ("    const std::uint64_t sseed = static_cast<std::uint64_t>("
-            "static_cast<unsigned>(p.seed + index));")
+            "runner_seed(p, index));")
 
-# The same, with an inner-expression mutation on ONE line (`p.seed + index
-# + 1`): this is the shape the retired constraint actually banned ("NO
-# single-line inner-expression mutations"), so it is the retirement proof
-# itself - either form is fine.
+# The same, with an inner-expression mutation on ONE line
+# (`runner_seed(p, index + 1)`): this is the shape the retired constraint
+# actually banned ("NO single-line inner-expression mutations"), so it is the
+# retirement proof itself - either form is fine.
 ONE_LINE_INNER = ("    const std::uint64_t sseed = static_cast<std::uint64_t>("
-                  "static_cast<unsigned>(p.seed + index + 1));")
+                  "runner_seed(p, index + 1));")
 
 # The two-statement form of the record: the RECOMMENDED shape for scratch
 # mutations (one closing paren less to typo).
-TWO_STATEMENT = ("    const unsigned sseed32 = static_cast<unsigned>(p.seed +"
-                 " index);\n    const std::uint64_t sseed = sseed32 + 1u;")
+TWO_STATEMENT = ("    const unsigned sseed32 = runner_seed(p, index);\n"
+                 "    const std::uint64_t sseed = sseed32 + 1u;")
 
 # The four recorded repro forms (docs/measurements/s3-quirks.md), each
 # with the extra closing paren(s) that made it malformed. The paren delta
 # of each record line is part of the variant's declaration: repro #1-#3
 # carry ONE extra closing paren, repro #4 carries TWO (2 `(` and 4 `)`).
 MALFORMED = (
-    ("malformed-1", "record repro #1 (p.seed + index + 1)",
+    ("malformed-1", "record repro #1 (runner_seed(p, index + 1))",
      "    const std::uint64_t sseed =\n"
-     "        static_cast<std::uint64_t>(static_cast<unsigned>("
-     "p.seed + index + 1)));", -1),
-    ("malformed-2", "record repro #2 (p.seed + index + 0)",
+     "        static_cast<std::uint64_t>(runner_seed("
+     "p, index + 1)));", -1),
+    ("malformed-2", "record repro #2 (runner_seed(p, index + 0))",
      "    const std::uint64_t sseed =\n"
-     "        static_cast<std::uint64_t>(static_cast<unsigned>("
-     "p.seed + index + 0)));", -1),
-    ("malformed-3", "record repro #3 (p.seed ^ index)",
+     "        static_cast<std::uint64_t>(runner_seed("
+     "p, index + 0)));", -1),
+    ("malformed-3", "record repro #3 (runner_seed(p, index ^ 1))",
      "    const std::uint64_t sseed =\n"
-     "        static_cast<std::uint64_t>(static_cast<unsigned>("
-     "p.seed ^ index)));", -1),
-    ("malformed-4", "record repro #4 ((p.seed + index) + 1u)",
+     "        static_cast<std::uint64_t>(runner_seed("
+     "p, index ^ 1)));", -1),
+    ("malformed-4", "record repro #4 (runner_seed(p, index) + 1u)",
      "    const std::uint64_t sseed =\n"
-     "        static_cast<std::uint64_t>(static_cast<unsigned>("
-     "p.seed + index) + 1u)));", -2),
+     "        static_cast<std::uint64_t>(runner_seed("
+     "p, index) + 1u)));", -2),
 )
 
 # (key, label, expectation, replacement or None, paren delta of the
@@ -141,7 +144,7 @@ VARIANTS = (
     ("one-line", "well-formed ONE-LINE form (the site's two lines joined)",
      "compile", ONE_LINE, 0),
     ("one-line-inner",
-     "well-formed inner-expression mutation on ONE line (p.seed + index + 1)",
+     "well-formed inner-expression mutation on ONE line (runner_seed(p, index + 1))",
      "compile", ONE_LINE_INNER, 0),
     ("two-statement", "two-statement form (record's recommended shape)",
      "compile", TWO_STATEMENT, 0),

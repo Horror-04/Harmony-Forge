@@ -29,6 +29,7 @@
 #include "onnx_runner.h"
 #include "ort_logits.h"
 #include "sampler.h"
+#include "seed_derivation.h"
 
 namespace hf::infer {
 namespace {
@@ -164,10 +165,10 @@ core::Pattern material_via_sampler_or_greedy(const core::Pattern& feed, const Ge
                                              const core::ChordProgression& prog,
                                              int kn_shift, int index) {
   const auto greedy = [&] {
+    const unsigned seed = runner_seed(p, index);
     return !p.model_path.empty()
-               ? material_from_runner_with(feed, static_cast<unsigned>(p.seed + index),
-                                           p.model_path, nullptr)
-               : material_from_runner(feed, static_cast<unsigned>(p.seed + index));
+               ? material_from_runner_with(feed, seed, p.model_path, nullptr)
+               : material_from_runner(feed, seed);
   };
   try {
     const auto provider = sampler_provider_for(p.model_path);
@@ -197,7 +198,7 @@ core::Pattern material_via_sampler_or_greedy(const core::Pattern& feed, const Ge
     // scratch mutations (one paren less to typo), but either form is fine:
     // tools/c2059_probe/probe_c2059.py compiles this file both ways.
     const std::uint64_t sseed =
-        static_cast<std::uint64_t>(static_cast<unsigned>(p.seed + index));
+        static_cast<std::uint64_t>(runner_seed(p, index));
     std::array<int, kSamplerMaxTokens - 1> buf{};
     size_t out_n = 0;
     SamplerStats stats;
