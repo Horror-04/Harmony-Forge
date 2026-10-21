@@ -30,8 +30,8 @@
 //   generated the material: e = 0 adds no ORNAMENTS, whatever the mode.
 //   That is exactly what the ruling's "e = 0 -> pure Strict" means - it is
 //   a statement about the ORNAMENTS, NOT about the generator's mode: a
-//   Creative base generates Creative material at e = 0 too (see the in-scale
-//   note below). tonic/scale/model_path come from base.
+//   Creative base still generates in Creative mode at e = 0 (see the
+//   in-scale note below). tonic/scale/model_path come from base.
 // - Each section restarts the I-V-vi-IV progression loop (section-local bar
 //   phase; see arrangement_progression).
 //
@@ -72,10 +72,14 @@
 // - On a STRICT base the material is in scale at e = 0 ONLY: the generator
 //   adds no chromaticism of its own, so e = 0 (no ornaments) is in scale,
 //   and every e > 0 is not (the ornaments are chromatic by design).
-// - On a CREATIVE base the material is OUTSIDE the scale at EVERY e, e = 0
-//   included: the generator itself inserts chromatic passing tones
-//   (insert_chromatic_passing_tones, src/inference/candidate_modes.cpp)
-//   and those are present regardless of the energy.
+// - On a CREATIVE base there is NO in-scale guarantee at ANY e: the
+//   generator MAY insert chromatic passing tones
+//   (insert_chromatic_passing_tones, src/inference/candidate_modes.cpp).
+//   The insert is conditional (same-bar pair, pitch gap >= 3, midpoint on a
+//   weak 16th-grid tick) and the tones it adds are ordinary mid-bar melody
+//   notes, so the density stage may thin them away - at e = 0 a passing
+//   tone survives with p = 0.4. The material CAN therefore be in scale at
+//   e = 0: a Creative base REMOVES the guarantee, it does not invert it.
 // The ruling's "e = 0 -> pure Strict" is a statement about the ORNAMENTS
 // (e = 0 adds no ornaments), NOT about the generator's mode.
 //
@@ -146,9 +150,9 @@ struct ArrangeParams {
   // default, so an untouched ArrangeParams reproduces the pre-B2 bytes;
   // Creative/Experimental come straight from the caller (nothing overrides
   // them). Energy (per section) keeps blending the Creative ORNAMENTS on top,
-  // independent of this mode; on a Creative base the material is outside the
-  // scale at every e (the generator's own chromatic passing tones), whatever
-  // the energy.
+  // independent of this mode; on a Creative base there is NO in-scale
+  // guarantee at any e (the generator MAY insert chromatic passing tones),
+  // whatever the energy.
   hf::infer::GenParams base;
 };
 

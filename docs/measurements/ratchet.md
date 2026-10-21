@@ -370,30 +370,36 @@ value: **221 is the build-OFF (Debug) count; the build-FULL (Release)
 count is 254.**
 
 **Static cross-check (no build).** Verified against `tests/CMakeLists.txt`
-at HEAD: the tree holds **264 `TEST_CASE` macros** in 45 test binaries.
-**40 binaries are registered** with `catch_discover_tests` (directly, or
+at HEAD: the tree holds **274 `TEST_CASE` macros** in 46 test binaries.
+**41 binaries are registered** with `catch_discover_tests` (directly, or
 through the `hf_add_test` helper); **5 are deliberately NOT registered**:
 `test_visual_polish` (5 cases), `test_note_cues` (3), `test_memo_e2e`
 (1) and the two plain-`main()` probes (`probe_b12_bounds`,
 `probe_s93_tab_wiring` — no cases) — 9 unregistered cases in total. The
 one hidden (`[.]`) case in the tree lives in `test_memo_e2e`, i.e. inside
 the unregistered group, so it never reaches `ctest` either. That leaves
-**255 registered cases**: 227 in the binaries that build in BOTH
-configurations and 28 in the plugin-ON-only families
+**265 registered cases**: 230 in the binaries that build in BOTH
+configurations and 35 in the plugin-ON-only families
 (`test_chordtrack_pin` 2, `test_vertical_slice` 1,
 `test_keyboard_moves` 9, `test_focus_resize` 4, `test_preview_synth` 2,
-`test_rt_violation_counter` 3, `test_rt_soak` 1, `test_plugin_state` 4,
-`test_params_from_state` 2). The static proxy at HEAD therefore reads
-**255 (build-full) / 227 (build-off)** — one and six cases ABOVE the
-pinned 254/221: the one-case gap is the S10.1 census's own, the
-three-case gap is the historical one, and the three B10 cases are counted
-by the proxy but compiled OUT of the off configuration (they live in an
-`#ifdef HARMONY_FORGE_WITH_ONNX` block) — the MEASURED pair is therefore
-254/221. The static count is a PROXY, not a measurement: S10.1 runs no
-builds, so the pinned counters stayed at the recorded 251/221 until the
-final measurement pass (phase-B B10, 2026-10-20) re-ran ctest in both
-configurations and re-pinned the pair at 254/221 (they may only grow —
-the ratchet is "must not drop").
+`test_rt_violation_counter` 3, `test_rt_soak` 1, `test_plugin_state` 8,
+`test_params_from_state` 4, `test_arrange_mode_model` 1). The static
+proxy at HEAD therefore reads **265 (build-full) / 230 (build-off)** —
+eleven and nine cases ABOVE the pinned 254/221: the ten cases B2 added
+(registered: 3 in both configurations — `test_arrangement` +2,
+`test_candidates` +1 — and 7 in the plugin-ON-only families —
+`test_plugin_state` +4, `test_params_from_state` +2,
+`test_arrange_mode_model` +1), the one-case gap is the S10.1 census's own,
+the three-case gap is the historical one, and the three B10 cases are
+counted by the proxy but compiled OUT of the off configuration (they live
+in an `#ifdef HARMONY_FORGE_WITH_ONNX` block) — the MEASURED pair is
+therefore still 254/221 (the ratchet is "must not drop"). The static
+count is a PROXY, not a measurement: the EXPECTED pair once B2 is built
+and run is **264 (build-full) / 224 (build-off)** — 254 + 10 and 221 + 3,
+the ten registered cases B2 added (3 of them in both configurations) — to
+be confirmed by the first green CI run in both configurations; the B2
+branch itself ran no build, so the pinned counters stay at the recorded
+254/221 (they may only grow).
 
 ---
 

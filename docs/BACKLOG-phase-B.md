@@ -364,7 +364,7 @@ gets Strict, not the persisted value.
 > (including Experimental) reads and writes as Strict. `build_section` no
 > longer assigns `GenMode::Strict`, so the caller's `base.mode` reaches the
 > generator.
-> **The UI:** the Arrange tab carries a visible `Mode` combo
+> **The UI:** the Arrange tab carries a visible `Mode (arrangement)` combo
 > (Strict/Creative) on the section-button row; `onModeChanged` commits the
 > value undoably and `valueTreePropertyChanged` reflects load/undo/redo.
 > **Default preservation:** `paramsFromState` keeps its Strict default (via

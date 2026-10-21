@@ -199,20 +199,22 @@ void ArrangeBar::resized() {
   // B2: the section buttons give the arrangement-wide mode label room on
   // the same row (the Arrange tab has no spare row). Widths: the four
   // buttons carry "Add"/"Del"/"Up"/"Down" at the 13 px body font (text
-  // 23/19/16/33 px + the 4 px inset per side), so 44/42/38/48 keep 10-15 px
-  // of slack; the label needs ~96 px for "Mode (arrangement)" at the 11 px
-  // caption font; the combo takes the rest (~76 px at the 960 px editor
-  // minimum, enough for "Creative" + the arrow). The combo is visible next
-  // to the buttons, never a hidden default.
-  addButton_.setBounds(row3.removeFromLeft(44));
+  // 23/19/16/33 px + the 4 px inset per side), so 40/38/38/48 keep 10-17 px
+  // of slack (Add and Del gave 4 px each to the label); the label takes
+  // 108 px for "Mode (arrangement)" at the 11 px caption font (Arial
+  // metrics: ~100 px of text, so the last character cannot be clipped);
+  // the combo takes the rest (~76 px at the 960 px editor minimum, enough
+  // for "Creative" + the arrow). The combo is visible next to the buttons,
+  // never a hidden default.
+  addButton_.setBounds(row3.removeFromLeft(40));
   row3.removeFromLeft(4);
-  removeButton_.setBounds(row3.removeFromLeft(42));
+  removeButton_.setBounds(row3.removeFromLeft(38));
   row3.removeFromLeft(4);
   upButton_.setBounds(row3.removeFromLeft(38));
   row3.removeFromLeft(4);
   downButton_.setBounds(row3.removeFromLeft(48));
   row3.removeFromLeft(8);
-  modeLabel_.setBounds(row3.removeFromLeft(100));
+  modeLabel_.setBounds(row3.removeFromLeft(108));
   row3.removeFromLeft(6);
   modeBox_.setBounds(row3);
   auto right = r;
