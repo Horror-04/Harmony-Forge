@@ -60,13 +60,13 @@
   #error "Preflight: root LICENSE not found (AGPL §§4/6 require shipping the licence text). Refusing to build."
 #endif
 
-; R1 resolved (AGPLv3, 2026-10-12): the notice file must exist; iscc fails
-; loudly here if it is missing so no installer ships without the notice.
-#if FileExists(LicenceNotice)
-  #define HaveLicenceNotice 1
-#else
-  #define HaveLicenceNotice 0
-  #pragma message "TODO(R1): packaging\LICENSE-JUCE-NOTICE.txt not found -- building an installer WITHOUT a JUCE licence notice."
+; R1 resolved (AGPLv3, 2026-10-12): packaging\LICENSE-JUCE-NOTICE.txt is
+; committed and REQUIRED -- under the AGPL decision it is the source offer
+; (it names the public repository URL, AGPL §13). Same hard preflight as the
+; root LICENSE above: a missing notice is a compile-time #error, so no
+; installer can ever be built without it.
+#if !FileExists(LicenceNotice)
+  #error "Preflight: packaging\LICENSE-JUCE-NOTICE.txt not found (R1: the notice is the AGPL source offer). Refusing to build."
 #endif
 
 [Setup]
@@ -105,9 +105,8 @@ Source: "{#OrtDll}"; DestDir: "{commoncf}\VST3"; Flags: ignoreversion
 Source: "{#StandaloneExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#OrtDll}"; DestDir: "{app}"; Flags: ignoreversion
 ; AGPL licence notice (R1 resolved; installed next to the Standalone exe).
-#if HaveLicenceNotice
+; Unconditional: the preflight above #error-fails if the notice is missing.
 Source: "{#LicenceNotice}"; DestDir: "{app}"; Flags: ignoreversion
-#endif
 ; AGPL §§4/6 (fix round 1): the full licence text, installed next to the exe.
 Source: "{#LicenceFull}"; DestDir: "{app}"; Flags: ignoreversion
 
