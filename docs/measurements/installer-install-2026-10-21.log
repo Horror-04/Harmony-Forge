@@ -1,0 +1,84 @@
+﻿2026-10-21 21:58:24.642   Log opened. (Time zone: UTC+03:00)
+2026-10-21 21:58:24.642   Setup version: Inno Setup version 6.7.3
+2026-10-21 21:58:24.642   Original Setup EXE: F:\MyPrograms\Harmony Forge\build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe
+2026-10-21 21:58:24.642   Setup command line: /SL5="$6B0DA6,7509830,893952,F:\MyPrograms\Harmony Forge\build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe" /SPAWNWND=$BD0C08 /FIRSTWND=$2A0AC0 /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=C:\Users\horridy\AppData\Local\Temp\hf-install-test4 /LOG 
+2026-10-21 21:58:24.642   Compatibility mode: Yes (DetectorsAppHealth Installer)
+2026-10-21 21:58:24.642   Windows version: 10.0.26300
+2026-10-21 21:58:24.642   Windows architecture: x64 (64-bit)
+2026-10-21 21:58:24.642   Machine types supported by system: x86 x64
+2026-10-21 21:58:24.642   User privileges: Administrative
+2026-10-21 21:58:24.643   Administrative install mode: Yes
+2026-10-21 21:58:24.643   Install mode root key: HKEY_LOCAL_MACHINE
+2026-10-21 21:58:24.643   64-bit install mode: Yes
+2026-10-21 21:58:24.643   RedirectionGuard status for current process: Enabled in enforcing mode
+2026-10-21 21:58:24.644   Created protected temporary directory: C:\Users\horridy\AppData\Local\Temp\is-0HCDKWQ13J.tmp
+2026-10-21 21:58:24.751   Found 3 files to register with RestartManager.
+2026-10-21 21:58:24.751   Calling RestartManager's RmGetList.
+2026-10-21 21:58:24.755   RmGetList finished successfully.
+2026-10-21 21:58:24.755   RestartManager found no applications using one of our files.
+2026-10-21 21:58:24.760   Starting the installation process.
+2026-10-21 21:58:24.761   Directory for uninstall files: C:\Users\horridy\AppData\Local\Temp\hf-install-test4
+2026-10-21 21:58:24.761   Creating new uninstall log: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\unins000.dat
+2026-10-21 21:58:24.763   -- File entry --
+2026-10-21 21:58:24.764   Dest filename: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\unins000.exe
+2026-10-21 21:58:24.764   Non-default bitness: 32-bit
+2026-10-21 21:58:24.766   Time stamp of our file: 2026-10-21 21:58:24.530
+2026-10-21 21:58:24.766   Installing the file.
+2026-10-21 21:58:24.769   Successfully installed the file.
+2026-10-21 21:58:24.769   -- File entry --
+2026-10-21 21:58:24.770   Dest filename: C:\Program Files\Common Files\VST3\Harmony Forge.vst3\Contents\Resources\moduleinfo.json
+2026-10-21 21:58:24.770   Time stamp of our file: 2026-10-21 21:37:18.000
+2026-10-21 21:58:24.770   Installing the file.
+2026-10-21 21:58:24.770   Creating directory: C:\Program Files\Common Files\VST3\Harmony Forge.vst3
+2026-10-21 21:58:24.770   Creating directory: C:\Program Files\Common Files\VST3\Harmony Forge.vst3\Contents
+2026-10-21 21:58:24.770   Creating directory: C:\Program Files\Common Files\VST3\Harmony Forge.vst3\Contents\Resources
+2026-10-21 21:58:24.771   Successfully installed the file.
+2026-10-21 21:58:24.771   -- File entry --
+2026-10-21 21:58:24.771   Dest filename: C:\Program Files\Common Files\VST3\Harmony Forge.vst3\Contents\x86_64-win\Harmony Forge.vst3
+2026-10-21 21:58:24.771   Time stamp of our file: 2026-10-21 21:37:18.000
+2026-10-21 21:58:24.771   Installing the file.
+2026-10-21 21:58:24.771   Creating directory: C:\Program Files\Common Files\VST3\Harmony Forge.vst3\Contents\x86_64-win
+2026-10-21 21:58:24.858   Successfully installed the file.
+2026-10-21 21:58:24.858   -- File entry --
+2026-10-21 21:58:24.859   Dest filename: C:\Program Files\Common Files\VST3\onnxruntime.dll
+2026-10-21 21:58:24.859   Time stamp of our file: 2026-10-19 01:17:16.000
+2026-10-21 21:58:24.859   Installing the file.
+2026-10-21 21:58:25.042   Successfully installed the file.
+2026-10-21 21:58:25.042   -- File entry --
+2026-10-21 21:58:25.042   Dest filename: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\Harmony Forge.exe
+2026-10-21 21:58:25.042   Time stamp of our file: 2026-10-21 21:37:20.000
+2026-10-21 21:58:25.042   Installing the file.
+2026-10-21 21:58:25.143   Successfully installed the file.
+2026-10-21 21:58:25.143   -- File entry --
+2026-10-21 21:58:25.144   Dest filename: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\onnxruntime.dll
+2026-10-21 21:58:25.144   Time stamp of our file: 2026-10-19 01:17:16.000
+2026-10-21 21:58:25.144   Installing the file.
+2026-10-21 21:58:25.196   Successfully installed the file.
+2026-10-21 21:58:25.196   -- File entry --
+2026-10-21 21:58:25.196   Dest filename: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\LICENSE-JUCE-NOTICE.txt
+2026-10-21 21:58:25.196   Time stamp of our file: 2026-10-20 17:08:16.000
+2026-10-21 21:58:25.196   Installing the file.
+2026-10-21 21:58:25.197   Successfully installed the file.
+2026-10-21 21:58:25.197   -- File entry --
+2026-10-21 21:58:25.197   Dest filename: C:\Users\horridy\AppData\Local\Temp\hf-install-test4\LICENSE
+2026-10-21 21:58:25.197   Time stamp of our file: 2026-10-12 21:36:40.000
+2026-10-21 21:58:25.197   Installing the file.
+2026-10-21 21:58:25.198   Successfully installed the file.
+2026-10-21 21:58:25.198   -- Icon entry --
+2026-10-21 21:58:25.198   Dest filename: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Harmony Forge\Harmony Forge.lnk
+2026-10-21 21:58:25.198   Creating directory: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Harmony Forge
+2026-10-21 21:58:25.204   Creating the icon.
+2026-10-21 21:58:25.288   Successfully created the icon.
+2026-10-21 21:58:25.292   -- Icon entry --
+2026-10-21 21:58:25.292   Dest filename: C:\Users\Public\Desktop\Harmony Forge.lnk
+2026-10-21 21:58:25.293   Creating the icon.
+2026-10-21 21:58:25.296   Successfully created the icon.
+2026-10-21 21:58:25.311   Saving uninstall information.
+2026-10-21 21:58:25.311   Creating new uninstall key: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\{314D332F-8F4D-402D-B8D3-2F414788407F}_is1
+2026-10-21 21:58:25.311   Writing uninstall key values.
+2026-10-21 21:58:25.311   Detected previous non administrative install? No
+2026-10-21 21:58:25.311   Detected previous administrative 32-bit install? No
+2026-10-21 21:58:25.314   Installation process succeeded.
+2026-10-21 21:58:25.314   Need to restart Windows? No
+2026-10-21 21:58:25.318   Deinitializing Setup.
+2026-10-21 21:58:25.328   Log closed.

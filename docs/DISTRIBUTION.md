@@ -16,7 +16,7 @@ dated notes are added where a later change moved them.
 | Item | Status |
 | --- | --- |
 | Windows build with `AU` in `FORMATS` | Verified unaffected (JUCE skips AU on non-Apple; see §2) |
-| Windows installer script (`iscc`) | **COMPILED 2026-10-21**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8.3 MB, SHA256 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`) — build record below; the artefact is git-ignored and NOT committed |
+| Windows installer script (`iscc`) | **COMPILED 2026-10-21**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,713,903 bytes, SHA256 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`) — build record below; the artefact is git-ignored and NOT committed |
 | Executing the Windows installer | **RUN once locally, 2026-10-21**: installed into a temp dir, the payload verified in place, then removed with the installer's own uninstaller (the removal was verified item by item). Nothing is installed on the development machine now — §5 |
 | macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3); the `.pkg` was never executed |
 | Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) — the local install is NOT the R4 step |
@@ -24,7 +24,7 @@ dated notes are added where a later change moved them.
 | Code signing / notarization | Not implemented; plan stub in §6 |
 
 **NOTE (2026-10-21):** the rows above are re-recorded from the wave that
-actually ran — the Release rebuild, the 273/273 `ctest` run, the 18/18 payload
+actually ran — the Release rebuild, the 273/273 `ctest` run, the 15/15 payload
 preflight, the `iscc` compile and a local install that was uninstalled again
 (see "Windows installer build record" below). The 2026-10-12 row they
 supersede recorded an earlier artefact (8,578,025 bytes, SHA256
@@ -58,39 +58,50 @@ one configuration only. The block carried `94/94` when this file was written
 | --- | --- | --- |
 | Release rebuild | `cmake --build build-full --config Release` | incremental, 2.2 min, exit 0 |
 | Test suite | `ctest -C Release` (in `build-full/`) | **273/273 passed, 0 failed** (23.8 s) |
-| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS, 18/18 checks** |
+| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
 | Installer compile | `ISCC.exe` (Inno Setup 6) on `packaging\windows\harmony_forge.iss` | **Successful compile** |
 
-The 18 preflight checks: the version sync (CMake `0.1.0` == `.iss` `0.1.0`); the
-`.iss` build dir resolves to the checked tree; the VST3 module and
-`moduleinfo.json` exist; the Standalone exe exists; `onnxruntime.dll` exists
-next to both; `docs\SPEC.md` is NOT referenced by the `.iss`; the root
-`LICENSE` ships to `{app}` and is byte-identical to the root file (sha256
-`E0EEDBA615D5CD1B986AFB6C5B3A4B1AE33713E7E9DC74D19DAEC5E3221F9D2E`);
-`packaging\LICENSE-JUCE-NOTICE.txt` exists, is shown and is shipped; the ISPP
-`#error` preflight is present.
+The 15 result rows the preflight prints: **8 static checks** (the version sync
+— CMake `0.1.0` == the `.iss` `0.1.0`; the `.iss` build dir resolving to the
+checked tree; `docs\SPEC.md` NOT referenced by the `.iss`; the root `LICENSE`
+shipping to `{app}`; the shipped `LICENSE` being byte-identical to the root
+one (sha256 `E0EEDBA615D5CD1B986AFB6C5B3A4B1AE33713E7E9DC74D19DAEC5E3221F9D2E`);
+`packaging\LICENSE-JUCE-NOTICE.txt` existing; the `.iss` showing + shipping the
+notice; the ISPP `#error` preflight that refuses to build without the notice),
+**4 artefact-existence checks** (the VST3 module, the VST3 `moduleinfo.json`
+manifest, the Standalone exe, `onnxruntime.dll`) and **3 `.iss`-reference
+drift guards** (the `.iss` references `VST3\Harmony Forge.vst3`,
+`Standalone\Harmony Forge.exe` and `onnxruntime.dll`).
 
 **The artefact.**
 
 - Path: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
-- Size: 8.3 MB
+- Size: 8,713,903 bytes (8.3 MiB)
 - SHA256: `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`
 - Built 2026-10-21 from the current `master`.
 - It lives inside the git-ignored `build-full/` tree — it is **NOT committed**,
   and it is **NOT distributable** yet (§4: the repository is still private by
   the owner's deliberate decision).
 
-**Its composition is evidenced by the compiler's own log** — the `iscc` compile
-log lists exactly what it compressed: `moduleinfo.json`, `Harmony Forge.vst3`
-(x86_64-win), `onnxruntime.dll`, `Harmony Forge.exe`,
-`packaging\LICENSE-JUCE-NOTICE.txt`, the root `LICENSE`.
+**Its composition is evidenced by a SURVIVING artefact, not by the console.**
+The `iscc` compile log listed exactly what it compressed, but it only went to
+the console. The durable evidence is the Inno Setup install log of the local
+run, copied into this repository as
+`docs/measurements/installer-install-2026-10-21.log` (the original
+`%TEMP%\Setup Log 2026-10-21 #001.txt`): its file entries are exactly the six
+payload items — `moduleinfo.json`, `Harmony Forge.vst3` (x86_64-win),
+`onnxruntime.dll`, `Harmony Forge.exe`, `LICENSE-JUCE-NOTICE.txt` and the root
+`LICENSE` — with `onnxruntime.dll` appearing twice (next to the bundle and next
+to the exe), plus the uninstaller.
 
 **A local install was executed, verified in place, and then removed.** The
 installer was run on this machine with the documented command line
 (`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=<dir> /LOG` — the bare
 `/LOG`, not `/LOG=<path>`; an unquoted `/LOG=<path>` is an invalid command
 line and the setup aborts before it opens its log) and returned exit 0; the
-Inno log (6.7.3) records "User privileges: Administrative", "Administrative
+Inno log (6.7.3), committed as `docs/measurements/installer-install-2026-10-21.log`,
+records its own `Setup command line:` line (the proof of that command line)
+and "User privileges: Administrative", "Administrative
 install mode: Yes", "Installation process succeeded", "Need to restart
 Windows? No". The payload was verified **in place**: the VST3 bundle
 (`…\Common Files\VST3\Harmony Forge.vst3` with `moduleinfo.json` and the
@@ -326,8 +337,9 @@ after itself, not that it installs onto a clean machine.
 What to copy/install:
 
 - Windows: only `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
-  (it is git-ignored; transfer it manually — e.g. USB/shared folder). Verify the
-  SHA256 against the table above before running.
+  (it is git-ignored; transfer it manually — e.g. USB/shared folder — and only
+  after the repository is public (§4); the R4 install itself counts as
+  distribution). Verify the SHA256 against the table above before running.
 - macOS: only `packaging/macos/build/HarmonyForge-0.1.0-macOS.pkg` (built by the
   human per §3).
 
@@ -400,11 +412,13 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 
 ## 8. Known limitations / open items
 
-- Windows installer: **compiled 2026-10-21** (8.3 MB, sha256
+- Windows installer: **compiled 2026-10-21** (8,713,903 bytes, sha256
   `4E771BB7…D2E2`, in the git-ignored `build-full/` tree, not committed) and
   installed + uninstalled once locally on the development machine (the removal
-  was verified item by item). The **clean-machine install (R4) is still
-  NOT-RUN** — it is the owner's step, and §4 counts it as distribution (§5).
+  was verified item by item; the install log is committed as
+  `docs/measurements/installer-install-2026-10-21.log`). The **clean-machine
+  install (R4) is still NOT-RUN** — it is the owner's step, and §4 counts it as
+  distribution (§5).
 - macOS AU + pkg: **never executed** on a Mac (§3).
 - macOS inference: offline stub only; the ONNX Runtime delivery is win-x64 only.
 - Licence notice: present (`packaging/LICENSE-JUCE-NOTICE.txt`, R1 resolved §4);
