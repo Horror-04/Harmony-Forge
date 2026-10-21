@@ -24,6 +24,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 _TRAINING = os.path.join(_REPO, "training")
 _GOLDEN = os.path.join(_REPO, "tests", "golden", "slot_bitmap.txt")
 _MANIFEST = os.path.join(_REPO, "tests", "golden", "manifest.json")
@@ -112,6 +114,7 @@ def _frozen_mark() -> tuple[bool, str]:
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--write", action="store_true",
                     help="rewrite the golden file (FROZEN goldens: never)")

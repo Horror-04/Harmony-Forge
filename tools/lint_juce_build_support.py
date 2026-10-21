@@ -61,6 +61,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 # The vendored tree (repo-relative).
 TREE = "JUCE/extras/Build"
@@ -165,6 +167,7 @@ def evaluate(root: str) -> tuple[list[str], list[str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=_REPO)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)

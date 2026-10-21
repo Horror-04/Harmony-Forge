@@ -58,6 +58,8 @@ import struct
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 REPO = os.path.dirname(HERE)
 
 # The sidecar the product pin covers (repo-relative).
@@ -184,6 +186,7 @@ def render(model_sha: str, values: list[float], values_sha: str,
 
 
 def main(argv: list[str] | None = None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=GOLDEN_REL,
                     help="output golden path (repo-relative or absolute)")

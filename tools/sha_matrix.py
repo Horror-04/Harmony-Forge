@@ -50,6 +50,8 @@ import tempfile
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 SEEDS_DEFAULT = 72
 SEEDS = list(range(SEEDS_DEFAULT))
@@ -142,6 +144,7 @@ def run_render_model(seed: int, keynorm: str | None = None,
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser()
     ap.add_argument('--seeds', type=int, default=SEEDS_DEFAULT)
     ap.add_argument('--seed-offset', type=int, default=0)

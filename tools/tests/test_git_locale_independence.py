@@ -30,16 +30,31 @@ raising. The tests below:
   1. a temp repo with a tracked NON-ASCII name: the lint must report a
      NORMAL verdict (never an AttributeError);
   2. the same with an unregistered non-ASCII artifact: the coverage rule
-     may flag it - that is a normal verdict too (exit 1 by the rules);
+     may flag it - a normal verdict too (exit 1 by the rules);
   3. the same with the locale FORCED to cp1252 (the runner's condition):
      the lint must still work;
   4. a repo-wide GUARD: no ``tools/**/*.py`` may call subprocess with
      ``text=True`` and no explicit ``encoding=``. The guard's LOGIC lives
      in ``tools/lint_locale_independence.py`` (a script, so the CI can
-     run it as a blocking step - while it lived only in this test, the
-     workflow never executed it); the test below calls that script's
+     run it as a blocking step); the test below calls that script's
      function, so the rule is implemented once.
 
+THE SECOND FAILURE - the OUTPUT dimension (the CI's SECOND runner
+execution, the new "Python gate tests" step)::
+
+    File "tools/lint_golden_manifest.py", line 833, in main
+      print(f"lint_golden_manifest: FAIL: {msg}")
+    File ".../encodings/cp1252.py", line 19, in encode
+    UnicodeEncodeError: 'charmap' codec can't encode characters in position 49-59'
+
+The previous wave fixed the INPUT side (the decode); the OUTPUT side still
+went through the CONSOLE, so the lint died with a traceback instead of
+reporting its verdict. Case 3 passed locally ONLY because the local
+console is cp1251: it forced the LOCALE (the decode) but never the STDOUT
+ENCODING (the print). The fix is ``tools/ci_encoding.py``: every tool
+hardens its console (``ci_encoding.harden_console()``) so an unencodable
+character is REPLACED (an escape) instead of raising - the console's own
+encoding is kept and the verdict + the exit code always come out.
 NOTE on the locale knob: since Python 3.11 ``io.TextIOWrapper`` (and so
 subprocess) asks the LOCALE MODULE for the encoding - ``locale.getencoding()``
 (PEP 597) - and NOT ``locale.getpreferredencoding()`` (which is only a
@@ -70,6 +85,7 @@ TOOLS_DIR = os.path.join(REPO_ROOT, "tools")
 sys.path.insert(0, TOOLS_DIR)
 
 import lint_locale_independence as LOCALE  # noqa: E402
+import ci_encoding  # noqa: E402  (the CI-safe console helper under test)
 
 # The tracked name that broke the first CI run (Cyrillic).
 NON_ASCII_NAME = "методология.txt"
@@ -91,6 +107,13 @@ _LOCALE_PRELUDE = (
     "sys.argv = sys.argv[1:]\n"
     "runpy.run_path(sys.argv[0], run_name='__main__')\n"
 )
+
+# The OUTPUT dimension: the child's console code page. PYTHONIOENCODING is
+# the runner's condition exactly (the windows-2022 runner's Python 3.12
+# writes to a cp1252 console with the STRICT handler: a print of a
+# non-ASCII path RAISES). The locale above drives the DECODE, this the
+# print.
+_CP1252_CONSOLE_ENV = {"PYTHONIOENCODING": "cp1252:strict"}
 
 # The premise of the regression, run in a CHILD process: the same bytes
 # (U+044F 'ya' in UTF-8) captured with and without an explicit encoding
@@ -200,20 +223,31 @@ def _manifest(commit: str) -> dict:
     }
 
 
-def _run_lint(root: str, manifest: str, force_cp1252: bool = False):
-    """Run the manifest lint on `root` (as a child process)."""
+def _run_lint(root: str, manifest: str, force_cp1252: bool = False,
+              force_cp1252_stdout: bool = False):
+    """Run the manifest lint on `root` (as a child process).
+    `force_cp1252` forces the child's LOCALE (the decode),
+    `force_cp1252_stdout` its CONSOLE ENCODING (the print).
+    """
     if force_cp1252:
         cmd = [sys.executable, "-c", _LOCALE_PRELUDE, LINT,
                "--root", root, "--manifest", manifest]
     else:
         cmd = [sys.executable, LINT, "--root", root, "--manifest", manifest]
-    return subprocess.run(cmd, capture_output=True, cwd=REPO_ROOT,
+    env = None
+    if force_cp1252_stdout:
+        env = dict(os.environ)
+        env.update(_CP1252_CONSOLE_ENV)
+    return subprocess.run(cmd, capture_output=True, cwd=REPO_ROOT, env=env,
                           encoding="utf-8", errors="surrogateescape")
 
 
-def _lint_tree(extra_path: str | None = None):
+def _lint_tree(extra_path: str | None = None, force_cp1252: bool = False,
+               force_cp1252_stdout: bool = False, manifest_mutator=None):
     """Build the synthetic tree (+ an optional extra tracked file), write the
-    registry and run the lint. Returns the CompletedProcess."""
+    registry and run the lint. Returns (tmp, CompletedProcess).
+    `manifest_mutator(manifest, commit)` may edit the registry first.
+    """
     tmp = tempfile.TemporaryDirectory()
     root = tmp.name
     commit = _build_tree(root)
@@ -223,9 +257,28 @@ def _lint_tree(extra_path: str | None = None):
         _git(root, "add", "-A")
         _git(root, "commit", "-q", "-m", "add the non-ASCII tracked file")
     man_path = os.path.join(root, "tests", "golden_manifest.json")
+    manifest = _manifest(commit)
+    if manifest_mutator is not None:
+        manifest_mutator(manifest, commit)
     with open(man_path, "w", encoding="utf8") as f:
-        json.dump(_manifest(commit), f, indent=2)
-    return tmp, _run_lint(root, man_path)
+        json.dump(manifest, f, indent=2)
+    return tmp, _run_lint(root, man_path, force_cp1252, force_cp1252_stdout)
+
+
+def _register_non_ascii_slot(manifest: dict, commit: str, path: str) -> None:
+    """Register `path` (a non-ASCII name) with a WRONG sha: the record's
+    `files` slot then names the non-ASCII path, so rule 2 fires and the
+    violation message PRINTS that path."""
+    capture = ("capture: synthetic capture source@%s (no in-repo writer) - "
+               'tests/test_x.cpp "%s"' % (commit, ANCHOR))
+    manifest["in_test"].append({
+        "test": "synthetic golden case (tests/test_x.cpp, [x] "
+                "'synthetic case name')",
+        "kind": "in_test",
+        "commit": commit + " synthetic tree",
+        "produced_by": capture,
+        "files": {path: "0" * 64},
+    })
 
 
 class NonAsciiTrackedPathTest(unittest.TestCase):
@@ -276,6 +329,95 @@ class NonAsciiTrackedPathTest(unittest.TestCase):
                 proc.returncode, 0,
                 "the lint must pass under a forced cp1252 locale: %s"
                 % proc.stdout[-2000:])
+
+
+class NonAsciiStdoutEncodingTest(unittest.TestCase):
+    """The OUTPUT dimension: the lint's own PRINTS must never raise. Every
+    case forces the child's CONSOLE ENCODING to cp1252 with the STRICT
+    error handler (the runner's condition, via PYTHONIOENCODING). Before
+    the fix the lint died with a UnicodeEncodeError traceback instead of
+    reporting its verdict."""
+
+    def _assert_a_normal_verdict(self, proc):
+        self.assertNotIn("Traceback", proc.stdout + proc.stderr,
+                         "the lint must not crash: %s"
+                         % (proc.stderr[-800:] or proc.stdout[-800:]))
+        self.assertNotIn("UnicodeEncodeError", proc.stdout + proc.stderr)
+
+    def test_the_tracked_name_case_prints_a_normal_verdict(self):
+        # The non-ASCII name is TRACKED at the repo root: no rule fires on
+        # it, so the verdict is PASS (exit 0).
+        tmp, proc = _lint_tree(extra_path=NON_ASCII_NAME,
+                               force_cp1252_stdout=True)
+        with tmp:
+            self._assert_a_normal_verdict(proc)
+            self.assertEqual(
+                proc.returncode, 0,
+                "the lint must pass under a cp1252 console: %s"
+                % proc.stdout[-2000:])
+            self.assertIn("lint_golden_manifest: PASS", proc.stdout)
+
+    def test_the_coverage_rule_case_prints_a_normal_verdict(self):
+        # The artifact under tests/fixtures/ is UNREGISTERED: the coverage
+        # rule (rule4) flags it - a NORMAL verdict (exit 1 by the rules).
+        # This is the case the CI runner failed on.
+        tmp, proc = _lint_tree(extra_path="tests/fixtures/" + NON_ASCII_NAME,
+                               force_cp1252_stdout=True)
+        with tmp:
+            self._assert_a_normal_verdict(proc)
+            self.assertEqual(
+                proc.returncode, 1,
+                "the coverage rule must fail the lint: %s" % proc.stdout[-2000:])
+            self.assertIn("rule4", proc.stdout)
+            # the hardening must not swallow the message: the escaped path
+            # is still IN the output (the reader sees WHICH path failed)
+            self.assertIn("\\u043c", proc.stdout,
+                          "the non-ASCII path must be escaped, not dropped")
+
+    def test_the_registered_slot_case_prints_a_normal_verdict(self):
+        # The non-ASCII path is REGISTERED (a registry slot) with a wrong
+        # sha: rule 2 fires and the message PRINTS that path.
+        tmp, proc = _lint_tree(
+            extra_path=NON_ASCII_NAME,
+            force_cp1252_stdout=True,
+            manifest_mutator=lambda man, commit: _register_non_ascii_slot(
+                man, commit, NON_ASCII_NAME))
+        with tmp:
+            self._assert_a_normal_verdict(proc)
+            self.assertEqual(
+                proc.returncode, 1,
+                "the sha rule must fail the lint: %s" % proc.stdout[-2000:])
+            self.assertIn("rule2", proc.stdout)
+class ConsoleHardeningTest(unittest.TestCase):
+    """The helper itself (tools/ci_encoding.py): a cp1252 console must be
+    able to print a non-ASCII path (escaped, never raised)."""
+
+    PROBE = (
+        "import sys\n"
+        "sys.path.insert(0, %r)\n"
+        "import ci_encoding\n"
+        "ci_encoding.harden_console()\n"
+        "print('ENCODING', sys.stdout.encoding)\n"
+        "print('VERDICT:', %r)\n" % (TOOLS_DIR, NON_ASCII_NAME)
+    )
+
+    def test_a_cp1252_console_prints_a_non_ascii_path(self):
+        env = dict(os.environ)
+        env.update(_CP1252_CONSOLE_ENV)
+        proc = subprocess.run([sys.executable, "-c", self.PROBE],
+                              capture_output=True, cwd=REPO_ROOT, env=env,
+                              encoding="utf-8", errors="surrogateescape")
+        self.assertEqual(proc.returncode, 0, proc.stderr[-800:])
+        self.assertNotIn("Traceback", proc.stderr)
+        self.assertNotIn("UnicodeEncodeError", proc.stdout + proc.stderr)
+        # the console's own encoding is KEPT (the rest of the output stays
+        # readable in the console's code page)
+        self.assertIn("ENCODING cp1252", proc.stdout)
+        # the unencodable characters are escaped, never raised and never
+        # silently dropped
+        self.assertIn("VERDICT: ", proc.stdout)
+        self.assertIn("\\u043c", proc.stdout)
+        self.assertNotIn(NON_ASCII_NAME, proc.stdout)
 
 
 class ForcedLocalePremiseTest(unittest.TestCase):

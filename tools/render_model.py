@@ -27,6 +27,8 @@ import random
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 _TRAINING = os.path.join(os.path.dirname(_HERE), "training")
 if _TRAINING not in sys.path:
     sys.path.insert(0, _TRAINING)
@@ -455,6 +457,7 @@ def _to_smf0(full_abs: list[int]) -> bytes:
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description="Render one fixture to SMF0.")
     ap.add_argument("--rec", default="os-lc4985925-w02")
     ap.add_argument("--seed", type=int, default=7)

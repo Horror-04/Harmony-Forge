@@ -25,6 +25,8 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(_HERE)
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 
 # S2-entry frozen bitmap pin (canonical sha256 = sha256 of the 6 stripped
 # rows concatenated, no separators). Landed 409af60 (S4a infra), re-pinned
@@ -83,6 +85,7 @@ def lint(bitmap_path: str, manifest_path: str) -> list[str]:
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--bitmap", default=os.path.join(
         _REPO, "tests", "golden", "slot_bitmap.txt"))

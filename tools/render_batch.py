@@ -43,6 +43,8 @@ import sys
 import time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 _TRAINING = os.path.join(os.path.dirname(_HERE), "training")
 if _TRAINING not in sys.path:
     sys.path.insert(0, _TRAINING)
@@ -253,6 +255,7 @@ def aggregate(rows, conditions):
 
 
 def main(argv=None) -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description="Phase-10 blind A/B batch.")
     ap.add_argument("--conditions", default=",".join(CONDITIONS),
                     help="comma subset of " + ",".join(CONDITIONS))

@@ -46,6 +46,7 @@ _REPO = os.path.dirname(_HERE)
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
 import off_golden_ratchet as RATCHET  # noqa: E402  (companion data module)
 
 # ---------------------------------------------------------------------------
@@ -454,6 +455,7 @@ def evaluate(root):
 
 
 def main(argv=None):
+    ci_encoding.harden_console()  # the console must never raise on a path
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", default=_REPO)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)

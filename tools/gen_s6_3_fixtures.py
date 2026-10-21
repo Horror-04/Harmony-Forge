@@ -12,8 +12,12 @@ via the golden report file).
 from __future__ import annotations
 
 import os
+import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _HERE)  # the CI-safe console helper is a sibling module
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
+
 _FIX = os.path.join(os.path.dirname(_HERE), "tests", "fixtures")
 
 
@@ -61,6 +65,7 @@ def _note(events: list, ch: int, pitch: int, start: int, dur: int, vel: int) -> 
 
 
 def main() -> int:
+    ci_encoding.harden_console()  # the console must never raise on a path
     os.makedirs(_FIX, exist_ok=True)
     made = {}
 

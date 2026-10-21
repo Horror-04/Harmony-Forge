@@ -53,6 +53,9 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.dirname(HERE))  # the CI-safe console helper lives in tools/
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
+
 REPO_ROOT = os.path.dirname(os.path.dirname(HERE))
 SITE_REL = os.path.join("src", "inference", "candidate_model.cpp")
 RECORD_REL = os.path.join("docs", "measurements", "s3-quirks.md")
@@ -352,6 +355,8 @@ def main(argv):
                         help="fail (instead of skipping) when no MSVC "
                              "toolchain is found (CI form)")
     args = parser.parse_args(argv)
+
+    ci_encoding.harden_console()  # the console must never raise on a path
 
     print("[sseed] B7 probe - record: %s" % RECORD_REL.replace("\\", "/"))
     print("[sseed] site: %s" % SITE_REL.replace("\\", "/"))

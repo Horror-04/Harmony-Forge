@@ -12,6 +12,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # the sibling helper
+import ci_encoding  # noqa: E402  (the CI-safe console helper)
+
 
 def repo_text_at_rev(root, rev, path):
     # The decode is EXPLICIT (never the locale): `text=True` alone decodes
@@ -74,6 +77,7 @@ def first_diff(a, b, width=80):
 
 
 def main():
+    ci_encoding.harden_console()  # the console must never raise on a path
     here = os.path.dirname(os.path.abspath(__file__))
     default_root = os.path.dirname(here)
     ap = argparse.ArgumentParser()
