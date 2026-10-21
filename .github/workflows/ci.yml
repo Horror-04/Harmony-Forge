@@ -14,7 +14,8 @@ jobs:
     # configure/build/test. Five families, all blocking:
     #  * architecture/isolation — banned tokens on the audio path, the
     #    layer includes, the golden pin, the golden-manifest registry, the
-    #    invariant tags, the sealed-split isolation;
+    #    invariant tags, the sealed-split isolation, and the repo-hygiene
+    #    contract (a path .gitignore ignores may not be TRACKED);
     #  * companion behaviour — the FL dispatcher's pure path (stdlib
     #    unittest, seconds, no FL Studio on the runner);
     #  * quality/size ratchets (S10.1) — file size, the Editor's SUMMED
@@ -181,6 +182,19 @@ jobs:
         # non-zero fails the job.
         run: python tools/lint_utf8.py
 
+      - name: Repo-hygiene gate (no ignored path may be TRACKED)
+        # Stdlib only, seconds, no build: tools/lint_repo_hygiene.py. A path
+        # .gitignore ignores is NOT part of the repository, so it may not
+        # be TRACKED: the tree held 26 such paths (14 agent-scratch
+        # reports under .superpowers/sdd/**, force-added by mistake, plus
+        # 12 intentional ones - the committed MIDI fixtures + the ONNX
+        # models - that carry a REASON in the tool's own allowlist). The
+        # gate also fails when a junk pattern (__pycache__/, *.pyc, *.orig,
+        # *.rej, *~, *.bak, .pytest_cache/, a top-level build* tree) is
+        # TRACKED. It judges the INDEX only - ignoring a file is the
+        # point of .gitignore. Blocking: non-zero fails the job.
+        run: python tools/lint_repo_hygiene.py
+
       - name: Install the pinned CCN analyzer (lizard 1.24.1)
         # The CCN ratchet measures with lizard 1.24.1 — the version this
         # repo measured with (docs/measurements/s3-0-ccn.md). The version
@@ -225,7 +239,7 @@ jobs:
         # Blocking. Until now CI ran ONE python test file (the FL
         # dispatcher, via stdlib unittest), so a regression in a lint's OWN
         # test suite was invisible until someone ran pytest locally. This
-        # step runs the torch-free subset of tools/tests/ (132 of the 189
+        # step runs the torch-free subset of tools/tests/ (143 of the 200
         # collected tests today). It sits AFTER the lizard install above, so
         # the CCN unit tests RUN here instead of skipping. Seconds, no
         # build, no venv.

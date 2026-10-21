@@ -61,7 +61,8 @@ It SUPERSEDES nothing that came before and COMPLEMENTS two records:
 | G10 | ctest | `ctest --test-dir build-off` (Debug) / `ctest --test-dir build-full -C Release` | the C++ suite | RATCHET (the count may not drop) | `build-off` (Debug) = **221**, `build-full` (Release) = **254** — the PINNED pair of the EARLIER wave, i.e. the last pair MEASURED locally (the growth: the 3 new B10 ORT-only cases — `tests/test_ort_logits.cpp`; the off configuration is unchanged at 221 because the cases live in an `#ifdef HARMONY_FORGE_WITH_ONNX` block). The merged backlog wave's pair is **273 (build-full) / 233 (build-off)**: the build-full half is now **MEASURED** — CI run id `39625770936` on commit `1552665` reported "100% tests passed, 0 tests failed out of 273" in the build-full (Release) configuration (CI's `build` directory carries the build-full semantics, see §7) — and the build-off half (233) is still the STATIC EXPECTATION, **not** measured by CI (CI runs one configuration only); the PINNED pair stays 254/221 until an off-configuration run measures it. See §7 for the derivation and `docs/measurements/s10-final.md` §10.1 | yes (the test job) |
 | G11 | sealed isolation | the `sealed-grep` step in `ci.yml` | `training/**.py` | HARD | CLEAN (only `carve_sealed.py` + `test_sealed.py` mention `sealed_test`) | yes |
 | G12 | Editor total budget | `python tools/lint_editor_budget.py` | the Editor's OWN file set — `src/plugin/audio/PluginEditor.h` + `src/plugin/audio/PluginEditor.cpp` (the set `docs/measurements/s9-0.md` Appendix D measures for the D-B12 ceiling) | RATCHET (a pinned file SET + a pinned ceiling: **1102** = the recorded budget 1050 + the D-B12 +5 % tolerance; 1050 × 1.05 = 1102.5 → 1102 for integer line counts) | **1100** physical lines (293 + 807) → **2 lines of headroom**; the tolerance IS exercised (1100 > the recorded 1050) | yes (`gates` job) |
-| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **280 files, 1384 symbols** (44270 bytes). The map was regenerated at each of the four backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b` (277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384, the LAST regeneration) — and verified FRESH at the doc-truth commit (`python tools/gen_map.py --check` → "gen_map: FRESH (44270 bytes)"; the counts are `docs/MAP.md:6`) | yes (`gates` job) |
+| G13 | MAP freshness | `python tools/gen_map.py --check` | `docs/MAP.md` vs the tree the generator walks (`src/ tools/ tests/ training/`; deny-paths + environment trees pruned) | HARD (the TRACKED map must equal the generator's output for the tree as it stands; no counter, no exception list) | FRESH — **282 files, 1393 symbols** (44470 bytes). The map was regenerated at each of the four backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b` (277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384) — and once more by the repo-hygiene wave (the G14 gate + its test file: 282 / 1393, the LAST regeneration), verified FRESH (`python tools/gen_map.py --check` → "gen_map: FRESH (44470 bytes)"; the counts are `docs/MAP.md:6`) | yes (`gates` job) |
+| G14 | repo hygiene | `python tools/lint_repo_hygiene.py` | the git INDEX: every TRACKED path that `.gitignore` ignores (except the reasoned allowlist) + every junk pattern among the TRACKED files | HARD (no exception without a REASON; the allowlist may not be empty) | CLEAN — **0 violations**; 12 tracked-but-ignored paths, all allowlisted (9 MIDI fixtures + 3 ONNX models); the 14 `.superpowers/sdd/**` scratch reports were UNTRACKED by this wave (before it: 26 tracked-but-ignored paths and a RED UTF-8 gate) | yes (`gates` job) |
 
 **The P-series (P1-P5) — the two runtime probes and the three CI steps added
 by the phase-B tranches.** They sit OUTSIDE the G-series on purpose: the
@@ -78,7 +79,7 @@ push?
 | P2 | S93 tab-wiring guard | `cmake --build build-plugdbg --config Debug --target probe_s93_tab_wiring` then `.\build-plugdbg\tests\Debug\probe_s93_tab_wiring.exe` **run from the repo root** | the REAL editor's Edit/Explain tab buttons, found through PUBLIC child APIs only (no new accessors, no product change) | HARD — 11 wiring assertions (button present, viewports found and distinct, the visible view really switches and switches back) | **ALL-PASS (0 failures)** | **NO** — not `catch_discover_tests`-registered (never in `ctest -N`). **CI integration is FUTURE WORK** (ruling S93-3) |
 | P3 | FL-dispatcher unittest (CI step) | `python -m unittest discover -s tools/tests -p "test_fl_dispatcher.py" -v` — the CI step "FL companion dispatcher test (pure path)" in the `gates` job | the companion's PURE path only: `plan_layout` + the dry-run path of `src/companion/fl_dispatcher.py` (no FL Studio, no venv) | HARD — the plan for `DEFAULT_LAYOUT` and the rejection of a malformed layout entry are pinned | PASS (the step runs on every push) | **YES** — the `gates` job; a failing test fails the job (D-B8: dispatcher-only step now; the general python-test step landed later as P5) |
 | P4 | sseed compiler probe (CI step) | `python tools/c2059_probe/probe_c2059.py --require-msvc` — the CI step "sseed probe (real-TU compile witness)" in the `build-test-validate` job | the REAL `src/inference/candidate_model.cpp` TU, compiled EIGHT ways (site as-is + three well-formed forms + four recorded malformed forms) | HARD — a malformed form that compiles, a well-formed form that does not, or a fact that no longer holds fails the job; the verdict RETIRE (a well-formed one-line form stopped compiling) also fails | PASS | **YES** — the `build-test-validate` job (it needs the MSVC toolchain that job already requires; the `gates` job stays stdlib-only) |
-| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **130 passed, 2 skipped, 27 subtests** (the torch-free subset collects **132**; measured 2026-10-21 on the merged tree with the runner's profile: the system python, no torch, no `build-full` — the 2 skips are the `dump_worker_ids.exe` cases, which need that build tree). The full `tools/tests/` collection is **189** tests; the six training-stack files are excluded by name in the step. The count GROWS with the suite and is NOT a ratchet: the G12 gate's own file `tools/tests/test_lint_editor_budget.py` contributes **7** cases, and the console-hardening case lives in `tools/tests/test_console_encoding.py` (split out at the 500-line pin) | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
+| P5 | tools/tests pytest (CI step) | `python -m pip install --disable-pip-version-check pytest` then `python -m pytest tools/tests -q` with the SIX excluded files passed as explicit `--ignore=` arguments (all six are named in the step's comment) — the CI step "Python gate tests (the torch-free subset of tools/tests)" in the `gates` job | the TORCH-FREE subset of `tools/tests/`: every lint's own test suite that needs no training venv. The six EXCLUDED files (`test_expected_errors.py`, `test_keynorm_ab.py`, `test_pressure_variants.py`, `test_render_batch.py`, `test_render_model.py`, `test_step1_table.py`) drive the TRAINING stack and need `training/.venv` + torch/onnxruntime, which the runner does not have; they are named in the step, never silently dropped | HARD — a failing test fails the job | PASS — **141 passed, 2 skipped, 27 subtests** (the torch-free subset collects **143**; measured 2026-10-21 on the repo-hygiene wave tree with the runner's profile: the system python, no torch, no `build-full` — the 2 skips are the `dump_worker_ids.exe` cases, which need that build tree). The PRE-WAVE merged tree measured **130 passed, 2 skipped** (the torch-free subset collected **132**) — that is the HISTORICAL number. The full `tools/tests/` collection is **200** tests (189 before this wave); the six training-stack files are excluded by name in the step. The count GROWS with the suite and is NOT a ratchet: the G12 gate's own file `tools/tests/test_lint_editor_budget.py` contributes **7** cases, the console-hardening case lives in `tools/tests/test_console_encoding.py` (split out at the 500-line pin), and the G14 repo-hygiene gate's own file `tools/tests/test_lint_repo_hygiene.py` contributes **11** | **YES** — the `gates` job, AFTER the pinned lizard install (so the 7 CCN unit tests RUN instead of skipping); the step installs pytest itself (the runner's python has none) |
 
 **The two probes are NOT ctest-registered, and that is deliberate.** Both
 are plain `main()` binaries in `tests/CMakeLists.txt` behind
@@ -633,12 +634,13 @@ grow and no exception list.
 `docs/AGENT_PERMISSIONS.md` is the permission record, and the map's own
 header repeats it.
 
-**Current value.** FRESH — **280 files, 1384 symbols** (44270 bytes), the
+**Current value.** FRESH — **282 files, 1393 symbols** (44470 bytes), the
 counts are `docs/MAP.md:6`. The map was regenerated at each of the four
 backlog-wave merges — B3 `b2dfc7a` (276 files / 1359 symbols), B1 `e850b5b`
-(277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384, the
-LAST regeneration) — and verified FRESH at the doc-truth commit
-(`python tools/gen_map.py --check` → "gen_map: FRESH (44270 bytes)").
+(277 / 1367), B2 `fd9aca9` (278 / 1377) and B4b `0f0b4a9` (280 / 1384) — and
+once more by the repo-hygiene wave (the G14 gate + its test file: 282 / 1393,
+the LAST regeneration), verified FRESH
+(`python tools/gen_map.py --check` → "gen_map: FRESH (44470 bytes)").
 
 **Provenance of the pre-wave merged tree (HISTORICAL).** Before the
 backlog wave the merged tree was **274 files, 1355 symbols** (42722 bytes),
@@ -677,3 +679,101 @@ before the "(+N more)" marker), so a construct the extractor cannot see is
 absent from the map without failing this gate. It also says nothing about
 the CONTENT of the files it lists: it compares the map against the tree,
 not the tree against anything.
+
+---
+
+## 12. G14 — repo hygiene (`tools/lint_repo_hygiene.py`)
+
+**Rule.** HARD. Three rules, all of them must hold:
+
+1. no TRACKED path is ignored by `.gitignore`, EXCEPT the ALLOWLIST
+   below — and every allowlist entry carries a REASON (the repo's
+   convention: no exception without a reason; an entry with an EMPTY
+   reason is itself a violation);
+2. no TRACKED path matches a junk pattern: a `__pycache__/` or
+   `.pytest_cache/` directory component, a `*.pyc`, `*.orig`, `*.rej`,
+   `*~` or `*.bak` file, or any path under a TOP-LEVEL `build*`
+   directory (a build tree is generated output, never an input);
+3. the ALLOWLIST is not EMPTY (an empty allowlist would silently accept
+   every future exception).
+
+**Scope.** The git INDEX — not the working tree. A path `.gitignore`
+ignores is NOT part of the repository, so if it is TRACKED anyway the
+two disagree, and the disagreement has teeth:
+
+* the UTF-8 gate (G2) walks the TRACKED file list, so a tracked path
+  that is no longer in the working tree is reported UNREADABLE. The 14
+  agent-scratch reports under `.superpowers/sdd/**` had exactly that
+  fate (deleted from the working tree while still tracked), so
+  `python tools/lint_utf8.py` FAILED with 14 UNREADABLE paths before
+  this wave;
+* the junk is sticky: `git status` hides an ignored path, so nobody
+  notices that it is still in the index.
+
+**Method.** Two `git ls-files` calls: `git ls-files -z` (the tracked
+set) and `git ls-files -ci --exclude-standard -z` (the tracked paths
+`.gitignore` ignores). No file is read: the gate is about PATHS.
+
+**Current value (2026-10-21).** CLEAN — **0 violations**. 12
+tracked-but-ignored paths, all allowlisted (9 MIDI fixtures + 3 ONNX
+models). Before this wave the tree held **26** tracked-but-ignored
+paths: the 12 intentional ones above plus the 14 agent-scratch reports
+under `.superpowers/sdd/**`, which were force-added (`git add -f`) by
+the SDD phase commits even though `.superpowers/` has been git-ignored
+since the very first commit (`922d8b9`). Those 14 were UNTRACKED by
+this wave (`git rm -r --cached .superpowers`, commit `5b5d544`; the
+files stay on disk — they are ignored scratch). The durable record of
+that work is the git history of the commits themselves plus the tracked
+docs under `docs/measurements/`; the scratch reports were never project
+sources.
+
+**Exceptions (the allowlist, one line per entry — 13 entries; the
+allowlist lives in the tool, `tools/lint_repo_hygiene.py` → `ALLOWLIST`):**
+
+| path | reason |
+|---|---|
+| `tests/fixtures/ref_bad_event.mid` | a committed SMF parser fixture (the bad-event case): the `*.mid` rule covers the drag&drop SCRATCH midi, but this file is a test INPUT the parser tests read from the tree |
+| `tests/fixtures/ref_bad_header.mid` | a deliberately corrupted SMF fixture (bad header): the tests assert the `SmfError::BadHeader` path, so it must NOT be "fixed"; a committed test INPUT |
+| `tests/fixtures/ref_empty.mid` | a committed SMF parser fixture (the empty-file case): a test INPUT the tree needs |
+| `tests/fixtures/ref_happy_c_major.mid` | a committed SMF parser fixture (the happy path): a test INPUT the tree needs |
+| `tests/fixtures/ref_too_little.mid` | a committed SMF parser fixture (the too-little-data case): a test INPUT the tree needs |
+| `tests/fixtures/ref_truncated.mid` | a committed SMF parser fixture (the truncated-stream case): a test INPUT the tree needs |
+| `tests/fixtures/ref_unsupported_type.mid` | a committed SMF parser fixture (the unsupported-meta-type case): a test INPUT the tree needs |
+| `tests/golden/seeds/seed_42.mid` | a committed golden-seed MIDI (the seed-42 provenance fixture): the golden machinery reads it from the tree |
+| `tests/golden/seeds/seed_7.mid` | a committed golden-seed MIDI (the seed-7 provenance fixture): the golden machinery reads it from the tree |
+| `training/model.onnx` | the shipped v1 graph: the `*.onnx` rule covers the LARGE LOCAL training artifacts, but this one is a committed INPUT (`training/evaluate.py`, `training/distill.py` and the tools load it by path) — the `.gitignore` comment records the intentional `git add -f` |
+| `training/model.quant.onnx` | the INT8-quantized variant of the shipped graph, committed with it (the `.gitignore` comment: "committed: model.onnx, model.quant.onnx via `git add -f`") |
+| `training/model.logits.onnx` | the logits SIDECAR (graph surgery on the shipped graph, `training/export_logits.py`): the ORT logits provider and the golden capture read it by path, so it must be IN the tree |
+| `JUCE/extras/Build/` (directory prefix) | the vendored JUCE build-support tree (a build INPUT, 47 files): git's ignore matching is case-insensitive on Windows, so the `build*/` rule would swallow it — but `.gitignore` re-includes it with `!JUCE/extras/Build/`, so it is **NOT** flagged today (PROVEN, not assumed: `git ls-files -ci --exclude-standard -- JUCE/extras/Build` returns nothing, and the gate prints "47 tracked file(s) under the prefix, 0 currently flagged as ignored"). The entry is DEFENSIVE: if that re-include is ever dropped, the tree stays allowlisted instead of failing with 47 violations |
+
+**What the gate does NOT check** (stated in the tool's docstring too):
+
+* it does NOT police UNTRACKED or IGNORED files — ignoring them is the
+  WHOLE POINT of `.gitignore`; only the INDEX is judged, so a local
+  build tree, a venv or a working-tree `__pycache__` stays fine;
+* it does NOT police any file's CONTENT — neither ours nor the vendored
+  `JUCE/` tree: it looks at PATHS only (the vendored tree's own gate is
+  `tools/lint_juce_build_support.py`, paths + a pinned count);
+* it does NOT decide whether an allowlist entry is still NEEDED: an
+  entry that currently covers nothing is reported as a NOTE (a stale
+  entry is the owner's to prune), never a failure;
+* it does NOT re-judge `.gitignore`'s RULES: it never says a rule is
+  wrong, only that a tracked path CONTRADICTS one.
+
+**Enforcement.** Blocking in the `gates` job of `.github/workflows/ci.yml`
+("Repo-hygiene gate (no ignored path may be TRACKED)"); stdlib only,
+seconds, no build, so it needs none of the job's pinned dependencies.
+The unit-level proof is `tools/tests/test_lint_repo_hygiene.py` (11
+cases: the real repo passes, a clean scratch repo passes, an
+ignored-but-tracked path fails, a tracked junk pattern fails, a tracked
+top-level `build*` tree fails, an allowlisted path passes, the allowlist
+is path-scoped, the allowlist is not silently empty, an allowlist entry
+without a reason fails, the vendored JUCE tree is tracked and not
+flagged, and `main()`'s exit codes 1/0).
+
+**How a future executor adds an exception.** Edit `ALLOWLIST` in
+`tools/lint_repo_hygiene.py` WITH the one-line reason, add the same
+line to the table above, and commit both in the SAME commit. The
+allowlist lives in the tool, so the tool edit alone would make the gate
+pass — the document is the audit trail, and a green gate with a stale
+document is a red gate.
