@@ -113,6 +113,8 @@ TWO_STATEMENT = ("    const unsigned sseed32 = runner_seed(p, index);\n"
 # with the extra closing paren(s) that made it malformed. The paren delta
 # of each record line is part of the variant's declaration: repro #1-#3
 # carry ONE extra closing paren, repro #4 carries TWO (2 `(` and 4 `)`).
+# Labels show the B3 re-expressed forms; the literal historical text lives
+# in docs/measurements/s3-quirks.md.
 MALFORMED = (
     ("malformed-1", "record repro #1 (runner_seed(p, index + 1))",
      "    const std::uint64_t sseed =\n"
