@@ -10,7 +10,12 @@ Hybrid: Music Theory Engine (deterministic) + ONNX generative models + Constrain
 > plugin bundle, standalone app) is offered the complete corresponding
 > source under AGPLv3 via the public repository —
 > https://github.com/Horror-04/Harmony-Forge (see `docs/DISTRIBUTION.md` §4).
-> Do NOT distribute binaries before the source is published.
+> **The repository is public since 2026-10-22** (the owner made it public:
+> every GitHub Actions job on the account was being refused because the
+> Actions spending limit was exhausted, and public repositories get free
+> Actions minutes). The source is therefore published, so binaries **MAY** be
+> distributed under AGPLv3 — ship this licence text, the JUCE notice and the
+> source offer with them (§4).
 
 ## Status
 

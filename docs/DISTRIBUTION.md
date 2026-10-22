@@ -8,19 +8,20 @@ human steps.
 Document status: **NORMATIVE** for the rules it states (§1-§8: what is
 shipped, the licence obligations, the installer wiring, the runtime-library
 deployment rule) — those are true now. The "Status at a glance" table, the
-recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13 / 21);
-dated notes are added where a later change moved them.
+recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13 / 21
+/ 22); dated notes are added where a later change moved them.
 
-## Status at a glance (local verification, 2026-10-12; packaging re-verified 2026-10-21)
+## Status at a glance (local verification, 2026-10-12; packaging re-verified 2026-10-21; repository visibility re-verified 2026-10-22)
 
 | Item | Status |
 | --- | --- |
 | Windows build with `AU` in `FORMATS` | Verified unaffected (JUCE skips AU on non-Apple; see §2) |
-| Windows installer script (`iscc`) | **COMPILED 2026-10-21**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,713,903 bytes, SHA256 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`) — build record below; the artefact is git-ignored and NOT committed |
-| Executing the Windows installer | **RUN once locally, 2026-10-21**: installed into a temp dir, the payload verified in place, then removed with the installer's own uninstaller (the removal was verified item by item). Nothing is installed on the development machine now — §5 |
+| Windows installer script (`iscc`) | **COMPILED 2026-10-22**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,714,148 bytes, SHA256 `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`) — rebuild record below; the artefact is git-ignored and NOT committed. The 2026-10-21 compile (8,713,903 bytes, SHA256 `4E771BB7…D2E2`) is **SUPERSEDED** — it shipped the pre-2026-10-22 licence notice |
+| Executing the Windows installer | **RUN once locally, 2026-10-21** — on the **SUPERSEDED** artefact (its payload carried the pre-2026-10-22 notice): installed into a temp dir, the payload verified in place, then removed with the installer's own uninstaller (the removal was verified item by item). Nothing is installed on the development machine now. The **current** (2026-10-22) payload has NOT been installed anywhere — §5 |
 | macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3); the `.pkg` was never executed |
 | Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) — the local install is NOT the R4 step |
 | Licence decision (R1) | **DECIDED: AGPLv3** — our code under AGPL-3.0-or-later, JUCE under its AGPL side (§4) |
+| Repository visibility | **PUBLIC since 2026-10-22** — flipped from private by the owner (the Actions spending limit was refusing every CI job; public repositories get free Actions minutes). §4's "source must be public first" precondition is therefore **satisfied**: the artefacts MAY be distributed |
 | Code signing / notarization | Not implemented; plan stub in §6 |
 
 **NOTE (2026-10-21):** the rows above are re-recorded from the wave that
@@ -30,8 +31,18 @@ preflight, the `iscc` compile and a local install that was uninstalled again
 supersede recorded an earlier artefact (8,578,025 bytes, SHA256
 `AAB2EE0E…2BC87`) that was **not in the tree** when this wave started
 (`build-full/` is git-ignored and regenerated), so that hash identifies nothing
-on disk any more — the SHA256 to verify against in §5 is the 2026-10-21 one
-above.
+on disk any more — the SHA256 to verify against in §5 **was** the 2026-10-21 one
+above (superseded 2026-10-22 — see the note below).
+
+**NOTE (2026-10-22): the installer was RE-compiled on 2026-10-22.** The licence
+notice's own text changed (it now carries the version-pinned `v0.1.0` source
+offer), and the notice is part of the installer payload — so the 2026-10-21
+artefact shipped a **STALE notice** and is **SUPERSEDED**. The current
+artefact is the 2026-10-22 one (hash in the table above); its exact byte count
+and SHA256 are in the rebuild record below. The older artefacts stay in this
+document as history — 8,578,025 bytes / `AAB2EE0E…2BC87` (2026-10-12) and
+8,713,903 bytes / `4E771BB7…D2E2` (2026-10-21) — but **the SHA256 to verify
+against in §5 is the 2026-10-22 one**.
 
 Reproduce the Windows gates:
 
@@ -79,9 +90,27 @@ drift guards** (the `.iss` references `VST3\Harmony Forge.vst3`,
 - Size: 8,713,903 bytes (8.3 MiB)
 - SHA256: `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`
 - Built 2026-10-21 from the current `master`.
-- It lives inside the git-ignored `build-full/` tree — it is **NOT committed**,
-  and it is **NOT distributable** yet (§4: the repository is still private by
-  the owner's deliberate decision).
+- It lives inside the git-ignored `build-full/` tree — it is **NOT committed**.
+- **SUPERSEDED on 2026-10-22**: the notice inside this artefact is the
+  pre-2026-10-22 text. The size and the SHA256 above stay as this artefact's
+  identity; the current artefact is the 2026-10-22 rebuild (rebuild record
+  below).
+- **Distribution status (2026-10-22): the artefacts MAY now be distributed.**
+  §4's precondition — the source must be public before ANY binary
+  distribution — is **satisfied**: the repository went public on 2026-10-22
+  (§4), the notice's repository-URL line is the AGPL §13 written offer of the
+  complete corresponding source, and the notice plus the full licence text
+  ship in the payload. What remains NOT-RUN is separate and is listed in §5
+  and §8: the R4 clean-machine install, signing/notarization and the macOS
+  package.
+
+**NOTE (2026-10-22): the local install below happened while the repository was
+still private.** The install ran on 2026-10-21; the owner made the repository
+public on 2026-10-22 (§4). That historical fact is not rewritten — the
+install evidence is the 2026-10-21 evidence, and the privacy condition of the
+repository on that date is part of it. It is also the evidence for the
+**SUPERSEDED** artefact (see the rebuild record below): it does not cover the
+current payload.
 
 **Its composition is evidenced by a SURVIVING artefact, not by the console.**
 The `iscc` compile log listed exactly what it compressed, but it only went to
@@ -92,7 +121,9 @@ run, copied into this repository as
 payload items — `moduleinfo.json`, `Harmony Forge.vst3` (x86_64-win),
 `onnxruntime.dll`, `Harmony Forge.exe`, `LICENSE-JUCE-NOTICE.txt` and the root
 `LICENSE` — with `onnxruntime.dll` appearing twice (next to the bundle and next
-to the exe), plus the uninstaller.
+to the exe), plus the uninstaller. The **file list** still describes the
+current payload (the six items are unchanged); the notice's **bytes** are not
+the same — the current artefact carries the 2026-10-22 notice.
 
 **A local install was executed, verified in place, and then removed.** The
 installer was run on this machine with the documented command line
@@ -119,8 +150,45 @@ tree.
 
 **What is still NOT-RUN: the R4 clean-machine install** (§5). The local
 install above is NOT the R4 step: R4 is an install on a machine that has never
-had the plugin, and §4 counts it as distribution — so it stays blocked on the
-repository becoming public, and it is the owner's step.
+had the plugin, and §4 counts it as distribution. **That block is gone since
+2026-10-22** — the repository is public, so §4's precondition is met and the
+artefact may be distributed — but the R4 step itself has **not been
+performed**: it is still the owner's human step, on a clean machine. And since
+the 2026-10-22 rebuild, the current payload has **not been installed at all**:
+the 2026-10-21 install evidence belongs to the superseded artefact, so the R4
+clean-machine install is the verification of the current payload too.
+
+### Windows installer rebuild record (2026-10-22)
+
+**What ran, on this machine, in this wave — every number below is measured:**
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256) |
+| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
+| Installer compile | `ISCC.exe` (Inno Setup 6.7.3) on `packaging\windows\harmony_forge.iss` | **Successful compile** (3,125 ms, exit 0) |
+
+The compile compressed exactly the six payload items, as on 2026-10-21 — the
+notice is the only payload file whose bytes changed.
+
+**The artefact (current).**
+
+- Path: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
+- Size: 8,714,148 bytes (8.3 MiB)
+- SHA256: `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`
+- Built 2026-10-22, after the licence notice changed (§4).
+- It lives inside the git-ignored `build-full/` tree — it is **NOT committed**.
+- It **SUPERSEDES** the 2026-10-21 artefact (8,713,903 bytes, SHA256
+  `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`), whose
+  notice was stale.
+
+**What this rebuild did NOT do.** The installer was **compiled but NOT run**:
+no install, no local install, no uninstall, no clean-machine install. The
+recorded install evidence (`docs/measurements/installer-install-2026-10-21.log`)
+belongs to the **SUPERSEDED** artefact — it describes the 2026-10-21 payload,
+whose notice is not the one this artefact carries — so **it does not cover the
+current payload**. The verification of the current payload is the **R4
+clean-machine install** (§5), which remains **NOT-RUN**.
 
 ## 1. What is shipped
 
@@ -223,31 +291,51 @@ The JUCE Framework modules are used under their AGPLv3 side (same
 licence — see `JUCE/LICENSE.md`); no commercial JUCE licence was bought
 and none is needed for this distribution model.
 
-### Obligations — source publication REQUIRED before ANY distribution
+### Obligations — source publication REQUIRED before ANY distribution — **precondition SATISFIED 2026-10-22**
 
 AGPLv3 §§4–6 + §13: distributing binaries (installer, VST3/AU bundles,
 standalone app — or network use of a modified version) **requires**
 offering every recipient the complete corresponding source under AGPLv3,
 keeping licence notices intact (including JUCE's).
 
-- **Human step (blocking): create the public repository and push.**
-  The repository now exists and is pushed:
+- **Human step (DONE 2026-10-22): create the public repository and push.**
+  The repository exists, is pushed and is **PUBLIC**:
   `https://github.com/Horror-04/Harmony-Forge` (`origin`; `master` + the
-  `refactor/*` tags). It is created **private** — flipping it to public is
-  the remaining half of this step, and it must happen BEFORE any binary
-  distribution (not even to testers; the R4 clean-machine install counts as
-  distribution).
-  **What is in the tree, for the flip decision.** The evaluation corpus is
-  tracked (`training/corpus/*.jsonl`) and is CC0 / public-domain (Mutopia +
-  OpenScore, admitted through the per-file LICENSE-FIRST gate). The "sealed"
-  holdout (`training/corpus/sealed_test.jsonl`, 118 rows) is a *partition of
-  that same corpus* — 87/106 of `bulk_lieder.jsonl`, 25/33 of
-  `bulk_mutopia.jsonl` and 6/23 of `bulk_quartet.jsonl` ARE holdout rows, so
-  un-tracking the split file would NOT keep the holdout out of a public
-  repository. The flip therefore carries a research-integrity consequence
-  (an outside reader can reconstruct the holdout and tune against it) and no
-  licensing or user-data consequence. Keep the repository private until that
-  trade is made deliberately.
+  `refactor/*` tags). The API confirms `visibility: public`, `private: false`.
+  **Why the flip happened, and who ordered it.** Every GitHub Actions job on
+  the account was being refused with *"The job was not started because recent
+  account payments have failed or your spending limit needs to be
+  increased"* — the account's Actions spending limit was exhausted, and the
+  billing API cannot be written with the available token (a payment method
+  can only be added in the web UI). Public repositories get free, unlimited
+  Actions minutes, so making the repository public is the mechanism that
+  unblocked CI; the owner instructed the flip. **The flip is reversible** —
+  visibility can be set back to private with one API call — and the owner
+  keeps that option.
+  **The research-integrity trade was made deliberately, on 2026-10-22.**
+  What is in the tree was recorded before the flip and the flip changed
+  nothing in it: the evaluation corpus is tracked (`training/corpus/*.jsonl`)
+  and is CC0 / public-domain (Mutopia + OpenScore, admitted through the
+  per-file LICENSE-FIRST gate). The "sealed" holdout
+  (`training/corpus/sealed_test.jsonl`, 118 rows) is a *partition of that same
+  corpus* — 87/106 of `bulk_lieder.jsonl`, 25/33 of `bulk_mutopia.jsonl` and
+  6/23 of `bulk_quartet.jsonl` ARE holdout rows, so un-tracking the split
+  file would NOT keep the holdout out of a public repository. The flip
+  therefore carries a research-integrity consequence (an outside reader can
+  reconstruct the holdout and tune against it) and no licensing or user-data
+  consequence. **That consequence was accepted deliberately by the owner on
+  2026-10-22, in exchange for CI being able to run.** The instruction this
+  section used to carry — "Keep the repository private until that trade is
+  made deliberately" — has been carried out: it is now a dated record of a
+  decision that was taken, not a standing rule.
+  **Consequence for distribution.** §4's precondition — the source must be
+  public before ANY binary distribution — is now **satisfied**: the source is
+  public, the notice's repository-URL line is the AGPL §13 written offer of
+  the complete corresponding source, and the notice plus the full licence
+  text ship in the installer payload. The artefacts **MAY now be
+  distributed**. What is still NOT-RUN is a separate matter and stays
+  NOT-RUN: the R4 clean-machine install (§5), signing/notarization (§6) and
+  the macOS package (§3).
 - The repository URL is **filled in** — there is no `TODO: repo URL` marker
   left to fill. `README.md`, `packaging/LICENSE-JUCE-NOTICE.txt` and this
   section all carry `https://github.com/Horror-04/Harmony-Forge` (commits
@@ -255,7 +343,18 @@ keeping licence notices intact (including JUCE's).
   repository-URL line is the AGPL §13 written offer of the complete
   corresponding source, and the notice is HARD-required — the Inno Setup
   preflight and the payload check both refuse a build/payload without it
-  (the next bullet spells the mechanism out).
+  (the next bullet spells the mechanism out). Since 2026-10-22 that URL
+  resolves to a **public** repository, so the written offer is live.
+- **The offer is version-precise.** AGPL §13 asks for the Corresponding
+  Source **of the version the recipient received**, so the notice names the
+  release tag of this payload, not only the repository root:
+  `https://github.com/Horror-04/Harmony-Forge/tree/v0.1.0` — **`v0.1.0` is the
+  release tag for this payload**, created at the final merge commit (the
+  controller creates it; until then the tree URL 404s and the root URL beside
+  it still resolves). The repository root URL stays in the notice, so the
+  offer remains a link a human can follow. The notice also keeps the
+  "Do not modify this notice" clause — AGPL §§4/6 require the notice and the
+  licence text to travel with the binary unchanged.
 - The installers surface the notice AND the full licence text (AGPL §§4/6,
   fix round 1): the Windows `.iss` shows
   `packaging/LICENSE-JUCE-NOTICE.txt` via `LicenseFile=`, installs it next
@@ -316,12 +415,27 @@ Both installers ship the notice AND a byte-identical copy of the root
   and root `LICENSE` both staged to `/Library/Application Support/Harmony Forge/`
   (`set -e` makes a missing file fatal, matching the Windows preflight).
 
+**NOTE (2026-10-22): the notice's own text changed, and the installer was
+rebuilt the same day.** The notice no longer says "DO NOT distribute binaries
+before the source repository is public" — the repository IS public since
+2026-10-22, so that sentence was false — and its source offer is now
+**version-precise** (it names the `v0.1.0` release tag of this payload; see the
+bullet above). The notice is part of the installer payload, so the 2026-10-21
+artefact shipped a **STALE notice**: it is **SUPERSEDED**, and the current
+artefact is the 2026-10-22 rebuild (rebuild record above). Nothing else moved:
+the root `LICENSE` is untouched and still ships byte-identical (sha256
+`E0EEDBA6…9D2E`), and the payload preflight still passes (the preflight
+byte-compares the ROOT `LICENSE`, not the notice).
+
 ## 5. Clean-machine verification (R4) — NOT-RUN
 
 Installing on a fresh VM / second machine is a **human step**, and it is
 **still NOT-RUN**: the R4 step is an install on a machine that has never had
-the plugin, and §4 counts it as distribution, so it waits for the repository to
-become public.
+the plugin, and §4 counts it as distribution. That is no longer a *blocker* —
+the repository is public since 2026-10-22, so §4's precondition is met and
+the artefact may be distributed — but the step itself has **not been
+performed**: it remains a human install on a clean machine, and it stays
+NOT-RUN.
 
 What the development machine DID do (2026-10-21 — see the build record above):
 the installer was compiled, executed ONCE locally with
@@ -337,9 +451,14 @@ after itself, not that it installs onto a clean machine.
 What to copy/install:
 
 - Windows: only `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
-  (it is git-ignored; transfer it manually — e.g. USB/shared folder — and only
-  after the repository is public (§4); the R4 install itself counts as
-  distribution). Verify the SHA256 against the table above before running.
+  (it is git-ignored; transfer it manually — e.g. USB/shared folder). **Take
+  the 2026-10-22 artefact** — 8,714,148 bytes, SHA256
+  `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`; the
+  2026-10-21 one (8,713,903 bytes, `4E771BB7…D2E2`) is **SUPERSEDED** (stale
+  notice). The repository is public since 2026-10-22, so §4's precondition is
+  satisfied and the transfer/distribution is allowed (the R4 install itself
+  counts as distribution). Verify the SHA256 against the table above before
+  running.
 - macOS: only `packaging/macos/build/HarmonyForge-0.1.0-macOS.pkg` (built by the
   human per §3).
 
@@ -412,18 +531,27 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 
 ## 8. Known limitations / open items
 
-- Windows installer: **compiled 2026-10-21** (8,713,903 bytes, sha256
-  `4E771BB7…D2E2`, in the git-ignored `build-full/` tree, not committed) and
-  installed + uninstalled once locally on the development machine (the removal
-  was verified item by item; the install log is committed as
-  `docs/measurements/installer-install-2026-10-21.log`). The **clean-machine
-  install (R4) is still NOT-RUN** — it is the owner's step, and §4 counts it as
-  distribution (§5).
+- Windows installer: **compiled 2026-10-22** (8,714,148 bytes, sha256
+  `D0827156…F86F`, in the git-ignored `build-full/` tree, not committed) — the
+  2026-10-21 artefact (8,713,903 bytes, sha256 `4E771BB7…D2E2`) is
+  **SUPERSEDED** (it shipped the stale notice). The 2026-10-21 local install
+  + uninstall is a record of the **superseded** artefact (the removal was
+  verified item by item; the install log is committed as
+  `docs/measurements/installer-install-2026-10-21.log`) — it does **not** cover
+  the current payload, which has never been installed. The **clean-machine
+  install (R4) is still NOT-RUN** — it is the owner's step (a human install
+  on a machine that has never had the plugin) and it is the verification of
+  the current payload; the privacy block is gone since 2026-10-22, but the
+  step itself is unperformed (§5).
 - macOS AU + pkg: **never executed** on a Mac (§3).
 - macOS inference: offline stub only; the ONNX Runtime delivery is win-x64 only.
 - Licence notice: present (`packaging/LICENSE-JUCE-NOTICE.txt`, R1 resolved §4);
   full licence text (`LICENSE`) ships in both installers (fix round 1, §4);
-  installers must still not be distributed until the source is public (§4).
+  the source is public since 2026-10-22, so §4's precondition is satisfied
+  and the installers **MAY** be distributed. The notice's own text changed on
+  that date (version-pinned `v0.1.0` offer) and the installer was rebuilt the
+  same day — the current artefact carries the current notice; a further rebuild
+  is needed whenever the notice changes again (§4).
 - No signing/notarization (§6).
 - Installer version is a manual `#define` in the `.iss`; the version-sync check
   in `check_payload.ps1` fails loudly if it drifts from the CMake project
