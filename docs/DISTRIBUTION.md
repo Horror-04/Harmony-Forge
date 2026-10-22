@@ -16,7 +16,7 @@ recorded hashes and the NOT-RUN rows are a dated RECORD (2026-10-12 / 13 / 21
 | Item | Status |
 | --- | --- |
 | Windows build with `AU` in `FORMATS` | Verified unaffected (JUCE skips AU on non-Apple; see §2) |
-| Windows installer script (`iscc`) | **COMPILED 2026-10-22**: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,714,148 bytes, SHA256 `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`) — rebuild record below; the artefact is git-ignored and NOT committed. The 2026-10-21 compile (8,713,903 bytes, SHA256 `4E771BB7…D2E2`) is **SUPERSEDED** — it shipped the pre-2026-10-22 licence notice |
+| Windows installer script (`iscc`) | **COMPILED 2026-10-22** (canonical rebuild in the main checkout): `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe` (8,714,150 bytes, SHA256 `EB34D8825DADD7FEA29742DC839D79E7FE7650F741E00BEB8478288320174A38`) — rebuild record below; the artefact is git-ignored and NOT committed. The 2026-10-21 compile (8,713,903 bytes, SHA256 `4E771BB7…D2E2`) is **SUPERSEDED** — it shipped the pre-2026-10-22 licence notice. The artefact is **NOT byte-reproducible** (Inno Setup embeds the compile time): the recorded SHA256 identifies **this** build only — see the rebuild record |
 | Executing the Windows installer | **RUN once locally, 2026-10-21** — on the **SUPERSEDED** artefact (its payload carried the pre-2026-10-22 notice): installed into a temp dir, the payload verified in place, then removed with the installer's own uninstaller (the removal was verified item by item). Nothing is installed on the development machine now. The **current** (2026-10-22) payload has NOT been installed anywhere — §5 |
 | macOS AU build + `.pkg` | **SKIPPED** (shelved 2026-10-13, revisit on demand; §3); the `.pkg` was never executed |
 | Clean-machine verification (R4) | **NOT-RUN** (§5 checklist) — the local install is NOT the R4 step |
@@ -43,6 +43,21 @@ and SHA256 are in the rebuild record below. The older artefacts stay in this
 document as history — 8,578,025 bytes / `AAB2EE0E…2BC87` (2026-10-12) and
 8,713,903 bytes / `4E771BB7…D2E2` (2026-10-21) — but **the SHA256 to verify
 against in §5 is the 2026-10-22 one**.
+
+**NOTE (2026-10-22, canonical rebuild): the artefact was REBUILT in the main
+checkout, and the earlier 2026-10-22 hash did NOT reproduce.** The wave that
+recorded `D0827156…F86F` (8,714,148 bytes) compiled the installer inside a
+temporary worktree that has since been **deleted**, so that artefact is **not
+on disk** — its hash identifies nothing in this tree. The canonical rebuild in
+the main checkout produced a **different** artefact: **8,714,150 bytes, SHA256
+`EB34D882…4A38`** (measured values in the rebuild record below). The payload
+is byte-identical — the four payload files' SHA256 are unchanged — so the
+difference is the **container**: **an Inno Setup artefact embeds its compile
+timestamp and is therefore NOT byte-reproducible**. The recorded SHA256
+identifies **THIS build only**; a rebuild before a release yields a different
+hash, which is exactly why the payload must be re-verified with
+`check_payload.ps1` after **every** rebuild, and the recorded hash must be
+updated to the artefact that is actually shipped.
 
 Reproduce the Windows gates:
 
@@ -164,23 +179,39 @@ clean-machine install is the verification of the current payload too.
 
 | Step | Command | Result |
 | --- | --- | --- |
-| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256) |
+| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256; re-measured after this rebuild — all four still match) |
 | Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
-| Installer compile | `ISCC.exe` (Inno Setup 6.7.3) on `packaging\windows\harmony_forge.iss` | **Successful compile** (3,125 ms, exit 0) |
+| Installer compile | `ISCC.exe` (Inno Setup 6.7.3) on `packaging\windows\harmony_forge.iss` | **Successful compile** (2,890 ms, exit 0) |
 
-The compile compressed exactly the six payload items, as on 2026-10-21 — the
-notice is the only payload file whose bytes changed.
+The compile compressed exactly the six payload items, as on the two previous
+compiles — and in this rebuild **no** payload file's bytes changed: the notice
+had already been updated by the earlier 2026-10-22 compile.
 
 **The artefact (current).**
 
 - Path: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
-- Size: 8,714,148 bytes (8.3 MiB)
-- SHA256: `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`
-- Built 2026-10-22, after the licence notice changed (§4).
+- Size: 8,714,150 bytes (8.3 MiB)
+- SHA256: `EB34D8825DADD7FEA29742DC839D79E7FE7650F741E00BEB8478288320174A38`
+- Built 2026-10-22, in the **main checkout** (the canonical build), after the
+  licence notice changed (§4).
 - It lives inside the git-ignored `build-full/` tree — it is **NOT committed**.
 - It **SUPERSEDES** the 2026-10-21 artefact (8,713,903 bytes, SHA256
   `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`), whose
   notice was stale.
+
+**The installer is NOT byte-reproducible — the recorded SHA256 identifies THIS
+build only.** Inno Setup embeds the compile timestamp in the setup program, so
+two compiles of a byte-identical payload produce two different artefacts. This
+is measured here, not assumed: the earlier 2026-10-22 compile — run inside a
+temporary worktree that has since been **deleted**, so its artefact is **not on
+disk** — produced **8,714,148 bytes / `D0827156…F86F`**, while this canonical
+rebuild produced **8,714,150 bytes / `EB34D882…4A38`** from the **same**
+payload (the four payload files' SHA256 are unchanged). Two consequences for a
+release: (1) the SHA256 recorded in §5 is valid for **this** artefact only — a
+rebuild before a release yields a different hash, so the recorded hash must be
+updated to the artefact that is actually shipped; (2) the payload must be
+re-verified with `check_payload.ps1` after **every** rebuild, because the hash
+alone proves nothing about the payload.
 
 **What this rebuild did NOT do.** The installer was **compiled but NOT run**:
 no install, no local install, no uninstall, no clean-machine install. The
@@ -452,13 +483,16 @@ What to copy/install:
 
 - Windows: only `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
   (it is git-ignored; transfer it manually — e.g. USB/shared folder). **Take
-  the 2026-10-22 artefact** — 8,714,148 bytes, SHA256
-  `D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`; the
+  the 2026-10-22 artefact** — 8,714,150 bytes, SHA256
+  `EB34D8825DADD7FEA29742DC839D79E7FE7650F741E00BEB8478288320174A38`; the
   2026-10-21 one (8,713,903 bytes, `4E771BB7…D2E2`) is **SUPERSEDED** (stale
   notice). The repository is public since 2026-10-22, so §4's precondition is
   satisfied and the transfer/distribution is allowed (the R4 install itself
   counts as distribution). Verify the SHA256 against the table above before
-  running.
+  running. The installer is **not byte-reproducible**: that hash identifies
+  **this** build only — if the artefact is rebuilt before the release, the
+  hash changes, so re-measure it and re-run the preflight on the copy you
+  ship.
 - macOS: only `packaging/macos/build/HarmonyForge-0.1.0-macOS.pkg` (built by the
   human per §3).
 
@@ -531,10 +565,14 @@ find the DLL, others may load the plugin in its graceful no-model mode. The R4
 
 ## 8. Known limitations / open items
 
-- Windows installer: **compiled 2026-10-22** (8,714,148 bytes, sha256
-  `D0827156…F86F`, in the git-ignored `build-full/` tree, not committed) — the
+- Windows installer: **compiled 2026-10-22** (8,714,150 bytes, sha256
+  `EB34D882…4A38`, in the git-ignored `build-full/` tree, not committed) — the
   2026-10-21 artefact (8,713,903 bytes, sha256 `4E771BB7…D2E2`) is
-  **SUPERSEDED** (it shipped the stale notice). The 2026-10-21 local install
+  **SUPERSEDED** (it shipped the stale notice). The installer artefact is
+  **not byte-reproducible** (Inno Setup embeds the compile timestamp): the
+  recorded sha256 identifies **this** build only, so a rebuild before the
+  release yields a different hash — re-measure it and re-run the payload
+  preflight after every rebuild. The 2026-10-21 local install
   + uninstall is a record of the **superseded** artefact (the removal was
   verified item by item; the install log is committed as
   `docs/measurements/installer-install-2026-10-21.log`) — it does **not** cover

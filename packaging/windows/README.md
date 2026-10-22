@@ -154,25 +154,41 @@ the R4 clean-machine install is the verification of the current payload too.
 
 ## Build record (2026-10-22) — the rebuild after the notice change
 
-Every number below is measured; nothing in this section is a plan.
+Every number below is measured; nothing in this section is a plan. The compile
+recorded here ran in the **main checkout** — it is the canonical build.
 
 | Step | Command | Result |
 | --- | --- | --- |
-| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256) |
+| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256; re-measured after this rebuild — all four still match) |
 | Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
-| Installer compile | `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss` | **Successful compile** (3,125 ms, exit 0) |
+| Installer compile | `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss` | **Successful compile** (2,890 ms, exit 0) |
 
-The compile compressed exactly the six payload items, as on 2026-10-21 — the
-notice is the only payload file whose bytes changed.
+The compile compressed exactly the six payload items, as on the two previous
+compiles — and in this rebuild **no** payload file's bytes changed: the notice
+had already been updated by the earlier 2026-10-22 compile.
 
 Artefact: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
-— **8,714,148 bytes** (8.3 MiB), SHA256
-**`D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`**, built
-**2026-10-22**, after the licence notice changed. It lives inside the
-git-ignored `build-full/` tree, so it is **not committed**. It **SUPERSEDES**
-the 2026-10-21 artefact (8,713,903 bytes, SHA256
+— **8,714,150 bytes** (8.3 MiB), SHA256
+**`EB34D8825DADD7FEA29742DC839D79E7FE7650F741E00BEB8478288320174A38`**, built
+**2026-10-22** in the **main checkout**, after the licence notice changed. It
+lives inside the git-ignored `build-full/` tree, so it is **not committed**. It
+**SUPERSEDES** the 2026-10-21 artefact (8,713,903 bytes, SHA256
 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`), whose
 notice was stale.
+
+**The installer is NOT byte-reproducible — the recorded SHA256 identifies THIS
+build only.** Inno Setup embeds the compile timestamp in the setup program, so
+two compiles of a byte-identical payload produce two different artefacts. This
+is measured here, not assumed: the earlier 2026-10-22 compile — run inside a
+temporary worktree that has since been **deleted**, so its artefact is **not on
+disk** — produced **8,714,148 bytes / `D0827156…F86F`**, while this canonical
+rebuild produced **8,714,150 bytes / `EB34D882…4A38`** from the **same**
+payload (the four payload files' SHA256 are unchanged). Two consequences for a
+release: (1) the SHA256 above is valid for **this** artefact only — a rebuild
+before a release yields a different hash, so the recorded hash must be updated
+to the artefact that is actually shipped; (2) the payload must be re-verified
+with `check_payload.ps1` after **every** rebuild, because the hash alone proves
+nothing about the payload.
 
 **What this rebuild did NOT do.** The installer was **compiled but NOT run**:
 no install, no local install, no uninstall, no clean-machine install. The
@@ -207,3 +223,8 @@ clean-machine install**, which remains **NOT-RUN**.
   payload) and the installer was **rebuilt the same day** — the current
   artefact carries the current notice; a further rebuild is needed whenever the
   notice changes again.
+- The installer artefact is **not byte-reproducible**: Inno Setup embeds its
+  compile timestamp, so the SHA256 recorded above identifies **this** build
+  only, and a rebuild before a release yields a **different** hash. Re-measure
+  it, re-run `check_payload.ps1` after **every** rebuild, and update the
+  recorded hash to the artefact that is actually shipped.
