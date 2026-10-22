@@ -89,14 +89,17 @@ Artefact: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
 — 8,713,903 bytes (8.3 MiB), SHA256
 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`, built
 2026-10-21 from the current `master`. It lives inside the git-ignored
-`build-full/` tree, so it is **not committed**. **Since 2026-10-22 it MAY be
-distributed**: the repository is public — the owner made it public because
-the account's Actions spending limit was refusing every CI job (public
-repositories get free Actions minutes) — so §4's "source must be public
-first" precondition is met, and the AGPL source offer ships with the
-installer (`docs/DISTRIBUTION.md` §4). The local install below ran on
-2026-10-21, while the repository was still private; that historical fact
-stands, and the flip followed on 2026-10-22.
+`build-full/` tree, so it is **not committed**. **SUPERSEDED on 2026-10-22**:
+the notice inside it is the pre-2026-10-22 text, so the installer was
+re-compiled the same day — see "Build record (2026-10-22)" below for the
+current artefact. The size and the SHA256 above stay as this artefact's
+identity. **Since 2026-10-22 it MAY be distributed**: the repository is public
+— the owner made it public because the account's Actions spending limit was
+refusing every CI job (public repositories get free Actions minutes) — so §4's
+"source must be public first" precondition is met, and the AGPL source offer
+ships with the installer (`docs/DISTRIBUTION.md` §4). The local install below
+ran on 2026-10-21, while the repository was still private; that historical
+fact stands, and the flip followed on 2026-10-22.
 
 Its composition is evidenced by a SURVIVING artefact, not by the console: the
 Inno Setup install log of the local run, committed as
@@ -107,6 +110,9 @@ payload items — `moduleinfo.json`, `Harmony Forge.vst3` (x86_64-win),
 `LICENSE` — with `onnxruntime.dll` appearing twice (next to the bundle and next
 to the exe), plus the uninstaller. The `iscc` compile log listed the same six;
 it only went to the console, so the committed log is the durable evidence.
+The **file list** still describes the current payload (the six items are
+unchanged); the notice's **bytes** are not the same — the current artefact
+carries the 2026-10-22 notice.
 
 The installer was also **executed once, locally**, and then removed again:
 
@@ -141,7 +147,40 @@ The **clean-machine install (R4)** is still **NOT-RUN**: it is an install on a
 machine that has never had the plugin, it counts as distribution
 (`docs/DISTRIBUTION.md` §4), and it is the owner's step. Since 2026-10-22 the
 repository is public, so the privacy block is gone — what remains is the step
-itself: a human install on a clean machine, still unperformed.
+itself: a human install on a clean machine, still unperformed. And since the
+2026-10-22 rebuild the **current payload has never been installed at all**:
+the 2026-10-21 install evidence above belongs to the superseded artefact, so
+the R4 clean-machine install is the verification of the current payload too.
+
+## Build record (2026-10-22) — the rebuild after the notice change
+
+Every number below is measured; nothing in this section is a plan.
+
+| Step | Command | Result |
+| --- | --- | --- |
+| Plugin binaries | — | **NOT rebuilt**: the plugin source did not change, so the four payload files were taken byte-identical from the 2026-10-21 Release build — the VST3 module `65D6668B…4798`, `moduleinfo.json` `B824CFC9…03EB`, `Harmony Forge.exe` `18E6148C…F4AC`, `onnxruntime.dll` `579B6364…1559` (each copied with the same SHA256) |
+| Payload preflight | `powershell -ExecutionPolicy Bypass -File packaging\windows\check_payload.ps1 -BuildDir build-full` | **PASS — 15 result rows** (8 static checks, 4 artefact-existence checks, 3 `.iss`-reference drift guards) |
+| Installer compile | `& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\windows\harmony_forge.iss` | **Successful compile** (3,125 ms, exit 0) |
+
+The compile compressed exactly the six payload items, as on 2026-10-21 — the
+notice is the only payload file whose bytes changed.
+
+Artefact: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
+— **8,714,148 bytes** (8.3 MiB), SHA256
+**`D0827156A48F91DBE917CE9C176A99CE2CF085D7D29D6D10A04FC17D4AEAF86F`**, built
+**2026-10-22**, after the licence notice changed. It lives inside the
+git-ignored `build-full/` tree, so it is **not committed**. It **SUPERSEDES**
+the 2026-10-21 artefact (8,713,903 bytes, SHA256
+`4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`), whose
+notice was stale.
+
+**What this rebuild did NOT do.** The installer was **compiled but NOT run**:
+no install, no local install, no uninstall, no clean-machine install. The
+recorded install evidence (`docs/measurements/installer-install-2026-10-21.log`)
+belongs to the **SUPERSEDED** artefact — it describes the 2026-10-21 payload,
+whose notice is not the one this artefact carries — so **it does not cover the
+current payload**. The verification of the current payload is the **R4
+clean-machine install**, which remains **NOT-RUN**.
 
 ## Running the installer
 
@@ -163,5 +202,8 @@ itself: a human install on a clean machine, still unperformed.
   and `[Setup] LicenseFile=` shows it before installation. **The source is
   public since 2026-10-22**, so binaries MAY be distributed under AGPLv3 with
   the notice, the full licence text and the source offer intact
-  (`docs/DISTRIBUTION.md` §4). The notice's own text changed on that date —
-  rebuild the installer before a release so the payload carries it.
+  (`docs/DISTRIBUTION.md` §4). The notice's own text changed on that date (its
+  source offer is now version-pinned to the `v0.1.0` release tag of this
+  payload) and the installer was **rebuilt the same day** — the current
+  artefact carries the current notice; a further rebuild is needed whenever the
+  notice changes again.
