@@ -15,8 +15,11 @@ available as follows.
 
 Complete corresponding source: https://github.com/Horror-04/Harmony-Forge
 (the complete corresponding source of the version you received, including
-the vendored JUCE 9.0.3 tree). See docs/DISTRIBUTION.md §4. DO NOT distribute
-binaries before the source repository is public.
+the vendored JUCE 9.0.3 tree). See docs/DISTRIBUTION.md §4. The source
+repository is public (it was made public on 2026-10-22), so this notice is
+the AGPL §13 written offer: you may redistribute this program under AGPLv3,
+provided this notice, the full licence text and the corresponding source are
+kept intact.
 
 Third-party components bundled or linked (see docs/DISTRIBUTION.md §4
 for the full per-component table):

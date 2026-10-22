@@ -89,9 +89,14 @@ Artefact: `build-full\installer-output\HarmonyForge-0.1.0-windows-x64-setup.exe`
 — 8,713,903 bytes (8.3 MiB), SHA256
 `4E771BB7DC79B96F1A5D2FD4712CC79F8897CBDA99825AF6DA5D8E53CBF1D2E2`, built
 2026-10-21 from the current `master`. It lives inside the git-ignored
-`build-full/` tree, so it is **not committed**; and it is **not distributable**
-yet — the repository is still private by the owner's deliberate decision
-(`docs/DISTRIBUTION.md` §4).
+`build-full/` tree, so it is **not committed**. **Since 2026-10-22 it MAY be
+distributed**: the repository is public — the owner made it public because
+the account's Actions spending limit was refusing every CI job (public
+repositories get free Actions minutes) — so §4's "source must be public
+first" precondition is met, and the AGPL source offer ships with the
+installer (`docs/DISTRIBUTION.md` §4). The local install below ran on
+2026-10-21, while the repository was still private; that historical fact
+stands, and the flip followed on 2026-10-22.
 
 Its composition is evidenced by a SURVIVING artefact, not by the console: the
 Inno Setup install log of the local run, committed as
@@ -134,7 +139,9 @@ Start-Process -FilePath ".\build-full\installer-output\HarmonyForge-0.1.0-window
 
 The **clean-machine install (R4)** is still **NOT-RUN**: it is an install on a
 machine that has never had the plugin, it counts as distribution
-(`docs/DISTRIBUTION.md` §4), and it is the owner's step.
+(`docs/DISTRIBUTION.md` §4), and it is the owner's step. Since 2026-10-22 the
+repository is public, so the privacy block is gone — what remains is the step
+itself: a human install on a clean machine, still unperformed.
 
 ## Running the installer
 
@@ -153,5 +160,8 @@ machine that has never had the plugin, it counts as distribution
 
 - `docs/SPEC.md` is deliberately **not** shipped.
 - R1 resolved (AGPLv3, 2026-10-12): `packaging\LICENSE-JUCE-NOTICE.txt` exists
-  and `[Setup] LicenseFile=` shows it before installation. Binaries must
-  still NOT be distributed until the source is public (`docs/DISTRIBUTION.md` §4).
+  and `[Setup] LicenseFile=` shows it before installation. **The source is
+  public since 2026-10-22**, so binaries MAY be distributed under AGPLv3 with
+  the notice, the full licence text and the source offer intact
+  (`docs/DISTRIBUTION.md` §4). The notice's own text changed on that date —
+  rebuild the installer before a release so the payload carries it.
