@@ -31,7 +31,7 @@
 ; R1 (resolved 2026-10-12, AGPLv3): packaging\LICENSE-JUCE-NOTICE.txt exists;
 ;   [Setup] LicenseFile shows it before installation and the [Files] entry
 ;   installs it next to the Standalone exe. See docs\DISTRIBUTION.md §4.
-;   Binaries must still NOT be distributed until the source is public (§4).
+;   Source is PUBLIC since 2026-10-22: the AGPL source offer is MET (§4) and the notice ships with the installer -- but the R4 clean-machine install and signing are still NOT-RUN human steps. Do NOT release before them.
 ; =============================================================================
 
 #define MyAppName "Harmony Forge"
